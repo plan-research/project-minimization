@@ -21,4 +21,5 @@ intellij {
 
 dependencies {
     implementation(project(":project-minimization-core"))
+    implementation(libs.arrow.core)
 }

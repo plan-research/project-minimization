@@ -9,6 +9,8 @@ plugins {
 }
 
 allprojects {
+    val libs = rootProject.libs
+
     apply {
         apply {
             plugin("java")
@@ -21,6 +23,12 @@ allprojects {
     }
 
     dependencies {
+        // these libraries are already provided inside the IDEA plugin
+        if (project.name != "project-minimization-plugin") {
+            compileOnly(kotlin("stdlib-jdk8"))
+            compileOnly(libs.kotlinx.coroutines.core)
+        }
+
         testImplementation(kotlin("test"))
     }
 

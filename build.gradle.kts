@@ -25,8 +25,8 @@ allprojects {
     dependencies {
         // these libraries are already provided inside the IDEA plugin
         if (project.name != "project-minimization-plugin") {
-            compileOnly(kotlin("stdlib-jdk8"))
-            compileOnly(libs.kotlinx.coroutines.core)
+            implementation(kotlin("stdlib-jdk8"))
+            implementation(libs.kotlinx.coroutines.core)
         }
 
         testImplementation(kotlin("test"))

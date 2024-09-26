@@ -1,0 +1,133 @@
+package org.plan.research.minimization.core.algorithm.dd.impl
+
+import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Test
+import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
+import org.plan.research.minimization.core.model.DDItem
+import org.plan.research.minimization.core.model.PropertyTestResult
+import org.plan.research.minimization.core.model.PropertyTester
+import kotlin.random.Random
+import kotlin.test.assertContentEquals
+
+abstract class DDAlgorithmTestBase {
+    abstract fun createAlgorithm(): DDAlgorithm
+
+    data class SomeDDItem(val value: Int) : DDItem
+
+    class SimpleTester(private val target: Set<SomeDDItem>) : PropertyTester<SomeDDItem> {
+        override suspend fun test(items: List<SomeDDItem>): PropertyTestResult {
+            return if (items.count { it in target } == target.size) {
+                PropertyTestResult.PRESENT
+            } else {
+                PropertyTestResult.NOT_PRESENT
+            }
+        }
+    }
+
+    class ComplexTester(
+        private val target: Set<SomeDDItem>,
+        private val badItems: Set<SomeDDItem>,
+    ) : PropertyTester<SomeDDItem> {
+        override suspend fun test(items: List<SomeDDItem>): PropertyTestResult {
+            val badCount = items.count { it in badItems }
+            return if (badCount == 0 || badCount == badItems.size) {
+                if (items.count { it in target } == target.size) {
+                    PropertyTestResult.PRESENT
+                } else {
+                    PropertyTestResult.NOT_PRESENT
+                }
+            } else {
+                PropertyTestResult.UNKNOWN
+            }
+        }
+    }
+
+    private suspend fun simpleTestWithSize(
+        algorithm: DDAlgorithm,
+        size: Int, targetSize: Int,
+        random: Random, shuffled: Boolean,
+    ) {
+        val items = List(size) { SomeDDItem(it) }
+        val target = if (shuffled) {
+            items.shuffled(random).take(targetSize)
+        } else {
+            val index = random.nextInt(size - targetSize)
+            items.subList(index, index + targetSize)
+        }
+
+        val propertyTester = SimpleTester(target.toSet())
+        val result = algorithm.minimize(items, propertyTester)
+        assertContentEquals(result.sortedBy { it.value }, target.sortedBy { it.value })
+    }
+
+    private suspend fun complexTestWithSize(
+        algorithm: DDAlgorithm,
+        size: Int, targetSize: Int, badSize: Int,
+        random: Random, shuffled: Boolean,
+    ) {
+        val items = List(size) { SomeDDItem(it) }
+        val (target, bad) = if (shuffled) {
+            items.shuffled(random).let {
+                it.take(targetSize) to it.drop(targetSize).take(badSize)
+            }
+        } else {
+            val index = random.nextInt(size - targetSize)
+            val badIndex = random.nextInt(size - targetSize - badSize)
+            val target = items.subList(index, index + targetSize)
+            val bad = items.filterIndexed { i, _ ->
+                if (i < index) {
+                    i >= badIndex && i < badIndex + badSize
+                } else if (i >= index + targetSize) {
+                    (i - targetSize) >= badIndex && (i - targetSize) < badIndex + badSize
+                } else {
+                    false
+                }
+            }
+            target to bad
+        }
+
+        val propertyTester = ComplexTester(target.toSet(), bad.toSet())
+        val result = algorithm.minimize(items, propertyTester)
+
+        if (result.size == targetSize) {
+            assertContentEquals(result.sortedBy { it.value }, target.sortedBy { it.value })
+        } else {
+            assertContentEquals(result.sortedBy { it.value }, (target + bad).sortedBy { it.value })
+        }
+    }
+
+    @Test
+    fun simpleTest() {
+        val algorithm = createAlgorithm()
+        val random = Random(42)
+        runBlocking {
+            repeat(ITERATIONS) {
+                val size = random.nextInt(10, MAX_SIZE)
+                val targetSize = random.nextInt(1, size / 2)
+                val shuffled = random.nextBoolean()
+                simpleTestWithSize(algorithm, size, targetSize, random, shuffled)
+            }
+        }
+    }
+
+    @Test
+    fun complexTest() {
+        val algorithm = createAlgorithm()
+        val random = Random(42)
+        runBlocking {
+            repeat(ITERATIONS) {
+                val size = random.nextInt(10, MAX_SIZE)
+                val targetSize = random.nextInt(1, size / 2)
+                val badSize = random.nextInt(1, targetSize)
+                val shuffled = random.nextBoolean()
+                complexTestWithSize(algorithm, size, targetSize, badSize, random, shuffled)
+            }
+        }
+    }
+
+    companion object {
+        private const val ITERATIONS = 10
+        private const val MAX_SIZE = 10000
+    }
+
+}

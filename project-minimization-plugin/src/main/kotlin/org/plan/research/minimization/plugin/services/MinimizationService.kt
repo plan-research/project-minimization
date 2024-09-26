@@ -18,7 +18,6 @@ class MinimizationService(val project: Project) {
             .produce()
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
         hierarchicalDD.minimizeHierarchy(hierarchy)
-        compilationPropertyChecker.getLastSnapshot()
     }
 
     sealed interface MinimizationError {

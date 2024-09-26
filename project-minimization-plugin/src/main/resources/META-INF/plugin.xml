@@ -24,10 +24,6 @@
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-        <projectService
-                serviceInterface="org.plan.research.minimization.plugin.model.CompilationPropertyChecker"
-                serviceImplementation="org.plan.research.minimization.plugin.services.CompilationPropertyCheckerService"
-        />
     </extensions>
     <actions>
         <group

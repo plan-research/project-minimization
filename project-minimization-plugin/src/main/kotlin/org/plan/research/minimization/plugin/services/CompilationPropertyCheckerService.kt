@@ -5,6 +5,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
+import org.plan.research.minimization.plugin.getCompilationStrategy
 import org.plan.research.minimization.plugin.model.CompilationPropertyChecker
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
@@ -15,7 +16,7 @@ class CompilationPropertyCheckerService(
     private val underlyingObject: CompilationPropertyChecker
         get() = initialProject
             .service<MinimizationPluginSettings>()
-            .state
+            .state.currentCompilationStrategy
             .getCompilationStrategy()
 
     override suspend fun checkCompilation(project: Project): Either<CompilationPropertyCheckerError, Throwable> =

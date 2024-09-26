@@ -1,6 +1,5 @@
 package org.plan.research.minimization.plugin
 
-import arrow.core.Either
 import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.application.ModernApplicationStarter
 import com.intellij.openapi.components.service

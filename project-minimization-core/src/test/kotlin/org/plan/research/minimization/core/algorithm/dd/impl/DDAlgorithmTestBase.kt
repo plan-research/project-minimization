@@ -1,8 +1,6 @@
 package org.plan.research.minimization.core.algorithm.dd.impl
 
-import arrow.core.left
 import arrow.core.raise.either
-import arrow.core.right
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
@@ -21,10 +19,10 @@ abstract class DDAlgorithmTestBase {
             version: EmptyDDVersion,
             items: List<SomeDDItem>
         ): PropertyTestResult<EmptyDDVersion> = either {
-            return if (items.count { it in target } == target.size) {
-                EmptyDDVersion.right()
+            if (items.count { it in target } == target.size) {
+                EmptyDDVersion
             } else {
-                PropertyTesterError.NoProperty.left()
+                raise(PropertyTesterError.NoProperty)
             }
         }
     }
@@ -38,14 +36,14 @@ abstract class DDAlgorithmTestBase {
             items: List<SomeDDItem>
         ): PropertyTestResult<EmptyDDVersion> = either {
             val badCount = items.count { it in badItems }
-            return if (badCount == 0 || badCount == badItems.size) {
+            if (badCount == 0 || badCount == badItems.size) {
                 if (items.count { it in target } == target.size) {
-                    EmptyDDVersion.right()
+                    EmptyDDVersion
                 } else {
-                    PropertyTesterError.NoProperty.left()
+                    raise(PropertyTesterError.NoProperty)
                 }
             } else {
-                PropertyTesterError.UnknownProperty.left()
+                raise(PropertyTesterError.UnknownProperty)
             }
         }
     }

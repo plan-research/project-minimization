@@ -21,6 +21,5 @@ intellij {
 
 dependencies {
     implementation(project(":project-minimization-core"))
-    implementation(libs.arrow.core)
     implementation(libs.arrow.fx.coroutines)
 }

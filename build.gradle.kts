@@ -28,6 +28,7 @@ allprojects {
             implementation(kotlin("stdlib-jdk8"))
             implementation(libs.kotlinx.coroutines.core)
         }
+        implementation(libs.arrow.core)
 
         testImplementation(kotlin("test"))
     }

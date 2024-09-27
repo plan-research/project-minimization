@@ -6,5 +6,7 @@ import org.plan.research.minimization.core.algorithm.dd.hierarchical.Hierarchica
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError
 
 interface ProjectHierarchyProducer {
-    suspend fun produce(from: Project): Either<HierarchyBuildError, HierarchicalDDGenerator<PsiDDItem>>
+    suspend fun produce(
+        from: Project
+    ): Either<HierarchyBuildError, HierarchicalDDGenerator<ProjectDDVersion, PsiDDItem>>
 }

@@ -1,25 +1,30 @@
 package org.plan.research.minimization.core.algorithm.dd.impl
 
+import arrow.core.left
+import arrow.core.raise.either
+import arrow.core.right
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
-import org.plan.research.minimization.core.model.DDItem
-import org.plan.research.minimization.core.model.PropertyTestResult
-import org.plan.research.minimization.core.model.PropertyTester
+import org.plan.research.minimization.core.model.*
 import kotlin.random.Random
 import kotlin.test.assertContentEquals
 
 abstract class DDAlgorithmTestBase {
     abstract fun createAlgorithm(): DDAlgorithm
 
+    data object EmptyDDVersion : DDVersion
     data class SomeDDItem(val value: Int) : DDItem
 
-    class SimpleTester(private val target: Set<SomeDDItem>) : PropertyTester<SomeDDItem> {
-        override suspend fun test(items: List<SomeDDItem>): PropertyTestResult {
+    class SimpleTester(private val target: Set<SomeDDItem>) : PropertyTester<EmptyDDVersion, SomeDDItem> {
+        override suspend fun test(
+            version: EmptyDDVersion,
+            items: List<SomeDDItem>
+        ): PropertyTestResult<EmptyDDVersion> = either {
             return if (items.count { it in target } == target.size) {
-                PropertyTestResult.PRESENT
+                EmptyDDVersion.right()
             } else {
-                PropertyTestResult.NOT_PRESENT
+                PropertyTesterError.NoProperty.left()
             }
         }
     }
@@ -27,17 +32,20 @@ abstract class DDAlgorithmTestBase {
     class ComplexTester(
         private val target: Set<SomeDDItem>,
         private val badItems: Set<SomeDDItem>,
-    ) : PropertyTester<SomeDDItem> {
-        override suspend fun test(items: List<SomeDDItem>): PropertyTestResult {
+    ) : PropertyTester<EmptyDDVersion, SomeDDItem> {
+        override suspend fun test(
+            version: EmptyDDVersion,
+            items: List<SomeDDItem>
+        ): PropertyTestResult<EmptyDDVersion> = either {
             val badCount = items.count { it in badItems }
             return if (badCount == 0 || badCount == badItems.size) {
                 if (items.count { it in target } == target.size) {
-                    PropertyTestResult.PRESENT
+                    EmptyDDVersion.right()
                 } else {
-                    PropertyTestResult.NOT_PRESENT
+                    PropertyTesterError.NoProperty.left()
                 }
             } else {
-                PropertyTestResult.UNKNOWN
+                PropertyTesterError.UnknownProperty.left()
             }
         }
     }
@@ -56,7 +64,7 @@ abstract class DDAlgorithmTestBase {
         }
 
         val propertyTester = SimpleTester(target.toSet())
-        val result = algorithm.minimize(items, propertyTester)
+        val (_, result) = algorithm.minimize(EmptyDDVersion, items, propertyTester)
         assertContentEquals(result.sortedBy { it.value }, target.sortedBy { it.value })
     }
 
@@ -87,7 +95,7 @@ abstract class DDAlgorithmTestBase {
         }
 
         val propertyTester = ComplexTester(target.toSet(), bad.toSet())
-        val result = algorithm.minimize(items, propertyTester)
+        val (_, result) = algorithm.minimize(EmptyDDVersion, items, propertyTester)
 
         if (result.size == targetSize) {
             assertContentEquals(result.sortedBy { it.value }, target.sortedBy { it.value })

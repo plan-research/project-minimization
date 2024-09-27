@@ -21,7 +21,6 @@ intellij {
 
 dependencies {
     implementation(project(":project-minimization-core"))
-    implementation(libs.arrow.core)
     implementation(libs.arrow.fx.coroutines)
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.1.0")

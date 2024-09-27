@@ -2,8 +2,9 @@ package org.plan.research.minimization.core.algorithm.dd.impl
 
 import kotlinx.coroutines.yield
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
+import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.model.DDItem
-import org.plan.research.minimization.core.model.PropertyTestResult
+import org.plan.research.minimization.core.model.DDContext
 import org.plan.research.minimization.core.model.PropertyTester
 import kotlin.math.min
 
@@ -85,7 +86,11 @@ class DDMin : DDAlgorithm {
         }
     }
 
-    override suspend fun <T : DDItem> minimize(items: List<T>, propertyTester: PropertyTester<T>): List<T> {
+    override suspend fun <C : DDContext, T : DDItem> minimize(
+        context: C, items: List<T>,
+        propertyTester: PropertyTester<C, T>
+    ): DDAlgorithmResult<C, T> {
+        var currentContext = context
         var granularity = 2
         var currentItems = ArrayDeque(items)
         var smallItems = ArrayDeque<T>()
@@ -106,20 +111,25 @@ class DDMin : DDAlgorithm {
                     }
 
                     if (testSmall) {
-                        if (!node.smallChecked && propertyTester.test(smallItems) == PropertyTestResult.PRESENT) {
-                            granularity = 2
-                            smallItems.let {
-                                smallItems = currentItems
-                                currentItems = it
-                            }
-                            smallItems.clear()
-                            reduced = true
-                            node.parent = null
-                            node.smallChecked = true
-                            node.checked = true
-                            currentNodes.clear()
-                            currentNodes.addAll(node.initNext())
-                            break
+                        if (!node.smallChecked) {
+                            val toBreak = propertyTester.test(currentContext, smallItems)
+                                .isRight { updatedContext ->
+                                    currentContext = updatedContext
+                                    granularity = 2
+                                    smallItems.let {
+                                        smallItems = currentItems
+                                        currentItems = it
+                                    }
+                                    smallItems.clear()
+                                    reduced = true
+                                    node.parent = null
+                                    node.smallChecked = true
+                                    node.checked = true
+                                    currentNodes.clear()
+                                    currentNodes.addAll(node.initNext())
+                                    true
+                                }
+                            if (toBreak) break
                         }
                         node.smallChecked = true
                         if (granularity == 2) {
@@ -130,13 +140,15 @@ class DDMin : DDAlgorithm {
                             node.isCheckedAndMark()
                         }
                         if (!node.isCheckedAndMark()) {
-                            if (propertyTester.test(currentItems) == PropertyTestResult.PRESENT) {
+                            val toBreak = propertyTester.test(currentContext, currentItems).isRight { updatedContext ->
+                                currentContext = updatedContext
                                 granularity -= 1
                                 smallItems.clear()
                                 node.delete()
                                 reduced = true
-                                break
+                                true
                             }
+                            if (toBreak) break
                         }
                     }
 
@@ -148,7 +160,7 @@ class DDMin : DDAlgorithm {
                 if (!reduced) {
                     if (!testSmall || granularity == 2) {
                         if (granularity == currentItems.size) {
-                            return currentItems
+                            return DDAlgorithmResult(currentContext, currentItems)
                         }
                         granularity = min(granularity * 2, currentItems.size)
                         val next = currentNodes.flatMap { it.initNext() }
@@ -161,6 +173,6 @@ class DDMin : DDAlgorithm {
                 }
             }
         }
-        return currentItems
+        return DDAlgorithmResult(currentContext, currentItems)
     }
 }

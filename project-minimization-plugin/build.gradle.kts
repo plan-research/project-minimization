@@ -23,4 +23,16 @@ dependencies {
     implementation(project(":project-minimization-core"))
     implementation(libs.arrow.core)
     implementation(libs.arrow.fx.coroutines)
+
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.1.0")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.1.0")
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.1.0")
+    testCompileOnly("junit:junit:4.13.1")
+}
+tasks {
+    val test by getting(Test::class) {
+        isScanForTestClasses = false
+        // Only run tests from classes that end with "Test"
+        include("**/*Test.class")
+    }
 }

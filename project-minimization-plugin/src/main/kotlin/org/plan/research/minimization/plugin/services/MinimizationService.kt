@@ -10,7 +10,6 @@ import org.plan.research.minimization.plugin.errors.HierarchyBuildError
 @Service(Service.Level.PROJECT)
 class MinimizationService(val project: Project) {
     suspend fun minimizeProject(project: Project) = either {
-        val compilationPropertyChecker = project.service<CompilationPropertyCheckerService>()
         val hierarchicalDD = project.service<HierarchicalDDService>()
 
         val hierarchy = project

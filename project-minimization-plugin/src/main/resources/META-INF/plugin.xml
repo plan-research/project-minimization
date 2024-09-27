@@ -25,16 +25,4 @@
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
     </extensions>
-    <actions>
-        <group
-                id="org.plan.research.minimization.plugin.MinimizationGroup"
-                text="Minimize This Project"
-                popup="true"
-                icon="AllIcons.General.InspectionsOKEmpty">
-            <add-to-group
-                    group-id="ToolsMenu"
-                    anchor="after"
-            />
-        </group>
-    </actions>
 </idea-plugin>

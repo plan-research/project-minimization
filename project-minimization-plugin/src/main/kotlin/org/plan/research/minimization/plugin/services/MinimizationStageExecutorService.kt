@@ -9,17 +9,17 @@ import org.plan.research.minimization.plugin.getDDAlgorithm
 import org.plan.research.minimization.plugin.getHierarchyCollectionStrategy
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.MinimizationStageExecutor
-import org.plan.research.minimization.plugin.model.ProjectDDVersion
+import org.plan.research.minimization.plugin.model.IJDDContext
 
 @Service(Service.Level.PROJECT)
 class MinimizationStageExecutorService : MinimizationStageExecutor {
-    override suspend fun executeFileLevelStage(project: ProjectDDVersion, fileLevelStage: FileLevelStage) = either {
+    override suspend fun executeFileLevelStage(context: IJDDContext, fileLevelStage: FileLevelStage) = either {
         val baseAlgorithm = fileLevelStage.ddAlgorithm.getDDAlgorithm()
         val hierarchicalDD = HierarchicalDD(baseAlgorithm)
         val hierarchy = fileLevelStage
             .hierarchyCollectionStrategy
             .getHierarchyCollectionStrategy()
-            .produce(project.project)
+            .produce(context.project)
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
         hierarchicalDD.minimize(hierarchy)
     }

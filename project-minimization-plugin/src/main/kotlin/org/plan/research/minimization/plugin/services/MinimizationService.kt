@@ -4,7 +4,7 @@ import arrow.core.raise.either
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import org.plan.research.minimization.plugin.model.ProjectDDVersion
+import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 @Service(Service.Level.PROJECT)
@@ -13,10 +13,10 @@ class MinimizationService(project: Project) {
     private val executor = project.service<MinimizationStageExecutorService>()
 
     suspend fun minimizeProject(project: Project) = either {
-        var currentProject = ProjectDDVersion(project)
+        var context = IJDDContext(project)
         for (stage in stages) {
-            currentProject = stage.apply(currentProject, executor).bind()
+            context = stage.apply(context, executor).bind()
         }
-        currentProject.project
+        context.project
     }
 }

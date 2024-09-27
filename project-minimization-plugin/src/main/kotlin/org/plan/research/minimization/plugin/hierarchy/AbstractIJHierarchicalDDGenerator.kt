@@ -5,18 +5,18 @@ import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HDDLevel
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDDGenerator
 import org.plan.research.minimization.core.model.PropertyTester
-import org.plan.research.minimization.plugin.model.ProjectDDVersion
+import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.PsiDDItem
 
 abstract class AbstractIJHierarchicalDDGenerator(
-    protected val propertyTester: PropertyTester<ProjectDDVersion, PsiDDItem>
-) : HierarchicalDDGenerator<ProjectDDVersion, PsiDDItem> {
+    protected val propertyTester: PropertyTester<IJDDContext, PsiDDItem>
+) : HierarchicalDDGenerator<IJDDContext, PsiDDItem> {
 
     override suspend fun generateNextLevel(
-        minimizationResult: DDAlgorithmResult<ProjectDDVersion, PsiDDItem>
-    ): HDDLevel<ProjectDDVersion, PsiDDItem>? = option {
+        minimizationResult: DDAlgorithmResult<IJDDContext, PsiDDItem>
+    ): HDDLevel<IJDDContext, PsiDDItem>? = option {
         val nextLevel = minimizationResult.items.flatMap { it.psi.children.toList() }.map { PsiDDItem(it) }
         ensure(nextLevel.isNotEmpty())
-        HDDLevel(minimizationResult.version, nextLevel, propertyTester)
+        HDDLevel(minimizationResult.context, nextLevel, propertyTester)
     }.getOrNull()
 }

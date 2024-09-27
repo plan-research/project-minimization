@@ -8,5 +8,5 @@ import org.plan.research.minimization.plugin.errors.HierarchyBuildError
 interface ProjectHierarchyProducer {
     suspend fun produce(
         from: Project
-    ): Either<HierarchyBuildError, HierarchicalDDGenerator<ProjectDDVersion, PsiDDItem>>
+    ): Either<HierarchyBuildError, HierarchicalDDGenerator<IJDDContext, PsiDDItem>>
 }

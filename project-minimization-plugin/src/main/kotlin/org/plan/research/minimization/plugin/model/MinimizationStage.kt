@@ -6,16 +6,16 @@ import org.plan.research.minimization.plugin.errors.MinimizationError
 
 interface MinimizationStageExecutor {
     suspend fun executeFileLevelStage(
-        project: ProjectDDVersion,
+        context: IJDDContext,
         fileLevelStage: FileLevelStage
-    ): Either<MinimizationError, ProjectDDVersion>
+    ): Either<MinimizationError, IJDDContext>
 }
 
 sealed interface MinimizationStage {
     suspend fun apply(
-        project: ProjectDDVersion,
+        context: IJDDContext,
         executor: MinimizationStageExecutor
-    ): Either<MinimizationError, ProjectDDVersion>
+    ): Either<MinimizationError, IJDDContext>
 }
 
 @Tag("fileLevelStage")
@@ -23,6 +23,6 @@ data class FileLevelStage(
     var hierarchyCollectionStrategy: HierarchyCollectionStrategy,
     var ddAlgorithm: DDStrategy,
 ) : MinimizationStage {
-    override suspend fun apply(project: ProjectDDVersion, executor: MinimizationStageExecutor) =
-        executor.executeFileLevelStage(project, this)
+    override suspend fun apply(context: IJDDContext, executor: MinimizationStageExecutor) =
+        executor.executeFileLevelStage(context, this)
 }

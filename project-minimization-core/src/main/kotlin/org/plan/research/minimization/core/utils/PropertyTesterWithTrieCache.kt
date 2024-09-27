@@ -1,19 +1,19 @@
 package org.plan.research.minimization.core.utils
 
 import org.plan.research.minimization.core.model.DDItem
-import org.plan.research.minimization.core.model.DDVersion
+import org.plan.research.minimization.core.model.DDContext
 import org.plan.research.minimization.core.model.PropertyTestResult
 import org.plan.research.minimization.core.model.PropertyTester
 
-class PropertyTesterWithTrieCache<V : DDVersion, T : DDItem>(
-    private val innerTester: PropertyTester<V, T>
-) : PropertyTester<V, T> {
-    private val cache = TrieCache<T, PropertyTestResult<V>>()
+class PropertyTesterWithTrieCache<C : DDContext, T : DDItem>(
+    private val innerTester: PropertyTester<C, T>
+) : PropertyTester<C, T> {
+    private val cache = TrieCache<T, PropertyTestResult<C>>()
 
-    override suspend fun test(version: V, items: List<T>): PropertyTestResult<V> {
-        return cache.getOrPut(items) { innerTester.test(version, items) }
+    override suspend fun test(context: C, items: List<T>): PropertyTestResult<C> {
+        return cache.getOrPut(items) { innerTester.test(context, items) }
     }
 }
 
-fun <V : DDVersion, T : DDItem> PropertyTester<V, T>.withTrieCache(): PropertyTester<V, T> =
+fun <C : DDContext, T : DDItem> PropertyTester<C, T>.withTrieCache(): PropertyTester<C, T> =
     PropertyTesterWithTrieCache(this)

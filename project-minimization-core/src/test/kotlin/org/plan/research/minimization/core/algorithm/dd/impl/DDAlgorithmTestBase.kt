@@ -11,16 +11,16 @@ import kotlin.test.assertContentEquals
 abstract class DDAlgorithmTestBase {
     abstract fun createAlgorithm(): DDAlgorithm
 
-    data object EmptyDDVersion : DDVersion
+    data object EmptyDDContext : DDContext
     data class SomeDDItem(val value: Int) : DDItem
 
-    class SimpleTester(private val target: Set<SomeDDItem>) : PropertyTester<EmptyDDVersion, SomeDDItem> {
+    class SimpleTester(private val target: Set<SomeDDItem>) : PropertyTester<EmptyDDContext, SomeDDItem> {
         override suspend fun test(
-            version: EmptyDDVersion,
+            context: EmptyDDContext,
             items: List<SomeDDItem>
-        ): PropertyTestResult<EmptyDDVersion> = either {
+        ): PropertyTestResult<EmptyDDContext> = either {
             if (items.count { it in target } == target.size) {
-                EmptyDDVersion
+                EmptyDDContext
             } else {
                 raise(PropertyTesterError.NoProperty)
             }
@@ -30,15 +30,15 @@ abstract class DDAlgorithmTestBase {
     class ComplexTester(
         private val target: Set<SomeDDItem>,
         private val badItems: Set<SomeDDItem>,
-    ) : PropertyTester<EmptyDDVersion, SomeDDItem> {
+    ) : PropertyTester<EmptyDDContext, SomeDDItem> {
         override suspend fun test(
-            version: EmptyDDVersion,
+            context: EmptyDDContext,
             items: List<SomeDDItem>
-        ): PropertyTestResult<EmptyDDVersion> = either {
+        ): PropertyTestResult<EmptyDDContext> = either {
             val badCount = items.count { it in badItems }
             if (badCount == 0 || badCount == badItems.size) {
                 if (items.count { it in target } == target.size) {
-                    EmptyDDVersion
+                    EmptyDDContext
                 } else {
                     raise(PropertyTesterError.NoProperty)
                 }
@@ -62,7 +62,7 @@ abstract class DDAlgorithmTestBase {
         }
 
         val propertyTester = SimpleTester(target.toSet())
-        val (_, result) = algorithm.minimize(EmptyDDVersion, items, propertyTester)
+        val (_, result) = algorithm.minimize(EmptyDDContext, items, propertyTester)
         assertContentEquals(result.sortedBy { it.value }, target.sortedBy { it.value })
     }
 
@@ -93,7 +93,7 @@ abstract class DDAlgorithmTestBase {
         }
 
         val propertyTester = ComplexTester(target.toSet(), bad.toSet())
-        val (_, result) = algorithm.minimize(EmptyDDVersion, items, propertyTester)
+        val (_, result) = algorithm.minimize(EmptyDDContext, items, propertyTester)
 
         if (result.size == targetSize) {
             assertContentEquals(result.sortedBy { it.value }, target.sortedBy { it.value })

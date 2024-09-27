@@ -4,7 +4,7 @@ import kotlinx.coroutines.yield
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.model.DDItem
-import org.plan.research.minimization.core.model.DDVersion
+import org.plan.research.minimization.core.model.DDContext
 import org.plan.research.minimization.core.model.PropertyTester
 import java.util.*
 import kotlin.collections.ArrayDeque
@@ -16,11 +16,11 @@ import kotlin.math.exp
  * This version doesn't support caching mechanisms.
  */
 class ProbabilisticDD : DDAlgorithm {
-    override suspend fun <V : DDVersion, T : DDItem> minimize(
-        version: V, items: List<T>,
-        propertyTester: PropertyTester<V, T>
-    ): DDAlgorithmResult<V, T> {
-        var currentVersion = version
+    override suspend fun <C : DDContext, T : DDItem> minimize(
+        context: C, items: List<T>,
+        propertyTester: PropertyTester<C, T>
+    ): DDAlgorithmResult<C, T> {
+        var currentContext = context
         val buffer = ArrayDeque<T>()
         val probs = IdentityHashMap<T, Double>()
         val defaultProb = 1 - exp(-2.0 / items.size)
@@ -39,18 +39,18 @@ class ProbabilisticDD : DDAlgorithm {
                     break
                 }
             }
-            propertyTester.test(currentVersion, currentItems).fold(
+            propertyTester.test(currentContext, currentItems).fold(
                 ifLeft = {
                     excludedItems.forEach { item -> probs.computeIfPresent(item) { _, v -> v / (1 - p) } }
                     merge(probs, buffer, currentItems, excludedItems)
                 },
-                ifRight = { newVersion ->
-                    currentVersion = newVersion
+                ifRight = { updatedContext ->
+                    currentContext = updatedContext
                     excludedItems.clear()
                 }
             )
         }
-        return DDAlgorithmResult(currentVersion, currentItems)
+        return DDAlgorithmResult(currentContext, currentItems)
     }
 
     private fun <T> merge(

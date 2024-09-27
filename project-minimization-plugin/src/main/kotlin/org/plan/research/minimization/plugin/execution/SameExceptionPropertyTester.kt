@@ -11,7 +11,7 @@ import org.plan.research.minimization.core.model.PropertyTestResult
 import org.plan.research.minimization.core.model.PropertyTester
 import org.plan.research.minimization.core.model.PropertyTesterError
 import org.plan.research.minimization.plugin.model.CompilationPropertyChecker
-import org.plan.research.minimization.plugin.model.ProjectDDVersion
+import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.PsiDDItem
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 
@@ -20,12 +20,12 @@ class SameExceptionPropertyTester private constructor(
     private val compilationPropertyChecker: CompilationPropertyChecker,
     project: Project,
     private val initialException: Throwable,
-) : PropertyTester<ProjectDDVersion, PsiDDItem> {
+) : PropertyTester<IJDDContext, PsiDDItem> {
 
     private val projectCloner = project.service<ProjectCloningService>()
 
-    override suspend fun test(version: ProjectDDVersion, items: List<PsiDDItem>): PropertyTestResult<ProjectDDVersion> {
-        val project = version.project
+    override suspend fun test(context: IJDDContext, items: List<PsiDDItem>): PropertyTestResult<IJDDContext> {
+        val project = context.project
 
         val clonedProject = projectCloner.clone(project, items.map(PsiDDItem::psi))
             ?: return PropertyTesterError.UnknownProperty.left()
@@ -36,7 +36,7 @@ class SameExceptionPropertyTester private constructor(
                 .getOrElse { raise(PropertyTesterError.NoProperty) }
 
             when (compilationResult) {
-                initialException -> ProjectDDVersion(clonedProject)
+                initialException -> IJDDContext(clonedProject)
                 else -> raise(PropertyTesterError.UnknownProperty)
             }
         }.onLeft { ProjectManagerEx.getInstanceEx().closeAndDispose(clonedProject) }

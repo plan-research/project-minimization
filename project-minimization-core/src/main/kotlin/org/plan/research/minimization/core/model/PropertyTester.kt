@@ -2,10 +2,10 @@ package org.plan.research.minimization.core.model
 
 import arrow.core.Either
 
-typealias PropertyTestResult<V> = Either<PropertyTesterError, V>
+typealias PropertyTestResult<C> = Either<PropertyTesterError, C>
 
-interface PropertyTester<V : DDVersion, T : DDItem> {
-    suspend fun test(version: V, items: List<T>): PropertyTestResult<V>
+interface PropertyTester<C : DDContext, T : DDItem> {
+    suspend fun test(context: C, items: List<T>): PropertyTestResult<C>
 }
 
 sealed interface PropertyTesterError {

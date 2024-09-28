@@ -9,9 +9,7 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findOrCreateDirectory
-import com.intellij.psi.PsiDirectory
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFile
+import org.plan.research.minimization.plugin.getAllNestedElements
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 import java.util.*
 
@@ -24,27 +22,37 @@ class ProjectCloningService(private val rootProject: Project) {
         ?: ""
 
     suspend fun clone(project: Project): Project? {
-        val clonedProjectPath = createNewProjectDirectory()
         val projectRoot = project.guessProjectDir() ?: return null
-        VfsUtil.copyDirectory(this, projectRoot, clonedProjectPath, null)
-        return ProjectUtil.openOrImport(clonedProjectPath.toNioPath())
+        return clone(project, projectRoot.getAllNestedElements())
     }
 
-    suspend fun clone(project: Project, items: List<PsiElement>): Project? {
-        val filesToCopy = items.filterIsInstance<PsiFile>().map { it.virtualFile }.toSet() +
-                items.filterIsInstance<PsiDirectory>().map { it.virtualFile }
+    suspend fun clone(project: Project, items: List<VirtualFile>): Project? {
         val clonedProjectPath = createNewProjectDirectory()
         val projectRoot = project.guessProjectDir() ?: return null
-        VfsUtil.copyDirectory(this, projectRoot, clonedProjectPath) { it in filesToCopy }
-        return ProjectUtil.openOrImport(clonedProjectPath.toNioPath())
+        val snapshotLocation = getSnapshotLocation()
+        writeAction {
+            VfsUtil.copyDirectory(
+                this,
+                projectRoot,
+                clonedProjectPath
+            ) { it in items && it.path != snapshotLocation.path }
+        }
+        return ProjectUtil.openOrImportAsync(clonedProjectPath.toNioPath())
     }
+
     @Suppress("UnstableApiUsage")
-    private suspend fun createNewProjectDirectory(): VirtualFile = writeAction {
-        val tempDirectory = rootProject
+    private suspend fun createNewProjectDirectory(): VirtualFile {
+        val tempDirectory = getSnapshotLocation()
+        return writeAction {
+            tempDirectory
+                .findOrCreateDirectory(UUID.randomUUID().toString())
+        }
+    }
+
+    private suspend fun getSnapshotLocation(): VirtualFile = writeAction {
+        rootProject
             .guessProjectDir()
             ?.findOrCreateDirectory(tempProjectsDirectoryName)
             ?: rootProject.guessProjectDir()!!
-        tempDirectory
-            .findOrCreateDirectory(UUID.randomUUID().toString())
     }
 }

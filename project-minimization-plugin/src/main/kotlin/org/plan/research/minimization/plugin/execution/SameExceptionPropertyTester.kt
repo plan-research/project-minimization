@@ -1,10 +1,8 @@
 package org.plan.research.minimization.plugin.execution
 
 import arrow.core.getOrElse
-import arrow.core.left
 import arrow.core.raise.either
 import arrow.core.raise.option
-import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ex.ProjectManagerEx
 import org.plan.research.minimization.core.model.PropertyTestResult
@@ -12,34 +10,26 @@ import org.plan.research.minimization.core.model.PropertyTester
 import org.plan.research.minimization.core.model.PropertyTesterError
 import org.plan.research.minimization.plugin.model.CompilationPropertyChecker
 import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.PsiDDItem
-import org.plan.research.minimization.plugin.services.ProjectCloningService
+import org.plan.research.minimization.plugin.model.VirtualFileDDItem
 
 
 class SameExceptionPropertyTester private constructor(
     private val compilationPropertyChecker: CompilationPropertyChecker,
-    project: Project,
     private val initialException: Throwable,
-) : PropertyTester<IJDDContext, PsiDDItem> {
-
-    private val projectCloner = project.service<ProjectCloningService>()
-
-    override suspend fun test(context: IJDDContext, items: List<PsiDDItem>): PropertyTestResult<IJDDContext> {
+) : PropertyTester<IJDDContext, VirtualFileDDItem> {
+    override suspend fun test(context: IJDDContext, items: List<VirtualFileDDItem>): PropertyTestResult<IJDDContext> {
         val project = context.project
-
-        val clonedProject = projectCloner.clone(project, items.map(PsiDDItem::psi))
-            ?: return PropertyTesterError.UnknownProperty.left()
 
         return either {
             val compilationResult = compilationPropertyChecker
-                .checkCompilation(clonedProject)
+                .checkCompilation(project)
                 .getOrElse { raise(PropertyTesterError.NoProperty) }
 
             when (compilationResult) {
-                initialException -> IJDDContext(clonedProject)
+                initialException -> IJDDContext(project)
                 else -> raise(PropertyTesterError.UnknownProperty)
             }
-        }.onLeft { ProjectManagerEx.getInstanceEx().closeAndDispose(clonedProject) }
+        }.onLeft { ProjectManagerEx.getInstanceEx().closeAndDispose(project) }
     }
 
     companion object {
@@ -48,7 +38,7 @@ class SameExceptionPropertyTester private constructor(
             project: Project
         ) = option {
             val initialException = compilerPropertyChecker.checkCompilation(project).getOrNone().bind()
-            SameExceptionPropertyTester(compilerPropertyChecker, project, initialException)
+            SameExceptionPropertyTester(compilerPropertyChecker, initialException)
         }
     }
 }

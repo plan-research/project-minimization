@@ -1,5 +1,7 @@
 package org.plan.research.minimization.plugin
 
+import com.intellij.openapi.vfs.VfsUtilCore
+import com.intellij.openapi.vfs.VirtualFile
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.impl.DDMin
 import org.plan.research.minimization.core.algorithm.dd.impl.ProbabilisticDD
@@ -24,3 +26,12 @@ fun CompilationStrategy.getCompilationStrategy(): CompilationPropertyChecker =
         CompilationStrategy.GRADLE_IDEA -> TODO()
         CompilationStrategy.DUMB -> DumbCompiler
     }
+fun VirtualFile.getAllNestedElements(): List<VirtualFile> = buildList {
+    VfsUtilCore.iterateChildrenRecursively(
+        this@getAllNestedElements,
+        null
+    ) {
+        add(it)
+        true
+    }
+}

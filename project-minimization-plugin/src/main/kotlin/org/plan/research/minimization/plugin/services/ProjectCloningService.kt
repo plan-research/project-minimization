@@ -13,6 +13,11 @@ import org.plan.research.minimization.plugin.getAllNestedElements
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 import java.util.*
 
+/**
+ * Service responsible for cloning a given project.
+ *
+ * @property rootProject The root project used as a source of services
+ */
 @Service(Service.Level.PROJECT)
 class ProjectCloningService(private val rootProject: Project) {
     private val tempProjectsDirectoryName = rootProject
@@ -21,11 +26,21 @@ class ProjectCloningService(private val rootProject: Project) {
         .temporaryProjectLocation
         ?: ""
 
+    /**
+     * Perform a full clone of the project
+     * @param project A project to clone
+     * @return a cloned project or null if the project was default
+     */
     suspend fun clone(project: Project): Project? {
         val projectRoot = project.guessProjectDir() ?: return null
         return clone(project, projectRoot.getAllNestedElements())
     }
 
+    /**
+     * Perform a partial clone of the project
+     * @param project A project to clone
+     * @param items all files and directories that should be copied over from the original project including parent directories
+     */
     suspend fun clone(project: Project, items: List<VirtualFile>): Project? {
         val clonedProjectPath = createNewProjectDirectory()
         val projectRoot = project.guessProjectDir() ?: return null

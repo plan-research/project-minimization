@@ -6,6 +6,9 @@ import com.intellij.openapi.project.Project
 import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
 import org.plan.research.minimization.plugin.model.CompilationPropertyChecker
 
+/**
+ * A dumb compiler that always gives the same exception
+ */
 object DumbCompiler : CompilationPropertyChecker {
     override suspend fun checkCompilation(project: Project): Either<CompilationPropertyCheckerError, Throwable> =
         THROWABLE.right()

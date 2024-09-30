@@ -16,10 +16,9 @@ class CloneSnapshot(
     override val previousSnapshot: CloneSnapshot?,
 ) : Snapshot {
     override suspend fun rollback() = either {
-        if (previousSnapshot == null) {
+        if (previousSnapshot == null) { // Root case, I don't want to throw an error
             return@either this@CloneSnapshot
         }
-//        ensureNotNull(previousSnapshot) { SnapshotBuildingError.NoPreviousSnapshot }
         val thisProjectRoot = project.guessProjectDir()
         ApplicationManager.getApplication().invokeLater {
             ensure(ProjectManager.getInstance().closeAndDispose(project)) { SnapshotBuildingError.RollbackFailed }

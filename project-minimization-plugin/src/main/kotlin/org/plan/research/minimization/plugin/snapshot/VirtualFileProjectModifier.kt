@@ -9,11 +9,11 @@ import org.plan.research.minimization.plugin.getAllNestedElements
 import org.plan.research.minimization.plugin.getAllParents
 import org.plan.research.minimization.plugin.model.dd.IJDDContext
 import org.plan.research.minimization.plugin.model.dd.IJDDItem
-import org.plan.research.minimization.plugin.model.snapshot.ProjectModifier
+import org.plan.research.minimization.plugin.model.snapshot.ProjectShrinkProducer
 import kotlin.io.path.relativeTo
 
 @Service(Service.Level.PROJECT)
-class VirtualFileProjectModifier(private val project: Project) : ProjectModifier<IJDDItem.VirtualFileDDItem> {
+class VirtualFileProjectModifier(private val project: Project) : ProjectShrinkProducer<IJDDItem.VirtualFileDDItem> {
     override fun modifyWith(
         context: IJDDContext,
         items: List<IJDDItem.VirtualFileDDItem>
@@ -38,7 +38,6 @@ class VirtualFileProjectModifier(private val project: Project) : ProjectModifier
                     }
                 }
             }
-            true
         }
     }
 }

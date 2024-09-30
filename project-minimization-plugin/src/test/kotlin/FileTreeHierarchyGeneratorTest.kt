@@ -16,9 +16,11 @@ import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchicalDDGenerator
 import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchyGenerator
 import org.plan.research.minimization.plugin.model.dd.IJDDContext
+import org.plan.research.minimization.plugin.model.snapshot.SnapshotDecision
 import org.plan.research.minimization.plugin.model.strategies.CompilationStrategy
 import org.plan.research.minimization.plugin.services.SnapshottingService
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
+import org.plan.research.minimization.plugin.snapshot.CloneSnapshot
 import kotlin.io.path.relativeTo
 import kotlin.test.assertIs
 
@@ -137,17 +139,21 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
             assertSize(1, file)
             assertEquals("$i.txt", file.first().name)
             assertEquals("$i", directory.first().name)
-            val tmpSnapshot = runWithModalProgressBlocking(
+            runWithModalProgressBlocking(
                 project,
                 ""
-            ) { snapshottingService.makeTransaction(currentLevel.context.snapshot) { true }.getOrNull() }
-            kotlin.test.assertNotNull(tmpSnapshot)
-            val nextElements =
-                DDAlgorithmResult(IJDDContext(tmpSnapshot), currentLevel.items.filterNot { it.vfs.isDirectory })
-            val nextLevelWithoutDirectory =
-                runWithModalProgressBlocking(project, "") { generator.generateNextLevel(nextElements) }
-            assertNull(nextLevelWithoutDirectory)
-            runWithModalProgressBlocking(project, "") { tmpSnapshot.rollback() }
+            ) {
+                snapshottingService.makeTransaction(currentLevel.context.snapshot) {
+                    val nextElements =
+                        DDAlgorithmResult(
+                            IJDDContext(CloneSnapshot(project, null)),
+                            currentLevel.items.filterNot { it.vfs.isDirectory })
+                    val nextLevelWithoutDirectory = generator.generateNextLevel(nextElements)
+                    assertNull(nextLevelWithoutDirectory)
+                    SnapshotDecision.Rollback
+                }
+            }
+
             currentLevel = runWithModalProgressBlocking(project, "") {
                 generator.generateNextLevel(
                     DDAlgorithmResult(

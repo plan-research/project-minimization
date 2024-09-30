@@ -8,6 +8,7 @@ import org.plan.research.minimization.plugin.errors.SnapshotBuildingError
 import org.plan.research.minimization.plugin.getSnapshotStrategy
 import org.plan.research.minimization.plugin.model.snapshot.Snapshot
 import org.plan.research.minimization.plugin.model.snapshot.SnapshotBuilder
+import org.plan.research.minimization.plugin.model.snapshot.SnapshotDecision
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 @Service(Service.Level.PROJECT)
@@ -19,7 +20,7 @@ class SnapshottingService(project: Project): SnapshotBuilder<Snapshot> {
         .getSnapshotStrategy(project) as SnapshotBuilder<Snapshot>
     override suspend fun makeTransaction(
         currentSnapshot: Snapshot,
-        modifier: suspend (Project) -> Boolean
+        modifier: suspend (Project) -> SnapshotDecision
     ): Either<SnapshotBuildingError, Snapshot> = underlyingObject.makeTransaction(currentSnapshot, modifier)
 
     override fun initialSnapshot(): Either<SnapshotBuildingError, Snapshot> = underlyingObject.initialSnapshot()

@@ -10,6 +10,7 @@ import org.plan.research.minimization.core.algorithm.dd.hierarchical.Hierarchica
 import org.plan.research.minimization.core.model.PropertyTester
 import org.plan.research.minimization.plugin.model.dd.IJDDContext
 import org.plan.research.minimization.plugin.model.dd.IJDDItem.VirtualFileDDItem
+import org.plan.research.minimization.plugin.model.snapshot.SnapshotDecision
 import org.plan.research.minimization.plugin.services.SnapshottingService
 import org.plan.research.minimization.plugin.snapshot.VirtualFileProjectModifier
 
@@ -39,9 +40,8 @@ class FileTreeHierarchicalDDGenerator(
             ensureNotNull(modifyingFunction)
             val newProjectSnapshot = snapshottingService.makeTransaction(minimizationResult.context.snapshot) {
                 modifyingFunction(it)
-                true
+                SnapshotDecision.Commit
             }
-            minimizationResult.context.snapshot.rollback().getOrNone().bind()
 
             HDDLevel(
                 items = nextFiles,

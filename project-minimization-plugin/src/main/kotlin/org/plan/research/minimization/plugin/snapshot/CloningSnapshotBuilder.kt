@@ -8,22 +8,29 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import org.plan.research.minimization.plugin.errors.SnapshotBuildingError
 import org.plan.research.minimization.plugin.model.snapshot.SnapshotBuilder
+import org.plan.research.minimization.plugin.model.snapshot.SnapshotDecision
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 
 class CloningSnapshotBuilder(private val rootProject: Project) : SnapshotBuilder<CloneSnapshot> {
     private val projectCloningService = rootProject.service<ProjectCloningService>()
     override suspend fun makeTransaction(
         currentSnapshot: CloneSnapshot,
-        modifier: suspend (Project) -> Boolean
+        modifier: suspend (Project) -> SnapshotDecision
     ): Either<SnapshotBuildingError, CloneSnapshot> = either {
         val newProject = projectCloningService.clone(currentSnapshot.project)
         ensureNotNull(newProject) { SnapshotBuildingError.CopyingFailed }
         val newSnapshot = CloneSnapshot(newProject, currentSnapshot)
-        if (modifier(newProject)) {
-            newSnapshot
-        } else {
-            newSnapshot.rollback().bind()
-            raise(SnapshotBuildingError.Aborted)
+
+        when (modifier(newProject)) {
+            SnapshotDecision.Commit -> {
+                currentSnapshot.rollback().bind()
+                newSnapshot
+            }
+
+            SnapshotDecision.Rollback -> {
+                newSnapshot.rollback().bind()
+                raise(SnapshotBuildingError.Aborted)
+            }
         }
     }
 

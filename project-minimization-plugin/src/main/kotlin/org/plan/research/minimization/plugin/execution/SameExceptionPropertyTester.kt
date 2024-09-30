@@ -14,7 +14,8 @@ import org.plan.research.minimization.plugin.errors.SnapshotBuildingError
 import org.plan.research.minimization.plugin.model.dd.CompilationPropertyChecker
 import org.plan.research.minimization.plugin.model.dd.IJDDContext
 import org.plan.research.minimization.plugin.model.dd.IJDDItem
-import org.plan.research.minimization.plugin.model.snapshot.ProjectModifier
+import org.plan.research.minimization.plugin.model.snapshot.ProjectShrinkProducer
+import org.plan.research.minimization.plugin.model.snapshot.SnapshotDecision
 import org.plan.research.minimization.plugin.services.SnapshottingService
 
 /**
@@ -23,7 +24,7 @@ import org.plan.research.minimization.plugin.services.SnapshottingService
 class SameExceptionPropertyTester<T : IJDDItem> private constructor(
     rootProject: Project,
     private val compilationPropertyChecker: CompilationPropertyChecker,
-    private val projectModifier: ProjectModifier<T>,
+    private val projectShrinkProducer: ProjectShrinkProducer<T>,
     private val initialException: Throwable,
 ) : PropertyTester<IJDDContext, T> {
     private val snapshottingService = rootProject.service<SnapshottingService>()
@@ -39,10 +40,12 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
     override suspend fun test(context: IJDDContext, items: List<T>): PropertyTestResult<IJDDContext> {
         return either {
             var result: PropertyTestResult<IJDDContext> = PropertyTesterError.UnknownProperty.left()
-            val copyingAction = projectModifier.modifyWith(context, items) ?: raise(PropertyTesterError.UnknownProperty)
+            val deletingAction =
+                projectShrinkProducer.modifyWith(context, items) ?: raise(PropertyTesterError.UnknownProperty)
+
             val transactionResult = snapshottingService
                 .makeTransaction(context.snapshot) {
-                    copyingAction(it)
+                    deletingAction(it)
                     result = either {
                         val exception = compilationPropertyChecker.checkCompilation(it)
                         ensure(exception is Either.Right) { PropertyTesterError.NoProperty }
@@ -51,7 +54,7 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
                             else -> raise(PropertyTesterError.UnknownProperty)
                         }
                     }
-                    false
+                    SnapshotDecision.Rollback
                 }
             ensure(transactionResult.leftOrNull() == SnapshotBuildingError.Aborted) { PropertyTesterError.UnknownProperty }
             result.bind()
@@ -62,7 +65,7 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
         suspend fun <T : IJDDItem> create(
             compilerPropertyChecker: CompilationPropertyChecker,
             project: Project,
-            projectModifier: ProjectModifier<T>
+            projectModifier: ProjectShrinkProducer<T>
         ) = option {
             val initialException = compilerPropertyChecker.checkCompilation(project).getOrNone().bind()
             SameExceptionPropertyTester(project, compilerPropertyChecker, projectModifier, initialException)

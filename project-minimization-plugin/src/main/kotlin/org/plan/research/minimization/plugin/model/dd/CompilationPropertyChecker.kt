@@ -1,4 +1,4 @@
-package org.plan.research.minimization.plugin.model
+package org.plan.research.minimization.plugin.model.dd
 
 import arrow.core.Either
 import com.intellij.openapi.project.Project

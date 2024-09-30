@@ -8,32 +8,46 @@ import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HDDLevel
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDDGenerator
 import org.plan.research.minimization.core.model.PropertyTester
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.IJDDItem.VirtualFileDDItem
-import org.plan.research.minimization.plugin.services.ProjectCloningService
+import org.plan.research.minimization.plugin.model.dd.IJDDContext
+import org.plan.research.minimization.plugin.model.dd.IJDDItem.VirtualFileDDItem
+import org.plan.research.minimization.plugin.services.SnapshottingService
+import org.plan.research.minimization.plugin.snapshot.VirtualFileProjectModifier
 
 class FileTreeHierarchicalDDGenerator(
     val project: Project,
     private val propertyTester: PropertyTester<IJDDContext, VirtualFileDDItem>
 ) : HierarchicalDDGenerator<IJDDContext, VirtualFileDDItem> {
-    private val projectCloner = project.service<ProjectCloningService>()
-    private val savedLevels = mutableListOf<DDAlgorithmResult<IJDDContext, VirtualFileDDItem>>()
+    private val snapshottingService = project.service<SnapshottingService>()
+    private val projectModifier = project.service<VirtualFileProjectModifier>()
     override suspend fun generateFirstLevel(): HDDLevel<IJDDContext, VirtualFileDDItem> {
         val projectRoot = project.guessProjectDir()
         val level = listOfNotNull(projectRoot)
-        return HDDLevel(IJDDContext(project), level.map { VirtualFileDDItem(it) }, propertyTester)
+        val initialSnapshot = snapshottingService
+            .initialSnapshot()
+            .getOrNull()
+            ?: error("Initial snapshot can't be initialized")
+
+        return HDDLevel(IJDDContext(initialSnapshot), level.map { VirtualFileDDItem(it) }, propertyTester)
     }
 
     override suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<IJDDContext, VirtualFileDDItem>) =
         option {
-            savedLevels.add(minimizationResult)
             val nextFiles = minimizationResult.items.flatMap { it.vfs.children.asList() }.map { VirtualFileDDItem(it) }
             ensure(nextFiles.isNotEmpty())
-            val newProjectVersion =
-                projectCloner.clone(minimizationResult.context.project, nextFiles.map(VirtualFileDDItem::vfs))
-            ensureNotNull(newProjectVersion)
-            HDDLevel(items = nextFiles, context = IJDDContext(newProjectVersion), propertyTester = propertyTester)
+
+            val modifyingFunction = projectModifier.modifyWith(minimizationResult.context, nextFiles)
+            ensureNotNull(modifyingFunction)
+            val newProjectSnapshot = snapshottingService.makeTransaction(minimizationResult.context.snapshot) {
+                modifyingFunction(it)
+                true
+            }
+            minimizationResult.context.snapshot.rollback().getOrNone().bind()
+
+            HDDLevel(
+                items = nextFiles,
+                context = IJDDContext(newProjectSnapshot.getOrNone().bind()),
+                propertyTester = propertyTester
+            )
         }.getOrNull()
 
-    fun getAllLevels(): List<DDAlgorithmResult<IJDDContext, VirtualFileDDItem>> = savedLevels
 }

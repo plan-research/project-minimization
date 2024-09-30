@@ -1,20 +1,21 @@
 package org.plan.research.minimization.plugin.execution
 
-import arrow.core.getOrElse
+import arrow.core.Either
+import arrow.core.left
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.core.raise.option
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ex.ProjectManagerEx
 import org.plan.research.minimization.core.model.PropertyTestResult
 import org.plan.research.minimization.core.model.PropertyTester
 import org.plan.research.minimization.core.model.PropertyTesterError
-import org.plan.research.minimization.plugin.model.CompilationPropertyChecker
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.IJDDItem
-import org.plan.research.minimization.plugin.model.IJDDItem.VirtualFileDDItem
-import org.plan.research.minimization.plugin.services.ProjectCloningService
+import org.plan.research.minimization.plugin.errors.SnapshotBuildingError
+import org.plan.research.minimization.plugin.model.dd.CompilationPropertyChecker
+import org.plan.research.minimization.plugin.model.dd.IJDDContext
+import org.plan.research.minimization.plugin.model.dd.IJDDItem
+import org.plan.research.minimization.plugin.model.snapshot.ProjectModifier
+import org.plan.research.minimization.plugin.services.SnapshottingService
 
 /**
  * A property tester for Delta Debugging algorithm that leverages different compilation strategies
@@ -22,9 +23,10 @@ import org.plan.research.minimization.plugin.services.ProjectCloningService
 class SameExceptionPropertyTester<T : IJDDItem> private constructor(
     rootProject: Project,
     private val compilationPropertyChecker: CompilationPropertyChecker,
+    private val projectModifier: ProjectModifier<T>,
     private val initialException: Throwable,
 ) : PropertyTester<IJDDContext, T> {
-    private val cloningService = rootProject.service<ProjectCloningService>()
+    private val snapshottingService = rootProject.service<SnapshottingService>()
 
     /**
      * Tests whether the context's project has the same compiler exception as the root one
@@ -35,39 +37,35 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
      * For the given level all children and parent nodes will be considered as taken
      */
     override suspend fun test(context: IJDDContext, items: List<T>): PropertyTestResult<IJDDContext> {
-        val project = context.project
-
         return either {
-            ensure(items.isNotEmpty()) { PropertyTesterError.NoProperty }
-            val clonedProject = when (items.firstOrNull()) {
-                null -> cloningService.clone(project, emptyList())
-                is VirtualFileDDItem ->
-                    cloningService
-                        .clone(project, items.filterIsInstance<VirtualFileDDItem>().map(VirtualFileDDItem::vfs))
-                else -> TODO()
-            }
-                ?: raise(PropertyTesterError.UnknownProperty)
-
-
-            val compilationResult = compilationPropertyChecker
-                .checkCompilation(clonedProject)
-                .also { ProjectManagerEx.getInstanceEx().closeAndDispose(clonedProject) } // Close immediately
-                .getOrElse { raise(PropertyTesterError.NoProperty) }
-
-            when (compilationResult) {
-                initialException -> IJDDContext(project)
-                else -> raise(PropertyTesterError.UnknownProperty)
-            }
+            var result: PropertyTestResult<IJDDContext> = PropertyTesterError.UnknownProperty.left()
+            val copyingAction = projectModifier.modifyWith(context, items) ?: raise(PropertyTesterError.UnknownProperty)
+            val transactionResult = snapshottingService
+                .makeTransaction(context.snapshot) {
+                    copyingAction(it)
+                    result = either {
+                        val exception = compilationPropertyChecker.checkCompilation(it)
+                        ensure(exception is Either.Right) { PropertyTesterError.NoProperty }
+                        when (exception.value) {
+                            initialException -> context
+                            else -> raise(PropertyTesterError.UnknownProperty)
+                        }
+                    }
+                    false
+                }
+            ensure(transactionResult.leftOrNull() == SnapshotBuildingError.Aborted) { PropertyTesterError.UnknownProperty }
+            result.bind()
         }
     }
 
     companion object {
-        suspend fun<T: IJDDItem> create(
+        suspend fun <T : IJDDItem> create(
             compilerPropertyChecker: CompilationPropertyChecker,
-            project: Project
+            project: Project,
+            projectModifier: ProjectModifier<T>
         ) = option {
             val initialException = compilerPropertyChecker.checkCompilation(project).getOrNone().bind()
-            SameExceptionPropertyTester<T>(project, compilerPropertyChecker, initialException)
+            SameExceptionPropertyTester(project, compilerPropertyChecker, projectModifier, initialException)
         }
     }
 }

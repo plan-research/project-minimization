@@ -5,24 +5,30 @@ import arrow.core.getOrElse
 import arrow.core.raise.either
 import arrow.core.raise.ensureNotNull
 import com.intellij.openapi.components.service
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError
 import org.plan.research.minimization.plugin.errors.NoExceptionFound
 import org.plan.research.minimization.plugin.errors.NoRootFound
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
-import org.plan.research.minimization.plugin.model.IJDDItem.VirtualFileDDItem
-import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
+import org.plan.research.minimization.plugin.model.dd.IJDDContext
+import org.plan.research.minimization.plugin.model.dd.IJDDItem.VirtualFileDDItem
+import org.plan.research.minimization.plugin.model.dd.ProjectHierarchyProducer
 import org.plan.research.minimization.plugin.services.CompilationPropertyCheckerService
+import org.plan.research.minimization.plugin.snapshot.VirtualFileProjectModifier
 
 class FileTreeHierarchyGenerator : ProjectHierarchyProducer<VirtualFileDDItem> {
     override suspend fun produce(
-        from: Project
+        from: IJDDContext
     ): Either<HierarchyBuildError, FileTreeHierarchicalDDGenerator> = either {
-        ensureNotNull(from.guessProjectDir()) { NoRootFound }
-        val compilerPropertyTester = from.service<CompilationPropertyCheckerService>()
-        val propertyTester = SameExceptionPropertyTester.create<VirtualFileDDItem>(compilerPropertyTester, from)
+        val project = from.snapshot.project
+        ensureNotNull(project.guessProjectDir()) { NoRootFound }
+        val compilerPropertyTester = project.service<CompilationPropertyCheckerService>()
+        val propertyTester = SameExceptionPropertyTester.create<VirtualFileDDItem>(
+            compilerPropertyTester,
+            project,
+            project.service<VirtualFileProjectModifier>(),
+        )
             .getOrElse { raise(NoExceptionFound) }
-        FileTreeHierarchicalDDGenerator(from, propertyTester)
+        FileTreeHierarchicalDDGenerator(project, propertyTester)
     }
 }

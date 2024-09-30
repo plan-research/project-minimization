@@ -6,7 +6,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
 import org.plan.research.minimization.plugin.getCompilationStrategy
-import org.plan.research.minimization.plugin.model.CompilationPropertyChecker
+import org.plan.research.minimization.plugin.model.dd.CompilationPropertyChecker
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 @Service(Service.Level.PROJECT)

@@ -6,21 +6,22 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.dd.IJDDContext
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 @Service(Service.Level.PROJECT)
 class MinimizationService(project: Project, private val coroutineScope: CoroutineScope) {
     private val stages = project.service<MinimizationPluginSettings>().state.stages
     private val executor = project.service<MinimizationStageExecutorService>()
-
+    private val snapshottingService = project.service<SnapshottingService>()
      fun minimizeProject(project: Project) = coroutineScope.launch {
          val result = either {
-             var currentProject = IJDDContext(project)
+             val initialSnapshot = snapshottingService.initialSnapshot().bind()
+             var currentProject = IJDDContext(initialSnapshot)
              for (stage in stages) {
                  currentProject = stage.apply(currentProject, executor).bind()
              }
-             currentProject.project
+             currentProject.snapshot
          }
          result.fold(
              ifLeft = { println("MinimizationError = $it") },

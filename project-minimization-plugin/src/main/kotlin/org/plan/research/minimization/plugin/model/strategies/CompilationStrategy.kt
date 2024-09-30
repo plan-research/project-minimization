@@ -1,4 +1,4 @@
-package org.plan.research.minimization.plugin.model
+package org.plan.research.minimization.plugin.model.strategies
 
 enum class CompilationStrategy {
     DUMB, // Return the same exception every time. Used for testing

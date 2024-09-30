@@ -1,4 +1,4 @@
-package org.plan.research.minimization.plugin.model
+package org.plan.research.minimization.plugin.model.dd
 
 import com.intellij.openapi.vfs.VirtualFile
 import org.plan.research.minimization.core.model.DDItem

@@ -1,5 +1,6 @@
 package org.plan.research.minimization.plugin
 
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
@@ -8,7 +9,15 @@ import org.plan.research.minimization.core.algorithm.dd.impl.DDMin
 import org.plan.research.minimization.core.algorithm.dd.impl.ProbabilisticDD
 import org.plan.research.minimization.plugin.execution.DumbCompiler
 import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchyGenerator
-import org.plan.research.minimization.plugin.model.*
+import org.plan.research.minimization.plugin.model.dd.CompilationPropertyChecker
+import org.plan.research.minimization.plugin.model.dd.ProjectHierarchyProducer
+import org.plan.research.minimization.plugin.model.snapshot.Snapshot
+import org.plan.research.minimization.plugin.model.snapshot.SnapshotBuilder
+import org.plan.research.minimization.plugin.model.snapshot.SnapshotStrategy
+import org.plan.research.minimization.plugin.model.strategies.CompilationStrategy
+import org.plan.research.minimization.plugin.model.strategies.DDStrategy
+import org.plan.research.minimization.plugin.model.strategies.HierarchyCollectionStrategy
+import org.plan.research.minimization.plugin.snapshot.CloningSnapshotBuilder
 
 
 fun HierarchyCollectionStrategy.getHierarchyCollectionStrategy(): ProjectHierarchyProducer<*> =
@@ -27,6 +36,11 @@ fun CompilationStrategy.getCompilationStrategy(): CompilationPropertyChecker =
         CompilationStrategy.GRADLE_IDEA -> TODO()
         CompilationStrategy.DUMB -> DumbCompiler
     }
+fun SnapshotStrategy.getSnapshotStrategy(project: Project): SnapshotBuilder<out Snapshot> =
+    when (this) {
+        SnapshotStrategy.CLONING -> CloningSnapshotBuilder(project)
+        SnapshotStrategy.IDEA_ROLLBACK -> TODO()
+    }
 
 fun VirtualFile.getAllNestedElements(): List<VirtualFile> = buildList {
     VfsUtilCore.iterateChildrenRecursively(
@@ -40,7 +54,7 @@ fun VirtualFile.getAllNestedElements(): List<VirtualFile> = buildList {
 
 fun List<VirtualFile>.getAllParents(root: VirtualFile): List<VirtualFile> = buildSet {
     fun traverseParents(vertex: VirtualFile?) {
-        if (vertex == null || contains(vertex) || VfsUtil.isAncestor(vertex, root, false))
+        if (vertex == null || contains(vertex) || VfsUtil.isAncestor(vertex, root, true))
             return
         add(vertex)
         traverseParents(vertex.parent)

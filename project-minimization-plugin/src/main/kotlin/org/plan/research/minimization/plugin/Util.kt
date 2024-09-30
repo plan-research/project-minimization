@@ -1,5 +1,6 @@
 package org.plan.research.minimization.plugin
 
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
@@ -26,6 +27,7 @@ fun CompilationStrategy.getCompilationStrategy(): CompilationPropertyChecker =
         CompilationStrategy.GRADLE_IDEA -> TODO()
         CompilationStrategy.DUMB -> DumbCompiler
     }
+
 fun VirtualFile.getAllNestedElements(): List<VirtualFile> = buildList {
     VfsUtilCore.iterateChildrenRecursively(
         this@getAllNestedElements,
@@ -35,3 +37,13 @@ fun VirtualFile.getAllNestedElements(): List<VirtualFile> = buildList {
         true
     }
 }
+
+fun List<VirtualFile>.getAllParents(root: VirtualFile): List<VirtualFile> = buildSet {
+    fun traverseParents(vertex: VirtualFile?) {
+        if (vertex == null || contains(vertex) || VfsUtil.isAncestor(vertex, root, false))
+            return
+        add(vertex)
+        traverseParents(vertex.parent)
+    }
+    this@getAllParents.forEach(::traverseParents)
+}.toList()

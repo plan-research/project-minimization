@@ -4,12 +4,15 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.isFile
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import org.plan.research.minimization.plugin.getAllNestedElements
+import org.plan.research.minimization.plugin.getAllParents
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 import java.nio.file.Path
+import kotlin.io.path.Path
 import kotlin.io.path.relativeTo
 
 class ProjectCloningTest : JavaCodeInsightFixtureTestCase() {
@@ -73,6 +76,29 @@ class ProjectCloningTest : JavaCodeInsightFixtureTestCase() {
         doPartialCloningTest(root.getAllNestedElements())
         doPartialCloningTest(listOf(fileMap[".config"], fileMap["A"], fileMap["B"]).map { it!! })
         doPartialCloningTest(listOf(fileMap[".config"]!!))
+    }
+
+    fun testTreeProjectPartialCloning() {
+        val root = myFixture.copyDirectoryToProject("treeProject", "")
+        val fileMap = buildMap {
+            VfsUtilCore.iterateChildrenRecursively(root, null) {
+                this[it.toNioPath().relativeTo(project.guessProjectDir()!!.toNioPath())] = it
+                true
+            }
+        }
+        doPartialCloningTest(listOf(root))
+        doPartialCloningTest(listOf(fileMap[Path("root-file")]!!))
+        doPartialCloningTest(listOf(fileMap[Path("depth-1-a", "depth-2-a", "depth-2-file-a-a")]!!))
+        doPartialCloningTest(
+            listOf(
+                fileMap[Path("depth-1-a", "depth-2-a", "pretty-good-file")]!!,
+                fileMap[Path("depth-1-a", "depth-2-a-prime", "pretty-good-file")]!!,
+                fileMap[Path("depth-1-a", "pretty-good-file")]!!,
+                fileMap[Path("depth-1-b", "pretty-good-file")]!!,
+                fileMap[Path("depth-1-b", "depth-2-b", "pretty-good-file")]!!,
+                fileMap[Path("depth-1-b", "depth-2-b-prime", "pretty-good-file")]!!,
+            )
+        )
     }
 
     private fun doPartialCloningTest(
@@ -149,6 +175,6 @@ class ProjectCloningTest : JavaCodeInsightFixtureTestCase() {
     }
 
     private fun List<VirtualFile>.getAllFiles(project: Project): Set<Pair<Path, String?>> =
-        flatMap { it.getAllFiles(project) }.toSet()
+        flatMap { it.getAllFiles(project) }.toSet() + getAllParents(project.guessProjectDir()!!).map { it.getPathContentPair(project) }.toSet()
 }
 

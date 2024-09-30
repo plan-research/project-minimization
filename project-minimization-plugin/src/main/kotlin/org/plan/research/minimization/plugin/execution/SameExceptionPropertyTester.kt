@@ -30,7 +30,7 @@ class SameExceptionPropertyTester private constructor(
      *
      * @param context The context containing the current level project to test.
      * @param items The list of virtual file items to be tested within the context.
-     * The list should contain all files (including intermediate and files from previous branches) (FIXME)
+     * For the given level all children and parent nodes will be considered as taken
      */
     override suspend fun test(context: IJDDContext, items: List<VirtualFileDDItem>): PropertyTestResult<IJDDContext> {
         val project = context.project

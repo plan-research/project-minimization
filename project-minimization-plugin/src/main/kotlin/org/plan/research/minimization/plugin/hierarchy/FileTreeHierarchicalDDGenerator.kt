@@ -24,9 +24,8 @@ class FileTreeHierarchicalDDGenerator(
     override suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<IJDDContext, VirtualFileDDItem>): HDDLevel<IJDDContext, VirtualFileDDItem>? {
         val superResult = super.generateNextLevel(minimizationResult) ?: return null
         if (superResult.items.isEmpty()) return null
-        val allCopiedNodes = getAllLevels().flatMap { it.items } + superResult.items
         val newProjectVersion =
-            projectCloner.clone(minimizationResult.context.project, allCopiedNodes.map(VirtualFileDDItem::vfs))
+            projectCloner.clone(minimizationResult.context.project, superResult.items.map(VirtualFileDDItem::vfs))
                 ?: return null
         return superResult
             .copy(items = superResult.items, context = IJDDContext(newProjectVersion))

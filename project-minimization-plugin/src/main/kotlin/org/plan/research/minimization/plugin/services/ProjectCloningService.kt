@@ -10,6 +10,7 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findOrCreateDirectory
 import org.plan.research.minimization.plugin.getAllNestedElements
+import org.plan.research.minimization.plugin.getAllParents
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 import java.util.*
 
@@ -45,12 +46,13 @@ class ProjectCloningService(private val rootProject: Project) {
         val clonedProjectPath = createNewProjectDirectory()
         val projectRoot = project.guessProjectDir() ?: return null
         val snapshotLocation = getSnapshotLocation()
+        val itemsWithParents = items.getAllParents(projectRoot).toSet() + items.flatMap { it.getAllNestedElements() }.toSet()
         writeAction {
             VfsUtil.copyDirectory(
                 this,
                 projectRoot,
                 clonedProjectPath
-            ) { it in items && it.path != snapshotLocation.path }
+            ) { it in itemsWithParents && it.path != snapshotLocation.path }
         }
         return ProjectUtil.openOrImportAsync(clonedProjectPath.toNioPath())
     }

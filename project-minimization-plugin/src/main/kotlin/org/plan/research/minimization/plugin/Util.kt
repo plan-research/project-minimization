@@ -11,7 +11,7 @@ import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchyGenerato
 import org.plan.research.minimization.plugin.model.*
 
 
-fun HierarchyCollectionStrategy.getHierarchyCollectionStrategy(): ProjectHierarchyProducer =
+fun HierarchyCollectionStrategy.getHierarchyCollectionStrategy(): ProjectHierarchyProducer<*> =
     when (this) {
         HierarchyCollectionStrategy.FILE_TREE -> FileTreeHierarchyGenerator()
     }

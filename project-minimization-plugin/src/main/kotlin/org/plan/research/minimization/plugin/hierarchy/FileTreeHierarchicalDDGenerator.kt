@@ -17,7 +17,6 @@ class FileTreeHierarchicalDDGenerator(
     private val propertyTester: PropertyTester<IJDDContext, VirtualFileDDItem>
 ) : HierarchicalDDGenerator<IJDDContext, VirtualFileDDItem> {
     private val projectCloner = project.service<ProjectCloningService>()
-    private val savedLevels = mutableListOf<DDAlgorithmResult<IJDDContext, VirtualFileDDItem>>()
     override suspend fun generateFirstLevel(): HDDLevel<IJDDContext, VirtualFileDDItem> {
         val projectRoot = project.guessProjectDir()
         val level = listOfNotNull(projectRoot)
@@ -26,14 +25,17 @@ class FileTreeHierarchicalDDGenerator(
 
     override suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<IJDDContext, VirtualFileDDItem>) =
         option {
-            savedLevels.add(minimizationResult)
             val nextFiles = minimizationResult.items.flatMap { it.vfs.children.asList() }.map { VirtualFileDDItem(it) }
             ensure(nextFiles.isNotEmpty())
             val newProjectVersion =
                 projectCloner.clone(minimizationResult.context.project, nextFiles.map(VirtualFileDDItem::vfs))
             ensureNotNull(newProjectVersion)
-            HDDLevel(items = nextFiles, context = IJDDContext(newProjectVersion), propertyTester = propertyTester)
+            HDDLevel(
+                items = nextFiles,
+                context = minimizationResult.context.copy(
+                    project = newProjectVersion,
+                ),
+                propertyTester = propertyTester
+            )
         }.getOrNull()
-
-    fun getAllLevels(): List<DDAlgorithmResult<IJDDContext, VirtualFileDDItem>> = savedLevels
 }

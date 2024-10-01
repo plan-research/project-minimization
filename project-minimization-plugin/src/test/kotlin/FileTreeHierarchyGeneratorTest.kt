@@ -49,7 +49,6 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
                 )
             )
         })
-        generator.clear()
     }
 
     fun testSingleFileProject() {
@@ -86,7 +85,6 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
                 )
             )
         })
-        generator.clear()
     }
 
     fun testComplicatedFileStructure() {
@@ -159,7 +157,6 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
                 )
             )
         })
-        generator.clear()
     }
 
     private fun getPsiDepth(element: PsiElement?): Int = if (element == null) 0 else getPsiDepth(element.parent) + 1
@@ -168,16 +165,5 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
         assertIs<Either.Right<FileTreeHierarchicalDDGenerator>>(ddGenerator)
         val generator = ddGenerator.value
         return generator
-    }
-
-    private fun FileTreeHierarchicalDDGenerator.clear() {
-        this
-            .getAllLevels()
-            .filter { it.context.project.name != myFixture.project.name }
-            .map { it.context.project }
-            .toSet()
-            .forEach {
-                ProjectManager.getInstance().closeAndDispose(it)
-            }
     }
 }

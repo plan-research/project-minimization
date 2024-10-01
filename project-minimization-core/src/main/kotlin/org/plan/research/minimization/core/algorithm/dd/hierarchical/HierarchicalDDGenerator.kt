@@ -1,5 +1,6 @@
 package org.plan.research.minimization.core.algorithm.dd.hierarchical
 
+import arrow.core.Option
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.DDContext
@@ -11,6 +12,6 @@ data class HDDLevel<C : DDContext, T : DDItem>(
 )
 
 interface HierarchicalDDGenerator<C : DDContext, T : DDItem> {
-    suspend fun generateFirstLevel(): HDDLevel<C, T>
-    suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<C, T>): HDDLevel<C, T>?
+    suspend fun generateFirstLevel(context: C): Option<HDDLevel<C, T>>
+    suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<C, T>): Option<HDDLevel<C, T>>
 }

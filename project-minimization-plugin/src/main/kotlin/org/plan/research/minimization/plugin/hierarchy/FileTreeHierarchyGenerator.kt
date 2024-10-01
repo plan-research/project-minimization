@@ -11,8 +11,8 @@ import org.plan.research.minimization.plugin.errors.HierarchyBuildError
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoExceptionFound
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoRootFound
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
-import org.plan.research.minimization.plugin.model.VirtualFileDDItem
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
+import org.plan.research.minimization.plugin.model.VirtualFileDDItem
 import org.plan.research.minimization.plugin.services.CompilationPropertyCheckerService
 
 class FileTreeHierarchyGenerator : ProjectHierarchyProducer<VirtualFileDDItem> {
@@ -23,6 +23,6 @@ class FileTreeHierarchyGenerator : ProjectHierarchyProducer<VirtualFileDDItem> {
         val compilerPropertyTester = from.service<CompilationPropertyCheckerService>()
         val propertyTester = SameExceptionPropertyTester.create<VirtualFileDDItem>(compilerPropertyTester, from)
             .getOrElse { raise(NoExceptionFound) }
-        FileTreeHierarchicalDDGenerator(from, propertyTester)
+        FileTreeHierarchicalDDGenerator(propertyTester)
     }
 }

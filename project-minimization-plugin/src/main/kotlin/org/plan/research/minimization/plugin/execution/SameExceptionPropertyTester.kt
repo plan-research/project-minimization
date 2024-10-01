@@ -42,7 +42,7 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
 
             writeAction {
                 targetFiles.forEach { file ->
-                    file.translate().deleteRecursively()
+                    file.translate()?.deleteRecursively()
                 }
             }
 
@@ -57,7 +57,7 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
         }.mapLeft {
             when (it) {
                 is SnapshotError.Aborted -> it.reason
-                is SnapshotError.TransactionFailed -> PropertyTesterError.UnknownProperty
+                else -> PropertyTesterError.UnknownProperty
             }
         }
 

@@ -4,6 +4,9 @@ import com.intellij.openapi.components.BaseState
 import com.intellij.util.xmlb.annotations.Property
 import com.intellij.util.xmlb.annotations.XCollection
 import org.plan.research.minimization.plugin.model.*
+import org.plan.research.minimization.plugin.model.state.CompilationStrategy
+import org.plan.research.minimization.plugin.model.state.DDStrategy
+import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
 
 class MinimizationPluginState : BaseState() {
     var currentCompilationStrategy by enum<CompilationStrategy>(CompilationStrategy.GRADLE_IDEA)

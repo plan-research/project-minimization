@@ -16,7 +16,7 @@ import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchicalDDGenerator
 import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchyGenerator
-import org.plan.research.minimization.plugin.model.CompilationStrategy
+import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 import kotlin.test.assertIs
 

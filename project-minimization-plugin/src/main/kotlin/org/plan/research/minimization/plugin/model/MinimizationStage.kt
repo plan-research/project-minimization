@@ -3,6 +3,8 @@ package org.plan.research.minimization.plugin.model
 import arrow.core.Either
 import com.intellij.util.xmlb.annotations.Tag
 import org.plan.research.minimization.plugin.errors.MinimizationError
+import org.plan.research.minimization.plugin.model.state.DDStrategy
+import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
 
 interface MinimizationStageExecutor {
     suspend fun executeFileLevelStage(

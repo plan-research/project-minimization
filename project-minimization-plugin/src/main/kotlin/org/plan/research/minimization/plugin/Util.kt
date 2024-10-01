@@ -9,6 +9,9 @@ import org.plan.research.minimization.core.algorithm.dd.impl.ProbabilisticDD
 import org.plan.research.minimization.plugin.execution.DumbCompiler
 import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchyGenerator
 import org.plan.research.minimization.plugin.model.*
+import org.plan.research.minimization.plugin.model.state.CompilationStrategy
+import org.plan.research.minimization.plugin.model.state.DDStrategy
+import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
 
 
 fun HierarchyCollectionStrategy.getHierarchyCollectionStrategy(): ProjectHierarchyProducer<*> =

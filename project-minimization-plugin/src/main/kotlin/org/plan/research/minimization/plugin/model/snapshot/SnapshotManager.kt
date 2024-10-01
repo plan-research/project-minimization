@@ -1,8 +1,8 @@
-package org.plan.research.minimization.plugin.model
+package org.plan.research.minimization.plugin.model.snapshot
 
 import arrow.core.Either
-import arrow.core.raise.OptionRaise
 import org.plan.research.minimization.plugin.errors.SnapshotError
+import org.plan.research.minimization.plugin.model.IJDDContext
 
 
 /**
@@ -11,14 +11,14 @@ import org.plan.research.minimization.plugin.errors.SnapshotError
 interface SnapshotManager {
 
     /**
-     * Executes a transaction within the provided context. It should create a copy of the context with a new project.
+     * Executes a transaction within the provided context.
      *
      * @param context The context in which the transaction is executed.
      * @param action A suspendable lambda function representing the transaction action to be performed.
      * @return Either a `SnapshotError` if the transaction fails, or the updated `IJDDContext` if the transaction succeeds.
      */
-    suspend fun transaction(
+    suspend fun <T> transaction(
         context: IJDDContext,
-        action: suspend OptionRaise.(newContext: IJDDContext) -> IJDDContext,
-    ): Either<SnapshotError, IJDDContext>
+        action: suspend TransactionBody<T>.(newContext: IJDDContext) -> IJDDContext,
+    ): Either<SnapshotError<T>, IJDDContext>
 }

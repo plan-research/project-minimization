@@ -13,7 +13,7 @@ import org.plan.research.minimization.core.model.PropertyTesterError
 import org.plan.research.minimization.plugin.model.CompilationPropertyChecker
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.IJDDItem
-import org.plan.research.minimization.plugin.model.IJDDItem.VirtualFileDDItem
+import org.plan.research.minimization.plugin.model.VirtualFileDDItem
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 
 /**
@@ -39,15 +39,10 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
 
         return either {
             ensure(items.isNotEmpty()) { PropertyTesterError.NoProperty }
-            val clonedProject = when (items.firstOrNull()) {
-                null -> cloningService.clone(project, emptyList())
-                is VirtualFileDDItem ->
-                    cloningService
-                        .clone(project, items.filterIsInstance<VirtualFileDDItem>().map(VirtualFileDDItem::vfs))
-                else -> TODO()
-            }
-                ?: raise(PropertyTesterError.UnknownProperty)
 
+            val clonedProject = cloningService.clone(
+                project, items.filterIsInstance<VirtualFileDDItem>().map(VirtualFileDDItem::vfs)
+            ) ?: raise(PropertyTesterError.UnknownProperty)
 
             val compilationResult = compilationPropertyChecker
                 .checkCompilation(clonedProject)

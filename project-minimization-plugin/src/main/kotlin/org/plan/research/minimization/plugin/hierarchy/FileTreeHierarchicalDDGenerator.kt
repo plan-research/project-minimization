@@ -9,7 +9,7 @@ import org.plan.research.minimization.core.algorithm.dd.hierarchical.HDDLevel
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDDGenerator
 import org.plan.research.minimization.core.model.PropertyTester
 import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.IJDDItem.VirtualFileDDItem
+import org.plan.research.minimization.plugin.model.VirtualFileDDItem
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 
 class FileTreeHierarchicalDDGenerator(

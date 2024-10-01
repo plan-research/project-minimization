@@ -13,10 +13,6 @@ class MinimizationApplicationStarter : ModernApplicationStarter() {
         val projectPath = args.firstOrNull() ?: return // FIXME
         val project = ProjectUtil.openOrImport(Path(projectPath)) ?: return
         val minimizationService = project.service<MinimizationService>()
-        val minimizationResult = minimizationService.minimizeProject(project)
-        minimizationResult.fold(
-            ifLeft = { println("MinimizationError = $it") },
-            ifRight = { println("Minimization successful. Minimized project is saved at $it.") }
-        )
+        minimizationService.minimizeProject(project)
     }
 }

@@ -1,31 +1,39 @@
 package org.plan.research.minimization.plugin.hierarchy
 
+import arrow.core.raise.option
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
-import com.intellij.psi.PsiDirectory
-import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiManager
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HDDLevel
+import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDDGenerator
 import org.plan.research.minimization.core.model.PropertyTester
 import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.PsiDDItem
+import org.plan.research.minimization.plugin.model.IJDDItem.VirtualFileDDItem
+import org.plan.research.minimization.plugin.services.ProjectCloningService
 
 class FileTreeHierarchicalDDGenerator(
     val project: Project,
-    propertyTester: PropertyTester<IJDDContext, PsiDDItem>
-) : AbstractIJHierarchicalDDGenerator(propertyTester) {
-    override suspend fun generateFirstLevel(): HDDLevel<IJDDContext, PsiDDItem> {
+    private val propertyTester: PropertyTester<IJDDContext, VirtualFileDDItem>
+) : HierarchicalDDGenerator<IJDDContext, VirtualFileDDItem> {
+    private val projectCloner = project.service<ProjectCloningService>()
+    private val savedLevels = mutableListOf<DDAlgorithmResult<IJDDContext, VirtualFileDDItem>>()
+    override suspend fun generateFirstLevel(): HDDLevel<IJDDContext, VirtualFileDDItem> {
         val projectRoot = project.guessProjectDir()
-        val psiManager = PsiManager.getInstance(project)
-        val level = projectRoot?.let { listOfNotNull(psiManager.findDirectory(it)) } ?: emptyList()
-        return HDDLevel(IJDDContext(project), level.map { PsiDDItem(it) }, propertyTester)
+        val level = listOfNotNull(projectRoot)
+        return HDDLevel(IJDDContext(project), level.map { VirtualFileDDItem(it) }, propertyTester)
     }
 
-    override suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<IJDDContext, PsiDDItem>): HDDLevel<IJDDContext, PsiDDItem>? {
-        val superResult = super.generateNextLevel(minimizationResult)
-        return superResult
-            ?.copy(items = superResult.items.filter { it.psi is PsiDirectory || it.psi is PsiFile })
-            ?.takeIf { it.items.isNotEmpty() }
-    }
+    override suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<IJDDContext, VirtualFileDDItem>) =
+        option {
+            savedLevels.add(minimizationResult)
+            val nextFiles = minimizationResult.items.flatMap { it.vfs.children.asList() }.map { VirtualFileDDItem(it) }
+            ensure(nextFiles.isNotEmpty())
+            val newProjectVersion =
+                projectCloner.clone(minimizationResult.context.project, nextFiles.map(VirtualFileDDItem::vfs))
+            ensureNotNull(newProjectVersion)
+            HDDLevel(items = nextFiles, context = IJDDContext(newProjectVersion), propertyTester = propertyTester)
+        }.getOrNull()
+
+    fun getAllLevels(): List<DDAlgorithmResult<IJDDContext, VirtualFileDDItem>> = savedLevels
 }

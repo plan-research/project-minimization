@@ -7,6 +7,10 @@ import org.plan.research.minimization.plugin.model.*
 
 class MinimizationPluginState : BaseState() {
     var currentCompilationStrategy by enum<CompilationStrategy>(CompilationStrategy.GRADLE_IDEA)
+
+    /**
+     * A location for cloned projects
+     */
     var temporaryProjectLocation by string("minimization-project-snapshots")
 
     @Property(surroundWithTag = false)

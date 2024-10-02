@@ -1,9 +1,11 @@
 package org.plan.research.minimization.plugin.snapshot
 
 import arrow.core.Either
-import arrow.core.left
+import arrow.core.identity
 import arrow.core.raise.either
+import arrow.core.raise.fold
 import arrow.core.raise.withError
+import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
@@ -23,11 +25,11 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
     override suspend fun <T> transaction(
         context: IJDDContext,
         action: suspend TransactionBody<T>.(newContext: IJDDContext) -> IJDDContext
-    ): Either<SnapshotError<T>, IJDDContext> {
+    ): Either<SnapshotError<T>, IJDDContext> = either {
         val clonedProject = projectCloning.clone(context.project)
-            ?: return TransactionCreationFailed<T>("Failed to create project").left()
+            ?: raise(TransactionCreationFailed("Failed to create project"))
 
-        return either<SnapshotError<T>, IJDDContext> {
+        try {
             val translator = withError(::TransactionCreationFailed) {
                 val sourcePath = context.project.guessProjectDir()?.path
                     ?: raise("Failed to get source path")
@@ -36,17 +38,23 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
                 Translator(clonedProjectDir, sourcePath)
             }
 
-            try {
-                withError(::Aborted) {
-                    val transaction = TransactionBody<T>(this@withError, translator)
+            fold<T, _, _>(
+                block = {
+                    val transaction = TransactionBody(this@fold, translator)
                     transaction.action(context.copy(project = clonedProject))
-                }
-            } catch (e: Throwable) {
-                raise(TransactionFailed(e))
+                },
+                catch = { raise(TransactionFailed(it)) },
+                recover = { raise(Aborted(it)) },
+                transform = ::identity,
+            )
+        } catch (e: Throwable) {
+            invokeLater {
+                ProjectManager.getInstance().closeAndDispose(clonedProject)
             }
-        }.onLeft {
-            ProjectManager.getInstance().closeAndDispose(clonedProject)
-        }.onRight {
+            throw e
+        }
+    }.onRight {
+        invokeLater {
             ProjectManager.getInstance().closeAndDispose(context.project)
         }
     }

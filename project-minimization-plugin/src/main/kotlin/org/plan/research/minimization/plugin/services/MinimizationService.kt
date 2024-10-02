@@ -13,10 +13,16 @@ import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 class MinimizationService(project: Project, private val coroutineScope: CoroutineScope) {
     private val stages = project.service<MinimizationPluginSettings>().state.stages
     private val executor = project.service<MinimizationStageExecutorService>()
+    private val projectCloning = project.service<ProjectCloningService>()
 
      fun minimizeProject(project: Project) = coroutineScope.launch {
+         val clonedProject = projectCloning.clone(project)
+         if (clonedProject == null) {
+             println("Failed to clone project")
+             return@launch
+         }
          val result = either {
-             var currentProject = IJDDContext(project)
+             var currentProject = IJDDContext(clonedProject)
              for (stage in stages) {
                  currentProject = stage.apply(currentProject, executor).bind()
              }

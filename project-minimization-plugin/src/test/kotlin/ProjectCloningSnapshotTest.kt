@@ -126,4 +126,30 @@ class ProjectCloningSnapshotTest : ProjectCloningBaseTest() {
         assertNotNull(project.guessProjectDir()!!.findChild(".config"))
         assert(project.isOpen)
     }
+
+    fun testTranslatorInTransaction() {
+        val root = myFixture.copyDirectoryToProject("treeProject", "")
+
+        val project = myFixture.project
+        val snapshotManager = ProjectCloningSnapshotManager(project)
+
+        val fileMap = buildMap {
+            VfsUtilCore.iterateChildrenRecursively(root, null) {
+                this[it.toNioPath().relativeTo(project.guessProjectDir()!!.toNioPath())] = it
+                true
+            }
+        }
+
+        runWithModalProgressBlocking(project, "") {
+            snapshotManager.transaction(IJDDContext(project)) { newContext ->
+                fileMap.forEach { (path, file) ->
+                    val expected = newContext.project.guessProjectDir()?.findFileByRelativePath(path.toString())
+                    val actual = file.translate()
+                    assertEquals(expected, actual)
+                }
+
+                raise("Abort")
+            }
+        }
+    }
 }

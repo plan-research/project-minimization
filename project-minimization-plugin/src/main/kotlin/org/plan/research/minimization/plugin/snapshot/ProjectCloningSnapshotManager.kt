@@ -18,6 +18,9 @@ import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.model.snapshot.TransactionBody
 import org.plan.research.minimization.plugin.model.snapshot.TransactionTranslator
 import org.plan.research.minimization.plugin.services.ProjectCloningService
+import java.nio.file.Path
+import kotlin.io.path.pathString
+import kotlin.io.path.relativeTo
 
 class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
     private val projectCloning = rootProject.service<ProjectCloningService>()
@@ -31,7 +34,7 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
 
         try {
             val translator = withError(::TransactionCreationFailed) {
-                val sourcePath = context.project.guessProjectDir()?.path
+                val sourcePath = context.project.guessProjectDir()?.toNioPath()
                     ?: raise("Failed to get source path")
                 val clonedProjectDir = context.project.guessProjectDir()
                     ?: raise("Failed to get cloned project dir")
@@ -61,9 +64,9 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
 
     private inner class Translator(
         val clonedProjectDir: VirtualFile,
-        val originalPath: String,
+        val originalPath: Path,
     ) : TransactionTranslator {
         override fun VirtualFile.translate(): VirtualFile? =
-            clonedProjectDir.findFileByRelativePath(path.removePrefix(originalPath))
+            clonedProjectDir.findFileByRelativePath(toNioPath().relativeTo(originalPath).pathString)
     }
 }

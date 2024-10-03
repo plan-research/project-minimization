@@ -5,7 +5,9 @@ import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findOrCreateDirectory
@@ -28,7 +30,7 @@ class ProjectCloningService(private val rootProject: Project) {
     /**
      * Perform a full clone of the project
      * @param project A project to clone
-     * @return a cloned project or null if the project was default
+     * @return a cloned project
      */
     suspend fun clone(project: Project): Project? {
         val clonedProjectPath = createNewProjectDirectory()

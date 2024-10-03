@@ -8,6 +8,12 @@ import kotlin.io.path.relativeTo
 
 sealed interface IJDDItem : DDItem
 
+/**
+ * Represents a project file item in the minimization process.
+ *
+ * @property localPath The local path of the file within the project directory.
+ * @constructor Creates an instance of [ProjectFileDDItem] with the specified local path.
+ */
 data class ProjectFileDDItem(val localPath: Path) : IJDDItem {
     fun getVirtualFile(context: IJDDContext): VirtualFile? =
         context.projectDir.findFileByRelativePath(localPath.toString())
@@ -17,5 +23,3 @@ data class ProjectFileDDItem(val localPath: Path) : IJDDItem {
             ProjectFileDDItem(virtualFile.toNioPath().relativeTo(context.projectDir.toNioPath()))
     }
 }
-
-data class PsiDDItem(val psi: PsiElement) : IJDDItem

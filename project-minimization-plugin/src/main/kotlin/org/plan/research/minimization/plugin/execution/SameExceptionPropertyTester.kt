@@ -30,7 +30,7 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
      * Tests whether the context's project has the same compiler exception as the root one
      *
      * @param context The context containing the current level project to test.
-     * @param items The list of virtual file items to be tested within the context.
+     * @param items The list of project file items to be tested within the context.
      */
     override suspend fun test(context: IJDDContext, items: List<T>): PropertyTestResult<IJDDContext> =
         snapshotManager.transaction(context) { newContext ->

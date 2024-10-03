@@ -68,7 +68,7 @@ class ProjectCloningSnapshotTest : ProjectCloningBaseTest() {
             selectedFiles.getAllFiles(project) + project.guessProjectDir()!!.getPathContentPair(project)
 
         val clonedProject = runWithModalProgressBlocking(project, "") {
-            val context = IJDDContext(projectCloning.clone(project)!!)
+            val context = IJDDContext(projectCloning.clone(project)!!, project)
             snapshotManager.transaction<Unit>(context) { newContext ->
                 writeAction {
                     VfsUtil.iterateChildrenRecursively(newContext.project.guessProjectDir()!!, null) {
@@ -125,31 +125,5 @@ class ProjectCloningSnapshotTest : ProjectCloningBaseTest() {
         assertEquals("Abort", (result as? SnapshotError.TransactionFailed)?.error?.message)
         assertNotNull(project.guessProjectDir()!!.findChild(".config"))
         assert(project.isOpen)
-    }
-
-    fun testTranslatorInTransaction() {
-        val root = myFixture.copyDirectoryToProject("treeProject", "")
-
-        val project = myFixture.project
-        val snapshotManager = ProjectCloningSnapshotManager(project)
-
-        val fileMap = buildMap {
-            VfsUtilCore.iterateChildrenRecursively(root, null) {
-                this[it.toNioPath().relativeTo(project.guessProjectDir()!!.toNioPath())] = it
-                true
-            }
-        }
-
-        runWithModalProgressBlocking(project, "") {
-            snapshotManager.transaction(IJDDContext(project)) { newContext ->
-                fileMap.forEach { (path, file) ->
-                    val expected = newContext.project.guessProjectDir()?.findFileByRelativePath(path.toString())
-                    val actual = file.translate()
-                    assertEquals(expected, actual)
-                }
-
-                raise("Abort")
-            }
-        }
     }
 }

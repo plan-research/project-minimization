@@ -3,7 +3,6 @@ import com.intellij.openapi.progress.runWithModalProgressBlocking
 import com.intellij.openapi.project.ProjectManager
 import org.junit.Assert.assertNotEquals
 import org.plan.research.minimization.plugin.services.ProjectCloningService
-import java.nio.file.Path
 
 class ProjectCloningTest : ProjectCloningBaseTest() {
     fun testOneFileProject() {
@@ -46,7 +45,7 @@ class ProjectCloningTest : ProjectCloningBaseTest() {
         doFullCloningOfClonedTest()
     }
 
-    private fun doFullCloningTest(originalFileSet: Set<Pair<Path, String?>>? = null): Set<Pair<Path, String?>> {
+    private fun doFullCloningTest(originalFileSet: Set<PathContent>? = null): Set<PathContent> {
         val project = myFixture.project
         val files = originalFileSet ?: project.getAllFiles()
         val projectCloningService = project.service<ProjectCloningService>()
@@ -58,7 +57,7 @@ class ProjectCloningTest : ProjectCloningBaseTest() {
         return files
     }
 
-    private fun doFullCloningOfClonedTest(originalFileSet: Set<Pair<Path, String?>>? = null): Set<Pair<Path, String?>> {
+    private fun doFullCloningOfClonedTest(originalFileSet: Set<PathContent>? = null): Set<PathContent> {
         val project = myFixture.project
         val files = originalFileSet ?: project.getAllFiles()
         val projectCloningService = project.service<ProjectCloningService>()

@@ -13,7 +13,7 @@ import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.model.CompilationPropertyChecker
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.IJDDItem
-import org.plan.research.minimization.plugin.model.VirtualFileDDItem
+import org.plan.research.minimization.plugin.model.ProjectFileDDItem
 import org.plan.research.minimization.plugin.services.SnapshotManagerService
 
 /**
@@ -36,13 +36,11 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
         snapshotManager.transaction(context) { newContext ->
             if (context.currentLevel == null) return@transaction newContext
 
-            val targetFiles = context.currentLevel.minus(items.toSet()).mapNotNull {
-                (it as? VirtualFileDDItem)?.vfs
-            }
+            val targetFiles = context.currentLevel.minus(items.toSet()).filterIsInstance<ProjectFileDDItem>()
 
             writeAction {
-                targetFiles.forEach { file ->
-                    file.translate()?.deleteRecursively()
+                targetFiles.forEach { item ->
+                    item.getVirtualFile(newContext)?.deleteRecursively()
                 }
             }
 

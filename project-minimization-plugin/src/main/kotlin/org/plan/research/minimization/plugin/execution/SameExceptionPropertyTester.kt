@@ -33,9 +33,9 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
      */
     override suspend fun test(context: IJDDContext, items: List<T>): PropertyTestResult<IJDDContext> =
         snapshotManager.transaction(context) { newContext ->
-            val currentLevel = context.currentLevelVirtualFiles ?: return@transaction newContext
+            if (context.currentLevel == null) return@transaction newContext
 
-            val targetFiles = currentLevel.minus(items.toSet()).filterIsInstance<ProjectFileDDItem>()
+            val targetFiles = context.currentLevel.minus(items.toSet()).filterIsInstance<ProjectFileDDItem>()
 
             writeAction {
                 targetFiles.forEach { item ->

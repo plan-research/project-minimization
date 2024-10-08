@@ -13,12 +13,14 @@ import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import com.intellij.testFramework.runInEdtAndWait
 import org.jetbrains.plugins.gradle.util.GradleConstants
+import kotlin.test.assertNotEquals
 
 
 open class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
     override fun getTestDataPath(): String {
         return "src/test/resources/testData/gradle"
     }
+
     protected lateinit var sdk: Sdk
 
     override fun setUp() {
@@ -52,9 +54,12 @@ open class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
     }
 
     protected fun assertGradleLoaded() {
-        assert(
-            ProjectDataManager.getInstance()
-                .getExternalProjectsData(project, GradleConstants.SYSTEM_ID).isNotEmpty()
-        ) { "Gradle project hasn't been loaded correctly"}
+        val data = ProjectDataManager
+            .getInstance()
+            .getExternalProjectsData(project, GradleConstants.SYSTEM_ID)
+            .firstOrNull()!!
+            .externalProjectStructure!!
+            .data
+        assertNotEquals("unspecified", data.version, message = "Gradle project is not loaded")
     }
 }

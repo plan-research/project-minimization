@@ -32,10 +32,11 @@ class GradleCompilationPropertyChecker(private val cs: CoroutineScope) : Compila
             val gradleModel = connection.model(org.gradle.tooling.model.GradleProject::class.java).get()
             gradleModel.tasks
         }
+        ensure(gradleTasks.isNotEmpty()) { CompilationPropertyCheckerError.InvalidBuildSystem }
         val buildTask = gradleTasks.firstOrNull { it.name == "build" }
         val cleanTask = gradleTasks.firstOrNull { it.name == "clean" }
-        ensureNotNull(cleanTask) { CompilationPropertyCheckerError.NoBuildSchema }
-        ensureNotNull(buildTask) { CompilationPropertyCheckerError.NoBuildSchema }
+        ensureNotNull(cleanTask) { CompilationPropertyCheckerError.InvalidBuildSystem }
+        ensureNotNull(buildTask) { CompilationPropertyCheckerError.InvalidBuildSystem }
         val cleanResult = runTask(project, cleanTask).bind()
         ensure(cleanResult.exitCode == 0) { CompilationPropertyCheckerError.BuildSystemFail(Throwable(cleanResult.output)) }
 
@@ -72,7 +73,7 @@ class GradleCompilationPropertyChecker(private val cs: CoroutineScope) : Compila
             .build()
 
         val runner = ProgramRunner.getRunner(executor.id, configuration)
-        ensureNotNull(runner) { CompilationPropertyCheckerError.NoBuildSchema }
+        ensureNotNull(runner) { CompilationPropertyCheckerError.InvalidBuildSystem }
 
         executionEnvironment.setCallback { descriptor ->
             descriptor

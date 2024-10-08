@@ -41,7 +41,6 @@ open class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
         val projectPath = root.path
 
         runInEdtAndWait {
-            // Import the Gradle project synchronously
             ExternalSystemUtil.refreshProject(
                 projectPath,
                 ImportSpecBuilder(project, GradleConstants.SYSTEM_ID)

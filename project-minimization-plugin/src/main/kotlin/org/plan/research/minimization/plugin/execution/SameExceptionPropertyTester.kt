@@ -5,7 +5,6 @@ import arrow.core.raise.option
 import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.testFramework.utils.vfs.deleteRecursively
 import org.plan.research.minimization.core.model.PropertyTestResult
 import org.plan.research.minimization.core.model.PropertyTester
 import org.plan.research.minimization.core.model.PropertyTesterError
@@ -34,13 +33,13 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
      */
     override suspend fun test(context: IJDDContext, items: List<T>): PropertyTestResult<IJDDContext> =
         snapshotManager.transaction(context) { newContext ->
-            if (context.currentLevel == null) return@transaction newContext
+            val currentLevel = context.currentLevelVirtualFiles ?: return@transaction newContext
 
-            val targetFiles = context.currentLevel.minus(items.toSet()).filterIsInstance<ProjectFileDDItem>()
+            val targetFiles = currentLevel.minus(items.toSet()).filterIsInstance<ProjectFileDDItem>()
 
             writeAction {
                 targetFiles.forEach { item ->
-                    item.getVirtualFile(newContext)?.deleteRecursively()
+                    item.getVirtualFile(newContext)?.delete(this)
                 }
             }
 

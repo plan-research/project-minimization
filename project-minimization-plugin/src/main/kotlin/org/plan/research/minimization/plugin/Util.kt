@@ -10,6 +10,8 @@ import org.plan.research.minimization.core.algorithm.dd.impl.ProbabilisticDD
 import org.plan.research.minimization.plugin.execution.DumbCompiler
 import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchyGenerator
 import org.plan.research.minimization.plugin.model.CompilationPropertyChecker
+import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.ProjectFileDDItem
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
 import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
@@ -60,3 +62,6 @@ fun List<VirtualFile>.getAllParents(root: VirtualFile): List<VirtualFile> = buil
     }
     this@getAllParents.forEach(::traverseParents)
 }.toList()
+
+fun List<ProjectFileDDItem>.toVirtualFiles(context: IJDDContext): List<VirtualFile> =
+    mapNotNull { it.getVirtualFile(context) }

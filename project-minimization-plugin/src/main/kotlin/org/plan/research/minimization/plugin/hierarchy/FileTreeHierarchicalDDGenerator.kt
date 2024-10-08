@@ -14,6 +14,7 @@ class FileTreeHierarchicalDDGenerator(
 ) : HierarchicalDDGenerator<IJDDContext, ProjectFileDDItem> {
     override suspend fun generateFirstLevel(context: IJDDContext) =
         option {
+            // TODO: take first level as root's children
             val level = listOf(ProjectFileDDItem(Path("")))
             HDDLevel(context.copy(currentLevel = level), level, propertyTester)
         }

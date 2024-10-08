@@ -4,6 +4,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFile
 import org.plan.research.minimization.core.model.DDContext
+import org.plan.research.minimization.plugin.toVirtualFiles
 
 
 /**
@@ -19,4 +20,5 @@ data class IJDDContext(
     val currentLevel: List<ProjectFileDDItem>? = null,
 ) : DDContext {
     val projectDir: VirtualFile by lazy { project.guessProjectDir()!! }
+    val currentLevelVirtualFiles: List<VirtualFile>? by lazy { currentLevel?.toVirtualFiles(this) }
 }

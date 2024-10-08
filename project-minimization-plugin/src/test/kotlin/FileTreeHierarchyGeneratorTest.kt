@@ -2,9 +2,7 @@ import arrow.core.Either
 import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.runWithModalProgressBlocking
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessProjectDir
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findPsiFile
 import com.intellij.openapi.vfs.isFile
 import com.intellij.psi.PsiElement
@@ -16,8 +14,10 @@ import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchicalDDGenerator
 import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchyGenerator
-import org.plan.research.minimization.plugin.model.CompilationStrategy
+import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
+import kotlin.io.path.name
 import kotlin.test.assertIs
 
 class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
@@ -35,58 +35,60 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
     fun testWithEmptyProject() {
         val project = myFixture.project
         val generator = generateHierarchicalDDGenerator(project)
+        val context = IJDDContext(project)
 
-        val firstLevel = runWithModalProgressBlocking(project, "") { generator.generateFirstLevel() }
-        UsefulTestCase.assertSize(1, firstLevel.items)
+        val firstLevel = runWithModalProgressBlocking(project, "") {
+            generator.generateFirstLevel(context).getOrNull()
+        }
 
-        val firstElement = firstLevel.items.first().vfs
-        assertIs<VirtualFile>(firstElement)
+        UsefulTestCase.assertNotNull(firstLevel)
+        UsefulTestCase.assertSize(1, firstLevel!!.items)
+
         assertNull(runWithModalProgressBlocking(project, "") {
             generator.generateNextLevel(
                 DDAlgorithmResult(
                     firstLevel.context,
                     firstLevel.items
                 )
-            )
+            ).getOrNull()
         })
-        generator.clear()
     }
 
     fun testSingleFileProject() {
         val psiFile = myFixture.configureByFile("singleFileProject")
+        val project = myFixture.project
         val projectRoot = project.guessProjectDir()!!
         val psiManager = PsiManager.getInstance(project)
         val projectRootPsi = psiManager.findDirectory(projectRoot)!!
         assertEquals(1, getPsiDepth(psiFile) - getPsiDepth(projectRootPsi))
-        val project = myFixture.project
         val generator = generateHierarchicalDDGenerator(project)
+        val context = IJDDContext(project)
 
-        val firstLevel = runWithModalProgressBlocking(project, "") { generator.generateFirstLevel() }
-        UsefulTestCase.assertSize(1, firstLevel.items)
-        val firstElement = firstLevel.items.first().vfs
-        assertIs<VirtualFile>(firstElement)
+        val firstLevel = runWithModalProgressBlocking(project, "") {
+            generator.generateFirstLevel(context).getOrNull()
+        }
+        UsefulTestCase.assertNotNull(firstLevel)
+        UsefulTestCase.assertSize(1, firstLevel!!.items)
 
         val secondLevel = runWithModalProgressBlocking(project, "") {
             generator.generateNextLevel(
                 DDAlgorithmResult(
                     firstLevel.context, firstLevel.items
                 )
-            )
+            ).getOrNull()
         }
         assertNotNull(secondLevel)
         assertSize(1, secondLevel!!.items)
-        val secondElement = secondLevel.items.first().vfs
-        assertIs<VirtualFile>(secondElement)
-        assertEquals("singleFileProject", secondElement.presentableName)
+        val secondElement = secondLevel.items.first()
+        assertEquals("singleFileProject", secondElement.localPath.name)
         assertNull(runWithModalProgressBlocking(project, "") {
             generator.generateNextLevel(
                 DDAlgorithmResult(
                     secondLevel.context,
                     secondLevel.items
                 )
-            )
+            ).getOrNull()
         })
-        generator.clear()
     }
 
     fun testComplicatedFileStructure() {
@@ -94,49 +96,53 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
         val deepestFile = FilenameIndex.getVirtualFilesByName(
             "10.txt", GlobalSearchScope.projectScope(project)
         ).first()
+        val project = myFixture.project
+
         val psiFile = deepestFile.findPsiFile(project)!!
         val projectRoot = project.guessProjectDir()!!
         val psiManager = PsiManager.getInstance(project)
         val projectRootPsi = psiManager.findDirectory(projectRoot)!!
+        val context = IJDDContext(project)
 
         assertEquals(12, getPsiDepth(psiFile) - getPsiDepth(projectRootPsi))
 
-        val project = myFixture.project
         val generator = generateHierarchicalDDGenerator(project)
-        var currentLevel = runWithModalProgressBlocking(project, "") { generator.generateFirstLevel() }
+        var currentLevel =
+            runWithModalProgressBlocking(project, "") { generator.generateFirstLevel(context).getOrNull() }!!
         assertSize(1, currentLevel.items)
-        val firstElement = currentLevel.items.first().vfs
-        assertIs<VirtualFile>(firstElement)
         currentLevel = runWithModalProgressBlocking(project, "") {
             generator.generateNextLevel(
                 DDAlgorithmResult(
                     currentLevel.context, currentLevel.items
                 )
-            )
+            ).getOrNull()
         }!!
         assertSize(1, currentLevel.items)
-        val secondElement = currentLevel.items.first().vfs
-        assertIs<VirtualFile>(secondElement)
-        assertEquals("complicated-project", secondElement.presentableName)
+        val secondElement = currentLevel.items.first()
+        assertEquals("complicated-project", secondElement.localPath.name)
         currentLevel = runWithModalProgressBlocking(project, "") {
             generator.generateNextLevel(
                 DDAlgorithmResult(
                     currentLevel.context, currentLevel.items
                 )
-            )
+            ).getOrNull()
         }!!
         for (i in 0..9) {
             assertSize(2, currentLevel.items)
-            val directory = currentLevel.items.map { it.vfs }.filter { it.isDirectory }
-            val file = currentLevel.items.map { it.vfs }.filter { it.isFile }
+            val directory =
+                currentLevel.items.map { it.getVirtualFile(currentLevel.context)!! }.filter { it.isDirectory }
+            val file = currentLevel.items.map { it.getVirtualFile(currentLevel.context)!! }.filter { it.isFile }
             assertSize(1, directory)
             assertSize(1, file)
             assertEquals("$i.txt", file.first().name)
             assertEquals("$i", directory.first().name)
             val nextElements =
-                DDAlgorithmResult(currentLevel.context, currentLevel.items.filterNot { it.vfs.isDirectory })
+                DDAlgorithmResult(
+                    currentLevel.context,
+                    currentLevel.items.filterNot { it.getVirtualFile(currentLevel.context)!!.isDirectory }
+                )
             val nextLevelWithoutDirectory =
-                runWithModalProgressBlocking(project, "") { generator.generateNextLevel(nextElements) }
+                runWithModalProgressBlocking(project, "") { generator.generateNextLevel(nextElements).getOrNull() }
             assertNull(nextLevelWithoutDirectory)
             currentLevel = runWithModalProgressBlocking(project, "") {
                 generator.generateNextLevel(
@@ -144,40 +150,28 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
                         currentLevel.context,
                         currentLevel.items
                     )
-                )
+                ).getOrNull()
             }!!
         }
         assertSize(1, currentLevel.items)
-        val lastElement = currentLevel.items.first().vfs
-        assertIs<VirtualFile>(lastElement)
-        assertEquals("10.txt", lastElement.presentableName)
+        val lastElement = currentLevel.items.first()
+        assertEquals("10.txt", lastElement.localPath.name)
         assertNull(runWithModalProgressBlocking(project, "") {
             generator.generateNextLevel(
                 DDAlgorithmResult(
                     currentLevel.context,
                     currentLevel.items
                 )
-            )
+            ).getOrNull()
         })
-        generator.clear()
     }
 
     private fun getPsiDepth(element: PsiElement?): Int = if (element == null) 0 else getPsiDepth(element.parent) + 1
+
     private fun generateHierarchicalDDGenerator(project: Project): FileTreeHierarchicalDDGenerator {
         val ddGenerator = runWithModalProgressBlocking(project, "") { fileTreeHierarchyGenerator.produce(project) }
         assertIs<Either.Right<FileTreeHierarchicalDDGenerator>>(ddGenerator)
         val generator = ddGenerator.value
         return generator
-    }
-
-    private fun FileTreeHierarchicalDDGenerator.clear() {
-        this
-            .getAllLevels()
-            .filter { it.context.project.name != myFixture.project.name }
-            .map { it.context.project }
-            .toSet()
-            .forEach {
-                ProjectManager.getInstance().closeAndDispose(it)
-            }
     }
 }

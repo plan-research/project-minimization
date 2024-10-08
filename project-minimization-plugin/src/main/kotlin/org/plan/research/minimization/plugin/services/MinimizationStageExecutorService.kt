@@ -8,8 +8,8 @@ import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.getDDAlgorithm
 import org.plan.research.minimization.plugin.getHierarchyCollectionStrategy
 import org.plan.research.minimization.plugin.model.FileLevelStage
-import org.plan.research.minimization.plugin.model.MinimizationStageExecutor
 import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.MinimizationStageExecutor
 
 @Service(Service.Level.PROJECT)
 class MinimizationStageExecutorService : MinimizationStageExecutor {
@@ -19,9 +19,9 @@ class MinimizationStageExecutorService : MinimizationStageExecutor {
         val hierarchy = fileLevelStage
             .hierarchyCollectionStrategy
             .getHierarchyCollectionStrategy()
-            .produce(context.project)
+            .produce(context.originalProject)
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
-        hierarchicalDD.minimize(hierarchy)
+        hierarchicalDD.minimize(context, hierarchy)
     }
 }
 

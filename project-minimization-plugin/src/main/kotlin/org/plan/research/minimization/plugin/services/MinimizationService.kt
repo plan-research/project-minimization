@@ -5,7 +5,8 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
+import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
@@ -13,18 +14,17 @@ import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 class MinimizationService(project: Project, private val coroutineScope: CoroutineScope) {
     private val stages = project.service<MinimizationPluginSettings>().state.stages
     private val executor = project.service<MinimizationStageExecutorService>()
+    private val projectCloning = project.service<ProjectCloningService>()
 
-     fun minimizeProject(project: Project) = coroutineScope.launch {
-         val result = either {
-             var currentProject = IJDDContext(project)
-             for (stage in stages) {
-                 currentProject = stage.apply(currentProject, executor).bind()
-             }
-             currentProject.project
-         }
-         result.fold(
-             ifLeft = { println("MinimizationError = $it") },
-             ifRight = { println("Minimization successful. Minimized project is saved at $it.") }
-         )
-     }
+    fun minimizeProject(project: Project) = coroutineScope.async {
+        either {
+            val clonedProject = projectCloning.clone(project)
+                ?: raise(MinimizationError.CloningFailed)
+            var currentProject = IJDDContext(clonedProject, project)
+            for (stage in stages) {
+                currentProject = stage.apply(currentProject, executor).bind()
+            }
+            currentProject.project
+        }
+    }
 }

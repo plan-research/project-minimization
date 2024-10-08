@@ -11,6 +11,6 @@ class GradleCompilationTest : GradleProjectBaseTest() {
     fun testWithFreshlyInitializedProject() {
         val root = myFixture.copyDirectoryToProject("fresh", ".")
         importGradleProject(root)
-//        assertGradleLoaded()
+        assertGradleLoaded()
     }
 }

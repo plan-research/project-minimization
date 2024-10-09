@@ -7,7 +7,6 @@ import com.intellij.openapi.externalSystem.util.ExternalSystemUtil
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import com.intellij.testFramework.runInEdtAndWait
 import org.jetbrains.plugins.gradle.settings.GradleProjectSettings
@@ -49,16 +48,17 @@ open class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
                     .build()
             )
         }
-        PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+//        PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
     }
 
     protected fun assertGradleLoaded() {
         val data = ProjectDataManager
             .getInstance()
             .getExternalProjectsData(project, GradleConstants.SYSTEM_ID)
-            .firstOrNull()!!
-            .externalProjectStructure!!
-            .data
+            .firstOrNull()
+            ?.externalProjectStructure
+            ?.data
+        kotlin.test.assertNotNull(data, message = "Gradle project is not loaded")
         assertNotEquals("unspecified", data.version, message = "Gradle project is not loaded")
     }
 }

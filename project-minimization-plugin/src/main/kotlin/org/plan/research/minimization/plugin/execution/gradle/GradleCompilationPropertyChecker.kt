@@ -1,11 +1,11 @@
 package org.plan.research.minimization.plugin.execution.gradle
 
 import arrow.core.Either
+import arrow.core.raise.catch
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
 import com.intellij.execution.ExecutionTargetManager
-import com.intellij.execution.RunManager
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.execution.runners.ProgramRunner
@@ -27,11 +27,16 @@ class GradleCompilationPropertyChecker(private val cs: CoroutineScope) : Compila
         val externalProjectPath = project.guessProjectDir()?.path
         ensureNotNull(externalProjectPath) { CompilationPropertyCheckerError.InvalidBuildSystem }
         val gradleExecutionHelper = GradleExecutionHelper()
-        val gradleTasks = gradleExecutionHelper.execute(externalProjectPath, null) { connection ->
-            connection.action()
-            val gradleModel = connection.model(org.gradle.tooling.model.GradleProject::class.java).get()
-            gradleModel.tasks
-        }
+        val gradleTasks = catch(
+            {
+                gradleExecutionHelper.execute(externalProjectPath, null) { connection ->
+                    connection.action()
+                    val gradleModel = connection.model(org.gradle.tooling.model.GradleProject::class.java).get()
+                    gradleModel.tasks
+                }
+            },
+            { it: Throwable -> raise(CompilationPropertyCheckerError.BuildSystemFail(cause = it)) }
+        )
         ensure(gradleTasks.isNotEmpty()) { CompilationPropertyCheckerError.InvalidBuildSystem }
         val buildTask = gradleTasks.firstOrNull { it.name == "build" }
         val cleanTask = gradleTasks.firstOrNull { it.name == "clean" }
@@ -50,17 +55,13 @@ class GradleCompilationPropertyChecker(private val cs: CoroutineScope) : Compila
         task: GradleTask,
     ): Either<CompilationPropertyCheckerError, GradleRunResult> = either {
         val processAdapter = GradleRunProcessAdapter(cs)
-
-        val configuration = RunManager
-            .getInstance(project)
-            .createConfiguration(
-                "Gradle Test Project Compilation",
-                GradleExternalTaskConfigurationType.getInstance().factory
-            ).configuration as GradleRunConfiguration
+        val configurationFactory = GradleExternalTaskConfigurationType.getInstance().factory
+        val configuration = GradleRunConfiguration(project, configurationFactory, "Gradle Test Project Compilation")
         configuration.settings.apply {
             externalSystemIdString = GradleConstants.SYSTEM_ID.id
             taskNames = listOf(task.path)
-            this.externalProjectPath = externalProjectPath
+            externalProjectPath = project.guessProjectDir()?.path
+                ?: raise(CompilationPropertyCheckerError.InvalidBuildSystem)
             isPassParentEnvs = true
             scriptParameters = "--quiet"
         }
@@ -80,7 +81,12 @@ class GradleCompilationPropertyChecker(private val cs: CoroutineScope) : Compila
                 .processHandler
                 ?.addProcessListener(processAdapter)
         }
-        writeAction { runner.execute(executionEnvironment) }
+        writeAction {
+            catch(
+                { runner.execute(executionEnvironment) },
+                { raise(CompilationPropertyCheckerError.BuildSystemFail(it)) }
+            )
+        }
         processAdapter.getRunResult()
     }
 }

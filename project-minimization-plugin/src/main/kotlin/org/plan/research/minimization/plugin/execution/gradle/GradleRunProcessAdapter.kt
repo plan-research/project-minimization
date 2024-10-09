@@ -12,7 +12,7 @@ class GradleRunProcessAdapter(
     private val cs: CoroutineScope
 ) : ProcessAdapter() {
     private val resultPipe: Channel<GradleRunResult> = Channel(capacity = 1)
-    private val buffer = StringBuilder()
+    private val buffer = StringBuffer()
     override fun processTerminated(event: ProcessEvent) {
         cs.launch {
             resultPipe.send(GradleRunResult(event.exitCode, buffer.toString()))

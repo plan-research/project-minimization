@@ -19,9 +19,9 @@ import org.jetbrains.plugins.gradle.service.execution.GradleExternalTaskConfigur
 import org.jetbrains.plugins.gradle.service.execution.GradleRunConfiguration
 import org.jetbrains.plugins.gradle.util.GradleConstants
 import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
-import org.plan.research.minimization.plugin.model.CompilationPropertyChecker
+import org.plan.research.minimization.plugin.model.BuildExceptionProvider
 
-class GradleCompilationPropertyChecker(private val cs: CoroutineScope) : CompilationPropertyChecker {
+class GradleBuildExceptionProvider(private val cs: CoroutineScope) : BuildExceptionProvider {
     override suspend fun checkCompilation(project: Project) = either {
         // FIXME: Error filtering
         val externalProjectPath = project.guessProjectDir()?.path
@@ -47,13 +47,13 @@ class GradleCompilationPropertyChecker(private val cs: CoroutineScope) : Compila
 
         val buildResult = runTask(project, buildTask).bind()
         ensure(buildResult.exitCode != 0) { CompilationPropertyCheckerError.CompilationSuccess }
-        Throwable(buildResult.output)
+        buildResult
     }
 
     private suspend fun runTask(
         project: Project,
         task: GradleTask,
-    ): Either<CompilationPropertyCheckerError, GradleRunResult> = either {
+    ): Either<CompilationPropertyCheckerError, GradleConsoleRunResult> = either {
         val processAdapter = GradleRunProcessAdapter(cs)
         val configurationFactory = GradleExternalTaskConfigurationType.getInstance().factory
         val configuration = GradleRunConfiguration(project, configurationFactory, "Gradle Test Project Compilation")

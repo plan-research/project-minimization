@@ -9,9 +9,9 @@ import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.impl.DDMin
 import org.plan.research.minimization.core.algorithm.dd.impl.ProbabilisticDD
 import org.plan.research.minimization.plugin.execution.DumbCompiler
-import org.plan.research.minimization.plugin.execution.gradle.GradleCompilationPropertyChecker
+import org.plan.research.minimization.plugin.execution.gradle.GradleBuildExceptionProvider
 import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchyGenerator
-import org.plan.research.minimization.plugin.model.CompilationPropertyChecker
+import org.plan.research.minimization.plugin.model.BuildExceptionProvider
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.ProjectFileDDItem
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
@@ -39,9 +39,9 @@ fun DDStrategy.getDDAlgorithm(): DDAlgorithm =
         DDStrategy.PROBABILISTIC_DD -> ProbabilisticDD()
     }
 
-fun CompilationStrategy.getCompilationStrategy(cs: CoroutineScope): CompilationPropertyChecker =
+fun CompilationStrategy.getCompilationStrategy(cs: CoroutineScope): BuildExceptionProvider =
     when (this) {
-        CompilationStrategy.GRADLE_IDEA -> GradleCompilationPropertyChecker(cs)
+        CompilationStrategy.GRADLE_IDEA -> GradleBuildExceptionProvider(cs)
         CompilationStrategy.DUMB -> DumbCompiler
     }
 

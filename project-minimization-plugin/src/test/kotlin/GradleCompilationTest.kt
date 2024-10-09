@@ -4,8 +4,10 @@ import com.intellij.openapi.progress.runWithModalProgressBlocking
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFile
 import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
+import org.plan.research.minimization.plugin.execution.gradle.GradleConsoleRunResult
+import org.plan.research.minimization.plugin.model.CompilationResult
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
-import org.plan.research.minimization.plugin.services.CompilationPropertyCheckerService
+import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 import kotlin.test.assertContains
 import kotlin.test.assertIs
@@ -23,6 +25,7 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         assertIs<Either.Left<*>>(compilationResult)
         assertEquals(CompilationPropertyCheckerError.CompilationSuccess, compilationResult.value)
     }
+
     fun testWithFreshlyInitializedProjectK2() {
         val root = myFixture.copyDirectoryToProject("fresh", ".")
         copyGradle(useK2 = true)
@@ -37,6 +40,7 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         val compilationResult = doCompilation(root)
         assertIs<Either.Right<*>>(compilationResult)
     }
+
     fun testWithFreshlyInitializedProjectSyntaxErrorK2() {
         val root = myFixture.copyDirectoryToProject("fresh-non-compilable", ".")
         copyGradle(useK2 = true)
@@ -49,8 +53,9 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         val root = myFixture.copyDirectoryToProject("kt-71260", ".")
         copyGradle(useBuildKts = false)
         val compilationResult = doCompilation(root)
-        assertIs<Either.Right<Throwable>>(compilationResult)
-        assertContains(compilationResult.value.message!!, "Details: Internal error in file lowering")
+        assertIs<Either.Right<GradleConsoleRunResult>>(compilationResult)
+        assertContains(compilationResult.value.output!!, "Details: Internal error in file lowering")
+        assertEquals(1, compilationResult.value.exitCode)
     }
 
     fun testMavenProject() {
@@ -69,12 +74,12 @@ class GradleCompilationTest : GradleProjectBaseTest() {
     private fun doCompilation(
         root: VirtualFile,
         checkGradle: Boolean = true
-    ): Either<CompilationPropertyCheckerError, Throwable> {
+    ): CompilationResult {
         importGradleProject(root)
         if (checkGradle) assertGradleLoaded()
 
         val project = myFixture.project
-        val propertyCheckerService = project.service<CompilationPropertyCheckerService>()
+        val propertyCheckerService = project.service<BuildExceptionProviderService>()
         return runWithModalProgressBlocking(project, "") { propertyCheckerService.checkCompilation(project) }
     }
 

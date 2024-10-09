@@ -9,10 +9,7 @@ import org.plan.research.minimization.core.model.PropertyTestResult
 import org.plan.research.minimization.core.model.PropertyTester
 import org.plan.research.minimization.core.model.PropertyTesterError
 import org.plan.research.minimization.plugin.errors.SnapshotError
-import org.plan.research.minimization.plugin.model.CompilationPropertyChecker
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.IJDDItem
-import org.plan.research.minimization.plugin.model.ProjectFileDDItem
+import org.plan.research.minimization.plugin.model.*
 import org.plan.research.minimization.plugin.services.SnapshotManagerService
 
 /**
@@ -20,8 +17,8 @@ import org.plan.research.minimization.plugin.services.SnapshotManagerService
  */
 class SameExceptionPropertyTester<T : IJDDItem> private constructor(
     rootProject: Project,
-    private val compilationPropertyChecker: CompilationPropertyChecker,
-    private val initialException: Throwable,
+    private val buildExceptionProvider: BuildExceptionProvider,
+    private val initialException: CompilationException,
 ) : PropertyTester<IJDDContext, T> {
     private val snapshotManager = rootProject.service<SnapshotManagerService>()
 
@@ -43,7 +40,7 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
                 }
             }
 
-            val compilationResult = compilationPropertyChecker
+            val compilationResult = buildExceptionProvider
                 .checkCompilation(newContext.project)
                 .getOrElse { raise(PropertyTesterError.NoProperty) }
 
@@ -60,7 +57,7 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
 
     companion object {
         suspend fun <T : IJDDItem> create(
-            compilerPropertyChecker: CompilationPropertyChecker,
+            compilerPropertyChecker: BuildExceptionProvider,
             project: Project
         ) = option {
             val initialException = compilerPropertyChecker.checkCompilation(project).getOrNone().bind()

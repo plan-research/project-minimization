@@ -24,7 +24,7 @@ class MinimizationPluginState : BaseState() {
     val stages: MutableList<MinimizationStage> = mutableListOf(
         FileLevelStage(
             hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
-            ddAlgorithm = DDStrategy.DD_MIN,
+            ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
         )
     )
 }

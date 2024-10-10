@@ -5,9 +5,7 @@ import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessProjectDir
-import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findOrCreateDirectory
@@ -41,7 +39,7 @@ class ProjectCloningService(private val rootProject: Project) {
                 this,
                 projectRoot,
                 clonedProjectPath
-            ) { it.path != snapshotLocation.path }
+            ) { it.path != snapshotLocation.path && it.name != ".idea" }
         }
         return ProjectUtil.openOrImportAsync(clonedProjectPath.toNioPath())
     }

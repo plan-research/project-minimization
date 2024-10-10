@@ -5,6 +5,7 @@ import arrow.core.raise.catch
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
+import com.intellij.build.output.KotlincOutputParser
 import com.intellij.execution.ExecutionTargetManager
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
@@ -19,11 +20,12 @@ import org.jetbrains.plugins.gradle.service.execution.GradleExternalTaskConfigur
 import org.jetbrains.plugins.gradle.service.execution.GradleRunConfiguration
 import org.jetbrains.plugins.gradle.util.GradleConstants
 import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
+import org.plan.research.minimization.plugin.execution.IdeaCompilationException
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
 
 class GradleBuildExceptionProvider(private val cs: CoroutineScope) : BuildExceptionProvider {
+    private val gradleOutputParser = KotlincOutputParser()
     override suspend fun checkCompilation(project: Project) = either {
-        // FIXME: Error filtering
         val externalProjectPath = project.guessProjectDir()?.path
         ensureNotNull(externalProjectPath) { CompilationPropertyCheckerError.InvalidBuildSystem }
         val gradleExecutionHelper = GradleExecutionHelper()
@@ -43,11 +45,11 @@ class GradleBuildExceptionProvider(private val cs: CoroutineScope) : BuildExcept
         ensureNotNull(cleanTask) { CompilationPropertyCheckerError.InvalidBuildSystem }
         ensureNotNull(buildTask) { CompilationPropertyCheckerError.InvalidBuildSystem }
         val cleanResult = runTask(project, cleanTask).bind()
-        ensure(cleanResult.exitCode == 0) { CompilationPropertyCheckerError.BuildSystemFail(Throwable(cleanResult.output)) }
+        ensure(cleanResult.exitCode == 0) { CompilationPropertyCheckerError.BuildSystemFail(Throwable(cleanResult.stdOut)) }
 
         val buildResult = runTask(project, buildTask).bind()
         ensure(buildResult.exitCode != 0) { CompilationPropertyCheckerError.CompilationSuccess }
-        buildResult
+        parseResults("test-build-${project.name}", buildResult)
     }
 
     private suspend fun runTask(
@@ -88,5 +90,17 @@ class GradleBuildExceptionProvider(private val cs: CoroutineScope) : BuildExcept
             )
         }
         processAdapter.getRunResult()
+    }
+
+    private fun parseResults(eventId: String, results: GradleConsoleRunResult): IdeaCompilationException {
+        val outputReader = StringBuildOutputInstantReader.create(eventId, results.stdErr)
+        val parsedErrors = buildList {
+            while (true) {
+                val line = outputReader.readLine() ?: break
+                if(!gradleOutputParser.parse(line, outputReader, this::add))
+                    break
+            }
+        }
+        return IdeaCompilationException(parsedErrors)
     }
 }

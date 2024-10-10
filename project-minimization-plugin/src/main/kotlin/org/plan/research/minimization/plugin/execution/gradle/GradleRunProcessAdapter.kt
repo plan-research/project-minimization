@@ -8,7 +8,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
-
+/**
+ * An implementation of [com.intellij.execution.process.ProcessAdapter] that collects all the output
+ * and passes it asynchronously to another object.
+ */
 class GradleRunProcessAdapter(
     private val cs: CoroutineScope
 ) : ProcessAdapter() {
@@ -38,5 +41,9 @@ class GradleRunProcessAdapter(
         }
     }
 
+    /**
+     * Suspends the current coroutine and waits to receive the result from the result pipe.
+     * Some output (that could be send after [processTerminated]) will be trunk
+     */
     suspend fun getRunResult() = resultPipe.receive()
 }

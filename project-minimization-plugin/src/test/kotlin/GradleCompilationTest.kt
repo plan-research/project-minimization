@@ -10,6 +10,7 @@ import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 import kotlin.test.assertIs
+import kotlin.test.assertNotEquals
 
 class GradleCompilationTest : GradleProjectBaseTest() {
     override fun setUp() {
@@ -61,6 +62,27 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         val compilationResult2 = doCompilation(root, linkProject = false)
         assertIs<Either.Right<IdeaCompilationException>>(compilationResult2)
         assertEquals(compilationResult.value, compilationResult2.value)
+    }
+    fun testWithFreshlyInitializedProjectSyntaxErrorMigrationK1K2() {
+        val root = myFixture.copyDirectoryToProject("fresh-non-compilable", ".")
+        copyGradle(useK2 = false)
+        val compilationResult = doCompilation(root)
+        assertIs<Either.Right<IdeaCompilationException>>(compilationResult)
+
+        val buildErrors = compilationResult.value.buildErrors
+        assertSize(2, buildErrors)
+        assertEquals("Unresolved reference: fsdfhjlksdfskjlhfkjhsldjklhdfgagjkhldfdkjlhfgahkjldfggdfjkhdfhkjldfvhkjfdvjhk", buildErrors[0].message)
+        assertEquals("Unresolved reference: dfskjhl", buildErrors[1].message)
+
+        copyGradle(useK2 = true)
+        val compilationResult2 = doCompilation(root, linkProject = false)
+        assertIs<Either.Right<IdeaCompilationException>>(compilationResult2)
+
+        val buildErrors2 = compilationResult2.value.buildErrors
+        assertEquals("Unresolved reference 'fsdfhjlksdfskjlhfkjhsldjklhdfgagjkhldfdkjlhfgahkjldfggdfjkhdfhkjldfvhkjfdvjhk'.", buildErrors2[0].message)
+        assertEquals("Unresolved reference 'dfskjhl'.", buildErrors2[1].message)
+
+        assertNotEquals(compilationResult.value, compilationResult2.value)
     }
 
     fun testKt71260() {

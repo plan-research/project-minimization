@@ -81,3 +81,44 @@ Such representation allows us to control flow the HDD algorithm in a scalable ma
 [generator]: ../project-minimization-core/src/main/kotlin/org/plan/research/minimization/core/algorithm/dd/hierarchical/HierarchicalDDGenerator.kt
 
 ### Plugin
+
+This module is an implementation of an IntelliJ IDEA plugin.
+
+- **IJDDItem.**
+Project's components are represented as [IJDDItem][ij-item], which has such inherited classes:
+  - `ProjectFileDDItem` represents any file of the project.
+
+- **IJDDContext.**
+The algorithm context is represented as [IJDDContext][ij-context], which contains the current minimized `Project`.
+
+- **Minimization Stages.** 
+As shown on the sequence diagram, the minimization process consists of minimization stages ([doc][stage-doc]).
+Each stage should implement the [MinimizationStage][stage] interface.
+Here are already implemented stages:
+  - **[FileLevelStage][fl-stage-doc]** aims to minimize the project by deleting the project's files using HDD.
+
+- **Snapshots.**
+[SnapshotManager][snapshot] ([doc][snapshot-doc])
+interface provides `transaction` method representing undoable changes performed during transaction.
+Here are some implementations of SnapshotManager:
+  - **[ProjectCloningSnapshotManager][project-cloning]** implements transactions base on project cloning.
+
+- **Compilation.**
+[CompilationPropertyChecker][compilation] interface provides methods for checking compilation errors of the project.
+
+- **Settings.**
+[MinimizationPluginState][state] ([doc][settings-doc]) describes settings such as minimization stages, their order and own settings for each stage.
+
+
+[stage-doc]: MinimizationStages.md
+[fl-stage-doc]: MinimizationStages.md#File-level-stage
+[snapshot-doc]: SnapshotManagers.md
+[settings-doc]: Settings.md
+
+[stage]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/MinimizationStage.kt
+[ij-item]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/IJDDItem.kt
+[ij-context]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/IJDDContext.kt
+[snapshot]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/snapshot/SnapshotManager.kt
+[project-cloning]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/snapshot/ProjectCloningSnapshotManager.kt
+[compilation]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/CompilationPropertyChecker.kt
+[state]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/settings/MinimizationPluginState.kt

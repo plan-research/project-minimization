@@ -1,4 +1,5 @@
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.externalSystem.importing.ImportSpecBuilder
 import com.intellij.openapi.externalSystem.service.execution.ExternalSystemJdkUtil
 import com.intellij.openapi.externalSystem.service.execution.ProgressExecutionMode
@@ -8,17 +9,20 @@ import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
-import com.intellij.testFramework.runInEdtAndWait
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.jetbrains.plugins.gradle.settings.GradleProjectSettings
 import org.jetbrains.plugins.gradle.settings.GradleSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
 import kotlin.test.assertNotEquals
 
 
-open class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
+abstract class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
     override fun getTestDataPath(): String {
         return "src/test/resources/testData/gradle"
     }
+
+    override fun runInDispatchThread(): Boolean = false
 
     protected lateinit var sdk: Sdk
 
@@ -31,7 +35,7 @@ open class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
         }
     }
 
-    protected fun importGradleProject(root: VirtualFile) {
+    protected suspend fun importGradleProject(root: VirtualFile) {
         val projectPath = root.path
         val gradleSettings = GradleSettings.getInstance(project)
         val projectSettings = GradleProjectSettings().apply {
@@ -40,7 +44,7 @@ open class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
         }
         gradleSettings.linkProject(projectSettings)
 
-        runInEdtAndWait {
+        withContext(Dispatchers.EDT) {
             ExternalSystemUtil.refreshProject(
                 projectPath,
                 ImportSpecBuilder(project, GradleConstants.SYSTEM_ID)
@@ -48,7 +52,6 @@ open class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
                     .build()
             )
         }
-//        PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
     }
 
     protected fun assertGradleLoaded() {

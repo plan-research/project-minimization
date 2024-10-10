@@ -11,6 +11,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.plan.research.minimization.plugin.services.MinimizationService
 
+/**
+ * An action class responsible for minimizing a given project.
+ */
 class MinimizeProjectAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return

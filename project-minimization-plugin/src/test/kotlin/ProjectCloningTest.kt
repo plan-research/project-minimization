@@ -1,6 +1,6 @@
 import com.intellij.openapi.components.service
-import com.intellij.openapi.progress.runWithModalProgressBlocking
 import com.intellij.openapi.project.ProjectManager
+import com.intellij.platform.ide.progress.runWithModalProgressBlocking
 import org.junit.Assert.assertNotEquals
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 

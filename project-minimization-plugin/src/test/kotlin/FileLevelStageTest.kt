@@ -1,7 +1,7 @@
 import com.intellij.openapi.components.service
-import com.intellij.openapi.progress.runWithModalProgressBlocking
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.platform.ide.progress.runWithModalProgressBlocking
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import org.plan.research.minimization.plugin.execution.DumbCompiler
 import org.plan.research.minimization.plugin.model.FileLevelStage

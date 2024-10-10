@@ -1,8 +1,8 @@
 import arrow.core.Either
 import com.intellij.openapi.components.service
-import com.intellij.openapi.progress.runWithModalProgressBlocking
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFile
+import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
 import org.plan.research.minimization.plugin.execution.gradle.GradleConsoleRunResult
 import org.plan.research.minimization.plugin.model.CompilationResult
@@ -74,13 +74,13 @@ class GradleCompilationTest : GradleProjectBaseTest() {
     private fun doCompilation(
         root: VirtualFile,
         checkGradle: Boolean = true
-    ): CompilationResult {
+    ): CompilationResult = runBlocking {
         importGradleProject(root)
         if (checkGradle) assertGradleLoaded()
 
         val project = myFixture.project
         val propertyCheckerService = project.service<BuildExceptionProviderService>()
-        return runWithModalProgressBlocking(project, "") { propertyCheckerService.checkCompilation(project) }
+        propertyCheckerService.checkCompilation(project)
     }
 
     private fun copyGradle(useK2: Boolean = false, useBuildKts: Boolean = true) {

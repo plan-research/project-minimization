@@ -114,7 +114,8 @@ class ProjectCloningSnapshotTest : ProjectCloningBaseTest() {
 
         val snapshotManager = ProjectCloningSnapshotManager(project)
         val result = runWithModalProgressBlocking(project, "") {
-            snapshotManager.transaction<String>(IJDDContext(project)) { newProject ->
+            val context = IJDDContext(project)
+            snapshotManager.transaction<String>(context) { newProject ->
                 writeAction {
                     newProject.project.guessProjectDir()!!.findChild(".config")!!.deleteRecursively()
                 }

@@ -35,7 +35,7 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
     fun testWithEmptyProject() {
         val project = myFixture.project
         val generator = generateHierarchicalDDGenerator(project)
-        val context = IJDDContext(project)
+        val context = IJDDContext(project, project)
 
         val firstLevel = runWithModalProgressBlocking(project, "") {
             generator.generateFirstLevel(context).getOrNull()

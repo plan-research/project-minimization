@@ -66,7 +66,8 @@ class FileLevelStageTest : JavaCodeInsightFixtureTestCase() {
 
         val minimizedProject = runWithModalProgressBlocking(project, "") {
             val clonedProject = project.service<ProjectCloningService>().clone(project)!!
-            stage.apply(IJDDContext(clonedProject, project), executor)
+            val context = IJDDContext(clonedProject, project)
+            stage.apply(context, executor)
         }.getOrNull()?.project
         assertNotNull(minimizedProject)
 

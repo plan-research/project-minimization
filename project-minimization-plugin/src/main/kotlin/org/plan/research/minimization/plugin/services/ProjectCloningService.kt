@@ -11,6 +11,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findOrCreateDirectory
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 import java.util.*
+import kotlin.io.path.pathString
+import kotlin.io.path.relativeTo
 
 /**
  * Service responsible for cloning a given project.
@@ -31,23 +33,32 @@ class ProjectCloningService(private val rootProject: Project) {
      * @return a cloned project
      */
     suspend fun clone(project: Project): Project? {
-        val clonedProjectPath = createNewProjectDirectory()
         val projectRoot = project.guessProjectDir() ?: return null
-        writeAction {
+        val clonedProjectPath = writeAction {
+            val clonedProjectPath = createNewProjectDirectory()
             val snapshotLocation = getSnapshotLocation()
             VfsUtil.copyDirectory(
                 this,
                 projectRoot,
                 clonedProjectPath
-            ) { it.path != snapshotLocation.path && it.name != ".idea" }
+            ) { it.path != snapshotLocation.path && !ignore(it, projectRoot) }
+            clonedProjectPath
         }
         return ProjectUtil.openOrImportAsync(clonedProjectPath.toNioPath())
     }
 
-    @Suppress("UnstableApiUsage")
-    private suspend fun createNewProjectDirectory(): VirtualFile = writeAction {
-        getSnapshotLocation().findOrCreateDirectory(UUID.randomUUID().toString())
+    private val importantFiles = setOf("modules.xml", "misc.xml", "libraries")
+    private fun ignore(file: VirtualFile, root: VirtualFile): Boolean {
+        val path = file.toNioPath().relativeTo(root.toNioPath())
+        if (path.startsWith(".idea")) {
+            val pathString = path.pathString
+            return importantFiles.none { it in pathString }
+        }
+        return false
     }
+
+    private fun createNewProjectDirectory(): VirtualFile =
+        getSnapshotLocation().findOrCreateDirectory(UUID.randomUUID().toString())
 
     private fun getSnapshotLocation(): VirtualFile =
         rootProject

@@ -9,10 +9,11 @@ import com.intellij.execution.ExecutionTargetManager
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.execution.runners.ProgramRunner
-import com.intellij.openapi.application.writeAction
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.gradle.tooling.model.GradleTask
 import org.jetbrains.plugins.gradle.service.execution.GradleExecutionHelper
 import org.jetbrains.plugins.gradle.service.execution.GradleExternalTaskConfigurationType
@@ -21,7 +22,7 @@ import org.jetbrains.plugins.gradle.util.GradleConstants
 import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
 
-class GradleBuildExceptionProvider(private val cs: CoroutineScope) : BuildExceptionProvider {
+class GradleBuildExceptionProvider : BuildExceptionProvider {
     override suspend fun checkCompilation(project: Project) = either {
         // FIXME: Error filtering
         val externalProjectPath = project.guessProjectDir()?.path
@@ -54,7 +55,7 @@ class GradleBuildExceptionProvider(private val cs: CoroutineScope) : BuildExcept
         project: Project,
         task: GradleTask,
     ): Either<CompilationPropertyCheckerError, GradleConsoleRunResult> = either {
-        val processAdapter = GradleRunProcessAdapter(cs)
+        val processAdapter = GradleRunProcessAdapter()
         val configurationFactory = GradleExternalTaskConfigurationType.getInstance().factory
         val configuration = GradleRunConfiguration(project, configurationFactory, "Gradle Test Project Compilation")
         configuration.settings.apply {
@@ -71,17 +72,16 @@ class GradleBuildExceptionProvider(private val cs: CoroutineScope) : BuildExcept
         val executionEnvironment = ExecutionEnvironmentBuilder
             .create(executor, configuration)
             .target(ExecutionTargetManager.getActiveTarget(project))
-            .build()
+            .build { descriptor ->
+                descriptor
+                    .processHandler
+                    ?.addProcessListener(processAdapter)
+            }
 
         val runner = ProgramRunner.getRunner(executor.id, configuration)
         ensureNotNull(runner) { CompilationPropertyCheckerError.InvalidBuildSystem }
 
-        executionEnvironment.setCallback { descriptor ->
-            descriptor
-                .processHandler
-                ?.addProcessListener(processAdapter)
-        }
-        writeAction {
+        withContext(Dispatchers.EDT) {
             catch(
                 { runner.execute(executionEnvironment) },
                 { raise(CompilationPropertyCheckerError.BuildSystemFail(it)) }

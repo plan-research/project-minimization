@@ -45,28 +45,20 @@ class GradleBuildExceptionProvider(private val cs: CoroutineScope) : BuildExcept
      * or [CompilationPropertyCheckerError] if the compilation has been successful or some other error occurred
      */
     override suspend fun checkCompilation(project: Project) = either {
-        val externalProjectPath = project.guessProjectDir()?.path
-        // Fails then and only then, when this project is default
-        ensureNotNull(externalProjectPath) { CompilationPropertyCheckerError.InvalidBuildSystem }
-        val gradleExecutionHelper = GradleExecutionHelper()
-        val gradleTasks = catch(
-            {
-                gradleExecutionHelper.execute(externalProjectPath, null) { connection ->
-                    connection.action()
-                    val gradleModel = connection.model(org.gradle.tooling.model.GradleProject::class.java).get()
-                    gradleModel.tasks
-                }
-            },
-            { it: Throwable -> raise(CompilationPropertyCheckerError.BuildSystemFail(cause = it)) }
-        )
+        val gradleTasks = extractGradleTasks(project).bind()
         // If not gradle tasks were found ⇒ this is not a Gradle project
         ensure(gradleTasks.isNotEmpty()) { CompilationPropertyCheckerError.InvalidBuildSystem }
-        val buildTask = gradleTasks.firstOrNull { it.name == "build" }
-        val cleanTask = gradleTasks.firstOrNull { it.name == "clean" }
-        ensureNotNull(cleanTask) { CompilationPropertyCheckerError.InvalidBuildSystem }
-        ensureNotNull(buildTask) { CompilationPropertyCheckerError.InvalidBuildSystem }
+        val buildTask = gradleTasks.findOrFail("build").bind()
+        val cleanTask = gradleTasks.findOrFail("clean").bind()
+
         val cleanResult = runTask(project, cleanTask).bind()
-        ensure(cleanResult.exitCode == 0) { CompilationPropertyCheckerError.BuildSystemFail(Throwable(cleanResult.stdOut)) }
+        ensure(cleanResult.exitCode == 0) {
+            CompilationPropertyCheckerError.BuildSystemFail(
+                cause = IllegalStateException(
+                    "Clean task failed: ${cleanResult.stdOut}"
+                )
+            )
+        }
 
         val buildResult = runTask(project, buildTask).bind()
         ensure(buildResult.exitCode != 0) { CompilationPropertyCheckerError.CompilationSuccess }
@@ -123,6 +115,29 @@ class GradleBuildExceptionProvider(private val cs: CoroutineScope) : BuildExcept
             )
         }
         processAdapter.getRunResult() // Wait until writeAction is done
+    }
+
+    private fun extractGradleTasks(project: Project) = either {
+        val externalProjectPath = project.guessProjectDir()?.path
+        // Fails then and only then, when this project is default
+        ensureNotNull(externalProjectPath) { CompilationPropertyCheckerError.InvalidBuildSystem }
+        val gradleExecutionHelper = GradleExecutionHelper()
+        catch(
+            {
+                gradleExecutionHelper.execute(externalProjectPath, null) { connection ->
+                    connection.action()
+                    val gradleModel = connection.model(org.gradle.tooling.model.GradleProject::class.java).get()
+                    gradleModel.tasks.toList()
+                }
+            },
+            { it: Throwable -> raise(CompilationPropertyCheckerError.BuildSystemFail(cause = it)) }
+        )
+    }
+
+    private fun List<GradleTask>.findOrFail(name: String) = either {
+        val task = this@findOrFail.firstOrNull { it.name == name }
+        ensureNotNull(task) { CompilationPropertyCheckerError.InvalidBuildSystem }
+        task
     }
 
     /**

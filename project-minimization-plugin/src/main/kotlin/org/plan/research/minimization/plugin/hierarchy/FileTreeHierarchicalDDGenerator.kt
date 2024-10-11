@@ -77,8 +77,8 @@ class FileTreeHierarchicalDDGenerator(
             while (stack.isNotEmpty()) {
                 val entry = stack.last()
 
-                if (entry.file.isDirectory) {
-                    val children = entry.file.children
+                val children = entry.file.children
+                if (children.isNotEmpty()) {
                     if (entry.next < children.size) {
                         stack.add(StackEntry(children[entry.next], entry.level + 1))
                         entry.next += 1

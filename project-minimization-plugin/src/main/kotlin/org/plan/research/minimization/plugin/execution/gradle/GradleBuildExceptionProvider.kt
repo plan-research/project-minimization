@@ -21,6 +21,8 @@ import org.jetbrains.plugins.gradle.service.execution.GradleRunConfiguration
 import org.jetbrains.plugins.gradle.util.GradleConstants
 import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
 import org.plan.research.minimization.plugin.execution.IdeaCompilationException
+import org.plan.research.minimization.plugin.execution.exception.KotlincException
+import org.plan.research.minimization.plugin.execution.exception.KotlincExceptionUtils
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
 
 /**
@@ -135,10 +137,21 @@ class GradleBuildExceptionProvider(private val cs: CoroutineScope) : BuildExcept
         val parsedErrors = buildList {
             while (true) {
                 val line = outputReader.readLine() ?: break
-                if (!gradleOutputParser.parse(line, outputReader, this::add))
+                if (!gradleOutputParser.parse(line, outputReader) { add(KotlincExceptionUtils.parseException(it)) })
                     break
             }
         }
-        return IdeaCompilationException(parsedErrors)
+        // TODO: somehow report failed to parsed errors
+        parsedErrors.forEach {
+            when (it) {
+                is Either.Left -> println("Failed to parsed exception. Error ${it.value}")
+                else -> {}
+            }
+        }
+        return IdeaCompilationException(
+            parsedErrors
+                .filterIsInstance<Either.Right<KotlincException>>()
+                .map(Either.Right<KotlincException>::value)
+        )
     }
 }

@@ -8,6 +8,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.errors.SnapshotError.*
@@ -64,7 +65,7 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
 
     private suspend fun closeProject(context: IJDDContext) {
         // TODO: think about deleting the project
-        withContext(Dispatchers.EDT) {
+        withContext(NonCancellable + Dispatchers.EDT) {
             ProjectManager.getInstance().closeAndDispose(context.project)
         }
     }

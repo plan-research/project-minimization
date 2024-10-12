@@ -12,6 +12,7 @@ import com.intellij.execution.runners.ProgramRunner
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.util.Disposer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.gradle.tooling.model.GradleTask
@@ -69,24 +70,35 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
 
         val executor = DefaultRunExecutor.getRunExecutorInstance()
 
+        val endProcessDisposable = Disposer.newDisposable()
+
         val executionEnvironment = ExecutionEnvironmentBuilder
             .create(executor, configuration)
             .target(ExecutionTargetManager.getActiveTarget(project))
             .build { descriptor ->
-                descriptor
-                    .processHandler
-                    ?.addProcessListener(processAdapter)
+                descriptor.processHandler?.let {
+                    it.addProcessListener(processAdapter, endProcessDisposable)
+                    Disposer.register(endProcessDisposable) {
+                        if (!it.isProcessTerminated && !it.isProcessTerminating) {
+                            it.destroyProcess()
+                        }
+                    }
+                }
             }
 
         val runner = ProgramRunner.getRunner(executor.id, configuration)
         ensureNotNull(runner) { CompilationPropertyCheckerError.InvalidBuildSystem }
 
-        withContext(Dispatchers.EDT) {
-            catch(
-                { runner.execute(executionEnvironment) },
-                { raise(CompilationPropertyCheckerError.BuildSystemFail(it)) }
-            )
+        try {
+            withContext(Dispatchers.EDT) {
+                catch(
+                    { runner.execute(executionEnvironment) },
+                    { raise(CompilationPropertyCheckerError.BuildSystemFail(it)) }
+                )
+            }
+            processAdapter.getRunResult()
+        } finally {
+            Disposer.dispose(endProcessDisposable)
         }
-        processAdapter.getRunResult()
     }
 }

@@ -82,7 +82,7 @@ class KotlincExceptionTranslator: BuildEventTranslator {
     private fun parseGenericInternalCompilerException(
         exceptionMessage: String
     ): Either<CompilationPropertyCheckerError, KotlincException.GenericInternalCompilerException> = either {
-        val (stacktrace, message) = exceptionMessage.splitMessageAndStacktrace()
+        val (message, stacktrace) = exceptionMessage.splitMessageAndStacktrace()
             .getOrElse { raise(CompilationPropertyCheckerError.CompilationSuccess) }
         KotlincException.GenericInternalCompilerException(stacktrace, message)
     }
@@ -93,7 +93,8 @@ class KotlincExceptionTranslator: BuildEventTranslator {
      */
     private fun BuildEvent.isInternal(): Boolean =
         // FIXME: Not sure that is complete way to check if the exception is internal
-        message.endsWith("Please report this problem https://kotl.in/issue")
+        message.endsWith("Please report this problem https://kotl.in/issue") ||
+               message.startsWith("org.jetbrains.kotlin.util.FileAnalysisException")
 
     private fun parseExceptionMessage(message: String): Pair<String, String>? {
         val colonIndex = message.indexOfOrNull(COLON) ?: return null

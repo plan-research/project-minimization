@@ -20,6 +20,7 @@ import org.plan.research.minimization.plugin.model.state.DDStrategy
 import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
 import org.plan.research.minimization.plugin.model.state.SnapshotStrategy
 import org.plan.research.minimization.plugin.snapshot.ProjectCloningSnapshotManager
+import java.nio.file.Path
 
 
 fun SnapshotStrategy.getSnapshotManager(project: Project): SnapshotManager =
@@ -66,3 +67,5 @@ fun List<VirtualFile>.getAllParents(root: VirtualFile): List<VirtualFile> = buil
 
 fun List<ProjectFileDDItem>.toVirtualFiles(context: IJDDContext): List<VirtualFile> =
     mapNotNull { it.getVirtualFile(context) }
+
+fun Path.drop(n: Int): Path = subpath(n, nameCount)

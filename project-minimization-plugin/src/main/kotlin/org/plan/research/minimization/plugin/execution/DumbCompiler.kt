@@ -2,12 +2,14 @@ package org.plan.research.minimization.plugin.execution
 
 import arrow.core.raise.either
 import arrow.core.raise.ensureNotNull
+import arrow.core.toOption
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
 import org.plan.research.minimization.plugin.execution.DumbCompiler.targetPaths
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
-import org.plan.research.minimization.plugin.model.CompilationException
+import org.plan.research.minimization.plugin.model.exception.CompilationException
+import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
 
 /**
  * A dumb compiler that checks containing of [targetPaths].
@@ -15,7 +17,9 @@ import org.plan.research.minimization.plugin.model.CompilationException
  * If [targetPaths] equals null, then [DumbCompiler] always returns new exception
  */
 object DumbCompiler : BuildExceptionProvider {
-    data class DumbException(val throwable: Throwable) : CompilationException
+    data class DumbException(val throwable: Throwable) : CompilationException {
+        override suspend fun transformBy(transformation: ExceptionTransformation) = this.copy().toOption()
+    }
 
     override suspend fun checkCompilation(project: Project) =
         either {

@@ -5,6 +5,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import org.plan.research.minimization.plugin.getCompilationStrategy
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
+import org.plan.research.minimization.plugin.model.exception.CompilationResult
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 @Service(Service.Level.PROJECT)
@@ -17,7 +18,7 @@ class BuildExceptionProviderService(
             .state.currentCompilationStrategy
             .getCompilationStrategy()
 
-    override suspend fun checkCompilation(project: Project) =
+    override suspend fun checkCompilation(project: Project): CompilationResult =
         underlyingObject
             .checkCompilation(project)
 }

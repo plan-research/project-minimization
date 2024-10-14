@@ -1,5 +1,7 @@
 import arrow.core.Either
 import com.intellij.openapi.components.service
+import com.intellij.openapi.progress.runWithModalProgressBlocking
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.runBlocking
@@ -7,9 +9,11 @@ import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerEr
 import org.plan.research.minimization.plugin.execution.IdeaCompilationException
 import org.plan.research.minimization.plugin.execution.exception.KotlincErrorSeverity
 import org.plan.research.minimization.plugin.execution.exception.KotlincException
-import org.plan.research.minimization.plugin.model.CompilationResult
+import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.exception.CompilationResult
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
+import org.plan.research.minimization.plugin.services.SnapshotManagerService
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 import kotlin.io.path.name
 import kotlin.test.assertIs
@@ -45,7 +49,10 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         val buildErrors = compilationResult.value.kotlincExceptions
         assertSize(2, buildErrors)
         assertIs<List<KotlincException.GeneralKotlincException>>(buildErrors)
-        assertEquals("Unresolved reference: fsdfhjlksdfskjlhfkjhsldjklhdfgagjkhldfdkjlhfgahkjldfggdfjkhdfhkjldfvhkjfdvjhk", buildErrors[0].message)
+        assertEquals(
+            "Unresolved reference: fsdfhjlksdfskjlhfkjhsldjklhdfgagjkhldfdkjlhfgahkjldfggdfjkhdfhkjldfvhkjfdvjhk",
+            buildErrors[0].message
+        )
         assertEquals("Unresolved reference: dfskjhl", buildErrors[1].message)
 
         val compilationResult2 = doCompilation(root, linkProject = false)
@@ -61,7 +68,10 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         val buildErrors = compilationResult.value.kotlincExceptions
         assertSize(2, buildErrors)
         assertIs<List<KotlincException.GeneralKotlincException>>(buildErrors)
-        assertEquals("Unresolved reference 'fsdfhjlksdfskjlhfkjhsldjklhdfgagjkhldfdkjlhfgahkjldfggdfjkhdfhkjldfvhkjfdvjhk'.", buildErrors[0].message)
+        assertEquals(
+            "Unresolved reference 'fsdfhjlksdfskjlhfkjhsldjklhdfgagjkhldfdkjlhfgahkjldfggdfjkhdfhkjldfvhkjfdvjhk'.",
+            buildErrors[0].message
+        )
         assertEquals(KotlincErrorSeverity.ERROR, buildErrors[0].severity)
         assertEquals("Unresolved reference 'dfskjhl'.", buildErrors[1].message)
         assertEquals(KotlincErrorSeverity.ERROR, buildErrors[1].severity)
@@ -70,6 +80,7 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         assertIs<Either.Right<IdeaCompilationException>>(compilationResult2)
         assertEquals(compilationResult.value, compilationResult2.value)
     }
+
     fun testWithFreshlyInitializedProjectSyntaxErrorMigrationK1K2() {
         val root = myFixture.copyDirectoryToProject("fresh-non-compilable", ".")
         copyGradle(useK2 = false)
@@ -79,7 +90,10 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         val buildErrors = compilationResult.value.kotlincExceptions
         assertSize(2, buildErrors)
         assertIs<List<KotlincException.GeneralKotlincException>>(buildErrors)
-        assertEquals("Unresolved reference: fsdfhjlksdfskjlhfkjhsldjklhdfgagjkhldfdkjlhfgahkjldfggdfjkhdfhkjldfvhkjfdvjhk", buildErrors[0].message)
+        assertEquals(
+            "Unresolved reference: fsdfhjlksdfskjlhfkjhsldjklhdfgagjkhldfdkjlhfgahkjldfggdfjkhdfhkjldfvhkjfdvjhk",
+            buildErrors[0].message
+        )
         assertEquals(KotlincErrorSeverity.ERROR, buildErrors[0].severity)
         assertEquals("Unresolved reference: dfskjhl", buildErrors[1].message)
         assertEquals(KotlincErrorSeverity.ERROR, buildErrors[1].severity)
@@ -90,7 +104,10 @@ class GradleCompilationTest : GradleProjectBaseTest() {
 
         val buildErrors2 = compilationResult2.value.kotlincExceptions
         assertIs<List<KotlincException.GeneralKotlincException>>(buildErrors2)
-        assertEquals("Unresolved reference 'fsdfhjlksdfskjlhfkjhsldjklhdfgagjkhldfdkjlhfgahkjldfggdfjkhdfhkjldfvhkjfdvjhk'.", buildErrors2[0].message)
+        assertEquals(
+            "Unresolved reference 'fsdfhjlksdfskjlhfkjhsldjklhdfgagjkhldfdkjlhfgahkjldfggdfjkhdfhkjldfvhkjfdvjhk'.",
+            buildErrors2[0].message
+        )
         assertEquals(KotlincErrorSeverity.ERROR, buildErrors2[0].severity)
         assertEquals("Unresolved reference 'dfskjhl'.", buildErrors2[1].message)
         assertEquals(KotlincErrorSeverity.ERROR, buildErrors2[1].severity)
@@ -128,6 +145,21 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         assertEquals(CompilationPropertyCheckerError.InvalidBuildSystem, compilationResult.value)
     }
 
+    fun testInterProjectEquals() {
+        val root = myFixture.copyDirectoryToProject("kt-71260", ".")
+        copyGradle(useBuildKts = false)
+        val compilationResult = doCompilation(root)
+        val snapshottingService = myFixture.project.service<SnapshotManagerService>()
+        val snapshot = runWithModalProgressBlocking(myFixture.project, "") {
+            snapshottingService.transaction<Nothing>(IJDDContext(project)) {
+                it
+            }.getOrNull()
+        }
+        assertNotNull(snapshot)
+        val compilationResult2 = getCompilationResult(snapshot!!.project)
+        assertNotEquals(compilationResult, compilationResult2)
+    }
+
     fun testAnalysisProject() {
         val root = myFixture.copyDirectoryToProject("analysis-error", ".")
         copyGradle(useBuildKts = false)
@@ -154,9 +186,11 @@ class GradleCompilationTest : GradleProjectBaseTest() {
     ): CompilationResult = runBlocking {
         if (linkProject) importGradleProject(root)
         if (checkGradle) assertGradleLoaded()
+        return getCompilationResult(myFixture.project)
+    }
 
-        val project = myFixture.project
-        val propertyCheckerService = project.service<BuildExceptionProviderService>()
+    private fun getCompilationResult(project: Project): CompilationResult {
+        val propertyCheckerService = myFixture.project.service<BuildExceptionProviderService>()
         propertyCheckerService.checkCompilation(project)
     }
 }

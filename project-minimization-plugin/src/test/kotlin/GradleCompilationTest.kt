@@ -2,6 +2,7 @@ import arrow.core.Either
 import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.runWithModalProgressBlocking
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.runBlocking
@@ -9,11 +10,11 @@ import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerEr
 import org.plan.research.minimization.plugin.execution.IdeaCompilationException
 import org.plan.research.minimization.plugin.execution.exception.KotlincErrorSeverity
 import org.plan.research.minimization.plugin.execution.exception.KotlincException
-import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.execution.transformer.PathRelativizationTransformer
 import org.plan.research.minimization.plugin.model.exception.CompilationResult
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
-import org.plan.research.minimization.plugin.services.SnapshotManagerService
+import org.plan.research.minimization.plugin.services.ProjectCloningService
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 import kotlin.io.path.name
 import kotlin.test.assertIs
@@ -149,15 +150,24 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         val root = myFixture.copyDirectoryToProject("kt-71260", ".")
         copyGradle(useBuildKts = false)
         val compilationResult = doCompilation(root)
-        val snapshottingService = myFixture.project.service<SnapshotManagerService>()
+        val cloningService = myFixture.project.service<ProjectCloningService>()
         val snapshot = runWithModalProgressBlocking(myFixture.project, "") {
-            snapshottingService.transaction<Nothing>(IJDDContext(project)) {
-                it
-            }.getOrNull()
+            cloningService.clone(project)
         }
         assertNotNull(snapshot)
-        val compilationResult2 = getCompilationResult(snapshot!!.project)
+        val compilationResult2 = getCompilationResult(snapshot!!)
+
         assertNotEquals(compilationResult, compilationResult2)
+        assertIs<Either.Right<IdeaCompilationException>>(compilationResult)
+        assertIs<Either.Right<IdeaCompilationException>>(compilationResult2)
+
+        val transformer = PathRelativizationTransformer(project)
+        val transformedResults = listOf(compilationResult, compilationResult2)
+            .map(Either.Right<IdeaCompilationException>::value)
+            .map { runBlocking { transformer.transform(it) } }
+        assertEquals(transformedResults[0], transformedResults[1])
+
+        ProjectManager.getInstance().closeAndDispose(snapshot)
     }
 
     fun testAnalysisProject() {
@@ -170,7 +180,7 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         assertIs<List<KotlincException.GenericInternalCompilerException>>(buildErrors)
         assertSize(1, buildErrors)
         assert(buildErrors[0].stacktrace.isNotBlank())
-        assert(buildErrors[0].stacktrace.lines().all { it.startsWith("\tat")})
+        assert(buildErrors[0].stacktrace.lines().all { it.startsWith("\tat") })
         assert(buildErrors[0].message.startsWith("While analysing "))
         assert(buildErrors[0].message.endsWith("java.lang.IllegalArgumentException: Failed requirement."))
 

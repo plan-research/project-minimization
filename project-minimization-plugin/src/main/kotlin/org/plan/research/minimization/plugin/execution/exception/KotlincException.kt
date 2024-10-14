@@ -1,7 +1,8 @@
 package org.plan.research.minimization.plugin.execution.exception
 
 import org.plan.research.minimization.plugin.model.CaretPosition
-import org.plan.research.minimization.plugin.model.CompilationException
+import org.plan.research.minimization.plugin.model.exception.CompilationException
+import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
 
 sealed interface KotlincException : CompilationException {
     /**
@@ -15,7 +16,9 @@ sealed interface KotlincException : CompilationException {
         val stacktrace: String,
         val position: CaretPosition,
         val additionalMessage: String? = null,
-    ) : KotlincException
+    ) : KotlincException {
+        override suspend fun transformBy(transformation: ExceptionTransformation) = transformation.transform(this)
+    }
 
     /**
      * Represents a generic internal compiler exception that occurs within the Kotlin compiler.
@@ -27,7 +30,9 @@ sealed interface KotlincException : CompilationException {
     data class GenericInternalCompilerException(
         val stacktrace: String,
         val message: String,
-    ) : KotlincException
+    ) : KotlincException {
+        override suspend fun transformBy(transformation: ExceptionTransformation) = transformation.transform(this)
+    }
 
     /**
      * A data class that represents a general compilation error from kotlin compiler e.g., syntax errors or just expected exceptions
@@ -39,5 +44,7 @@ sealed interface KotlincException : CompilationException {
         val position: CaretPosition,
         val message: String,
         val severity: KotlincErrorSeverity = KotlincErrorSeverity.UNKNOWN
-    ) : KotlincException
+    ) : KotlincException {
+        override suspend fun transformBy(transformation: ExceptionTransformation) = transformation.transform(this)
+    }
 }

@@ -21,8 +21,7 @@ import org.jetbrains.plugins.gradle.service.execution.GradleRunConfiguration
 import org.jetbrains.plugins.gradle.util.GradleConstants
 import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
 import org.plan.research.minimization.plugin.execution.IdeaCompilationException
-import org.plan.research.minimization.plugin.execution.exception.KotlincException
-import org.plan.research.minimization.plugin.execution.exception.KotlincExceptionUtils
+import org.plan.research.minimization.plugin.execution.exception.KotlincExceptionTranslator
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
 
 /**
@@ -34,6 +33,7 @@ import org.plan.research.minimization.plugin.model.BuildExceptionProvider
  */
 class GradleBuildExceptionProvider(private val cs: CoroutineScope) : BuildExceptionProvider {
     private val gradleOutputParser = KotlincOutputParser()
+    private val kotlincExceptionTranslator = KotlincExceptionTranslator()
 
     /**
      * Checks the compilation of the given project, ensuring it has the necessary Gradle tasks and runs them.
@@ -152,7 +152,11 @@ class GradleBuildExceptionProvider(private val cs: CoroutineScope) : BuildExcept
         val parsedErrors = buildList {
             while (true) {
                 val line = outputReader.readLine() ?: break
-                if (!gradleOutputParser.parse(line, outputReader) { add(KotlincExceptionUtils.parseException(it)) })
+                if (!gradleOutputParser.parse(
+                        line,
+                        outputReader
+                    ) { add(kotlincExceptionTranslator.parseException(it)) }
+                )
                     break
             }
         }
@@ -165,8 +169,7 @@ class GradleBuildExceptionProvider(private val cs: CoroutineScope) : BuildExcept
         }
         return IdeaCompilationException(
             parsedErrors
-                .filterIsInstance<Either.Right<KotlincException>>()
-                .map(Either.Right<KotlincException>::value)
+                .mapNotNull { it.getOrNull() }
         )
     }
 }

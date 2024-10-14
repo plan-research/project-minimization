@@ -128,6 +128,25 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         assertEquals(CompilationPropertyCheckerError.InvalidBuildSystem, compilationResult.value)
     }
 
+    fun testAnalysisProject() {
+        val root = myFixture.copyDirectoryToProject("analysis-error", ".")
+        copyGradle(useBuildKts = false)
+        val compilationResult = doCompilation(root)
+
+        assertIs<Either.Right<IdeaCompilationException>>(compilationResult)
+        val buildErrors = compilationResult.value.kotlincExceptions
+        assertIs<List<KotlincException.GenericInternalCompilerException>>(buildErrors)
+        assertSize(1, buildErrors)
+        assert(buildErrors[0].stacktrace.isNotBlank())
+        assert(buildErrors[0].stacktrace.lines().all { it.startsWith("\tat")})
+        assert(buildErrors[0].message.startsWith("While analysing "))
+        assert(buildErrors[0].message.endsWith("java.lang.IllegalArgumentException: Failed requirement."))
+
+        val compilationResult2 = doCompilation(root, linkProject = false)
+        assertIs<Either.Right<IdeaCompilationException>>(compilationResult2)
+        assertEquals(compilationResult.value, compilationResult2.value)
+    }
+
     private fun doCompilation(
         root: VirtualFile,
         checkGradle: Boolean = true,

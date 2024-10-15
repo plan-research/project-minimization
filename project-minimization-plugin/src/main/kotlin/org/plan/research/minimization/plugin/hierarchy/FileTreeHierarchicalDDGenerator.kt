@@ -73,8 +73,15 @@ class FileTreeHierarchicalDDGenerator(
             computeLevels(root, roots)
         }
 
-        private data class StackEntry(val file: VirtualFile, val level: Int, var next: Int = 0)
+        private data class StackEntry(val file: VirtualFile, val level: Int, var nextChildIndex: Int = 0)
 
+        /**
+         * Computes the maximum depth levels for the given root paths and their descendants.
+         * This method implements DFS traversal via call-stack simulation.
+         *
+         * @param root The root path from which relative paths are computed and stored.
+         * @param roots An array of VirtualFile representing the starting points to compute levels.
+         */
         private fun computeLevels(root: Path, roots: Array<VirtualFile>) {
             val stack = mutableListOf<StackEntry>()
             roots.forEach {
@@ -86,9 +93,9 @@ class FileTreeHierarchicalDDGenerator(
 
                 val children = entry.file.children
                 if (children.isNotEmpty()) {
-                    if (entry.next < children.size) {
-                        stack.add(StackEntry(children[entry.next], entry.level + 1))
-                        entry.next += 1
+                    if (entry.nextChildIndex < children.size) {
+                        stack.add(StackEntry(children[entry.nextChildIndex], entry.level + 1))
+                        entry.nextChildIndex += 1
                     } else {
                         stack.removeLast()
                         levelMaxDepths[entry.file.toNioPath().relativeTo(root)] =

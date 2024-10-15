@@ -6,6 +6,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.project.isProjectOrWorkspaceFile
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findOrCreateDirectory
@@ -50,7 +51,7 @@ class ProjectCloningService(private val rootProject: Project) {
     private val importantFiles = setOf("modules.xml", "misc.xml", "libraries")
     private fun ignore(file: VirtualFile, root: VirtualFile): Boolean {
         val path = file.toNioPath().relativeTo(root.toNioPath())
-        if (path.startsWith(".idea")) {
+        if (isProjectOrWorkspaceFile(file)) {
             val pathString = path.pathString
             return importantFiles.none { it in pathString }
         }

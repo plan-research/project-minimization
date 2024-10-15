@@ -1,6 +1,8 @@
 package org.plan.research.minimization.plugin.hierarchy
 
 import arrow.core.raise.option
+import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.util.progress.SequentialProgressReporter
@@ -21,11 +23,15 @@ class FileTreeHierarchicalDDGenerator(
 
     override suspend fun generateFirstLevel(context: IJDDContext) =
         option {
-            val roots = ProjectRootManager.getInstance(context.project).contentSourceRoots
-                .takeIf { it.isNotEmpty() } ?: arrayOf(context.projectDir)
-            val level = roots.map { ProjectFileDDItem.create(context, it) }
-            context.progressReporter?.let {
-                reporter = ProgressReporter(it, context.projectDir.toNioPath(), roots)
+            val level = smartReadAction(context.project) {
+                val roots = ProjectRootManager.getInstance(context.project).contentSourceRoots
+                    .takeIf { it.isNotEmpty() } ?: arrayOf(context.projectDir)
+
+                context.progressReporter?.let {
+                    reporter = ProgressReporter(it, context.projectDir.toNioPath(), roots)
+                }
+
+                roots.map { ProjectFileDDItem.create(context, it) }
             }
 
             reporter?.updateProgress(level)
@@ -36,9 +42,10 @@ class FileTreeHierarchicalDDGenerator(
         option {
             val nextFiles = minimizationResult.items.flatMap {
                 val vf = it.getVirtualFile(minimizationResult.context) ?: return@flatMap emptyList()
-                vf.children.map { file ->
-                    ProjectFileDDItem.create(minimizationResult.context, file)
-                }
+                readAction { vf.children }
+                    .map { file ->
+                        ProjectFileDDItem.create(minimizationResult.context, file)
+                    }
             }
             ensure(nextFiles.isNotEmpty())
 

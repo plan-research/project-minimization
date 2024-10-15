@@ -19,10 +19,8 @@ import kotlin.io.path.relativeTo
 /**
  * Transforms file paths in compiler exceptions to be relative to a project root.
  * This module uses the fact that [MinimizationPluginState.temporaryProjectLocation][org.plan.research.minimization.plugin.settings.MinimizationPluginState.temporaryProjectLocation] is used for storing temporary projects.
- *
- *
  */
-class PathRelativizationTransformer(rootProject: Project /* TODO: Service? */) : ExceptionTransformation {
+class PathRelativizationTransformer(rootProject: Project) : ExceptionTransformation {
     private val rootProjectBasePath = rootProject.guessProjectDir()!!.toNioPath()
     private val temporaryProjectsLocation = rootProjectBasePath
         .resolve(rootProject.service<MinimizationPluginSettings>().state.temporaryProjectLocation ?: "")

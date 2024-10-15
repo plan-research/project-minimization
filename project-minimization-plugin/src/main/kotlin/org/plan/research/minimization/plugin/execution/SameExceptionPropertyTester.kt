@@ -14,6 +14,8 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.IJDDItem
 import org.plan.research.minimization.plugin.model.ProjectFileDDItem
 import org.plan.research.minimization.plugin.model.exception.CompilationException
+import org.plan.research.minimization.plugin.model.exception.ExceptionComparator
+import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
 import org.plan.research.minimization.plugin.services.SnapshotManagerService
 
 /**
@@ -22,6 +24,8 @@ import org.plan.research.minimization.plugin.services.SnapshotManagerService
 class SameExceptionPropertyTester<T : IJDDItem> private constructor(
     rootProject: Project,
     private val buildExceptionProvider: BuildExceptionProvider,
+    private val transformations: List<ExceptionTransformation>,
+    private val comparator: ExceptionComparator,
     private val initialException: CompilationException,
 ) : PropertyTester<IJDDContext, T> {
     private val snapshotManager = rootProject.service<SnapshotManagerService>()
@@ -47,10 +51,12 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
             val compilationResult = buildExceptionProvider
                 .checkCompilation(newContext.project)
                 .getOrElse { raise(PropertyTesterError.NoProperty) }
+            val transformedException = transformations.fold(compilationResult) { acc, transformation ->
+                transformation.transform(acc).getOrElse { raise(PropertyTesterError.NoProperty) }}
 
-            when (compilationResult) {
-                initialException -> newContext
-                else -> raise(PropertyTesterError.UnknownProperty)
+            when (comparator.areEquals(initialException, transformedException)) {
+                true -> newContext
+                false -> raise(PropertyTesterError.UnknownProperty)
             }
         }.mapLeft {
             when (it) {
@@ -62,10 +68,20 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
     companion object {
         suspend fun <T : IJDDItem> create(
             compilerPropertyChecker: BuildExceptionProvider,
+            exceptionComparator: ExceptionComparator,
+            transformations: List<ExceptionTransformation>,
             project: Project
         ) = option {
             val initialException = compilerPropertyChecker.checkCompilation(project).getOrNone().bind()
-            SameExceptionPropertyTester<T>(project, compilerPropertyChecker, initialException)
+            SameExceptionPropertyTester<T>(
+                project,
+                compilerPropertyChecker,
+                transformations,
+                exceptionComparator,
+                transformations.fold(initialException) { acc, transformation ->
+                    transformation.transform(acc).bind()
+                }
+            )
         }
     }
 }

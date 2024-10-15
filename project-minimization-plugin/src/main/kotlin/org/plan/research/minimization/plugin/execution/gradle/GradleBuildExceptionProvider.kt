@@ -125,7 +125,7 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
             }
             processAdapter.getRunResult() // Wait until writeAction is done
         } finally {
-
+            Disposer.dispose(endProcessDisposable)
         }
     }
 

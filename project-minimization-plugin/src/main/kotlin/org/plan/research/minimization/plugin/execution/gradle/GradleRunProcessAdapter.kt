@@ -37,7 +37,7 @@ class GradleRunProcessAdapter : ProcessAdapter() {
 
     /**
      * Suspends the current coroutine and waits to receive the result from the result pipe.
-     * Some output (that could be send after [processTerminated]) will be trunk
+     * Some output (that could be sent after [processTerminated]) will be trunk
      */
     suspend fun getRunResult() = resultPipe.receive()
 }

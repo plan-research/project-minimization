@@ -1,3 +1,4 @@
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.ProjectManager
@@ -5,8 +6,9 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.platform.ide.progress.runWithModalProgressBlocking
 import com.intellij.testFramework.utils.vfs.deleteRecursively
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.getAllNestedElements
 import org.plan.research.minimization.plugin.model.IJDDContext
@@ -67,7 +69,7 @@ class ProjectCloningSnapshotTest : ProjectCloningBaseTest() {
         val originalFiles =
             selectedFiles.getAllFiles(project) + project.guessProjectDir()!!.getPathContentPair(project)
 
-        val clonedProject = runWithModalProgressBlocking(project, "") {
+        val clonedProject = runBlocking {
             val context = IJDDContext(projectCloning.clone(project)!!, project)
             snapshotManager.transaction<Unit>(context) { newContext ->
                 writeAction {
@@ -86,7 +88,9 @@ class ProjectCloningSnapshotTest : ProjectCloningBaseTest() {
         assertNotNull(clonedProject)
         val clonedFiles = clonedProject!!.getAllFiles()
         assertEquals(originalFiles, clonedFiles)
-        ProjectManager.getInstance().closeAndDispose(clonedProject)
+        runBlocking(Dispatchers.EDT) {
+            ProjectManager.getInstance().closeAndDispose(clonedProject)
+        }
     }
 
     fun testAbortedTransaction() {
@@ -94,7 +98,7 @@ class ProjectCloningSnapshotTest : ProjectCloningBaseTest() {
         val project = myFixture.project
 
         val snapshotManager = ProjectCloningSnapshotManager(project)
-        val result = runWithModalProgressBlocking(project, "") {
+        val result = runBlocking {
             snapshotManager.transaction(IJDDContext(project)) { newProject ->
                 writeAction {
                     newProject.project.guessProjectDir()!!.findChild(".config")!!.deleteRecursively()
@@ -113,7 +117,7 @@ class ProjectCloningSnapshotTest : ProjectCloningBaseTest() {
         val project = myFixture.project
 
         val snapshotManager = ProjectCloningSnapshotManager(project)
-        val result = runWithModalProgressBlocking(project, "") {
+        val result = runBlocking {
             val context = IJDDContext(project)
             snapshotManager.transaction<String>(context) { newProject ->
                 writeAction {

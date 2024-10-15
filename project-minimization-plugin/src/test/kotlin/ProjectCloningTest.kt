@@ -1,6 +1,8 @@
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.ProjectManager
-import com.intellij.platform.ide.progress.runWithModalProgressBlocking
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertNotEquals
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 
@@ -49,11 +51,13 @@ class ProjectCloningTest : ProjectCloningBaseTest() {
         val project = myFixture.project
         val files = originalFileSet ?: project.getAllFiles()
         val projectCloningService = project.service<ProjectCloningService>()
-        val clonedProject = runWithModalProgressBlocking(project, "") { projectCloningService.clone(project) }
+        val clonedProject = runBlocking { projectCloningService.clone(project) }
         assertNotNull(clonedProject)
         val clonedFiles = clonedProject!!.getAllFiles()
         assertEquals(files, clonedFiles)
-        ProjectManager.getInstance().closeAndDispose(clonedProject)
+        runBlocking(Dispatchers.EDT) {
+            ProjectManager.getInstance().closeAndDispose(clonedProject)
+        }
         return files
     }
 
@@ -61,20 +65,22 @@ class ProjectCloningTest : ProjectCloningBaseTest() {
         val project = myFixture.project
         val files = originalFileSet ?: project.getAllFiles()
         val projectCloningService = project.service<ProjectCloningService>()
-        val clonedProject = runWithModalProgressBlocking(project, "") { projectCloningService.clone(project) }
+        val clonedProject = runBlocking { projectCloningService.clone(project) }
         assertNotNull(clonedProject)
         val clonedFiles = clonedProject!!.getAllFiles()
         assertEquals(files, clonedFiles)
 
         val clonedClonedProject =
-            runWithModalProgressBlocking(project, "") { projectCloningService.clone(clonedProject) }
+            runBlocking { projectCloningService.clone(clonedProject) }
         assertNotNull(clonedClonedProject)
         val clonedClonedFiles = clonedClonedProject!!.getAllFiles()
         assertEquals(files, clonedClonedFiles)
         assertNotEquals(clonedProject, clonedClonedProject)
 
-        ProjectManager.getInstance().closeAndDispose(clonedClonedProject)
-        ProjectManager.getInstance().closeAndDispose(clonedProject)
+        runBlocking(Dispatchers.EDT) {
+            ProjectManager.getInstance().closeAndDispose(clonedClonedProject)
+            ProjectManager.getInstance().closeAndDispose(clonedProject)
+        }
         return files
     }
 }

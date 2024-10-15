@@ -159,18 +159,4 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         val propertyCheckerService = project.service<BuildExceptionProviderService>()
         propertyCheckerService.checkCompilation(project)
     }
-
-    private fun copyGradle(useK2: Boolean = false, useBuildKts: Boolean = true) {
-        myFixture.copyDirectoryToProject("core/gradle", "gradle")
-        myFixture.copyFileToProject("core/gradle.properties", "gradle.properties")
-        myFixture.copyFileToProject("core/settings.gradle.kts", "settings.gradle.kts")
-        if (useBuildKts) {
-            if (!useK2)
-                myFixture.copyFileToProject("core/build.gradle.kts", "build.gradle.kts")
-            else
-                myFixture.copyFileToProject("core/build.gradle.kts.2", "build.gradle.kts")
-        }
-        myFixture.copyFileToProject("core/gradlew", "gradlew")
-        myFixture.copyFileToProject("core/gradlew.bat", "gradlew.bat")
-    }
 }

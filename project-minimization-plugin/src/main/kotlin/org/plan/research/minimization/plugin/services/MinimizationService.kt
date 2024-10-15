@@ -7,7 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.platform.ide.progress.withBackgroundProgress
 import com.intellij.platform.util.progress.reportSequentialProgress
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
@@ -18,8 +18,8 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
     private val executor = project.service<MinimizationStageExecutorService>()
     private val projectCloning = project.service<ProjectCloningService>()
 
-    fun minimizeProject(project: Project) {
-        coroutineScope.launch {
+    fun minimizeProject(project: Project) =
+        coroutineScope.async {
             withBackgroundProgress(project, "Minimizing project") {
                 either {
                     val clonedProject = projectCloning.clone(project)
@@ -38,5 +38,4 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
                 }
             }
         }
-    }
 }

@@ -7,6 +7,7 @@ Currently, only projects that use Gradle are supported. Moreover, we haven't tes
 The Gradle compilation out of two main parts: running and output parsing.
 
 ### Running
+
 ```mermaid
 sequenceDiagram
     actor DD as DD Algorithm
@@ -37,9 +38,11 @@ sequenceDiagram
         end
     end
 ```
+
 #### Pipeline
 
-For running Gradle tasks, the [GradleExceptionProvider][build-exception-provider] class is responsible. It builds the project
+For running Gradle tasks, the [GradleExceptionProvider][build-exception-provider] class is responsible. It builds the
+project
 in three stages:
 
 1. the Gradle structure is parsed and all the tasks are fetched (`extractGradleTasks`)
@@ -82,9 +85,11 @@ However, all the exceptions are equal and not all possible fields are parsed (su
 self-written translator that
 
 * Parses all useful information such as a stack trace, the rest file positions, some additional information
-* Split all the exception per-category: Internal exceptions that occur because of bugs and general compilation issues (see [below](#kotlincexception))
+* Split all the exception per-category: Internal exceptions that occur because of bugs and general compilation issues (
+  see [below](#kotlincexception))
 
-So, the [KotlincExceptionTranslator][kotlinc-translator] was introduced. It parses `BuildEvent` into three (see [KotlincException](#kotlincexception)) categories:
+So, the [KotlincExceptionTranslator][kotlinc-translator] was introduced. It parses `BuildEvent` into three (
+see [KotlincException](#kotlincexception)) categories:
 
 * The non-internal exceptions that determined using `BuildEvent.isInternal()` function. It is mostly heuristics.
 * Internal exceptions are split into two categories:
@@ -107,6 +112,26 @@ support only one exception:
 Additionally, `KotlincException` has two classes: one for general excepted compilation error and one for unparsed
 unexpected compilation error.
 
+## Exception Transformation
+
+After the exceptions are parsed and translated, they could be additionally transformed.
+The general transformation interface is [ExceptionTransformer][exception-transformer].
+It exposes an API to transform each type of exception.
+
+Kotlinc exception transformers has following implementations:
+
+* [PathRelativizationTransformer][path-relative-transformer] — makes paths in the exceptions relative to the projects'
+  root.
+  Which allows comparing the exceptions
+
+## Exception Comparing
+
+In the current implementation a DD Property Checker ([SameExceptionPropertyTester][same-exception-checker]) supports an
+extendable checker via [ExceptionComparator][exception-comparator].
+This simple interface allows comparing two exceptions to equality. 
+The current implementations are
+* [SimpleExceptionComparator][simple-comparator] is a comparator that uses Kotlin `equals()` for comparison.
+
 [build-exception-provider]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/execution/gradle/GradleBuildExceptionProvider.kt
 
 [run-process-adapter]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/execution/gradle/GradleRunProcessAdapter.kt
@@ -116,3 +141,13 @@ unexpected compilation error.
 [kotlinc-translator]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/execution/exception/KotlincExceptionTranslator.kt
 
 [kotlinc-exception]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/execution/exception/KotlincException.kt
+
+[exception-transformer]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/exception/ExceptionTransformer.kt
+
+[path-relative-transformer]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/execution/transformer/PathRelativizationTransformer.kt
+
+[same-exception-checker]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/execution/SameExceptionPropertyTester.kt
+
+[exception-comparator]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/exception/ExceptionComparator.kt
+
+[simple-comparator]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/execution/comparable/SimpleExceptionComparator.kt

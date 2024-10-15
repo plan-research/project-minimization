@@ -4,6 +4,8 @@ import arrow.core.raise.either
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.platform.ide.progress.withBackgroundProgress
+import com.intellij.platform.util.progress.reportSequentialProgress
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import org.plan.research.minimization.plugin.errors.MinimizationError
@@ -16,15 +18,24 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
     private val executor = project.service<MinimizationStageExecutorService>()
     private val projectCloning = project.service<ProjectCloningService>()
 
-    fun minimizeProject(project: Project) = coroutineScope.async {
-        either {
-            val clonedProject = projectCloning.clone(project)
-                ?: raise(MinimizationError.CloningFailed)
-            var currentProject = IJDDContext(clonedProject, project)
-            for (stage in stages) {
-                currentProject = stage.apply(currentProject, executor).bind()
+    fun minimizeProject(project: Project) =
+        coroutineScope.async {
+            withBackgroundProgress(project, "Minimizing project") {
+                either {
+                    val clonedProject = projectCloning.clone(project)
+                        ?: raise(MinimizationError.CloningFailed)
+                    var currentProject = IJDDContext(clonedProject, project)
+
+                    reportSequentialProgress(stages.size) { reporter ->
+                        for (stage in stages) {
+                            reporter.itemStep("Minimization step: ${stage.name}") {
+                                currentProject = stage.apply(currentProject, executor).bind()
+                            }
+                        }
+                    }
+
+                    currentProject.project
+                }
             }
-            currentProject.project
         }
-    }
 }

@@ -5,6 +5,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.isFile
 import org.plan.research.minimization.plugin.getAllParents
 import java.nio.file.Path
+import kotlin.io.path.invariantSeparatorsPathString
 import kotlin.io.path.relativeTo
 
 data class PathContent(val path: Path, val content: String?)
@@ -38,4 +39,11 @@ fun List<VirtualFile>.getAllFiles(project: Project): Set<PathContent> =
         it.getPathContentPair(
             project
         )
+    }.toSet()
+
+fun Set<PathContent>.filterGradleAndBuildFiles(): Set<PathContent> =
+    filterNot { content ->
+        content.path.invariantSeparatorsPathString.split("/").let {
+            "build" in it || "gradle" in it
+        }
     }.toSet()

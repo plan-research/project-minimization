@@ -4,7 +4,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
-import kotlinx.coroutines.CoroutineScope
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.impl.DDMin
 import org.plan.research.minimization.core.algorithm.dd.impl.ProbabilisticDD
@@ -39,9 +38,9 @@ fun DDStrategy.getDDAlgorithm(): DDAlgorithm =
         DDStrategy.PROBABILISTIC_DD -> ProbabilisticDD()
     }
 
-fun CompilationStrategy.getCompilationStrategy(cs: CoroutineScope): BuildExceptionProvider =
+fun CompilationStrategy.getCompilationStrategy(): BuildExceptionProvider =
     when (this) {
-        CompilationStrategy.GRADLE_IDEA -> GradleBuildExceptionProvider(cs)
+        CompilationStrategy.GRADLE_IDEA -> GradleBuildExceptionProvider()
         CompilationStrategy.DUMB -> DumbCompiler
     }
 

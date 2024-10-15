@@ -10,10 +10,12 @@ import com.intellij.execution.ExecutionTargetManager
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.execution.runners.ProgramRunner
-import com.intellij.openapi.application.writeAction
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
-import kotlinx.coroutines.CoroutineScope
+import com.intellij.openapi.util.Disposer
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.gradle.tooling.model.GradleTask
 import org.jetbrains.plugins.gradle.service.execution.GradleExecutionHelper
 import org.jetbrains.plugins.gradle.service.execution.GradleExternalTaskConfigurationType
@@ -31,7 +33,7 @@ import org.plan.research.minimization.plugin.model.BuildExceptionProvider
  * The implementation for now is based on the `clean` and `compileKotlin` tasks.
  * However, TODO is to add a setting to make work with other tasks
  */
-class GradleBuildExceptionProvider(private val cs: CoroutineScope) : BuildExceptionProvider {
+class GradleBuildExceptionProvider : BuildExceptionProvider {
     private val gradleOutputParser = KotlincOutputParser()
     private val kotlincExceptionTranslator = KotlincExceptionTranslator()
 
@@ -80,7 +82,7 @@ class GradleBuildExceptionProvider(private val cs: CoroutineScope) : BuildExcept
         project: Project,
         task: GradleTask,
     ): Either<CompilationPropertyCheckerError, GradleConsoleRunResult> = either {
-        val processAdapter = GradleRunProcessAdapter(cs)
+        val processAdapter = GradleRunProcessAdapter()
         val configurationFactory = GradleExternalTaskConfigurationType.getInstance().factory
         val configuration = GradleRunConfiguration(project, configurationFactory, "Gradle Test Project Compilation")
         configuration.settings.apply {
@@ -94,27 +96,37 @@ class GradleBuildExceptionProvider(private val cs: CoroutineScope) : BuildExcept
 
         val executor = DefaultRunExecutor.getRunExecutorInstance()
 
+        val endProcessDisposable = Disposer.newDisposable()
+
         val executionEnvironment = ExecutionEnvironmentBuilder
             .create(executor, configuration)
             .target(ExecutionTargetManager.getActiveTarget(project))
-            .build()
+            .build { descriptor ->
+                descriptor.processHandler?.let {
+                    it.addProcessListener(processAdapter, endProcessDisposable)
+                    Disposer.register(endProcessDisposable) {
+                        if (!it.isProcessTerminated && !it.isProcessTerminating) {
+                            it.destroyProcess()
+                        }
+                    }
+                }
+            }
 
         val runner = ProgramRunner.getRunner(executor.id, configuration)
         // Don't know any situation when it could happen
         ensureNotNull(runner) { CompilationPropertyCheckerError.InvalidBuildSystem }
 
-        executionEnvironment.setCallback { descriptor ->
-            descriptor
-                .processHandler
-                ?.addProcessListener(processAdapter)
+        try {
+            withContext(Dispatchers.EDT) {
+                catch( // runner.execute can throw
+                    { runner.execute(executionEnvironment) },
+                    { raise(CompilationPropertyCheckerError.BuildSystemFail(it)) }
+                )
+            }
+            processAdapter.getRunResult() // Wait until writeAction is done
+        } finally {
+            Disposer.dispose(endProcessDisposable)
         }
-        writeAction {
-            catch( // runner.execute can throw
-                { runner.execute(executionEnvironment) },
-                { raise(CompilationPropertyCheckerError.BuildSystemFail(it)) }
-            )
-        }
-        processAdapter.getRunResult() // Wait until writeAction is done
     }
 
     private fun extractGradleTasks(project: Project) = either {

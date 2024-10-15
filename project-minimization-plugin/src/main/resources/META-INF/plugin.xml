@@ -31,4 +31,10 @@
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
     </extensions>
+    <actions>
+        <action id="org.plan.research.minimization.plugin.MinimizeProjectAction"
+                class="org.plan.research.minimization.plugin.MinimizeProjectAction" text="Minimize Project">
+            <add-to-group group-id="CodeMenu" anchor="first"/>
+        </action>
+    </actions>
 </idea-plugin>

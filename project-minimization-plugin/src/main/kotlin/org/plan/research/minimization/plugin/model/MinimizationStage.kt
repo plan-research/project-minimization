@@ -23,6 +23,8 @@ interface MinimizationStageExecutor {
  * Implementations of this interface should provide concrete steps to minimize the project's context.
  */
 sealed interface MinimizationStage {
+    val name: String
+
     suspend fun apply(
         context: IJDDContext,
         executor: MinimizationStageExecutor
@@ -42,6 +44,8 @@ data class FileLevelStage(
     var hierarchyCollectionStrategy: HierarchyCollectionStrategy,
     var ddAlgorithm: DDStrategy,
 ) : MinimizationStage {
+    override val name: String = "File-Level Minimization"
+
     override suspend fun apply(context: IJDDContext, executor: MinimizationStageExecutor) =
         executor.executeFileLevelStage(context, this)
 }

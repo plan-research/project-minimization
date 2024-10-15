@@ -1,10 +1,10 @@
 import arrow.core.Either
 import com.intellij.openapi.components.service
-import com.intellij.openapi.progress.runWithModalProgressBlocking
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.findPsiFile
 import com.intellij.openapi.vfs.isFile
+import com.intellij.platform.ide.progress.runWithModalProgressBlocking
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
 import com.intellij.psi.search.FilenameIndex
@@ -35,7 +35,7 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
     fun testWithEmptyProject() {
         val project = myFixture.project
         val generator = generateHierarchicalDDGenerator(project)
-        val context = IJDDContext(project)
+        val context = IJDDContext(project, project)
 
         val firstLevel = runWithModalProgressBlocking(project, "") {
             generator.generateFirstLevel(context).getOrNull()

@@ -54,7 +54,6 @@ dependencies {
         testPlatformDependency(Coordinates("com.jetbrains.intellij.platform", "external-system-test-framework"))
     }
     implementation(project(":project-minimization-core"))
-    implementation(libs.arrow.fx.coroutines)
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.1.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.1.0")

@@ -21,8 +21,8 @@ class MinimizationStageExecutorService : MinimizationStageExecutor {
             .getHierarchyCollectionStrategy()
             .produce(context.originalProject)
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
-        hierarchicalDD.minimize(context, hierarchy)
+        context.withProgress {
+            hierarchicalDD.minimize(it, hierarchy)
+        }
     }
 }
-
-

@@ -1,8 +1,8 @@
 import arrow.core.Either
 import com.intellij.openapi.components.service
-import com.intellij.openapi.progress.runWithModalProgressBlocking
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFile
+import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
 import org.plan.research.minimization.plugin.execution.IdeaCompilationException
 import org.plan.research.minimization.plugin.execution.exception.KotlincErrorSeverity
@@ -151,26 +151,12 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         root: VirtualFile,
         checkGradle: Boolean = true,
         linkProject: Boolean = true,
-    ): CompilationResult {
+    ): CompilationResult = runBlocking {
         if (linkProject) importGradleProject(root)
         if (checkGradle) assertGradleLoaded()
 
         val project = myFixture.project
         val propertyCheckerService = project.service<BuildExceptionProviderService>()
-        return runWithModalProgressBlocking(project, "") { propertyCheckerService.checkCompilation(project) }
-    }
-
-    private fun copyGradle(useK2: Boolean = false, useBuildKts: Boolean = true) {
-        myFixture.copyDirectoryToProject("core/gradle", "gradle")
-        myFixture.copyFileToProject("core/gradle.properties", "gradle.properties")
-        myFixture.copyFileToProject("core/settings.gradle.kts", "settings.gradle.kts")
-        if (useBuildKts) {
-            if (!useK2)
-                myFixture.copyFileToProject("core/build.gradle.kts", "build.gradle.kts")
-            else
-                myFixture.copyFileToProject("core/build.gradle.kts.2", "build.gradle.kts")
-        }
-        myFixture.copyFileToProject("core/gradlew", "gradlew")
-        myFixture.copyFileToProject("core/gradlew.bat", "gradlew.bat")
+        propertyCheckerService.checkCompilation(project)
     }
 }

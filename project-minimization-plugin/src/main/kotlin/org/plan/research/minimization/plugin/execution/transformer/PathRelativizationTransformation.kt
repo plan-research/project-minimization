@@ -14,6 +14,7 @@ import org.plan.research.minimization.plugin.execution.exception.KotlincExceptio
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 import java.nio.file.Path
+import kotlin.io.path.Path
 import kotlin.io.path.relativeTo
 
 /**
@@ -32,13 +33,14 @@ class PathRelativizationTransformation(rootProject: Project) : ExceptionTransfor
     override suspend fun transform(exception: GeneralKotlincException): Option<GeneralKotlincException> = option {
         val transformedPath = transformPath(exception.position.filePath).bind()
         val copiedCursorPosition = exception.position.copy(filePath = transformedPath)
-        exception.copy(position = copiedCursorPosition)
+        exception.copy(position = copiedCursorPosition, message = exception.message.replaceRootDir())
     }
-    override suspend fun transform(exception: GenericInternalCompilerException): Option<GenericInternalCompilerException> = exception.toOption()
+    override suspend fun transform(exception: GenericInternalCompilerException): Option<GenericInternalCompilerException> =
+        exception.copy(message = exception.message.replaceRootDir()).toOption()
     override suspend fun transform(exception: BackendCompilerException): Option<BackendCompilerException> = option {
         val transformedPath = transformPath(exception.position.filePath).bind()
         val copiedCursorPosition = exception.position.copy(filePath = transformedPath)
-        exception.copy(position = copiedCursorPosition)
+        exception.copy(position = copiedCursorPosition, additionalMessage = exception.additionalMessage?.replaceRootDir())
     }
 
     private fun transformPath(path: Path): Option<Path> = option {
@@ -47,5 +49,23 @@ class PathRelativizationTransformation(rootProject: Project) : ExceptionTransfor
             path.startsWith(rootProjectBasePath) -> path.relativeTo(rootProjectBasePath)
             else -> raise(None)
         }
+    }
+
+    /**
+     * Tries to replace root paths in the string.
+     * Due to the uncertain format with the path inside the messages we just try to find `<file>:<line>:<column>` entries
+     */
+    private fun String.replaceRootDir(): String = this
+        .replace(FILE_ENTRY_REGEX) {
+            val fileUrl = it.groups["fileurl"]?.value ?: ""
+            val name = it.groups["name"]?.value!!
+            val line = it.groups["line"]?.value
+            val column = it.groups["column"]?.value
+            val relativePath = transformPath(Path(name)).getOrNull() ?: name
+            "$fileUrl$relativePath:$line:$column"
+        }
+
+    companion object {
+        private val FILE_ENTRY_REGEX = Regex("(?<fileurl>file://)?(?<name>/.+?):(?<line>-?\\d+):(?<column>-?\\d+)")
     }
 }

@@ -1,11 +1,15 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.research.code.submissions.clustering.buildutils.configureDetekt
+import org.jetbrains.research.code.submissions.clustering.buildutils.configureDiktat
+import org.jetbrains.research.code.submissions.clustering.buildutils.createDetektTask
+import org.jetbrains.research.code.submissions.clustering.buildutils.createDiktatTask
 
 group = "org.plan.research.minimization"
 version = "1.0-SNAPSHOT"
 
 plugins {
     java
-    alias(libs.plugins.kotlin.jvm)
+    kotlin
 }
 
 allprojects {
@@ -45,4 +49,10 @@ allprojects {
     kotlin {
         jvmToolchain(21)
     }
+
+    configureDiktat()
+    configureDetekt()
 }
+
+createDiktatTask()
+createDetektTask()

@@ -169,7 +169,7 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
     private fun getPsiDepth(element: PsiElement?): Int = if (element == null) 0 else getPsiDepth(element.parent) + 1
 
     private fun generateHierarchicalDDGenerator(project: Project): FileTreeHierarchicalDDGenerator {
-        val ddGenerator = runWithModalProgressBlocking(project, "") { fileTreeHierarchyGenerator.produce(project) }
+        val ddGenerator = runWithModalProgressBlocking(project, "") { fileTreeHierarchyGenerator.produce(IJDDContext(project)) }
         assertIs<Either.Right<FileTreeHierarchicalDDGenerator>>(ddGenerator)
         val generator = ddGenerator.value
         return generator

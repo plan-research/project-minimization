@@ -1,10 +1,15 @@
 package org.plan.research.minimization.plugin.execution.exception
 
 import org.plan.research.minimization.plugin.model.CaretPosition
+import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.CompilationException
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
 
 sealed interface KotlincException : CompilationException {
+    override suspend fun apply(
+        transformation: ExceptionTransformation,
+        context: IJDDContext
+    ): KotlincException
     /**
      * A data class that represents `CompilationException` from Kotlin compiler.
      * For that file we can acquire three properties:
@@ -17,7 +22,10 @@ sealed interface KotlincException : CompilationException {
         val position: CaretPosition,
         val additionalMessage: String? = null,
     ) : KotlincException {
-        override suspend fun transformBy(transformation: ExceptionTransformation) = transformation.transform(this)
+        override suspend fun apply(
+            transformation: ExceptionTransformation,
+            context: IJDDContext
+        ) = transformation.transform(this, context)
     }
 
     /**
@@ -31,7 +39,10 @@ sealed interface KotlincException : CompilationException {
         val stacktrace: String,
         val message: String,
     ) : KotlincException {
-        override suspend fun transformBy(transformation: ExceptionTransformation) = transformation.transform(this)
+        override suspend fun apply(
+            transformation: ExceptionTransformation,
+            context: IJDDContext
+        ) = transformation.transform(this, context)
     }
 
     /**
@@ -45,6 +56,9 @@ sealed interface KotlincException : CompilationException {
         val message: String,
         val severity: KotlincErrorSeverity = KotlincErrorSeverity.UNKNOWN
     ) : KotlincException {
-        override suspend fun transformBy(transformation: ExceptionTransformation) = transformation.transform(this)
+        override suspend fun apply(
+            transformation: ExceptionTransformation,
+            context: IJDDContext
+        ) = transformation.transform(this, context)
     }
 }

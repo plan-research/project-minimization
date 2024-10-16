@@ -73,6 +73,6 @@ fun ExceptionComparingStrategy.getExceptionComparator() = when(this) {
     ExceptionComparingStrategy.SIMPLE -> SimpleExceptionComparator()
 }
 
-fun TransformationDescriptors.getExceptionTransformations(project: Project) = when (this) {
-    TransformationDescriptors.PATH_RELATIVIZATION -> PathRelativizationTransformation(project)
+fun TransformationDescriptors.getExceptionTransformations() = when (this) {
+    TransformationDescriptors.PATH_RELATIVIZATION -> PathRelativizationTransformation()
 }

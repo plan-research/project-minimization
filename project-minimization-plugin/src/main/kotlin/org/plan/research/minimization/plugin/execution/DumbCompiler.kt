@@ -2,12 +2,12 @@ package org.plan.research.minimization.plugin.execution
 
 import arrow.core.raise.either
 import arrow.core.raise.ensureNotNull
-import arrow.core.toOption
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
 import org.plan.research.minimization.plugin.execution.DumbCompiler.targetPaths
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
+import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.CompilationException
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
 
@@ -18,7 +18,10 @@ import org.plan.research.minimization.plugin.model.exception.ExceptionTransforma
  */
 object DumbCompiler : BuildExceptionProvider {
     data class DumbException(val throwable: Throwable) : CompilationException {
-        override suspend fun transformBy(transformation: ExceptionTransformation) = this.copy().toOption()
+        override suspend fun apply(
+            transformation: ExceptionTransformation,
+            context: IJDDContext
+        ): CompilationException = this.copy()
     }
 
     override suspend fun checkCompilation(project: Project) =

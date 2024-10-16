@@ -1,8 +1,8 @@
 - name: DIKTAT_COMMON
   enabled: true
   configuration:
-    domainName: org.jetbrains.research.code.submissions.clustering
-    kotlinVersion: 1.6
+    domainName: org.plan.research.minimization
+    kotlinVersion: 1.9.23
     srcDirectories: "main"
     testDirs: "test,nativeTest,commonTest"
 - name: PARAMETER_NAME_IN_OUTER_LAMBDA
@@ -154,4 +154,8 @@
 - name: EXTENSION_FUNCTION_WITH_CLASS
   enabled: false
 - name: IDENTIFIER_LENGTH
+  enabled: false
+- name: FILE_NAME_INCORRECT
+  enabled: false
+- name: CLASS_NAME_INCORRECT
   enabled: false

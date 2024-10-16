@@ -1,7 +1,7 @@
 package org.plan.research.minimization.core.algorithm.dd
 
-import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.DDContext
+import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.PropertyTester
 
 /**
@@ -13,7 +13,7 @@ import org.plan.research.minimization.core.model.PropertyTester
 interface DDAlgorithm {
     suspend fun <C : DDContext, T : DDItem> minimize(
         context: C, items: List<T>,
-        propertyTester: PropertyTester<C, T>
+        propertyTester: PropertyTester<C, T>,
     ): DDAlgorithmResult<C, T>
 }
 

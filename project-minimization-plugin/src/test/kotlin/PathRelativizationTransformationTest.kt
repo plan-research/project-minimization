@@ -1,8 +1,9 @@
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.service
-import com.intellij.openapi.progress.runWithModalProgressBlocking
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.execution.exception.KotlincErrorSeverity
 import org.plan.research.minimization.plugin.execution.exception.KotlincException
@@ -12,6 +13,7 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 
 class PathRelativizationTransformationTest : JavaCodeInsightFixtureTestCase() {
+    override fun runInDispatchThread(): Boolean = false
     fun testGenericKotlinCompilationError() {
         val project = myFixture.project
         val projectLocation = project.guessProjectDir()!!.toNioPath()
@@ -34,7 +36,7 @@ class PathRelativizationTransformationTest : JavaCodeInsightFixtureTestCase() {
         assertEquals(1, transformedError.position.lineNumber)
         assertEquals(1, transformedError.position.columnNumber)
 
-        val snapshot = runWithModalProgressBlocking(project, "") { project.service<ProjectCloningService>().clone(project)!! }
+        val snapshot = runBlocking { project.service<ProjectCloningService>().clone(project)!! }
         val snapshotLocation = snapshot.guessProjectDir()!!.toNioPath()
         val snapshotContext = IJDDContext(snapshot)
 
@@ -52,7 +54,7 @@ class PathRelativizationTransformationTest : JavaCodeInsightFixtureTestCase() {
         assert(transformedInSnapshot.position.filePath.startsWith("Test.kt"))
         assertEquals(1, transformedInSnapshot.position.lineNumber)
         assertEquals(1, transformedInSnapshot.position.columnNumber)
-        ProjectManager.getInstance().closeAndDispose(snapshot)
+        runBlocking(Dispatchers.EDT) { ProjectManager.getInstance().closeAndDispose(snapshot) }
     }
 
     fun testBackendCompilationError() {
@@ -78,7 +80,7 @@ class PathRelativizationTransformationTest : JavaCodeInsightFixtureTestCase() {
         assertEquals(1, transformed.position.lineNumber)
         assertEquals(1, transformed.position.columnNumber)
 
-        val snapshot = runWithModalProgressBlocking(project, "") { project.service<ProjectCloningService>().clone(project)!! }
+        val snapshot = runBlocking { project.service<ProjectCloningService>().clone(project)!! }
         val snapshotLocation = snapshot.guessProjectDir()!!.toNioPath()
         val snapshotContext = IJDDContext(snapshot)
 
@@ -95,7 +97,7 @@ class PathRelativizationTransformationTest : JavaCodeInsightFixtureTestCase() {
         assert(transformed2.position.filePath.startsWith("Test.kt"))
         assertEquals(1, transformed2.position.lineNumber)
         assertEquals(1, transformed2.position.columnNumber)
-        ProjectManager.getInstance().closeAndDispose(snapshot)
+        runBlocking(Dispatchers.EDT) { ProjectManager.getInstance().closeAndDispose(snapshot) }
     }
 
     fun testGenericCompilationException() {
@@ -112,7 +114,7 @@ class PathRelativizationTransformationTest : JavaCodeInsightFixtureTestCase() {
         kotlin.test.assertNotNull(transformed)
         assert(!transformed.message.contains(projectLocation.toString()))
 
-        val snapshot = runWithModalProgressBlocking(project, "") { project.service<ProjectCloningService>().clone(project)!! }
+        val snapshot = runBlocking { project.service<ProjectCloningService>().clone(project)!! }
         val snapshotLocation = snapshot.guessProjectDir()!!.toNioPath()
         val snapshotContext = IJDDContext(snapshot)
 
@@ -125,6 +127,6 @@ class PathRelativizationTransformationTest : JavaCodeInsightFixtureTestCase() {
         val transformed2 = runBlocking { snapshotException.apply(transformation, snapshotContext) }
         kotlin.test.assertNotNull(transformed2)
         assert(!transformed2.message.contains(projectLocation.toString()))
-        ProjectManager.getInstance().closeAndDispose(snapshot)
+        runBlocking(Dispatchers.EDT) { ProjectManager.getInstance().closeAndDispose(snapshot) }
     }
 }

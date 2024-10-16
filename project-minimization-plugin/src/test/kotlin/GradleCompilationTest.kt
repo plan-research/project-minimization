@@ -1,10 +1,11 @@
 import arrow.core.Either
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.service
-import com.intellij.openapi.progress.runWithModalProgressBlocking
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFile
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
 import org.plan.research.minimization.plugin.execution.IdeaCompilationException
@@ -152,11 +153,11 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         copyGradle(useBuildKts = false)
         val compilationResult = doCompilation(root)
         val cloningService = myFixture.project.service<ProjectCloningService>()
-        val snapshot = runWithModalProgressBlocking(myFixture.project, "") {
+        val snapshot = runBlocking {
             cloningService.clone(project)
         }
-        assertNotNull(snapshot)
-        val compilationResult2 = getCompilationResult(snapshot!!)
+        kotlin.test.assertNotNull(snapshot)
+        val compilationResult2 = runBlocking { getCompilationResult(snapshot) }
 
         assertNotEquals(compilationResult, compilationResult2)
         assertIs<Either.Right<IdeaCompilationException>>(compilationResult)
@@ -171,7 +172,9 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         }
         assertEquals(transformedResults[0], transformedResults[1])
 
-        ProjectManager.getInstance().closeAndDispose(snapshot)
+        runBlocking(Dispatchers.EDT) {
+            ProjectManager.getInstance().closeAndDispose(snapshot)
+        }
     }
 
     fun testAnalysisProject() {
@@ -200,11 +203,11 @@ class GradleCompilationTest : GradleProjectBaseTest() {
     ): CompilationResult = runBlocking {
         if (linkProject) importGradleProject(root)
         if (checkGradle) assertGradleLoaded()
-        return getCompilationResult(myFixture.project)
+        getCompilationResult(myFixture.project)
     }
 
-    private fun getCompilationResult(project: Project): CompilationResult {
+    private suspend fun getCompilationResult(project: Project): CompilationResult {
         val propertyCheckerService = myFixture.project.service<BuildExceptionProviderService>()
-        propertyCheckerService.checkCompilation(project)
+        return propertyCheckerService.checkCompilation(project)
     }
 }

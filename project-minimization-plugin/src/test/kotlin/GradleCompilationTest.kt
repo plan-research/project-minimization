@@ -10,7 +10,7 @@ import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerEr
 import org.plan.research.minimization.plugin.execution.IdeaCompilationException
 import org.plan.research.minimization.plugin.execution.exception.KotlincErrorSeverity
 import org.plan.research.minimization.plugin.execution.exception.KotlincException
-import org.plan.research.minimization.plugin.execution.transformer.PathRelativizationTransformer
+import org.plan.research.minimization.plugin.execution.transformer.PathRelativizationTransformation
 import org.plan.research.minimization.plugin.model.exception.CompilationResult
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
@@ -161,7 +161,7 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         assertIs<Either.Right<IdeaCompilationException>>(compilationResult)
         assertIs<Either.Right<IdeaCompilationException>>(compilationResult2)
 
-        val transformer = PathRelativizationTransformer(project)
+        val transformer = PathRelativizationTransformation(project)
         val transformedResults = listOf(compilationResult, compilationResult2)
             .map(Either.Right<IdeaCompilationException>::value)
             .map { runBlocking { transformer.transform(it) } }

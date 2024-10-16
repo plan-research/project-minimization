@@ -1,18 +1,11 @@
 package org.plan.research.minimization.plugin.execution.transformer
 
-import arrow.core.None
-import arrow.core.Option
-import arrow.core.raise.option
-import arrow.core.toOption
-import com.intellij.openapi.components.service
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
-import com.intellij.util.io.isAncestor
-import org.plan.research.minimization.plugin.drop
+import com.intellij.openapi.vfs.toNioPathOrNull
 import org.plan.research.minimization.plugin.execution.IdeaCompilationException
 import org.plan.research.minimization.plugin.execution.exception.KotlincException.*
+import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.io.path.relativeTo
@@ -21,47 +14,58 @@ import kotlin.io.path.relativeTo
  * Transforms file paths in compiler exceptions to be relative to a project root.
  * This module uses the fact that [MinimizationPluginState.temporaryProjectLocation][org.plan.research.minimization.plugin.settings.MinimizationPluginState.temporaryProjectLocation] is used for storing temporary projects.
  */
-class PathRelativizationTransformation(rootProject: Project) : ExceptionTransformation {
-    private val rootProjectBasePath = rootProject.guessProjectDir()!!.toNioPath()
-    private val temporaryProjectsLocation = rootProjectBasePath
-        .resolve(rootProject.service<MinimizationPluginSettings>().state.temporaryProjectLocation ?: "")
+class PathRelativizationTransformation : ExceptionTransformation {
 
-    override suspend fun transform(exception: IdeaCompilationException): Option<IdeaCompilationException> = option {
-        exception.copy(kotlincExceptions = exception.kotlincExceptions.map { transform(it).bind() })
-    }
+    override suspend fun transform(
+        exception: IdeaCompilationException,
+        context: IJDDContext
+    ) =
+        exception.copy(kotlincExceptions = exception.kotlincExceptions.map {
+            it.apply(
+                this@PathRelativizationTransformation,
+                context
+            )
+        })
 
-    override suspend fun transform(exception: GeneralKotlincException): Option<GeneralKotlincException> = option {
-        val transformedPath = transformPath(exception.position.filePath).bind()
+    override suspend fun transform(exception: GeneralKotlincException, context: IJDDContext): GeneralKotlincException {
+        val transformedPath = transformPath(exception.position.filePath, context)
         val copiedCursorPosition = exception.position.copy(filePath = transformedPath)
-        exception.copy(position = copiedCursorPosition, message = exception.message.replaceRootDir())
-    }
-    override suspend fun transform(exception: GenericInternalCompilerException): Option<GenericInternalCompilerException> =
-        exception.copy(message = exception.message.replaceRootDir()).toOption()
-    override suspend fun transform(exception: BackendCompilerException): Option<BackendCompilerException> = option {
-        val transformedPath = transformPath(exception.position.filePath).bind()
-        val copiedCursorPosition = exception.position.copy(filePath = transformedPath)
-        exception.copy(position = copiedCursorPosition, additionalMessage = exception.additionalMessage?.replaceRootDir())
+        return exception.copy(position = copiedCursorPosition, message = exception.message.replaceRootDir(context))
     }
 
-    private fun transformPath(path: Path): Option<Path> = option {
-        when {
-            temporaryProjectsLocation.isAncestor(path) -> path.relativeTo(temporaryProjectsLocation).drop(1)
-            path.startsWith(rootProjectBasePath) -> path.relativeTo(rootProjectBasePath)
-            else -> raise(None)
-        }
+    override suspend fun transform(
+        exception: GenericInternalCompilerException,
+        context: IJDDContext
+    ): GenericInternalCompilerException = exception.copy(message = exception.message.replaceRootDir(context))
+
+    override suspend fun transform(
+        exception: BackendCompilerException,
+        context: IJDDContext
+    ): BackendCompilerException {
+        val transformedPath = transformPath(exception.position.filePath, context)
+        val copiedCursorPosition = exception.position.copy(filePath = transformedPath)
+        return exception.copy(
+            position = copiedCursorPosition,
+            additionalMessage = exception.additionalMessage?.replaceRootDir(context)
+        )
+    }
+
+    private fun transformPath(path: Path, context: IJDDContext): Path {
+        val projectBase = context.project.guessProjectDir()?.toNioPathOrNull() ?: return path
+        return path.relativeTo(projectBase)
     }
 
     /**
      * Tries to replace root paths in the string.
      * Due to the uncertain format with the path inside the messages we just try to find `<file>:<line>:<column>` entries
      */
-    private fun String.replaceRootDir(): String = this
+    private fun String.replaceRootDir(context: IJDDContext): String = this
         .replace(FILE_ENTRY_REGEX) {
             val fileUrl = it.groups["fileurl"]?.value ?: ""
             val name = it.groups["name"]?.value!!
             val line = it.groups["line"]?.value
             val column = it.groups["column"]?.value
-            val relativePath = transformPath(Path(name)).getOrNull() ?: name
+            val relativePath = transformPath(Path(name), context)
             "$fileUrl$relativePath:$line:$column"
         }
 

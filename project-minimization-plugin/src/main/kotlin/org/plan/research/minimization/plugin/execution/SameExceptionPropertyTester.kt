@@ -52,12 +52,13 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
                 .checkCompilation(newContext.project)
                 .getOrElse { raise(PropertyTesterError.NoProperty) }
             val transformedException = transformations.fold(compilationResult) { acc, transformation ->
-                transformation.transform(acc).getOrElse { raise(PropertyTesterError.NoProperty) }}
-
-            when (comparator.areEquals(initialException, transformedException)) {
-                true -> newContext
-                false -> raise(PropertyTesterError.UnknownProperty)
+                acc.apply(transformation, newContext)
             }
+
+            if (comparator.areEquals(initialException, transformedException))
+                newContext
+            else
+                raise(PropertyTesterError.UnknownProperty)
         }.mapLeft {
             when (it) {
                 is SnapshotError.Aborted -> it.reason
@@ -70,16 +71,16 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
             compilerPropertyChecker: BuildExceptionProvider,
             exceptionComparator: ExceptionComparator,
             transformations: List<ExceptionTransformation>,
-            project: Project
+            context: IJDDContext
         ) = option {
-            val initialException = compilerPropertyChecker.checkCompilation(project).getOrNone().bind()
+            val initialException = compilerPropertyChecker.checkCompilation(context.originalProject).getOrNone().bind()
             SameExceptionPropertyTester<T>(
-                project,
+                context.originalProject,
                 compilerPropertyChecker,
                 transformations,
                 exceptionComparator,
                 transformations.fold(initialException) { acc, transformation ->
-                    transformation.transform(acc).bind()
+                    acc.apply(transformation, context.copy(project = context.originalProject))
                 }
             )
         }

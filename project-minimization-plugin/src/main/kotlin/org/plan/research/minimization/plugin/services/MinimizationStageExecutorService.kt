@@ -19,7 +19,7 @@ class MinimizationStageExecutorService : MinimizationStageExecutor {
         val hierarchy = fileLevelStage
             .hierarchyCollectionStrategy
             .getHierarchyCollectionStrategy()
-            .produce(context.originalProject)
+            .produce(context)
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
         context.withProgress {
             hierarchicalDD.minimize(it, hierarchy)

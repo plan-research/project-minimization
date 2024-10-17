@@ -18,6 +18,7 @@ fun Project.configureDiktat() {
     configure<DiktatExtension> {
         githubActions = true
         reporters {
+            plain()
             sarif()
         }
         inputs {
@@ -36,6 +37,7 @@ fun Project.createDiktatTask() {
             diktatConfigFile = rootProject.file("diktat-analysis.yml")
             githubActions = true
             reporters {
+                plain()
                 sarif()
             }
             inputs {

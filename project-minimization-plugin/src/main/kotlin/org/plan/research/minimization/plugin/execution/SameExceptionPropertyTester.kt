@@ -8,6 +8,7 @@ import com.intellij.openapi.project.Project
 import org.plan.research.minimization.core.model.PropertyTestResult
 import org.plan.research.minimization.core.model.PropertyTester
 import org.plan.research.minimization.core.model.PropertyTesterError
+import org.plan.research.minimization.plugin.apply
 import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
 import org.plan.research.minimization.plugin.model.IJDDContext
@@ -51,11 +52,8 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
             val compilationResult = buildExceptionProvider
                 .checkCompilation(newContext.project)
                 .getOrElse { raise(PropertyTesterError.NoProperty) }
-            val transformedException = transformations.fold(compilationResult) { acc, transformation ->
-                acc.apply(transformation, newContext)
-            }
 
-            if (comparator.areEquals(initialException, transformedException))
+            if (comparator.areEquals(initialException, compilationResult.apply(transformations, newContext)))
                 newContext
             else
                 raise(PropertyTesterError.UnknownProperty)
@@ -79,9 +77,7 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
                 compilerPropertyChecker,
                 transformations,
                 exceptionComparator,
-                transformations.fold(initialException) { acc, transformation ->
-                    acc.apply(transformation, context.copy(project = context.originalProject))
-                }
+                initialException.apply(transformations, context.copy(project = context.originalProject))
             )
         }
     }

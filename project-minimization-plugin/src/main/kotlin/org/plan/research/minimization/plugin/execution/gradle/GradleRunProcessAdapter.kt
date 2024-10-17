@@ -22,7 +22,7 @@ class GradleRunProcessAdapter : ProcessAdapter() {
                 bufferStdOut.toString(),
                 bufferStdErr.toString(),
                 bufferSystem.toString(),
-            )
+            ),
         )
         resultPipe.close()
     }

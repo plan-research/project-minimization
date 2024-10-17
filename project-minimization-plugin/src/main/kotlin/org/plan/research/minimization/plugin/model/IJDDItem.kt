@@ -1,9 +1,11 @@
 package org.plan.research.minimization.plugin.model
 
-import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiElement
 import org.plan.research.minimization.core.model.DDItem
+
+import com.intellij.openapi.vfs.VirtualFile
+
 import java.nio.file.Path
+
 import kotlin.io.path.relativeTo
 
 sealed interface IJDDItem : DDItem

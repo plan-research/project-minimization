@@ -1,13 +1,13 @@
 package org.plan.research.minimization.plugin.model
 
+import org.plan.research.minimization.core.model.DDContext
+import org.plan.research.minimization.plugin.toVirtualFiles
+
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.util.progress.SequentialProgressReporter
 import com.intellij.platform.util.progress.reportSequentialProgress
-import org.plan.research.minimization.core.model.DDContext
-import org.plan.research.minimization.plugin.toVirtualFiles
-
 
 /**
  * Represents a context for the minimization process containing the current project and derived properties.

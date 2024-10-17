@@ -1,24 +1,26 @@
 package org.plan.research.minimization.plugin.hierarchy
 
-import arrow.core.raise.option
-import com.intellij.openapi.application.readAction
-import com.intellij.openapi.application.smartReadAction
-import com.intellij.openapi.roots.ProjectRootManager
-import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.platform.util.progress.SequentialProgressReporter
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HDDLevel
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDDGenerator
 import org.plan.research.minimization.core.model.PropertyTester
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.ProjectFileDDItem
+
+import arrow.core.raise.option
+import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.smartReadAction
+import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.platform.util.progress.SequentialProgressReporter
+
 import java.nio.file.Path
+
 import kotlin.io.path.relativeTo
 
 class FileTreeHierarchicalDDGenerator(
-    private val propertyTester: PropertyTester<IJDDContext, ProjectFileDDItem>
+    private val propertyTester: PropertyTester<IJDDContext, ProjectFileDDItem>,
 ) : HierarchicalDDGenerator<IJDDContext, ProjectFileDDItem> {
-
     private var reporter: ProgressReporter? = null
 
     override suspend fun generateFirstLevel(context: IJDDContext) =
@@ -59,9 +61,9 @@ class FileTreeHierarchicalDDGenerator(
      * keep track of the current progress and update it during the process. This class computes levels
      * of directories and files to provide meaningful progress reporting.
      *
+     * @param root The root path from which relative paths are computed and stored.
+     * @param roots An array of VirtualFile representing the starting points to compute levels.
      * @property reporter An instance of [SequentialProgressReporter] used for updating the progress.
-     * @property currentLevel A volatile counter indicating the current level of progress.
-     * @property levelMaxDepths A hash map that stores the maximum depth levels of paths relative to the root.
      * @constructor Creates a new instance of [ProgressReporter] based on the given root path and the array of root files.
      */
     private class ProgressReporter(val reporter: SequentialProgressReporter, root: Path, roots: Array<VirtualFile>) {
@@ -72,8 +74,6 @@ class FileTreeHierarchicalDDGenerator(
         init {
             computeLevels(root, roots)
         }
-
-        private data class StackEntry(val file: VirtualFile, val level: Int, var nextChildIndex: Int = 0)
 
         /**
          * Computes the maximum depth levels for the given root paths and their descendants.
@@ -113,5 +113,7 @@ class FileTreeHierarchicalDDGenerator(
             val maxDepth = level.maxOf { levelMaxDepths[it.localPath]!! }
             reporter.nextStep(100 * currentLevel / maxDepth)
         }
+
+        private data class StackEntry(val file: VirtualFile, val level: Int, var nextChildIndex: Int = 0)
     }
 }

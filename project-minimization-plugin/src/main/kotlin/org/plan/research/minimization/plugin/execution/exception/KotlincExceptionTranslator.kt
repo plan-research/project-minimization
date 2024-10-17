@@ -1,5 +1,9 @@
 package org.plan.research.minimization.plugin.execution.exception
 
+import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
+import org.plan.research.minimization.plugin.model.BuildEventTranslator
+import org.plan.research.minimization.plugin.model.CaretPosition
+
 import arrow.core.Either
 import arrow.core.Option
 import arrow.core.getOrElse
@@ -11,15 +15,12 @@ import com.intellij.build.events.BuildEvent
 import com.intellij.build.events.FileMessageEvent
 import com.intellij.build.events.MessageEvent
 import org.jetbrains.kotlin.utils.addToStdlib.indexOfOrNull
-import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
-import org.plan.research.minimization.plugin.model.BuildEventTranslator
-import org.plan.research.minimization.plugin.model.CaretPosition
 
 /**
  * KotlincExceptionTranslator provides functionality to interpret build events and transform them into either
  * general compilation errors or internal Kotlin compiler exceptions.
  */
-class KotlincExceptionTranslator: BuildEventTranslator {
+class KotlincExceptionTranslator : BuildEventTranslator {
     /**
      * Parses a [BuildEvent] to determine if it represents an internal or general Kotlin compiler exception.
      *
@@ -41,9 +42,9 @@ class KotlincExceptionTranslator: BuildEventTranslator {
             raise(
                 CompilationPropertyCheckerError.BuildSystemFail(
                     cause = IllegalStateException(
-                        "Invalid event type: ${buildEvent.javaClass}, but expected FileMessageEvent"
-                    )
-                )
+                        "Invalid event type: ${buildEvent.javaClass}, but expected FileMessageEvent",
+                    ),
+                ),
             )
         }
         val filePosition = CaretPosition.fromFilePosition(buildEvent.filePosition)
@@ -51,7 +52,7 @@ class KotlincExceptionTranslator: BuildEventTranslator {
     }
 
     private fun parseInternalException(
-        buildEvent: BuildEvent
+        buildEvent: BuildEvent,
     ): Either<CompilationPropertyCheckerError, KotlincException> = either {
         val (exceptionType, exceptionMessage) = parseExceptionMessage(buildEvent.description ?: "")
             ?: raise(CompilationPropertyCheckerError.CompilationSuccess)
@@ -62,9 +63,9 @@ class KotlincExceptionTranslator: BuildEventTranslator {
     }
 
     private fun parseBackendCompilerException(
-        exceptionMessage: String
+        exceptionMessage: String,
     ): Either<CompilationPropertyCheckerError, KotlincException.BackendCompilerException> = either {
-        val (_, detailedMessage) = exceptionMessage.pollNextLine() // Remove boilerplate about making an issue
+        val (_, detailedMessage) = exceptionMessage.pollNextLine()  // Remove boilerplate about making an issue
         ensureNotNull(detailedMessage) { CompilationPropertyCheckerError.CompilationSuccess }
 
         val (filePosition, remaining) = detailedMessage.pollNextLine()
@@ -80,13 +81,12 @@ class KotlincExceptionTranslator: BuildEventTranslator {
     }
 
     private fun parseGenericInternalCompilerException(
-        exceptionMessage: String
+        exceptionMessage: String,
     ): Either<CompilationPropertyCheckerError, KotlincException.GenericInternalCompilerException> = either {
         val (message, stacktrace) = exceptionMessage.splitMessageAndStacktrace()
             .getOrElse { raise(CompilationPropertyCheckerError.CompilationSuccess) }
         KotlincException.GenericInternalCompilerException(stacktrace, message)
     }
-
 
     /**
      * Checks whether the current BuildEvent instance is an internal Kotlin compiler exception.
@@ -94,7 +94,7 @@ class KotlincExceptionTranslator: BuildEventTranslator {
     private fun BuildEvent.isInternal(): Boolean =
         // FIXME: Not sure that is complete way to check if the exception is internal
         message.endsWith("Please report this problem https://kotl.in/issue") ||
-               message.startsWith("org.jetbrains.kotlin.util.FileAnalysisException")
+            message.startsWith("org.jetbrains.kotlin.util.FileAnalysisException")
 
     private fun parseExceptionMessage(message: String): Pair<String, String>? {
         val colonIndex = message.indexOfOrNull(COLON) ?: return null
@@ -108,13 +108,15 @@ class KotlincExceptionTranslator: BuildEventTranslator {
         return substring(0, nextLineIndex) to substring(nextLineIndex + System.lineSeparator().length)
     }
 
+    @Suppress("TYPE_ALIAS")
     private fun String.splitMessageAndStacktrace(): Option<Pair<String, String>> = option {
         val lastLines = lines()
         val firstStacktraceLine = lastLines.indexOfFirst { it.startsWith("\tat") }
         ensure(firstStacktraceLine >= 0)
         lastLines.take(firstStacktraceLine).joinToString(separator = System.lineSeparator()) to
-                lastLines.drop(firstStacktraceLine).joinToString(separator = System.lineSeparator())
+            lastLines.drop(firstStacktraceLine).joinToString(separator = System.lineSeparator())
     }
+
     private fun MessageEvent.severity() = when (this.kind) {
         MessageEvent.Kind.ERROR -> KotlincErrorSeverity.ERROR
         MessageEvent.Kind.WARNING -> KotlincErrorSeverity.WARNING
@@ -123,7 +125,8 @@ class KotlincExceptionTranslator: BuildEventTranslator {
     }
 
     companion object {
+        private const val BACKEND_COMPILER_EXCEPTION_CLASSNAME =
+            "org.jetbrains.kotlin.backend.common.CompilationException"
         private const val COLON = ':'
-        private const val BACKEND_COMPILER_EXCEPTION_CLASSNAME = "org.jetbrains.kotlin.backend.common.CompilationException"
     }
 }

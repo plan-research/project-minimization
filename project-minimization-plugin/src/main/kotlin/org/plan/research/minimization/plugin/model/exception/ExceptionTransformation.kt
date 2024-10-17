@@ -13,7 +13,7 @@ interface ExceptionTransformation {
 
     suspend fun transform(
         exception: GenericInternalCompilerException,
-        context: IJDDContext
+        context: IJDDContext,
     ): GenericInternalCompilerException =
         exception
 

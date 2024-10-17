@@ -38,6 +38,6 @@ object DumbCompiler : BuildExceptionProvider {
         override suspend fun apply(
             transformation: ExceptionTransformation,
             context: IJDDContext,
-        ): CompilationException = this.copy()
+        ): CompilationException = this
     }
 }

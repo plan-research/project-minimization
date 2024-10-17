@@ -27,7 +27,7 @@ jobs:
           gradle-version: 8.5
 
       - name: Build Plugin with Gradle
-        run: gradle buildPlugin
+        run: ./gradlew buildPlugin
 
       - name: Run Tests
-        run: gradle test
+        run: ./gradlew test --stacktrace

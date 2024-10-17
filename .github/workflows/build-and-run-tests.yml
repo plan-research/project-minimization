@@ -30,4 +30,16 @@ jobs:
         run: ./gradlew buildPlugin
 
       - name: Run Tests
-        run: ./gradlew test --stacktrace
+        run: ./gradlew test
+
+      - name: Test Report Core
+        uses: pavi2410/html-preview-action@v4
+        with:
+          html_file: project-minimization-core/build/reports/tests/test/index.html
+          job_summary: true
+
+      - name: Test Report Plugin
+        uses: pavi2410/html-preview-action@v4
+        with:
+          html_file: project-minimization-plugin/build/reports/tests/test/index.html
+          job_summary: true

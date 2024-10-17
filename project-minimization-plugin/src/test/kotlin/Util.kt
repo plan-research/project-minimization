@@ -41,9 +41,11 @@ fun List<VirtualFile>.getAllFiles(project: Project): Set<PathContent> =
         )
     }.toSet()
 
+private val gradleFolders = listOf("build", "gradle", ".gradle")
+
 fun Set<PathContent>.filterGradleAndBuildFiles(): Set<PathContent> =
     filterNot { content ->
         content.path.invariantSeparatorsPathString.split("/").let {
-            "build" in it || "gradle" in it
+            gradleFolders.any { folder -> folder in it }
         }
     }.toSet()

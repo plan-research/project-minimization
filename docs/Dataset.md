@@ -38,4 +38,19 @@ That folder contains all the projects, described in the `config.yaml`. Some proj
 
 `validate.sh` is a simple script that checks that all the `reproduce` scripts are valid (build failed on every
 script).  
-More detailed checks aren’t done yet due to complexity of the different problems. 
+More detailed checks aren’t done yet due to complexity of the different problems.
+
+# Example yaml
+```yaml
+projects:
+  - name: example
+    path: projects/example
+    reproduce: projects/example/reproduce.sh
+    buildSystem:
+      name: gradle
+      version: 8.0
+    kotlinVersion: 2.0.20
+    extra:
+      tags: ["android", "mpp", "pcla", "rust"]
+      issue: KT-56630
+```

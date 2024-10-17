@@ -39,8 +39,9 @@
             <maxHistory>30</maxHistory>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %class{36} - %msg%n</pattern>
         </encoder>
+
     </appender>
 
     <!-- Logger for STATISTICS (write only in statistics.log) -->

@@ -1,15 +1,16 @@
 package org.plan.research.minimization.plugin.model.snapshot
 
-import arrow.core.Either
 import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.model.IJDDContext
 
+import arrow.core.Either
+
+typealias TransactionResult<T> = Either<SnapshotError<T>, IJDDContext>
 
 /**
  * The `SnapshotManager` interface provides a mechanism to handle transactions within a given context.
  */
 interface SnapshotManager {
-
     /**
      * Executes a transaction within the provided context.
      *
@@ -20,5 +21,5 @@ interface SnapshotManager {
     suspend fun <T> transaction(
         context: IJDDContext,
         action: suspend TransactionBody<T>.(newContext: IJDDContext) -> IJDDContext,
-    ): Either<SnapshotError<T>, IJDDContext>
+    ): TransactionResult<T>
 }

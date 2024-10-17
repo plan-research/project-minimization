@@ -1,11 +1,5 @@
 package org.plan.research.minimization.plugin.hierarchy
 
-import arrow.core.Either
-import arrow.core.getOrElse
-import arrow.core.raise.either
-import arrow.core.raise.ensureNotNull
-import com.intellij.openapi.components.service
-import com.intellij.openapi.project.guessProjectDir
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoExceptionFound
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoRootFound
@@ -18,9 +12,16 @@ import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
+import arrow.core.Either
+import arrow.core.getOrElse
+import arrow.core.raise.either
+import arrow.core.raise.ensureNotNull
+import com.intellij.openapi.components.service
+import com.intellij.openapi.project.guessProjectDir
+
 class FileTreeHierarchyGenerator : ProjectHierarchyProducer<ProjectFileDDItem> {
     override suspend fun produce(
-        fromContext: IJDDContext
+        fromContext: IJDDContext,
     ): Either<HierarchyBuildError, FileTreeHierarchicalDDGenerator> = either {
         val project = fromContext.originalProject
         ensureNotNull(project.guessProjectDir()) { NoRootFound }

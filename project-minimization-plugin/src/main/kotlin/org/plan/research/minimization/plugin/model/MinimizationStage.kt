@@ -1,10 +1,11 @@
 package org.plan.research.minimization.plugin.model
 
-import arrow.core.Either
-import com.intellij.util.xmlb.annotations.Tag
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.model.state.DDStrategy
 import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
+
+import arrow.core.Either
+import com.intellij.util.xmlb.annotations.Tag
 
 /**
  * Interface representing an executor responsible for handling various stages of the minimization process.
@@ -12,7 +13,7 @@ import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStra
 interface MinimizationStageExecutor {
     suspend fun executeFileLevelStage(
         context: IJDDContext,
-        fileLevelStage: FileLevelStage
+        fileLevelStage: FileLevelStage,
     ): Either<MinimizationError, IJDDContext>
 }
 
@@ -27,7 +28,7 @@ sealed interface MinimizationStage {
 
     suspend fun apply(
         context: IJDDContext,
-        executor: MinimizationStageExecutor
+        executor: MinimizationStageExecutor,
     ): Either<MinimizationError, IJDDContext>
 }
 

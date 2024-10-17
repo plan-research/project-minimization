@@ -1,29 +1,33 @@
 package org.plan.research.minimization.plugin.execution.transformer
 
-import com.intellij.openapi.project.guessProjectDir
-import com.intellij.openapi.vfs.toNioPathOrNull
 import org.plan.research.minimization.plugin.execution.IdeaCompilationException
 import org.plan.research.minimization.plugin.execution.exception.KotlincException.*
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
+import org.plan.research.minimization.plugin.settings.MinimizationPluginState
+
+import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.vfs.toNioPathOrNull
+
 import java.nio.file.Path
+
 import kotlin.io.path.Path
 import kotlin.io.path.relativeTo
 
 /**
  * Transforms file paths in compiler exceptions to be relative to a project root.
- * This module uses the fact that [MinimizationPluginState.temporaryProjectLocation][org.plan.research.minimization.plugin.settings.MinimizationPluginState.temporaryProjectLocation] is used for storing temporary projects.
+ * This module uses the fact that [MinimizationPluginState.temporaryProjectLocation][MinimizationPluginState.temporaryProjectLocation]
+ * is used for storing temporary projects.
  */
 class PathRelativizationTransformation : ExceptionTransformation {
-
     override suspend fun transform(
         exception: IdeaCompilationException,
-        context: IJDDContext
+        context: IJDDContext,
     ) =
         exception.copy(kotlincExceptions = exception.kotlincExceptions.map {
             it.apply(
                 this@PathRelativizationTransformation,
-                context
+                context,
             )
         })
 
@@ -35,18 +39,18 @@ class PathRelativizationTransformation : ExceptionTransformation {
 
     override suspend fun transform(
         exception: GenericInternalCompilerException,
-        context: IJDDContext
+        context: IJDDContext,
     ): GenericInternalCompilerException = exception.copy(message = exception.message.replaceRootDir(context))
 
     override suspend fun transform(
         exception: BackendCompilerException,
-        context: IJDDContext
+        context: IJDDContext,
     ): BackendCompilerException {
         val transformedPath = transformPath(exception.position.filePath, context)
         val copiedCursorPosition = exception.position.copy(filePath = transformedPath)
         return exception.copy(
             position = copiedCursorPosition,
-            additionalMessage = exception.additionalMessage?.replaceRootDir(context)
+            additionalMessage = exception.additionalMessage?.replaceRootDir(context),
         )
     }
 

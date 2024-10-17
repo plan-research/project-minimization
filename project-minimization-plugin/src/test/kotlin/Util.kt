@@ -41,7 +41,7 @@ fun List<VirtualFile>.getAllFiles(project: Project): Set<PathContent> =
         )
     }.toSet()
 
-private val gradleFolders = listOf("build", "gradle", ".gradle")
+private val gradleFolders = listOf("build", "gradle", ".gradle", ".kotlin", "gradlew", "gradlew.bat")
 
 fun Set<PathContent>.filterGradleAndBuildFiles(): Set<PathContent> =
     filterNot { content ->

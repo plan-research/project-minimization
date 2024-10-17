@@ -47,7 +47,7 @@ class ProjectCloningService(private val rootProject: Project) {
                 this,
                 projectRoot,
                 clonedProjectPath,
-            ) { it.path != snapshotLocation.path && isImportant(it, projectRoot) }
+            ) { !it.path.startsWith(snapshotLocation.path) && isImportant(it, projectRoot) }
             clonedProjectPath
         }
         return ProjectUtil.openOrImportAsync(clonedProjectPath.toNioPath())

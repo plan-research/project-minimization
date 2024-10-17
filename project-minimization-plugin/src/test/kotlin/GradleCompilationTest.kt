@@ -157,7 +157,7 @@ class GradleCompilationTest : GradleProjectBaseTest() {
             cloningService.clone(project)
         }
         kotlin.test.assertNotNull(snapshot)
-        val compilationResult2 = runBlocking { getCompilationResult(snapshot) }
+        val compilationResult2 = doCompilation(snapshot.guessProjectDir()!!, snapshot)
 
         assertNotEquals(compilationResult, compilationResult2)
         assertIs<Either.Right<IdeaCompilationException>>(compilationResult)
@@ -198,12 +198,13 @@ class GradleCompilationTest : GradleProjectBaseTest() {
 
     private fun doCompilation(
         root: VirtualFile,
+        project: Project = myFixture.project,
         checkGradle: Boolean = true,
         linkProject: Boolean = true,
     ): CompilationResult = runBlocking {
-        if (linkProject) importGradleProject(root)
-        if (checkGradle) assertGradleLoaded()
-        getCompilationResult(myFixture.project)
+        if (linkProject) importGradleProject(root, project)
+        if (checkGradle) assertGradleLoaded(project)
+        getCompilationResult(project)
     }
 
     private suspend fun getCompilationResult(project: Project): CompilationResult {

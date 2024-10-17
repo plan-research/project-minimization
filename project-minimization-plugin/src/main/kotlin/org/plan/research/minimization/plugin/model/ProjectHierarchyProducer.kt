@@ -1,11 +1,17 @@
 package org.plan.research.minimization.plugin.model
 
-import arrow.core.Either
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDDGenerator
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError
 
-interface ProjectHierarchyProducer<T: IJDDItem> {
+import arrow.core.Either
+
+typealias ProjectHierarchyProducerResult<T> = Either<HierarchyBuildError, HierarchicalDDGenerator<IJDDContext, T>>
+
+/**
+ * @param T
+ */
+interface ProjectHierarchyProducer<T : IJDDItem> {
     suspend fun produce(
-        fromContext: IJDDContext
-    ): Either<HierarchyBuildError, HierarchicalDDGenerator<IJDDContext, T>>
+        fromContext: IJDDContext,
+    ): ProjectHierarchyProducerResult<T>
 }

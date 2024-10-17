@@ -1,10 +1,5 @@
 package org.plan.research.minimization.plugin.execution
 
-import arrow.core.getOrElse
-import arrow.core.raise.option
-import com.intellij.openapi.application.writeAction
-import com.intellij.openapi.components.service
-import com.intellij.openapi.project.Project
 import org.plan.research.minimization.core.model.PropertyTestResult
 import org.plan.research.minimization.core.model.PropertyTester
 import org.plan.research.minimization.core.model.PropertyTesterError
@@ -19,8 +14,21 @@ import org.plan.research.minimization.plugin.model.exception.ExceptionComparator
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
 import org.plan.research.minimization.plugin.services.SnapshotManagerService
 
+import arrow.core.getOrElse
+import arrow.core.raise.option
+import com.intellij.openapi.application.writeAction
+import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
+
 /**
  * A property tester for Delta Debugging algorithm that leverages different compilation strategies
+ *
+ * @param T
+ * @param rootProject
+ * @param buildExceptionProvider
+ * @param transformations
+ * @param comparator
+ * @param initialException
  */
 class SameExceptionPropertyTester<T : IJDDItem> private constructor(
     rootProject: Project,
@@ -39,7 +47,7 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
      */
     override suspend fun test(context: IJDDContext, items: List<T>): PropertyTestResult<IJDDContext> =
         snapshotManager.transaction(context) { newContext ->
-            if (context.currentLevel == null) return@transaction newContext
+            context.currentLevel ?: return@transaction newContext
 
             val targetFiles = context.currentLevel.minus(items.toSet()).filterIsInstance<ProjectFileDDItem>()
 
@@ -53,10 +61,11 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
                 .checkCompilation(newContext.project)
                 .getOrElse { raise(PropertyTesterError.NoProperty) }
 
-            if (comparator.areEquals(initialException, compilationResult.apply(transformations, newContext)))
+            if (comparator.areEquals(initialException, compilationResult.apply(transformations, newContext))) {
                 newContext
-            else
+            } else {
                 raise(PropertyTesterError.UnknownProperty)
+            }
         }.mapLeft {
             when (it) {
                 is SnapshotError.Aborted -> it.reason
@@ -69,7 +78,7 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
             compilerPropertyChecker: BuildExceptionProvider,
             exceptionComparator: ExceptionComparator,
             transformations: List<ExceptionTransformation>,
-            context: IJDDContext
+            context: IJDDContext,
         ) = option {
             val initialException = compilerPropertyChecker.checkCompilation(context.originalProject).getOrNone().bind()
             SameExceptionPropertyTester<T>(
@@ -77,7 +86,7 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
                 compilerPropertyChecker,
                 transformations,
                 exceptionComparator,
-                initialException.apply(transformations, context.copy(project = context.originalProject))
+                initialException.apply(transformations, context.copy(project = context.originalProject)),
             )
         }
     }

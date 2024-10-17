@@ -1,8 +1,5 @@
 package org.plan.research.minimization.plugin.services
 
-import arrow.core.getOrElse
-import arrow.core.raise.either
-import com.intellij.openapi.components.Service
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDD
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.getDDAlgorithm
@@ -10,6 +7,10 @@ import org.plan.research.minimization.plugin.getHierarchyCollectionStrategy
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.MinimizationStageExecutor
+
+import arrow.core.getOrElse
+import arrow.core.raise.either
+import com.intellij.openapi.components.Service
 
 @Service(Service.Level.PROJECT)
 class MinimizationStageExecutorService : MinimizationStageExecutor {

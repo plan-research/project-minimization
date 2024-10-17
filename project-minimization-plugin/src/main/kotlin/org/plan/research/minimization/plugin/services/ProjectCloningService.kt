@@ -1,5 +1,7 @@
 package org.plan.research.minimization.plugin.services
 
+import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
+
 import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.Service
@@ -10,15 +12,16 @@ import com.intellij.openapi.project.isProjectOrWorkspaceFile
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findOrCreateDirectory
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
+
 import java.util.*
+
 import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
 
 /**
  * Service responsible for cloning a given project.
  *
- * @property rootProject The root project used as a source of services
+ * @param rootProject The root project used as a source of services
  */
 @Service(Service.Level.PROJECT)
 class ProjectCloningService(private val rootProject: Project) {
@@ -27,9 +30,11 @@ class ProjectCloningService(private val rootProject: Project) {
         .state
         .temporaryProjectLocation
         ?: ""
+    private val importantFiles = setOf("modules.xml", "misc.xml", "libraries")
 
     /**
      * Perform a full clone of the project
+     *
      * @param project A project to clone
      * @return a cloned project
      */
@@ -41,21 +46,20 @@ class ProjectCloningService(private val rootProject: Project) {
             VfsUtil.copyDirectory(
                 this,
                 projectRoot,
-                clonedProjectPath
-            ) { it.path != snapshotLocation.path && !ignore(it, projectRoot) }
+                clonedProjectPath,
+            ) { it.path != snapshotLocation.path && isImportant(it, projectRoot) }
             clonedProjectPath
         }
         return ProjectUtil.openOrImportAsync(clonedProjectPath.toNioPath())
     }
 
-    private val importantFiles = setOf("modules.xml", "misc.xml", "libraries")
-    private fun ignore(file: VirtualFile, root: VirtualFile): Boolean {
+    private fun isImportant(file: VirtualFile, root: VirtualFile): Boolean {
         val path = file.toNioPath().relativeTo(root.toNioPath())
         if (isProjectOrWorkspaceFile(file)) {
             val pathString = path.pathString
-            return importantFiles.none { it in pathString }
+            return importantFiles.any { it in pathString }
         }
-        return false
+        return true
     }
 
     private fun createNewProjectDirectory(): VirtualFile =

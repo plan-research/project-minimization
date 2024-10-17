@@ -159,3 +159,5 @@
   enabled: false
 - name: CLASS_NAME_INCORRECT
   enabled: false
+- name: FUNCTION_NAME_INCORRECT_CASE
+  enabled: false

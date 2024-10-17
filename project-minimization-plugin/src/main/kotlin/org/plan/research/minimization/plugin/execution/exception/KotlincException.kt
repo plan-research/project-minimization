@@ -8,8 +8,9 @@ import org.plan.research.minimization.plugin.model.exception.ExceptionTransforma
 sealed interface KotlincException : CompilationException {
     override suspend fun apply(
         transformation: ExceptionTransformation,
-        context: IJDDContext
+        context: IJDDContext,
     ): KotlincException
+
     /**
      * A data class that represents `CompilationException` from Kotlin compiler.
      * For that file we can acquire three properties:
@@ -24,7 +25,7 @@ sealed interface KotlincException : CompilationException {
     ) : KotlincException {
         override suspend fun apply(
             transformation: ExceptionTransformation,
-            context: IJDDContext
+            context: IJDDContext,
         ) = transformation.transform(this, context)
     }
 
@@ -41,7 +42,7 @@ sealed interface KotlincException : CompilationException {
     ) : KotlincException {
         override suspend fun apply(
             transformation: ExceptionTransformation,
-            context: IJDDContext
+            context: IJDDContext,
         ) = transformation.transform(this, context)
     }
 
@@ -54,11 +55,11 @@ sealed interface KotlincException : CompilationException {
     data class GeneralKotlincException(
         val position: CaretPosition,
         val message: String,
-        val severity: KotlincErrorSeverity = KotlincErrorSeverity.UNKNOWN
+        val severity: KotlincErrorSeverity = KotlincErrorSeverity.UNKNOWN,
     ) : KotlincException {
         override suspend fun apply(
             transformation: ExceptionTransformation,
-            context: IJDDContext
+            context: IJDDContext,
         ) = transformation.transform(this, context)
     }
 }

@@ -8,6 +8,7 @@ import com.intellij.platform.ide.progress.withBackgroundProgress
 import com.intellij.platform.util.progress.reportSequentialProgress
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
+import mu.KotlinLogging
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
@@ -18,12 +19,20 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
     private val executor = project.service<MinimizationStageExecutorService>()
     private val projectCloning = project.service<ProjectCloningService>()
 
+    private val workingLogger = KotlinLogging.logger("WORKING")
+    private val logger = KotlinLogging.logger {}
+
     fun minimizeProject(project: Project) =
         coroutineScope.async {
             withBackgroundProgress(project, "Minimizing project") {
                 either {
+                    workingLogger.info { "Start Project minimization" }
+
+                    workingLogger.info { "Clonning project..." }
                     val clonedProject = projectCloning.clone(project)
                         ?: raise(MinimizationError.CloningFailed)
+                    workingLogger.info { "Project clone end" }      
+                        
                     var currentProject = IJDDContext(clonedProject, project)
 
                     reportSequentialProgress(stages.size) { reporter ->
@@ -35,6 +44,11 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
                     }
 
                     currentProject.project
+                }.onRight {
+                    workingLogger.info { "End Project minimization" }
+                }.onLeft { error ->
+                    workingLogger.info { "End Project minimization" }
+                    logger.error { "End minimizeProject with error: $error" }
                 }
             }
         }

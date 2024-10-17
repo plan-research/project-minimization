@@ -3,8 +3,8 @@ package org.plan.research.minimization.core.algorithm.dd.impl
 import kotlinx.coroutines.yield
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
-import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.DDContext
+import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.PropertyTester
 import kotlin.math.min
 
@@ -15,7 +15,6 @@ import kotlin.math.min
  * so it's not necessary to implement your own.
  */
 class DDMin : DDAlgorithm {
-
     private class Node(
         val size: Int, var parent: Node?,
         var smallChecked: Boolean = false, var checked: Boolean = false
@@ -109,7 +108,6 @@ class DDMin : DDAlgorithm {
                     repeat(node.size) {
                         smallItems.add(currentItems.removeFirst())
                     }
-
                     if (testSmall) {
                         if (!node.smallChecked) {
                             val toBreak = propertyTester.test(currentContext, smallItems)

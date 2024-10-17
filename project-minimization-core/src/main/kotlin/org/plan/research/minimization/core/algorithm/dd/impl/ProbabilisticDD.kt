@@ -3,8 +3,8 @@ package org.plan.research.minimization.core.algorithm.dd.impl
 import kotlinx.coroutines.yield
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
-import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.DDContext
+import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.PropertyTester
 import java.util.*
 import kotlin.collections.ArrayDeque

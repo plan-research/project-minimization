@@ -1,8 +1,10 @@
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.service
-import com.intellij.openapi.progress.runWithModalProgressBlocking
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.execution.DumbCompiler
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.IJDDContext
@@ -17,6 +19,8 @@ class FileLevelStageTest : JavaCodeInsightFixtureTestCase() {
     override fun getTestDataPath(): String {
         return "src/test/resources/testData/fileTreeHierarchy"
     }
+
+    override fun runInDispatchThread(): Boolean = false
 
     override fun setUp() {
         super.setUp()
@@ -64,16 +68,19 @@ class FileLevelStageTest : JavaCodeInsightFixtureTestCase() {
                 .getAllFiles(project) + root.getPathContentPair(project)
         }
 
-        val minimizedProject = runWithModalProgressBlocking(project, "") {
+        val minimizedProject = runBlocking {
             val clonedProject = project.service<ProjectCloningService>().clone(project)!!
-            stage.apply(IJDDContext(clonedProject, project), executor)
+            val context = IJDDContext(clonedProject, project)
+            stage.apply(context, executor)
         }.getOrNull()?.project
         assertNotNull(minimizedProject)
 
         val minimizedFiles = minimizedProject!!.getAllFiles()
         assertEquals(targetFiles, minimizedFiles)
 
-        ProjectManager.getInstance().closeAndDispose(minimizedProject)
+        runBlocking(Dispatchers.EDT) {
+            ProjectManager.getInstance().closeAndDispose(minimizedProject)
+        }
 
         DumbCompiler.targetPaths = null // it's important
     }

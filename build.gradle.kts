@@ -23,11 +23,6 @@ allprojects {
     }
 
     dependencies {
-        // these libraries are already provided inside the IDEA plugin
-        if (project.name != "project-minimization-plugin") {
-            implementation(kotlin("stdlib-jdk8"))
-            implementation(libs.kotlinx.coroutines.core)
-        }
         implementation(libs.arrow.core)
 
         implementation("io.github.microutils:kotlin-logging-jvm:2.1.21")
@@ -40,11 +35,11 @@ allprojects {
     tasks {
         // Set the JVM compatibility versions
         withType<JavaCompile> {
-            sourceCompatibility = "17"
-            targetCompatibility = "17"
+            sourceCompatibility = "21"
+            targetCompatibility = "21"
         }
         withType<KotlinCompile> {
-            kotlinOptions.jvmTarget = "17"
+            kotlinOptions.jvmTarget = "21"
         }
 
         test {
@@ -53,6 +48,6 @@ allprojects {
     }
 
     kotlin {
-        jvmToolchain(17)
+        jvmToolchain(21)
     }
 }

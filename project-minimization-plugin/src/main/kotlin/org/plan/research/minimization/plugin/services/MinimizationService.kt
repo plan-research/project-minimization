@@ -4,6 +4,8 @@ import arrow.core.raise.either
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.platform.ide.progress.withBackgroundProgress
+import com.intellij.platform.util.progress.reportSequentialProgress
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import mu.KotlinLogging
@@ -20,25 +22,34 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
     private val workingLogger = KotlinLogging.logger("WORKING")
     private val logger = KotlinLogging.logger {}
 
-    fun minimizeProject(project: Project) = coroutineScope.async {
-        either {
-            workingLogger.info { "Start Project minimization" }
+    fun minimizeProject(project: Project) =
+        coroutineScope.async {
+            withBackgroundProgress(project, "Minimizing project") {
+                either {
+                    workingLogger.info { "Start Project minimization" }
 
-            workingLogger.info { "Clonning project..." }
-            val clonedProject = projectCloning.clone(project)
-                ?: raise(MinimizationError.CloningFailed)
-            workingLogger.info { "Project clone end" }
+                    workingLogger.info { "Clonning project..." }
+                    val clonedProject = projectCloning.clone(project)
+                        ?: raise(MinimizationError.CloningFailed)
+                    workingLogger.info { "Project clone end" }      
+                        
+                    var currentProject = IJDDContext(clonedProject, project)
 
-            var currentProject = IJDDContext(clonedProject, project)
-            for (stage in stages) {
-                currentProject = stage.apply(currentProject, executor).bind()
+                    reportSequentialProgress(stages.size) { reporter ->
+                        for (stage in stages) {
+                            reporter.itemStep("Minimization step: ${stage.name}") {
+                                currentProject = stage.apply(currentProject, executor).bind()
+                            }
+                        }
+                    }
+
+                    currentProject.project
+                }.onRight {
+                    workingLogger.info { "End Project minimization" }
+                }.onLeft { error ->
+                    workingLogger.info { "End Project minimization" }
+                    logger.error { "End minimizeProject with error: $error" }
+                }
             }
-            currentProject.project
-        }.onRight {
-            workingLogger.info { "End Project minimization" }
-        }.onLeft { error ->
-            workingLogger.info { "End Project minimization" }
-            logger.error { "End minimizeProject with error: $error" }
         }
-    }
 }

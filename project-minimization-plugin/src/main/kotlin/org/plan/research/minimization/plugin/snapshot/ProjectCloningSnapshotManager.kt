@@ -3,10 +3,13 @@ package org.plan.research.minimization.plugin.snapshot
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.recover
-import com.intellij.openapi.application.invokeLater
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import mu.KotlinLogging
 import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.errors.SnapshotError.*
@@ -69,9 +72,9 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
         statLogger.info { "Result: $error" }
     }
 
-    private fun closeProject(context: IJDDContext) {
+    private suspend fun closeProject(context: IJDDContext) {
         // TODO: think about deleting the project
-        invokeLater {
+        withContext(NonCancellable + Dispatchers.EDT) {
             ProjectManager.getInstance().closeAndDispose(context.project)
         }
     }

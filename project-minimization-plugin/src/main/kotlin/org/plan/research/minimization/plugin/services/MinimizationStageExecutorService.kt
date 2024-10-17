@@ -31,11 +31,13 @@ class MinimizationStageExecutorService : MinimizationStageExecutor {
         val hierarchy = fileLevelStage
             .hierarchyCollectionStrategy
             .getHierarchyCollectionStrategy()
-            .produce(context.originalProject)
+            .produce(context)
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
 
         workingLogger.info { "Minimize" }
-        hierarchicalDD.minimize(context, hierarchy)
+        context.withProgress {
+            hierarchicalDD.minimize(it, hierarchy)
+        }
     }.onRight {
         workingLogger.info { "End File level stage" }
         statLogger.info { "File level stage result: success" }
@@ -45,5 +47,3 @@ class MinimizationStageExecutorService : MinimizationStageExecutor {
         statLogger.error { "File level stage failed with error: $error" }
     }
 }
-
-

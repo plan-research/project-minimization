@@ -9,12 +9,14 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.project.isProjectOrWorkspaceFile
-import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findOrCreateDirectory
+import com.intellij.openapi.vfs.toNioPathOrNull
 
+import java.nio.file.Path
 import java.util.*
 
+import kotlin.io.path.copyTo
 import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
 
@@ -40,14 +42,14 @@ class ProjectCloningService(private val rootProject: Project) {
      */
     suspend fun clone(project: Project): Project? {
         val projectRoot = project.guessProjectDir() ?: return null
+
         val clonedProjectPath = writeAction {
             val clonedProjectPath = createNewProjectDirectory()
             val snapshotLocation = getSnapshotLocation()
-            VfsUtil.copyDirectory(
-                this,
-                projectRoot,
-                clonedProjectPath,
-            ) { it.path != snapshotLocation.path && isImportant(it, projectRoot) }
+            projectRoot.copyTo(clonedProjectPath.toNioPath()) {
+                isImportant(it, projectRoot) &&
+                    it.path != snapshotLocation.path
+            }
             clonedProjectPath
         }
         return ProjectUtil.openOrImportAsync(clonedProjectPath.toNioPath())
@@ -70,4 +72,18 @@ class ProjectCloningService(private val rootProject: Project) {
             .guessProjectDir()
             ?.findOrCreateDirectory(tempProjectsDirectoryName)
             ?: rootProject.guessProjectDir()!!
+
+    private fun VirtualFile.copyTo(destination: Path, root: Boolean = true, filter: (VirtualFile) -> Boolean) {
+        if (!filter(this)) {
+            return
+        }
+        val originalPath = this.toNioPathOrNull() ?: return
+        val fileDestination = if (root) destination else destination.resolve(name)
+        originalPath.copyTo(fileDestination, overwrite = true)
+        if (isDirectory) {
+            for (child in children) {
+                child.copyTo(fileDestination, false, filter)
+            }
+        }
+    }
 }

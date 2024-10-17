@@ -16,9 +16,8 @@ class MinimizeProjectAction : AnAction() {
         ActionUpdateThread.BGT
 
     override fun update(e: AnActionEvent) {
-        val project = e.project
         e.presentation.isVisible = true
-        project ?: run {
+        val project = e.project ?: run {
             e.presentation.isEnabled = false
             return
         }

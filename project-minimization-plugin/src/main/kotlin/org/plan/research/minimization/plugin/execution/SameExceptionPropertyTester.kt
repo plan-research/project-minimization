@@ -22,13 +22,6 @@ import com.intellij.openapi.project.Project
 
 /**
  * A property tester for Delta Debugging algorithm that leverages different compilation strategies
- *
- * @param T
- * @param rootProject
- * @param buildExceptionProvider
- * @param transformations
- * @param comparator
- * @param initialException
  */
 class SameExceptionPropertyTester<T : IJDDItem> private constructor(
     rootProject: Project,

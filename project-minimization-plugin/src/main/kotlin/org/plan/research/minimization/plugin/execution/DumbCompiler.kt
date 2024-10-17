@@ -34,9 +34,6 @@ object DumbCompiler : BuildExceptionProvider {
             DumbException(THROWABLE)
         }
 
-    /**
-     * @property throwable
-     */
     data class DumbException(val throwable: Throwable) : CompilationException {
         override suspend fun apply(
             transformation: ExceptionTransformation,

@@ -161,3 +161,5 @@
   enabled: false
 - name: FUNCTION_NAME_INCORRECT_CASE
   enabled: false
+- name: KDOC_NO_CONSTRUCTOR_PROPERTY
+  enabled: false

@@ -14,10 +14,6 @@ import com.intellij.platform.util.progress.reportSequentialProgress
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 
-/**
- * @param project
- * @param coroutineScope
- */
 @Service(Service.Level.PROJECT)
 class MinimizationService(project: Project, private val coroutineScope: CoroutineScope) {
     private val stages = project.service<MinimizationPluginSettings>().state.stages

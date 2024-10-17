@@ -18,9 +18,6 @@ import java.nio.file.Path
 
 import kotlin.io.path.relativeTo
 
-/**
- * @param propertyTester
- */
 class FileTreeHierarchicalDDGenerator(
     private val propertyTester: PropertyTester<IJDDContext, ProjectFileDDItem>,
 ) : HierarchicalDDGenerator<IJDDContext, ProjectFileDDItem> {
@@ -117,11 +114,6 @@ class FileTreeHierarchicalDDGenerator(
             reporter.nextStep(100 * currentLevel / maxDepth)
         }
 
-        /**
-         * @property file
-         * @property level
-         * @property nextChildIndex
-         */
         private data class StackEntry(val file: VirtualFile, val level: Int, var nextChildIndex: Int = 0)
     }
 }

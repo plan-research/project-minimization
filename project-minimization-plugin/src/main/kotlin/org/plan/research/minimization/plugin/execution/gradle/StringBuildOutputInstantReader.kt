@@ -33,8 +33,8 @@ class StringBuildOutputInstantReader(
         /**
          * A basic constructor to make it from a concatenated output
          *
-         * @param parentEventId
-         * @param lines
+         * @param parentEventId Identifier for the parent event in the build process.
+         * @param lines List of lines representing the build output.
          */
         fun create(parentEventId: String, lines: String) = StringBuildOutputInstantReader(
             parentEventId,

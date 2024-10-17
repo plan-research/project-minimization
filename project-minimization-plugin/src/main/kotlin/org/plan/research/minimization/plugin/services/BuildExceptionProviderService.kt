@@ -9,9 +9,6 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 
-/**
- * @param initialProject
- */
 @Service(Service.Level.PROJECT)
 class BuildExceptionProviderService(
     private val initialProject: Project,

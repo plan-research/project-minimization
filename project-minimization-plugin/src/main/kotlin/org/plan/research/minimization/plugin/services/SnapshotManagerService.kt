@@ -11,9 +11,6 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 
-/**
- * @param rootProject
- */
 @Service(Service.Level.PROJECT)
 class SnapshotManagerService(private val rootProject: Project) : SnapshotManager {
     private val underlyingObject: SnapshotManager

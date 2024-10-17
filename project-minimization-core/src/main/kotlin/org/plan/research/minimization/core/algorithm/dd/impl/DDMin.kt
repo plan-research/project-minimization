@@ -112,10 +112,10 @@ class DDMin : DDAlgorithm {
     }
 
     /**
-     * @property size
-     * @property parent
-     * @property smallChecked
-     * @property checked
+     * @property size a number of items
+     * @property parent a parent node
+     * @property smallChecked checked only items of the node
+     * @property checked check all items without node's items
      */
     private class Node(
         val size: Int,

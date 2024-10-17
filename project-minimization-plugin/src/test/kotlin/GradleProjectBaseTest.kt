@@ -5,6 +5,7 @@ import com.intellij.openapi.externalSystem.service.execution.ExternalSystemJdkUt
 import com.intellij.openapi.externalSystem.service.execution.ProgressExecutionMode
 import com.intellij.openapi.externalSystem.service.project.ProjectDataManager
 import com.intellij.openapi.externalSystem.util.ExternalSystemUtil
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.vfs.VirtualFile
@@ -35,13 +36,14 @@ abstract class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
         }
     }
 
-    protected suspend fun importGradleProject(root: VirtualFile) {
+    protected suspend fun importGradleProject(root: VirtualFile, project: Project = this.project) {
         val projectPath = root.path
         val gradleSettings = GradleSettings.getInstance(project)
         val projectSettings = GradleProjectSettings().apply {
             externalProjectPath = projectPath
             gradleJvm = sdk.name
         }
+        gradleSettings.unlinkExternalProject(projectPath)
         gradleSettings.linkProject(projectSettings)
 
         withContext(Dispatchers.EDT) {
@@ -54,7 +56,7 @@ abstract class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
         }
     }
 
-    protected fun assertGradleLoaded() {
+    protected fun assertGradleLoaded(project: Project = this.project) {
         val data = ProjectDataManager
             .getInstance()
             .getExternalProjectsData(project, GradleConstants.SYSTEM_ID)

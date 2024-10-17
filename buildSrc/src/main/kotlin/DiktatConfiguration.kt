@@ -16,6 +16,10 @@ import org.gradle.kotlin.dsl.configure
 fun Project.configureDiktat() {
     apply<DiktatGradlePlugin>()
     configure<DiktatExtension> {
+        githubActions = true
+        reporters {
+            sarif()
+        }
         inputs {
             include("src/main/**/*.kt")
         }
@@ -30,20 +34,14 @@ fun Project.createDiktatTask() {
         apply<DiktatGradlePlugin>()
         configure<DiktatExtension> {
             diktatConfigFile = rootProject.file("diktat-analysis.yml")
+            githubActions = true
+            reporters {
+                sarif()
+            }
             inputs {
                 include("./*.kts")
                 include("./buildSrc/**/*.kt")
             }
-        }
-    }
-    tasks.register("diktatCheckAll") {
-         allprojects {
-            this@register.dependsOn(tasks.getByName("diktatCheck"))
-        }
-    }
-    tasks.register("diktatFixAll") {
-        allprojects {
-            this@register.dependsOn(tasks.getByName("diktatFix"))
         }
     }
 }

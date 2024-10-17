@@ -1,4 +1,4 @@
-name: "Project Minimization: build and run tests"
+name: "Project Minimization: run diktat"
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
 
 
 jobs:
-  build-and-run-tests:
+  diktat:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
@@ -26,8 +26,11 @@ jobs:
         with:
           gradle-version: 8.5
 
-      - name: Build Plugin with Gradle
-        run: gradle buildPlugin
+      - name: Run Diktat
+        run: ./gradlew diktatCheck --no-configuration-cache
 
-      - name: Run Tests
-        run: gradle test
+      - name: Upload SARIF to Github using the upload-sarif action
+        uses: github/codeql-action/upload-sarif@v1
+        if: ${{ always() }}
+        with:
+          sarif_file: build/reports/diktat/diktat-merged.sarif

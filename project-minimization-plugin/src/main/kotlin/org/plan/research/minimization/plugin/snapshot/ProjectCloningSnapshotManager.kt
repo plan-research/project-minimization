@@ -7,6 +7,7 @@ import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
+import mu.KotlinLogging
 import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.errors.SnapshotError.*
 import org.plan.research.minimization.plugin.model.IJDDContext
@@ -21,6 +22,7 @@ import org.plan.research.minimization.plugin.services.ProjectCloningService
  */
 class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
     private val projectCloning = rootProject.service<ProjectCloningService>()
+    private val statLogger = KotlinLogging.logger("STATISTICS")
 
     /**
      * Executes a transaction within the provided context,
@@ -39,6 +41,8 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
         context: IJDDContext,
         action: suspend TransactionBody<T>.(newContext: IJDDContext) -> IJDDContext
     ): Either<SnapshotError<T>, IJDDContext> = either {
+        statLogger.info { "Snapshot manager start's transaction" }
+
         val clonedProject = projectCloning.clone(context.project)
             ?: raise(TransactionCreationFailed("Failed to create project"))
         val clonedContext = context.copy(project = clonedProject)
@@ -57,7 +61,12 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
             throw e
         }
     }.onRight {
+        statLogger.info { "Transaction completed successfully for context: $it" }
+        statLogger.info { "Transaction completed successfully for context: $it" }
         closeProject(context)
+    }.onLeft { error ->
+        statLogger.error { "Transaction failed with error: $error" }
+        statLogger.info { "Result: $error" }
     }
 
     private fun closeProject(context: IJDDContext) {

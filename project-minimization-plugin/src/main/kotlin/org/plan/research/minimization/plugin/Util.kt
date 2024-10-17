@@ -16,6 +16,8 @@ import org.plan.research.minimization.plugin.model.BuildExceptionProvider
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.ProjectFileDDItem
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
+import org.plan.research.minimization.plugin.model.exception.CompilationException
+import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
 import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.model.state.*
 import org.plan.research.minimization.plugin.snapshot.ProjectCloningSnapshotManager
@@ -69,10 +71,13 @@ fun List<ProjectFileDDItem>.toVirtualFiles(context: IJDDContext): List<VirtualFi
 
 fun Path.drop(n: Int): Path = subpath(n, nameCount)
 
-fun ExceptionComparingStrategy.getExceptionComparator() = when(this) {
+fun ExceptionComparingStrategy.getExceptionComparator() = when (this) {
     ExceptionComparingStrategy.SIMPLE -> SimpleExceptionComparator()
 }
 
 fun TransformationDescriptors.getExceptionTransformations() = when (this) {
     TransformationDescriptors.PATH_RELATIVIZATION -> PathRelativizationTransformation()
 }
+
+suspend fun CompilationException.apply(transformations: List<ExceptionTransformation>, context: IJDDContext) =
+    transformations.fold(this) { acc, it -> acc.apply(it, context) }

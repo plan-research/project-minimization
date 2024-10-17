@@ -1,7 +1,5 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.jetbrains.research.code.submissions.clustering.buildutils.configureDetekt
 import org.jetbrains.research.code.submissions.clustering.buildutils.configureDiktat
-import org.jetbrains.research.code.submissions.clustering.buildutils.createDetektTask
 import org.jetbrains.research.code.submissions.clustering.buildutils.createDiktatTask
 
 group = "org.plan.research.minimization"
@@ -51,8 +49,6 @@ allprojects {
     }
 
     configureDiktat()
-    configureDetekt()
 }
 
 createDiktatTask()
-createDetektTask()

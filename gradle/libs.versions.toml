@@ -4,11 +4,9 @@ kotlin = "1.9.23"
 intellij = "2.1.0"
 coroutines = "1.8.0"
 arrow = "1.2.4"
-detekt = "1.23.7"
 diktat = "2.0.0"
 
 [libraries]
-detekt-gradle-plugin = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
 diktat-gradle-plugin = { module = "com.saveourtool.diktat:diktat-gradle-plugin", version.ref = "diktat" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 

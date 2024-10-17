@@ -16,7 +16,7 @@ import kotlinx.coroutines.yield
  * so it's not necessary to implement your own.
  */
 class DDMin : DDAlgorithm {
-    @Suppress("NESTED_BLOCK", "TOO_LONG_FUNCTION")
+    @Suppress("NESTED_BLOCK", "TOO_LONG_FUNCTION", "")
     override suspend fun <C : DDContext, T : DDItem> minimize(
         context: C, items: List<T>,
         propertyTester: PropertyTester<C, T>,

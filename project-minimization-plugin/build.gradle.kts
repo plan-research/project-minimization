@@ -3,6 +3,8 @@ import org.jetbrains.intellij.platform.gradle.models.Coordinates
 
 plugins {
     alias(libs.plugins.intellij)
+    kotlin("plugin.serialization") version "1.9.23"
+//    alias(libs.plugins.kotlin.serialization)
 }
 
 group = rootProject.group
@@ -54,6 +56,9 @@ dependencies {
         testPlatformDependency(Coordinates("com.jetbrains.intellij.platform", "external-system-test-framework"))
     }
     implementation(project(":project-minimization-core"))
+    implementation(libs.kaml)
+//    implementation(libs.kotlinx.coroutines.core)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.1")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.1.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.1.0")

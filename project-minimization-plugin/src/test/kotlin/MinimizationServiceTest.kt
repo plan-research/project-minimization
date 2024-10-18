@@ -6,7 +6,10 @@ import com.intellij.openapi.project.guessProjectDir
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
+import org.plan.research.minimization.plugin.model.state.DDStrategy
+import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
 import org.plan.research.minimization.plugin.model.state.TransformationDescriptors
 import org.plan.research.minimization.plugin.services.MinimizationService
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
@@ -22,6 +25,11 @@ class MinimizationServiceTest : GradleProjectBaseTest() {
             currentCompilationStrategy = CompilationStrategy.GRADLE_IDEA
             minimizationTransformations.clear()
             minimizationTransformations.add(TransformationDescriptors.PATH_RELATIVIZATION)
+            stages.clear()
+            stages.add(FileLevelStage(
+                hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
+                ddAlgorithm = DDStrategy.DD_MIN
+            ))
         }
     }
 

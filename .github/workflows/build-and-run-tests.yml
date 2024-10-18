@@ -8,6 +8,10 @@ on:
     branches:
       - 'main'
 
+permissions:
+  contents: read
+  actions: read
+  checks: write
 
 jobs:
   build-and-run-tests:
@@ -32,10 +36,10 @@ jobs:
       - name: Run Tests
         run: ./gradlew test
       - name: Store reports
-        if: failure()
-        uses: actions/upload-artifact@v3
+        uses: dorny/test-reporter@v1
+        if: failure() || success()
         with:
-          name: reports
-          path: |
-            **/build/reports/
-            **/build/test-results/
+          name: JUnit Tests
+          path: "**/build/test-results/test/*.xml"
+          reporter: java-junit
+

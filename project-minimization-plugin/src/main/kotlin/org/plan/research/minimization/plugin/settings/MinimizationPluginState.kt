@@ -19,7 +19,7 @@ class MinimizationPluginState : BaseState() {
 
     @Property(surroundWithTag = false)
     @XCollection(style = XCollection.Style.v1, elementName = "stage")
-    val stages: MutableList<MinimizationStage> = mutableListOf(
+    var stages: MutableList<MinimizationStage> = mutableListOf(
         FileLevelStage(
             hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
             ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
@@ -28,8 +28,9 @@ class MinimizationPluginState : BaseState() {
 
     @Property(surroundWithTag = false)
     @XCollection(style = XCollection.Style.v1, elementName = "minimizationTransformations")
-    val minimizationTransformations: MutableList<TransformationDescriptors> = mutableListOf(
+    var minimizationTransformations: MutableList<TransformationDescriptors> = mutableListOf(
         TransformationDescriptors.PATH_RELATIVIZATION,
     )
     var exceptionComparingStrategy by enum<ExceptionComparingStrategy>(ExceptionComparingStrategy.SIMPLE)
+    var gradleCompilationTask by string("build")
 }

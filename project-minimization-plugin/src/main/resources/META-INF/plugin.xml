@@ -36,5 +36,9 @@
                 class="org.plan.research.minimization.plugin.MinimizeProjectAction" text="Minimize Project">
             <add-to-group group-id="CodeMenu" anchor="first"/>
         </action>
+        <action id="org.plan.research.minimization.plugin.BenchmarkAction"
+                class="org.plan.research.minimization.plugin.BenchmarkAction" text="Run the benchmark on the dataset">
+            <add-to-group group-id="ToolsMenu" anchor="first"/>
+        </action>
     </actions>
 </idea-plugin>

@@ -5,6 +5,7 @@ intellij = "2.1.0"
 coroutines = "1.8.0"
 arrow = "1.2.4"
 diktat = "2.0.0"
+kaml = "0.58.0"
 
 [libraries]
 diktat-gradle-plugin = { module = "com.saveourtool.diktat:diktat-gradle-plugin", version.ref = "diktat" }
@@ -13,5 +14,9 @@ kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", v
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
 
+kaml = { module = "com.charleskorn.kaml:kaml", version.ref = "kaml" }
+kotlin-serialization = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
+
 [plugins]
 intellij = { id = "org.jetbrains.intellij.platform", version.ref = "intellij" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

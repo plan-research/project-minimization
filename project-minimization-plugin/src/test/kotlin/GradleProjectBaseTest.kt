@@ -67,9 +67,10 @@ abstract class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
         assertNotEquals("unspecified", data.version, message = "Gradle project is not loaded")
     }
 
-    protected fun copyGradle(useK2: Boolean = false, useBuildKts: Boolean = true) {
+    protected fun copyGradle(useK2: Boolean = false, useBuildKts: Boolean = true, copyProperties: Boolean = true) {
         myFixture.copyDirectoryToProject("core/gradle", "gradle")
-        myFixture.copyFileToProject("core/gradle.properties", "gradle.properties")
+        if (copyProperties)
+            myFixture.copyFileToProject("core/gradle.properties", "gradle.properties")
         myFixture.copyFileToProject("core/settings.gradle.kts", "settings.gradle.kts")
         if (useBuildKts) {
             if (!useK2)

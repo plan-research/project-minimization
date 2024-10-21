@@ -32,5 +32,5 @@ class MinimizationPluginState : BaseState() {
         TransformationDescriptors.PATH_RELATIVIZATION,
     )
     var exceptionComparingStrategy by enum<ExceptionComparingStrategy>(ExceptionComparingStrategy.SIMPLE)
-    var gradleCompilationTask by string("build")
+    var gradleCompilationTask by string(":build")
 }

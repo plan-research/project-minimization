@@ -3,7 +3,7 @@ import org.jetbrains.intellij.platform.gradle.models.Coordinates
 
 plugins {
     alias(libs.plugins.intellij)
-    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kotlinx.serialization)
 }
 
 group = rootProject.group
@@ -41,6 +41,7 @@ dependencies {
     }
     implementation(project(":project-minimization-core"))
     implementation(libs.kaml)
+    implementation(libs.kotlinx.serialization)
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.1.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.1.0")

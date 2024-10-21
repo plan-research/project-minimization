@@ -1,4 +1,3 @@
-import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.research.code.submissions.clustering.buildutils.configureDiktat
 import org.jetbrains.research.code.submissions.clustering.buildutils.createDiktatTask
@@ -42,14 +41,6 @@ allprojects {
 
         test {
             useJUnitPlatform()
-            testLogging {
-                events("passed", "skipped", "failed")
-                exceptionFormat = TestExceptionFormat.FULL
-                showCauses = true
-                showExceptions = true
-                showStackTraces = true
-                showStandardStreams = true
-            }
         }
     }
 

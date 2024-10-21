@@ -26,6 +26,7 @@ import com.intellij.openapi.vfs.findFile
 import com.intellij.openapi.vfs.readText
 import com.intellij.openapi.vfs.toNioPathOrNull
 import com.intellij.platform.ide.progress.withBackgroundProgress
+import com.intellij.platform.util.progress.ProgressReporter
 import com.intellij.platform.util.progress.reportProgress
 
 import java.nio.file.Path
@@ -51,18 +52,16 @@ class BenchmarkingService(private val rootProject: Project, private val cs: Coro
             .filter { it.isSuitableForGradleBenchmarking(allowAndroid = false) }  // FIXME
         withBackgroundProgress(rootProject, "Running Minimization Benchmark") {
             reportProgress(filteredProjects.size) { reporter ->
-                processProjects(filteredProjects)
+                processProjects(filteredProjects, reporter)
                     .cancellable()
                     .collect { (result, projectConfig) ->
-                        reporter.itemStep {
-                            result.fold(
-                                ifLeft = { adapter.onFailure(it, projectConfig) },
-                                ifRight = {
-                                    adapter.onSuccess(it, projectConfig)
-                                    closeProject(it)
-                                },
-                            )
-                        }
+                        result.fold(
+                            ifLeft = { adapter.onFailure(it, projectConfig) },
+                            ifRight = {
+                                adapter.onSuccess(it, projectConfig)
+                                closeProject(it)
+                            },
+                        )
                     }
             }
         }
@@ -91,18 +90,20 @@ class BenchmarkingService(private val rootProject: Project, private val cs: Coro
         }
     }
 
-    private suspend fun processProjects(projects: List<BenchmarkProject>) = projects
+    private suspend fun processProjects(projects: List<BenchmarkProject>, reporter: ProgressReporter) = projects
         .asFlow()
         .map { project ->
-            val gradleBuildTask = loadReproduceScript(project) ?: "build"
-            val openedProject = openBenchmarkProject(project).getOrNull() ?: return@map null
-            try {
-                setMinimizationSettings(openedProject, gradleBuildTask)
-                val minimizationService = openedProject.service<MinimizationService>()
-                val result = minimizationService.minimizeProjectSuspendable(openedProject)
-                BenchmarkMinimizationResult(result, project)
-            } finally {
-                closeProject(openedProject)
+            reporter.itemStep("Minimizing ${project.name}") {
+                val gradleBuildTask = loadReproduceScript(project) ?: "build"
+                val openedProject = openBenchmarkProject(project).getOrNull() ?: return@itemStep null
+                try {
+                    setMinimizationSettings(openedProject, gradleBuildTask)
+                    val minimizationService = openedProject.service<MinimizationService>()
+                    val result = minimizationService.minimizeProjectSuspendable(openedProject)
+                    BenchmarkMinimizationResult(result, project)
+                } finally {
+                    closeProject(openedProject)
+                }
             }
         }
         .filterNotNull()

@@ -22,22 +22,23 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
 
     fun minimizeProject(project: Project) =
         coroutineScope.async {
-            withBackgroundProgress(project, "Minimizing project") {
-                either {
-                    val clonedProject = projectCloning.clone(project)
-                        ?: raise(MinimizationError.CloningFailed)
-                    var currentProject = IJDDContext(clonedProject, project)
+            minimizeProjectSuspendable(project)
+        }
+    suspend fun minimizeProjectSuspendable(project: Project) = withBackgroundProgress(project, "Minimizing project") {
+        either {
+            val clonedProject = projectCloning.clone(project)
+                ?: raise(MinimizationError.CloningFailed)
+            var currentProject = IJDDContext(clonedProject, project)
 
-                    reportSequentialProgress(stages.size) { reporter ->
-                        for (stage in stages) {
-                            reporter.itemStep("Minimization step: ${stage.name}") {
-                                currentProject = stage.apply(currentProject, executor).bind()
-                            }
-                        }
+            reportSequentialProgress(stages.size) { reporter ->
+                for (stage in stages) {
+                    reporter.itemStep("Minimization step: ${stage.name}") {
+                        currentProject = stage.apply(currentProject, executor).bind()
                     }
-
-                    currentProject.project
                 }
             }
+
+            currentProject.project
         }
+    }
 }

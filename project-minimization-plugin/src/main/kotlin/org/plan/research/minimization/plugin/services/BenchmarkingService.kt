@@ -25,6 +25,8 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.findFile
 import com.intellij.openapi.vfs.readText
 import com.intellij.openapi.vfs.toNioPathOrNull
+import com.intellij.platform.ide.progress.withBackgroundProgress
+import com.intellij.platform.util.progress.reportProgress
 
 import java.nio.file.Path
 
@@ -32,10 +34,7 @@ import kotlin.io.path.Path
 import kotlin.io.path.readText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -47,17 +46,26 @@ class BenchmarkingService(private val rootProject: Project, private val cs: Coro
             adapter.onConfigCreationError()
             return@launch
         }
-        processProjects(config.projects)
-            .collect { (project, result, projectConfig) ->
-                result.fold(
-                    ifLeft = { adapter.onFailure(it, projectConfig) },
-                    ifRight = {
-                        adapter.onSuccess(it, projectConfig)
-                        closeProject(it)
+        val filteredProjects = config
+            .projects
+            .filter { it.isSuitableForGradleBenchmarking(allowAndroid = false) }  // FIXME
+        withBackgroundProgress(rootProject, "Running Minimization Benchmark") {
+            reportProgress(filteredProjects.size) { reporter ->
+                processProjects(filteredProjects)
+                    .cancellable()
+                    .collect { (result, projectConfig) ->
+                        reporter.itemStep {
+                            result.fold(
+                                ifLeft = { adapter.onFailure(it, projectConfig) },
+                                ifRight = {
+                                    adapter.onSuccess(it, projectConfig)
+                                    closeProject(it)
+                                },
+                            )
+                        }
                     }
-                )
-                closeProject(project)
             }
+        }
     }
 
     private suspend fun closeProject(project: Project) = withContext(Dispatchers.EDT) {
@@ -85,14 +93,17 @@ class BenchmarkingService(private val rootProject: Project, private val cs: Coro
 
     private suspend fun processProjects(projects: List<BenchmarkProject>) = projects
         .asFlow()
-        .filter { it.isSuitableForGradleBenchmarking(allowAndroid = false) }  // FIXME
         .map { project ->
             val gradleBuildTask = loadReproduceScript(project) ?: "build"
             val openedProject = openBenchmarkProject(project).getOrNull() ?: return@map null
-            setMinimizationSettings(openedProject, gradleBuildTask)
-            val minimizationService = openedProject.service<MinimizationService>()
-            val result = minimizationService.minimizeProject(openedProject).await()
-            BenchmarkMinimizationResult(openedProject, result, project)
+            try {
+                setMinimizationSettings(openedProject, gradleBuildTask)
+                val minimizationService = openedProject.service<MinimizationService>()
+                val result = minimizationService.minimizeProjectSuspendable(openedProject)
+                BenchmarkMinimizationResult(result, project)
+            } finally {
+                closeProject(openedProject)
+            }
         }
         .filterNotNull()
 
@@ -140,10 +151,9 @@ class BenchmarkingService(private val rootProject: Project, private val cs: Coro
 
     private fun BenchmarkProject.isSuitableForGradleBenchmarking(allowAndroid: Boolean): Boolean =
         (allowAndroid || this.extra?.tags?.contains("android") != true) &&
-                this.buildSystem.type == BuildSystemType.GRADLE
+            this.buildSystem.type == BuildSystemType.GRADLE
 
     private data class BenchmarkMinimizationResult(
-        val project: Project,
         val result: Either<MinimizationError, Project>,
         val projectConfig: BenchmarkProject,
     )

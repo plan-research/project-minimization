@@ -10,11 +10,23 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.components.service
+import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 
 class BenchmarkAction : AnAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
+
+    override fun update(e: AnActionEvent) {
+        e.presentation.isVisible = true
+        val project = e.project ?: run {
+            e.presentation.isEnabled = false
+            return
+        }
+
+        val isDumb = DumbService.isDumb(project)
+        e.presentation.isEnabled = !isDumb
+    }
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return

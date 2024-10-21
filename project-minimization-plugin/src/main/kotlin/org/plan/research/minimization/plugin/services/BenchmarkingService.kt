@@ -2,6 +2,8 @@ package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.plugin.benchmark.BenchmarkConfig
 import org.plan.research.minimization.plugin.benchmark.BenchmarkProject
+import org.plan.research.minimization.plugin.benchmark.BenchmarkResultAdapter
+import org.plan.research.minimization.plugin.benchmark.BuildSystemType
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.state.DDStrategy
@@ -36,26 +38,25 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.plan.research.minimization.plugin.benchmark.BuildSystemType
 
 @Service(Service.Level.PROJECT)
 class BenchmarkingService(private val rootProject: Project, private val cs: CoroutineScope) {
-    fun benchmark(onSuccess: (Project) -> Unit, onFailure: (MinimizationError?) -> Unit) = cs.launch {
+    fun benchmark(adapter: BenchmarkResultAdapter) = cs.launch {
         val config = readConfig().getOrNull()
         config ?: run {
-            onFailure(null)
+            adapter.onConfigCreationError()
             return@launch
         }
         processProjects(config.projects)
-            .collect { (project, result) ->
+            .collect { (project, result, projectConfig) ->
                 when (result) {
-                    is Either.Left<MinimizationError> -> onFailure(result.value).also {
+                    is Either.Left<MinimizationError> -> adapter.onFailure(result.value, projectConfig).also {
                         withContext(Dispatchers.EDT) {
                             ProjectManager.getInstance().closeAndDispose(project)
                         }
                     }
 
-                    is Either.Right<Project> -> onSuccess(result.value).also {
+                    is Either.Right<Project> -> adapter.onSuccess(result.value, projectConfig).also {
                         withContext(Dispatchers.EDT) {
                             ProjectManager.getInstance().closeAndDispose(result.value)
                         }
@@ -85,14 +86,14 @@ class BenchmarkingService(private val rootProject: Project, private val cs: Coro
 
     private suspend fun processProjects(projects: List<BenchmarkProject>) = projects
         .asFlow()
-        .filter { it.isSuitableForGradleBenchmarking(allowAndroid = false) } // FIXME
+        .filter { it.isSuitableForGradleBenchmarking(allowAndroid = false) }  // FIXME
         .map { project ->
             val gradleBuildTask = loadReproduceScript(project) ?: "build"
             val openedProject = openBenchmarkProject(project).getOrNull() ?: return@map null
             setMinimizationSettings(openedProject, gradleBuildTask)
             val minimizationService = openedProject.service<MinimizationService>()
             val result = minimizationService.minimizeProject(openedProject).await()
-            openedProject to result
+            BenchmarkMinimizationResult(openedProject, result, project)
         }
         .filterNotNull()
 
@@ -140,6 +141,11 @@ class BenchmarkingService(private val rootProject: Project, private val cs: Coro
 
     private fun BenchmarkProject.isSuitableForGradleBenchmarking(allowAndroid: Boolean): Boolean =
         (allowAndroid || this.extra?.tags?.contains("android") != true) &&
-                this.buildSystem.type == BuildSystemType.GRADLE
+            this.buildSystem.type == BuildSystemType.GRADLE
 
+    private data class BenchmarkMinimizationResult(
+        val project: Project,
+        val result: Either<MinimizationError, Project>,
+        val projectConfig: BenchmarkProject,
+    )
 }

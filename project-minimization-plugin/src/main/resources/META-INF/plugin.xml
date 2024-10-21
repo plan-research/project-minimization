@@ -30,6 +30,9 @@
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
+        <notificationGroup id="org.plan.research.minimization.benchmark.result"
+                           displayType="BALLOON"
+                           isLogByDefault="false"/>
     </extensions>
     <actions>
         <action id="org.plan.research.minimization.plugin.MinimizeProjectAction"

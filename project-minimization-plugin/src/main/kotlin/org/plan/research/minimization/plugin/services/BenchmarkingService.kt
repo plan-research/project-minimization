@@ -31,13 +31,15 @@ import kotlin.io.path.readText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.plan.research.minimization.plugin.benchmark.BuildSystemType
 
 @Service(Service.Level.PROJECT)
-class BenchmarkingService(val rootProject: Project, val cs: CoroutineScope) {
+class BenchmarkingService(private val rootProject: Project, private val cs: CoroutineScope) {
     fun benchmark(onSuccess: (Project) -> Unit, onFailure: (MinimizationError?) -> Unit) = cs.launch {
         val config = readConfig().getOrNull()
         config ?: run {
@@ -83,6 +85,7 @@ class BenchmarkingService(val rootProject: Project, val cs: CoroutineScope) {
 
     private suspend fun processProjects(projects: List<BenchmarkProject>) = projects
         .asFlow()
+        .filter { it.isSuitableForGradleBenchmarking(allowAndroid = false) } // FIXME
         .map { project ->
             val gradleBuildTask = loadReproduceScript(project) ?: "build"
             val openedProject = openBenchmarkProject(project).getOrNull() ?: return@map null
@@ -115,6 +118,13 @@ class BenchmarkingService(val rootProject: Project, val cs: CoroutineScope) {
         return getGradleBuildTask(content)
     }
 
+    /**
+     * Function to transform a reproducing script into Gradle's task name.
+     * NB: this script assumes that all reproducing scripts
+     *  * uses Gradle
+     *  * uses a single task (or a single task + `clean` task)
+     *  * do not do extra actions
+     */
     private fun getGradleBuildTask(reproduceScript: String): String? {
         val gradleLine = reproduceScript.lines().find { it.startsWith("./gradlew") } ?: return null
         val tasks = gradleLine
@@ -127,4 +137,9 @@ class BenchmarkingService(val rootProject: Project, val cs: CoroutineScope) {
             .filterNot { it.startsWith("--") }
         return tasks.firstOrNull()
     }
+
+    private fun BenchmarkProject.isSuitableForGradleBenchmarking(allowAndroid: Boolean): Boolean =
+        (allowAndroid || this.extra?.tags?.contains("android") != true) &&
+                this.buildSystem.type == BuildSystemType.GRADLE
+
 }

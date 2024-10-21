@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin
 
 import org.plan.research.minimization.plugin.benchmark.BenchmarkProject
-import org.plan.research.minimization.plugin.benchmark.BenchmarkResultAdapter
+import org.plan.research.minimization.plugin.benchmark.BenchmarkResultSubscriber
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.services.BenchmarkingService
 
@@ -18,15 +18,12 @@ class BenchmarkAction : AnAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        if (!project.name.endsWith("dataset")) {
-            return
-        }
         // TODO: make default choices for terminating and new projects
         val benchmarkingService = project.service<BenchmarkingService>()
         benchmarkingService.benchmark(BenchmarkResultNotifier(project))
     }
 
-    private class BenchmarkResultNotifier(private val root: Project) : BenchmarkResultAdapter {
+    private class BenchmarkResultNotifier(private val root: Project) : BenchmarkResultSubscriber {
         private val notificationGroup = NotificationGroupManager
             .getInstance()
             .getNotificationGroup("org.plan.research.minimization.benchmark.result")

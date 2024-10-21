@@ -2,7 +2,7 @@ package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.plugin.benchmark.BenchmarkConfig
 import org.plan.research.minimization.plugin.benchmark.BenchmarkProject
-import org.plan.research.minimization.plugin.benchmark.BenchmarkResultAdapter
+import org.plan.research.minimization.plugin.benchmark.BenchmarkResultSubscriber
 import org.plan.research.minimization.plugin.benchmark.BuildSystemType
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.model.FileLevelStage
@@ -41,7 +41,7 @@ import kotlinx.coroutines.withContext
 
 @Service(Service.Level.PROJECT)
 class BenchmarkingService(private val rootProject: Project, private val cs: CoroutineScope) {
-    fun benchmark(adapter: BenchmarkResultAdapter) = cs.launch {
+    fun benchmark(adapter: BenchmarkResultSubscriber) = cs.launch {
         val config = readConfig().getOrNull()
         config ?: run {
             adapter.onConfigCreationError()
@@ -49,20 +49,19 @@ class BenchmarkingService(private val rootProject: Project, private val cs: Coro
         }
         processProjects(config.projects)
             .collect { (project, result, projectConfig) ->
-                when (result) {
-                    is Either.Left<MinimizationError> -> adapter.onFailure(result.value, projectConfig).also {
-                        withContext(Dispatchers.EDT) {
-                            ProjectManager.getInstance().closeAndDispose(project)
-                        }
+                result.fold(
+                    ifLeft = { adapter.onFailure(it, projectConfig) },
+                    ifRight = {
+                        adapter.onSuccess(it, projectConfig)
+                        closeProject(it)
                     }
-
-                    is Either.Right<Project> -> adapter.onSuccess(result.value, projectConfig).also {
-                        withContext(Dispatchers.EDT) {
-                            ProjectManager.getInstance().closeAndDispose(result.value)
-                        }
-                    }
-                }
+                )
+                closeProject(project)
             }
+    }
+
+    private suspend fun closeProject(project: Project) = withContext(Dispatchers.EDT) {
+        ProjectManager.getInstance().closeAndDispose(project)
     }
 
     private suspend fun readConfig(): Option<BenchmarkConfig> = option {
@@ -141,7 +140,7 @@ class BenchmarkingService(private val rootProject: Project, private val cs: Coro
 
     private fun BenchmarkProject.isSuitableForGradleBenchmarking(allowAndroid: Boolean): Boolean =
         (allowAndroid || this.extra?.tags?.contains("android") != true) &&
-            this.buildSystem.type == BuildSystemType.GRADLE
+                this.buildSystem.type == BuildSystemType.GRADLE
 
     private data class BenchmarkMinimizationResult(
         val project: Project,

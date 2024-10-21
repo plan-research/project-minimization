@@ -16,7 +16,7 @@ import org.plan.research.minimization.plugin.model.MinimizationStageExecutor
 class MinimizationStageExecutorService : MinimizationStageExecutor {
 
     override suspend fun executeFileLevelStage(context: IJDDContext, fileLevelStage: FileLevelStage) = either {
-        Loggers.workingLogger.info { "Start File level stage" }
+        Loggers.generalLogger.info { "Start File level stage" }
         Loggers.statLogger.info { "File level stage settings, " +
                 "Hierarchy strategy: ${fileLevelStage.hierarchyCollectionStrategy::class.simpleName}, " +
                 "DDAlgorithm: ${fileLevelStage.ddAlgorithm::class.simpleName}" }
@@ -24,22 +24,22 @@ class MinimizationStageExecutorService : MinimizationStageExecutor {
         val baseAlgorithm = fileLevelStage.ddAlgorithm.getDDAlgorithm()
         val hierarchicalDD = HierarchicalDD(baseAlgorithm)
 
-        Loggers.workingLogger.info { "Initialise file hierarchy" }
+        Loggers.generalLogger.info { "Initialise file hierarchy" }
         val hierarchy = fileLevelStage
             .hierarchyCollectionStrategy
             .getHierarchyCollectionStrategy()
             .produce(context)
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
 
-        Loggers.workingLogger.info { "Minimize" }
+        Loggers.generalLogger.info { "Minimize" }
         context.withProgress {
             hierarchicalDD.minimize(it, hierarchy)
         }
     }.onRight {
-        Loggers.workingLogger.info { "End File level stage" }
+        Loggers.generalLogger.info { "End File level stage" }
         Loggers.statLogger.info { "File level stage result: success" }
     }.onLeft { error ->
-        Loggers.workingLogger.info { "End File level stage" }
+        Loggers.generalLogger.info { "End File level stage" }
         Loggers.statLogger.info { "File level stage result: $error" }
         Loggers.generalLogger.error { "File level stage failed with error: $error" }
     }

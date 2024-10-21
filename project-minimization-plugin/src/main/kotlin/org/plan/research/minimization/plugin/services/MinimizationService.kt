@@ -24,12 +24,12 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
         coroutineScope.async {
             withBackgroundProgress(project, "Minimizing project") {
                 either {
-                    Loggers.workingLogger.info { "Start Project minimization" }
+                    Loggers.generalLogger.info { "Start Project minimization" }
 
-                    Loggers.workingLogger.info { "Clonning project..." }
+                    Loggers.generalLogger.info { "Clonning project..." }
                     val clonedProject = projectCloning.clone(project)
                         ?: raise(MinimizationError.CloningFailed)
-                    Loggers.workingLogger.info { "Project clone end" }
+                    Loggers.generalLogger.info { "Project clone end" }
                         
                     var currentProject = IJDDContext(clonedProject, project)
 
@@ -43,9 +43,9 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
 
                     currentProject.project
                 }.onRight {
-                    Loggers.workingLogger.info { "End Project minimization" }
+                    Loggers.generalLogger.info { "End Project minimization" }
                 }.onLeft { error ->
-                    Loggers.workingLogger.info { "End Project minimization" }
+                    Loggers.generalLogger.info { "End Project minimization" }
                     Loggers.generalLogger.error { "End minimizeProject with error: $error" }
                 }
             }

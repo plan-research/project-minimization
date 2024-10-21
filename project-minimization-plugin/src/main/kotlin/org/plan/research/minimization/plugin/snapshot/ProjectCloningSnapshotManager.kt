@@ -44,7 +44,7 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
         action: suspend TransactionBody<T>.(newContext: IJDDContext) -> IJDDContext
     ): Either<SnapshotError<T>, IJDDContext> = either {
         Loggers.statLogger.info { "Snapshot manager start's transaction" }
-        Loggers.workingLogger.info { "Snapshot manager start's transaction" }
+        Loggers.generalLogger.info { "Snapshot manager start's transaction" }
 
         val clonedProject = projectCloning.clone(context.project)
             ?: raise(TransactionCreationFailed("Failed to create project"))
@@ -64,7 +64,7 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
             throw e
         }
     }.onRight {
-        Loggers.workingLogger.info { "Transaction completed successfully" }
+        Loggers.generalLogger.info { "Transaction completed successfully" }
         Loggers.statLogger.info { "Transaction result: success" }
         closeProject(context)
     }.onLeft { error ->

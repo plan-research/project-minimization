@@ -1,68 +1,20 @@
 <configuration>
 
-    <!-- appender for console output -->
+    <!-- Appender for console output (for tests only) -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <!-- appender for TRACE and DEBUG -->
-    <appender name="DEBUG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/logs.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>logs/logs-%d{yyyy-MM-dd}.log</fileNamePattern>
-            <maxHistory>30</maxHistory>
-        </rollingPolicy>
-        <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-        </encoder>
-    </appender>
-
-    <!-- Appender for STATISTICS -->
-    <appender name="STATISTICS_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/statistics.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>logs/statistics-%d{yyyy-MM-dd}.log</fileNamePattern>
-            <maxHistory>30</maxHistory>
-        </rollingPolicy>
-        <encoder>
-            <pattern>%d{HH:mm:ss.SSS} - %msg%n</pattern>
-        </encoder>
-    </appender>
-
-    <!-- appender for WORKING logs -->
-    <appender name="WORKING_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/working.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>logs/working-%d{yyyy-MM-dd}.log</fileNamePattern>
-            <maxHistory>30</maxHistory>
-        </rollingPolicy>
-        <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %class{36} - %msg%n</pattern>
-        </encoder>
-
-    </appender>
-
-    <!-- Logger for STATISTICS (write only in statistics.log) -->
-    <logger name="STATISTICS" level="INFO" additivity="false">
-        <appender-ref ref="STATISTICS_FILE" />
+    <!-- Logger for your package (write logs only to console) -->
+    <logger name="org.plan.research.minimization" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE" />
     </logger>
 
-    <!-- Logger for Working (write only in working.log) -->
-    <logger name="WORKING" level="INFO" additivity="false">
-        <appender-ref ref="WORKING_FILE" />
-    </logger>
-
-    <!-- Logger for TRACE and DEBUG (write only in logs.log) -->
-    <logger name="TRACE_DEBUG" level="TRACE" additivity="false">
-        <appender-ref ref="DEBUG_FILE" />
-    </logger>
-
-    <!-- Main logger for ERROR (write in logs.log and Console) -->
+    <!-- Root logger (limited to ERROR level) -->
     <root level="ERROR">
         <appender-ref ref="CONSOLE" />
-        <appender-ref ref="DEBUG_FILE" />
     </root>
 
 </configuration>

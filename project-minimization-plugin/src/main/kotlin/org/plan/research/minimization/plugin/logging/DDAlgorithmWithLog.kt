@@ -16,7 +16,7 @@ class DDAlgorithmWithLog (
     ): DDAlgorithmResult<C, T> {
         val result: DDAlgorithmResult<C, T>
 
-        Loggers.workingLogger.info { "Start minimization algorithm \n" +
+        Loggers.generalLogger.info { "Start minimization algorithm \n" +
                 "Context - ${context::class.simpleName}, \n" +
                 "items - ${(items.firstOrNull() ?: NoSuchElementException())::class.simpleName} \n" +
                 "propertyTester - ${propertyTester::class.simpleName}" }
@@ -26,7 +26,7 @@ class DDAlgorithmWithLog (
 
         try {
             result = innerDDAlgorithm.minimize(context, items, propertyTester)
-        } catch (e: Error) {
+        } catch (e: Throwable) {
             Loggers.generalLogger.error { "DDAlgorithm ended up with error: ${e.message}" }
             throw e
         }
@@ -34,7 +34,7 @@ class DDAlgorithmWithLog (
         Loggers.statLogger.info { "Start: ${items.size}, " +
                 "End: ${result.items.size}, " +
                 "Ratio: ${result.items.size.toDouble() / items.size}" }
-        Loggers.workingLogger.info { "End minimization algorithm" }
+        Loggers.generalLogger.info { "End minimization algorithm" }
 
         return result
     }

@@ -1,5 +1,6 @@
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.EDT
+import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.externalSystem.importing.ImportSpecBuilder
 import com.intellij.openapi.externalSystem.service.execution.ExternalSystemJdkUtil
 import com.intellij.openapi.externalSystem.service.execution.ProgressExecutionMode
@@ -56,13 +57,15 @@ abstract class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
         }
     }
 
-    protected fun assertGradleLoaded(project: Project = this.project) {
-        val data = ProjectDataManager
-            .getInstance()
-            .getExternalProjectsData(project, GradleConstants.SYSTEM_ID)
-            .firstOrNull()
-            ?.externalProjectStructure
-            ?.data
+    protected suspend fun assertGradleLoaded(project: Project = this.project) {
+        val data = smartReadAction(project) {
+            ProjectDataManager
+                .getInstance()
+                .getExternalProjectsData(project, GradleConstants.SYSTEM_ID)
+                .firstOrNull()
+                ?.externalProjectStructure
+                ?.data
+        }
         kotlin.test.assertNotNull(data, message = "Gradle project is not loaded")
         assertNotEquals("unspecified", data.version, message = "Gradle project is not loaded")
     }

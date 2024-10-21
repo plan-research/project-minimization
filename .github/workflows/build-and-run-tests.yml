@@ -35,9 +35,10 @@ jobs:
 
       - name: Run Tests
         run: ./gradlew test
+
       - name: Store reports
         uses: dorny/test-reporter@v1
-        if: failure() || success()
+        if: ${{ always() }}
         with:
           name: JUnit Tests
           path: "**/build/test-results/test/*.xml"

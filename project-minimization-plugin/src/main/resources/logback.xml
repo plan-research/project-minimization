@@ -27,7 +27,7 @@
             <maxHistory>30</maxHistory>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} - %msg%n</pattern>
         </encoder>
     </appender>
 
@@ -49,10 +49,6 @@
         <appender-ref ref="STATISTICS_FILE" />
     </logger>
 
-    <logger name="STATISTICS" level="DEBUG" additivity="false">
-        <appender-ref ref="STATISTICS_FILE" />
-    </logger>
-
     <!-- Logger for Working (write only in working.log) -->
     <logger name="WORKING" level="INFO" additivity="false">
         <appender-ref ref="WORKING_FILE" />
@@ -63,8 +59,8 @@
         <appender-ref ref="DEBUG_FILE" />
     </logger>
 
-    <!-- Main logger for INFO, WARN, ERROR (write in logs.log and Console) -->
-    <root level="INFO">
+    <!-- Main logger for ERROR (write in logs.log and Console) -->
+    <root level="ERROR">
         <appender-ref ref="CONSOLE" />
         <appender-ref ref="DEBUG_FILE" />
     </root>

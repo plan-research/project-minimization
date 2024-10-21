@@ -24,10 +24,8 @@ allprojects {
 
     dependencies {
         implementation(libs.arrow.core)
-
-        implementation("io.github.microutils:kotlin-logging-jvm:2.1.21")
-
-        implementation("ch.qos.logback:logback-classic:1.2.11")
+        implementation(libs.kotlin.logging)
+        implementation(libs.logback.classic)
 
         testImplementation(kotlin("test"))
     }

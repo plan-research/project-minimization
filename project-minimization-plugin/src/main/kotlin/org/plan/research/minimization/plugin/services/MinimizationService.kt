@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import mu.KotlinLogging
 import org.plan.research.minimization.plugin.errors.MinimizationError
+import org.plan.research.minimization.plugin.logging.Loggers
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
@@ -19,19 +20,16 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
     private val executor = project.service<MinimizationStageExecutorService>()
     private val projectCloning = project.service<ProjectCloningService>()
 
-    private val workingLogger = KotlinLogging.logger("WORKING")
-    private val logger = KotlinLogging.logger {}
-
     fun minimizeProject(project: Project) =
         coroutineScope.async {
             withBackgroundProgress(project, "Minimizing project") {
                 either {
-                    workingLogger.info { "Start Project minimization" }
+                    Loggers.workingLogger.info { "Start Project minimization" }
 
-                    workingLogger.info { "Clonning project..." }
+                    Loggers.workingLogger.info { "Clonning project..." }
                     val clonedProject = projectCloning.clone(project)
                         ?: raise(MinimizationError.CloningFailed)
-                    workingLogger.info { "Project clone end" }      
+                    Loggers.workingLogger.info { "Project clone end" }
                         
                     var currentProject = IJDDContext(clonedProject, project)
 
@@ -45,10 +43,10 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
 
                     currentProject.project
                 }.onRight {
-                    workingLogger.info { "End Project minimization" }
+                    Loggers.workingLogger.info { "End Project minimization" }
                 }.onLeft { error ->
-                    workingLogger.info { "End Project minimization" }
-                    logger.error { "End minimizeProject with error: $error" }
+                    Loggers.workingLogger.info { "End Project minimization" }
+                    Loggers.generalLogger.error { "End minimizeProject with error: $error" }
                 }
             }
         }

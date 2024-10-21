@@ -10,9 +10,9 @@ import com.intellij.openapi.project.ProjectManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
-import mu.KotlinLogging
 import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.errors.SnapshotError.*
+import org.plan.research.minimization.plugin.logging.Loggers
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.model.snapshot.TransactionBody
@@ -25,7 +25,6 @@ import org.plan.research.minimization.plugin.services.ProjectCloningService
  */
 class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
     private val projectCloning = rootProject.service<ProjectCloningService>()
-    private val statLogger = KotlinLogging.logger("STATISTICS")
 
     /**
      * Executes a transaction within the provided context,
@@ -44,7 +43,8 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
         context: IJDDContext,
         action: suspend TransactionBody<T>.(newContext: IJDDContext) -> IJDDContext
     ): Either<SnapshotError<T>, IJDDContext> = either {
-        statLogger.info { "Snapshot manager start's transaction" }
+        Loggers.statLogger.info { "Snapshot manager start's transaction" }
+        Loggers.workingLogger.info { "Snapshot manager start's transaction" }
 
         val clonedProject = projectCloning.clone(context.project)
             ?: raise(TransactionCreationFailed("Failed to create project"))
@@ -64,12 +64,12 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
             throw e
         }
     }.onRight {
-        statLogger.info { "Transaction completed successfully for context: $it" }
-        statLogger.info { "Transaction completed successfully for context: $it" }
+        Loggers.workingLogger.info { "Transaction completed successfully" }
+        Loggers.statLogger.info { "Transaction result: success" }
         closeProject(context)
     }.onLeft { error ->
-        statLogger.error { "Transaction failed with error: $error" }
-        statLogger.info { "Result: $error" }
+        Loggers.generalLogger.error { "Transaction failed with error: $error" }
+        Loggers.statLogger.info { "Transaction result: error" }
     }
 
     private suspend fun closeProject(context: IJDDContext) {

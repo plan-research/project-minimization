@@ -109,40 +109,7 @@ Here are some implementations of SnapshotManager:
 - **Settings.**
 [MinimizationPluginState][state] ([doc][settings-doc]) describes settings such as minimization stages, their order and own settings for each stage.
 
-
-
----
-
-### Logging Setup
-
-#### Logback Configuration
-The Logback configurations files (`logback.xml`) are located at:
-```
-src/main/resources/logback.xml
-```
-
-#### Loggers and Their Outputs:
-
-1. **General Logs** (root logger):
-    - `INFO`, `WARN`, `ERROR` -> `logs/logs.log` and console (stdout)
-    - `DEBUG`, `TRACE` -> `logs/logs.log`
-   
-
-2. **Statistics Logs** (`STATISTICS` logger):
-  - **Level**: `INFO`, `DEBUG`
-  - **Output**: `logs/statistics.log`
-
-3. **Working Logs** (`WORKING` logger):
-  - **Level**: `INFO`
-  - **Output**: `logs/working.log`
-
-#### Logger Usage Example:
-```kotlin
-private val logger = KotlinLogging.logger("STATISTICS")
-logger.info { "Logging a statistic" }
-```
-
----
+  
 
 [stage-doc]: MinimizationStages.md
 [fl-stage-doc]: MinimizationStages.md#File-level-stage

@@ -1,5 +1,9 @@
 # Dataset
 
+## Dataset location
+
+You can find the dataset on our server by path `/share/benchmarks/minimization`.
+
 ## Dataset format
 
 Currently, dataset consists on the root level of three objects: `config.yaml` file, `projects/` folder and `validate.sh`

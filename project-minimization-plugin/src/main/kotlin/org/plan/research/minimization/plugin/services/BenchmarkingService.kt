@@ -15,10 +15,12 @@ import arrow.core.None
 import arrow.core.Option
 import arrow.core.raise.option
 import com.charleskorn.kaml.Yaml
+import com.intellij.collaboration.async.awaitCancelling
 import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.progress.runBlockingCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessProjectDir
@@ -26,18 +28,14 @@ import com.intellij.openapi.vfs.findFile
 import com.intellij.openapi.vfs.readText
 import com.intellij.openapi.vfs.toNioPathOrNull
 import com.intellij.platform.ide.progress.withBackgroundProgress
-import com.intellij.platform.util.progress.ProgressReporter
-import com.intellij.platform.util.progress.reportProgress
+import com.intellij.platform.util.progress.reportSequentialProgress
 
 import java.nio.file.Path
 
 import kotlin.io.path.Path
 import kotlin.io.path.readText
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.map
 
 @Service(Service.Level.PROJECT)
 class BenchmarkingService(private val rootProject: Project, private val cs: CoroutineScope) {
@@ -51,18 +49,16 @@ class BenchmarkingService(private val rootProject: Project, private val cs: Coro
             .projects
             .filter { it.isSuitableForGradleBenchmarking(allowAndroid = false) }  // FIXME
         withBackgroundProgress(rootProject, "Running Minimization Benchmark") {
-            reportProgress(filteredProjects.size) { reporter ->
-                processProjects(filteredProjects, reporter)
-                    .cancellable()
-                    .collect { (result, projectConfig) ->
-                        result.fold(
-                            ifLeft = { adapter.onFailure(it, projectConfig) },
-                            ifRight = {
-                                adapter.onSuccess(it, projectConfig)
-                                closeProject(it)
-                            },
-                        )
+            reportSequentialProgress(filteredProjects.size) { reporter ->
+                filteredProjects.forEach { project ->
+                    reporter.itemStep("Minimizing ${project.name}") {
+                        project.process()
+                            ?.fold({ adapter.onFailure(it, project) },
+                                { result -> adapter.onSuccess(result, project).also { closeProject(result) } },
+                            )
+                            ?: adapter.onConfigCreationError()
                     }
+                }
             }
         }
     }
@@ -83,30 +79,31 @@ class BenchmarkingService(private val rootProject: Project, private val cs: Coro
         root.resolve(Path(project.path))
     }
 
-    private suspend fun openBenchmarkProject(project: BenchmarkProject): Option<Project> = option {
+    private fun openBenchmarkProject(project: BenchmarkProject): Option<Project> = option {
         val root = getBenchmarkProjectRoot(project).bind()
-        withContext(Dispatchers.EDT) {
-            ProjectUtil.openOrImportAsync(root) ?: raise(None)
+        runBlockingCancellable {
+            withContext(Dispatchers.EDT) {
+                ProjectUtil.openOrImportAsync(root) ?: raise(None)
+            }
         }
     }
 
-    private suspend fun processProjects(projects: List<BenchmarkProject>, reporter: ProgressReporter) = projects
-        .asFlow()
-        .map { project ->
-            reporter.itemStep("Minimizing ${project.name}") {
-                val gradleBuildTask = loadReproduceScript(project) ?: "build"
-                val openedProject = openBenchmarkProject(project).getOrNull() ?: return@itemStep null
-                try {
-                    setMinimizationSettings(openedProject, gradleBuildTask)
-                    val minimizationService = openedProject.service<MinimizationService>()
-                    val result = minimizationService.minimizeProject(openedProject, coroutineContext).await()
-                    BenchmarkMinimizationResult(result, project)
-                } finally {
+    private fun BenchmarkProject.process(): Either<MinimizationError, Project>? {
+        val gradleBuildTask = loadReproduceScript(this@process) ?: "build"
+        val openedProject = openBenchmarkProject(this@process).getOrNull() ?: return null
+        try {
+            setMinimizationSettings(openedProject, gradleBuildTask)
+            val minimizationService = openedProject.service<MinimizationService>()
+            val result = runBlockingCancellable { minimizationService.minimizeProject(openedProject).awaitCancelling() }
+            return result
+        } finally {
+            runBlockingCancellable {
+                withContext(Dispatchers.EDT) {
                     closeProject(openedProject)
                 }
             }
         }
-        .filterNotNull()
+    }
 
     private fun setMinimizationSettings(project: Project, runTask: String) {
         project
@@ -123,10 +120,10 @@ class BenchmarkingService(private val rootProject: Project, private val cs: Coro
             }
     }
 
-    private suspend fun loadReproduceScript(project: BenchmarkProject): String? {
+    private fun loadReproduceScript(project: BenchmarkProject): String? {
         val root = rootProject.guessProjectDir()?.toNioPathOrNull() ?: return null
         val reproduceScript = root.resolve(Path(project.reproduceScriptPath))
-        val content = withContext(Dispatchers.IO) { reproduceScript.readText() }
+        val content = reproduceScript.readText()
         return getGradleBuildTask(content)
     }
 

@@ -5,11 +5,9 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 import arrow.core.raise.either
-import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ProjectManager
 import com.intellij.platform.ide.progress.withBackgroundProgress
 import com.intellij.platform.util.progress.reportSequentialProgress
 import kotlinx.coroutines.*
@@ -38,9 +36,9 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
 
                         currentProject.project
                     } catch (e: Throwable) {
-                        withContext(Dispatchers.EDT + NonCancellable) {
-                            ProjectManager.getInstance().closeAndDispose(currentProject.project)
-                        }
+                        // withContext(Dispatchers.EDT + NonCancellable) {
+                        // ProjectManager.getInstance().closeAndDispose(currentProject.project)
+                        // }
                         throw e
                     }
                 }

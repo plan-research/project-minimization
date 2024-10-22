@@ -17,6 +17,7 @@ import java.nio.file.Path
 import java.util.*
 
 import kotlin.io.path.copyTo
+import kotlin.io.path.name
 import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
 
@@ -48,6 +49,7 @@ class ProjectCloningService(private val rootProject: Project) {
             val snapshotLocation = getSnapshotLocation()
             projectRoot.copyTo(clonedProjectPath.toNioPath()) {
                 isImportant(it, projectRoot) &&
+                    isNotBuild(it, projectRoot) &&
                     it.path != snapshotLocation.path
             }
             clonedProjectPath
@@ -62,6 +64,12 @@ class ProjectCloningService(private val rootProject: Project) {
             return importantFiles.any { it in pathString }
         }
         return true
+    }
+
+    private fun isNotBuild(file: VirtualFile, projectRoot: VirtualFile): Boolean {
+        val rootPath = projectRoot.toNioPathOrNull() ?: return false
+        val path = file.toNioPathOrNull()?.relativeTo(rootPath) ?: return false
+        return "build" !in path.toString() && (!path.name.startsWith(".") || path.name == ".idea")
     }
 
     private fun createNewProjectDirectory(): VirtualFile =

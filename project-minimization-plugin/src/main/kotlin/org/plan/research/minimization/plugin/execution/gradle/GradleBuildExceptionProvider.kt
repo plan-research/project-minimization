@@ -58,7 +58,7 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
      * or [CompilationPropertyCheckerError] if the compilation has been successful or some other error occurred
      */
     override suspend fun checkCompilation(project: Project) = either {
-        val gradleTasks = extractGradleTasks(project).bind()
+        val gradleTasks = extractGradleTasks(project).bind()  // FIXME: include subprojects
         // If not gradle tasks were found ⇒ this is not a Gradle project
         ensure(gradleTasks.isNotEmpty()) { CompilationPropertyCheckerError.InvalidBuildSystem }
         val buildTask = gradleTasks.findOrFail(project.exceptionGetterTask).bind()
@@ -75,6 +75,14 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
 
         val buildResult = runTask(project, buildTask).bind()
         ensure(buildResult.exitCode != 0) { CompilationPropertyCheckerError.CompilationSuccess }
+        val clean2Result = runTask(project, cleanTask).bind()
+        ensure(clean2Result.exitCode == 0) {
+            CompilationPropertyCheckerError.BuildSystemFail(
+                cause = IllegalStateException(
+                    "Second clean task failed: ${cleanResult.stdOut}",
+                ),
+            )
+        }
         parseResults("test-build-${project.name}", buildResult)
     }
 

@@ -12,4 +12,5 @@ data class BenchmarkProject(
     val kotlinVersion: String,
     val modules: ProjectModulesType,
     val extra: ExtraInfoStorage? = null,
+    val javaVersion: Int,
 )

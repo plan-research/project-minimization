@@ -1,9 +1,6 @@
 package org.plan.research.minimization.plugin.services
 
-import org.plan.research.minimization.plugin.benchmark.BenchmarkConfig
-import org.plan.research.minimization.plugin.benchmark.BenchmarkProject
-import org.plan.research.minimization.plugin.benchmark.BenchmarkResultSubscriber
-import org.plan.research.minimization.plugin.benchmark.BuildSystemType
+import org.plan.research.minimization.plugin.benchmark.*
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.state.DDStrategy
@@ -13,6 +10,7 @@ import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 import arrow.core.Either
 import arrow.core.None
 import arrow.core.Option
+import arrow.core.raise.catch
 import arrow.core.raise.option
 import com.charleskorn.kaml.Yaml
 import com.intellij.ide.impl.ProjectUtil
@@ -49,11 +47,16 @@ class BenchmarkingService(private val rootProject: Project, private val cs: Coro
             reportSequentialProgress(filteredProjects.size) { reporter ->
                 filteredProjects.forEach { project ->
                     reporter.itemStep("Minimizing ${project.name}") {
-                        project.process()
-                            ?.fold({ adapter.onFailure(it, project) },
-                                { result -> adapter.onSuccess(result, project).also { closeProject(result) } },
-                            )
-                            ?: adapter.onConfigCreationError()
+                        catch({
+                            project.process()
+                                ?.fold({ adapter.onFailure(it, project) },
+                                    { result -> adapter.onSuccess(result, project).also { closeProject(result) } },
+                                )
+                                ?: adapter.onConfigCreationError()
+                        },
+                        ) {
+                            adapter.onException(it, project)
+                        }
                     }
                 }
             }
@@ -142,7 +145,8 @@ class BenchmarkingService(private val rootProject: Project, private val cs: Coro
 
     private fun BenchmarkProject.isSuitableForGradleBenchmarking(allowAndroid: Boolean): Boolean =
         (allowAndroid || this.extra?.tags?.contains("android") != true) &&
-            this.buildSystem.type == BuildSystemType.GRADLE
+            this.buildSystem.type == BuildSystemType.GRADLE &&
+            this.modules == ProjectModulesType.SINGLE
 
     private data class BenchmarkMinimizationResult(
         val result: Either<MinimizationError, Project>,

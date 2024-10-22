@@ -76,5 +76,17 @@ class BenchmarkAction : AnAction() {
                 .setImportant(false)
                 .notify(root)
         }
+
+        override fun onException(throwable: Throwable, config: BenchmarkProject) {
+            notificationGroup
+                .createNotification(
+                    title = "Minimization crashed",
+                    content = "The minimization of project ${config.name} crashed with the following exception: $throwable",
+                    type = NotificationType.ERROR,
+                )
+                .setListener(NotificationListener.URL_OPENING_LISTENER)
+                .setImportant(false)
+                .notify(root)
+        }
     }
 }

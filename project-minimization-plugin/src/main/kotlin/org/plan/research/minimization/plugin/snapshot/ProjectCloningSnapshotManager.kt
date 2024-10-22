@@ -1,29 +1,21 @@
 package org.plan.research.minimization.plugin.snapshot
 
-import org.plan.research.minimization.plugin.errors.SnapshotError.*
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
-import org.plan.research.minimization.plugin.model.snapshot.TransactionBody
-import org.plan.research.minimization.plugin.model.snapshot.TransactionResult
-import org.plan.research.minimization.plugin.services.ProjectCloningService
-
 import arrow.core.raise.either
 import arrow.core.raise.recover
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
-
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import mu.KotlinLogging
-import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.errors.SnapshotError.*
 import org.plan.research.minimization.plugin.logging.statLogger
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.model.snapshot.TransactionBody
+import org.plan.research.minimization.plugin.model.snapshot.TransactionResult
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 
 /**

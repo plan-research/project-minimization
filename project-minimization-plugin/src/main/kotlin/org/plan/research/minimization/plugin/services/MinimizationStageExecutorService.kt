@@ -13,10 +13,6 @@ import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.MinimizationStageExecutor
 
-import arrow.core.getOrElse
-import arrow.core.raise.either
-import com.intellij.openapi.components.Service
-
 @Service(Service.Level.PROJECT)
 class MinimizationStageExecutorService : MinimizationStageExecutor {
 

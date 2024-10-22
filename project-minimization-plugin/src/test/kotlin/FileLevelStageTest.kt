@@ -25,6 +25,7 @@ class FileLevelStageTest : JavaCodeInsightFixtureTestCase() {
     override fun setUp() {
         super.setUp()
         project.service<MinimizationPluginSettings>().state.currentCompilationStrategy = CompilationStrategy.DUMB
+        project.service<MinimizationPluginSettings>().state.minimizationTransformations.clear()
     }
 
     fun testFullProject() {

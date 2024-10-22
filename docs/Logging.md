@@ -19,7 +19,7 @@ project-minimization-plugin/src/main/kotlin/.../plugin/logging/Loggers.kt
     - `DEBUG`, `TRACE` -> `logs/logs.log`
    
     
-    General logs used as usually in case smth can't be logged in Statistics or Working 
+    General logs used as usually for general purposes 
 
 
 2. **Statistics Logs** (`STATISTICS` logger):
@@ -29,16 +29,12 @@ project-minimization-plugin/src/main/kotlin/.../plugin/logging/Loggers.kt
 
     Statistical logs used for metrics collection
 
-3. **Working Logs** (`WORKING` logger):
-- **Level**: `INFO`
-- **Output**: `logs/working.log`
-
-
-    Working logs used for any useful information during plugin's work
-
 ### Logger Usage Example:
 ```kotlin
-Logger.statLogger.info { "Logging a statistic" }
+private val generalLogger = KotlinLogging.logger {}
+
+generalLogger.warn { "Log general warning" }
+statLogger.info { "Log metric: 1" }
 ```
 
 ---

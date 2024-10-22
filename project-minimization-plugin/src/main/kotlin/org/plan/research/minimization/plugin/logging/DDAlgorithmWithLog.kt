@@ -1,5 +1,6 @@
 package org.plan.research.minimization.plugin.logging
 
+import mu.KotlinLogging
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.model.DDContext
@@ -10,31 +11,33 @@ class DDAlgorithmWithLog (
     private val innerDDAlgorithm: DDAlgorithm
 ) : DDAlgorithm {
 
+    private val generalLogger = KotlinLogging.logger {}
+
     override suspend fun <C : DDContext, T : DDItem> minimize(
         context: C, items: List<T>,
         propertyTester: PropertyTester<C, T>
     ): DDAlgorithmResult<C, T> {
         val result: DDAlgorithmResult<C, T>
 
-        Loggers.generalLogger.info { "Start minimization algorithm \n" +
+        generalLogger.info { "Start minimization algorithm \n" +
                 "Context - ${context::class.simpleName}, \n" +
                 "items - ${(items.firstOrNull() ?: NoSuchElementException())::class.simpleName} \n" +
                 "propertyTester - ${propertyTester::class.simpleName}" }
-        Loggers.generalLogger.trace { "Context - $context \n" +
+        generalLogger.trace { "Context - $context \n" +
                 "items - $items \n" +
                 "propertyTester - $propertyTester" }
 
         try {
             result = innerDDAlgorithm.minimize(context, items, propertyTester)
         } catch (e: Throwable) {
-            Loggers.generalLogger.error { "DDAlgorithm ended up with error: ${e.message}" }
+            generalLogger.error { "DDAlgorithm ended up with error: ${e.message}" }
             throw e
         }
 
-        Loggers.statLogger.info { "Start: ${items.size}, " +
+        statLogger.info { "Start: ${items.size}, " +
                 "End: ${result.items.size}, " +
                 "Ratio: ${result.items.size.toDouble() / items.size}" }
-        Loggers.generalLogger.info { "End minimization algorithm" }
+        generalLogger.info { "End minimization algorithm" }
 
         return result
     }

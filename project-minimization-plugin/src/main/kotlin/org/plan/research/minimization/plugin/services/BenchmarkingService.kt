@@ -99,7 +99,7 @@ class BenchmarkingService(private val rootProject: Project, private val cs: Coro
                 try {
                     setMinimizationSettings(openedProject, gradleBuildTask)
                     val minimizationService = openedProject.service<MinimizationService>()
-                    val result = minimizationService.minimizeProjectSuspendable(openedProject)
+                    val result = minimizationService.minimizeProject(openedProject, coroutineContext).await()
                     BenchmarkMinimizationResult(result, project)
                 } finally {
                     closeProject(openedProject)

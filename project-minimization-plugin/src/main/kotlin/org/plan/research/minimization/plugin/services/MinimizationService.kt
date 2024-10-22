@@ -13,6 +13,8 @@ import com.intellij.platform.util.progress.reportSequentialProgress
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 @Service(Service.Level.PROJECT)
 class MinimizationService(project: Project, private val coroutineScope: CoroutineScope) {
@@ -20,25 +22,24 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
     private val executor = project.service<MinimizationStageExecutorService>()
     private val projectCloning = project.service<ProjectCloningService>()
 
-    fun minimizeProject(project: Project) =
-        coroutineScope.async {
-            minimizeProjectSuspendable(project)
-        }
-    suspend fun minimizeProjectSuspendable(project: Project) = withBackgroundProgress(project, "Minimizing project") {
-        either {
-            val clonedProject = projectCloning.clone(project)
-                ?: raise(MinimizationError.CloningFailed)
-            var currentProject = IJDDContext(clonedProject, project)
+    fun minimizeProject(project: Project, parentContext: CoroutineContext = EmptyCoroutineContext) =
+        coroutineScope.async(parentContext) {
+            withBackgroundProgress(project, "Minimizing project") {
+                either {
+                    val clonedProject = projectCloning.clone(project)
+                        ?: raise(MinimizationError.CloningFailed)
+                    var currentProject = IJDDContext(clonedProject, project)
 
-            reportSequentialProgress(stages.size) { reporter ->
-                for (stage in stages) {
-                    reporter.itemStep("Minimization step: ${stage.name}") {
-                        currentProject = stage.apply(currentProject, executor).bind()
+                    reportSequentialProgress(stages.size) { reporter ->
+                        for (stage in stages) {
+                            reporter.itemStep("Minimization step: ${stage.name}") {
+                                currentProject = stage.apply(currentProject, executor).bind()
+                            }
+                        }
                     }
+
+                    currentProject.project
                 }
             }
-
-            currentProject.project
         }
-    }
 }

@@ -149,6 +149,7 @@ class GradleCompilationTest : GradleProjectBaseTest() {
     }
 
     fun testInterProjectEquals() {
+        disableDeduplication()
         val root = myFixture.copyDirectoryToProject("kt-71260", ".")
         copyGradle(useBuildKts = false)
         val compilationResult = doCompilation(root)
@@ -209,6 +210,6 @@ class GradleCompilationTest : GradleProjectBaseTest() {
 
     private suspend fun getCompilationResult(project: Project): CompilationResult {
         val propertyCheckerService = myFixture.project.service<BuildExceptionProviderService>()
-        return propertyCheckerService.checkCompilation(project)
+        return propertyCheckerService.checkCompilation(IJDDContext(project))
     }
 }

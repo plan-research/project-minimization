@@ -5,11 +5,11 @@ import org.plan.research.minimization.plugin.execution.DumbCompiler.targetPaths
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.CompilationException
+import org.plan.research.minimization.plugin.model.exception.CompilationResult
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
 
 import arrow.core.raise.either
 import arrow.core.raise.ensureNotNull
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 
 /**
@@ -21,8 +21,9 @@ object DumbCompiler : BuildExceptionProvider {
     var targetPaths: List<String>? = null
     private val THROWABLE = Throwable()
 
-    override suspend fun checkCompilation(project: Project) =
+    override suspend fun checkCompilation(context: IJDDContext): CompilationResult =
         either {
+            val project = context.project
             val paths = targetPaths ?: return@either DumbException(Throwable())
 
             val baseDir = project.guessProjectDir() ?: raise(CompilationPropertyCheckerError.CompilationSuccess)

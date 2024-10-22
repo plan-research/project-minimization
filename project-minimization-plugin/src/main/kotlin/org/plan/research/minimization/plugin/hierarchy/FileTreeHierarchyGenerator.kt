@@ -5,7 +5,7 @@ import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoExcept
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoRootFound
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.getExceptionComparator
-import org.plan.research.minimization.plugin.getExceptionTransformations
+import org.plan.research.minimization.plugin.getLens
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.ProjectFileDDItem
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
@@ -25,13 +25,15 @@ class FileTreeHierarchyGenerator : ProjectHierarchyProducer<ProjectFileDDItem> {
     ): Either<HierarchyBuildError, FileTreeHierarchicalDDGenerator> = either {
         val project = fromContext.originalProject
         ensureNotNull(project.guessProjectDir()) { NoRootFound }
-        val compilerPropertyTester = project.service<BuildExceptionProviderService>()
+
         val settings = project.service<MinimizationPluginSettings>()
+        val compilerPropertyTester = project.service<BuildExceptionProviderService>()
+        val lens = settings.state.propertyCheckerProjectModificationLens.getLens()
         val propertyTester = SameExceptionPropertyTester
             .create<ProjectFileDDItem>(
                 compilerPropertyTester,
                 settings.state.exceptionComparingStrategy.getExceptionComparator(),
-                settings.state.minimizationTransformations.map { it.getExceptionTransformations() },
+                lens,
                 fromContext,
             )
             .getOrElse { raise(NoExceptionFound) }

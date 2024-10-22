@@ -28,8 +28,9 @@ class MinimizationPluginState : BaseState() {
 
     @Property(surroundWithTag = false)
     @XCollection(style = XCollection.Style.v1, elementName = "minimizationTransformations")
-    val minimizationTransformations: MutableList<TransformationDescriptors> = mutableListOf(
+    var minimizationTransformations: MutableList<TransformationDescriptors> = mutableListOf(
         TransformationDescriptors.PATH_RELATIVIZATION,
     )
     var exceptionComparingStrategy by enum<ExceptionComparingStrategy>(ExceptionComparingStrategy.SIMPLE)
+    var propertyCheckerProjectModificationLens by enum<ProjectItemLensDescriptor>(ProjectItemLensDescriptor.FILE_DELETING)
 }

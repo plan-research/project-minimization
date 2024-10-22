@@ -4,6 +4,7 @@ import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerEr
 import org.plan.research.minimization.plugin.execution.IdeaCompilationException
 import org.plan.research.minimization.plugin.execution.exception.KotlincExceptionTranslator
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
+import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 import arrow.core.Either
 import arrow.core.raise.*
@@ -16,6 +17,7 @@ import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.execution.runners.ProgramRunner
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.EDT
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.util.Disposer
@@ -39,6 +41,12 @@ import kotlinx.coroutines.withContext
 class GradleBuildExceptionProvider : BuildExceptionProvider {
     private val gradleOutputParser = KotlincOutputParser()
     private val kotlincExceptionTranslator = KotlincExceptionTranslator()
+    private val Project.exceptionGetterTask: String
+        get() = this
+            .service<MinimizationPluginSettings>()
+            .state
+            .gradleCompilationTask
+            ?: "build"
 
     /**
      * Checks the compilation of the given project, ensuring it has the necessary Gradle tasks and runs them.
@@ -50,11 +58,11 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
      * or [CompilationPropertyCheckerError] if the compilation has been successful or some other error occurred
      */
     override suspend fun checkCompilation(project: Project) = either {
-        val gradleTasks = extractGradleTasks(project).bind()
+        val gradleTasks = extractGradleTasks(project).bind()  // FIXME: include subprojects
         // If not gradle tasks were found ⇒ this is not a Gradle project
         ensure(gradleTasks.isNotEmpty()) { CompilationPropertyCheckerError.InvalidBuildSystem }
-        val buildTask = gradleTasks.findOrFail("build").bind()
-        val cleanTask = gradleTasks.findOrFail("clean").bind()
+        val buildTask = gradleTasks.findOrFail(project.exceptionGetterTask).bind()
+        val cleanTask = gradleTasks.findOrFail(":clean").bind()
 
         val cleanResult = runTask(project, cleanTask).bind()
         ensure(cleanResult.exitCode == 0) {
@@ -67,6 +75,14 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
 
         val buildResult = runTask(project, buildTask).bind()
         ensure(buildResult.exitCode != 0) { CompilationPropertyCheckerError.CompilationSuccess }
+        val clean2Result = runTask(project, cleanTask).bind()
+        ensure(clean2Result.exitCode == 0) {
+            CompilationPropertyCheckerError.BuildSystemFail(
+                cause = IllegalStateException(
+                    "Second clean task failed: ${cleanResult.stdOut}",
+                ),
+            )
+        }
         parseResults("test-build-${project.name}", buildResult)
     }
 
@@ -165,8 +181,8 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
         )
     }
 
-    private fun List<GradleTask>.findOrFail(name: String) = either {
-        val task = this@findOrFail.firstOrNull { it.name == name }
+    private fun List<GradleTask>.findOrFail(path: String) = either {
+        val task = this@findOrFail.firstOrNull { it.path == path }
         ensureNotNull(task) { CompilationPropertyCheckerError.InvalidBuildSystem }
         task
     }

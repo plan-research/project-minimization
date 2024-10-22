@@ -18,6 +18,7 @@ import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
+import kotlin.io.path.deleteIfExists
 import kotlin.io.path.name
 import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
@@ -194,6 +195,27 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         val compilationResult2 = doCompilation(root, linkProject = false)
         assertIs<Either.Right<IdeaCompilationException>>(compilationResult2)
         assertEquals(compilationResult.value, compilationResult2.value)
+    }
+
+    fun testProjectWithoutSettings() {
+        val root = myFixture.copyDirectoryToProject("fresh", ".")
+        copyGradle()
+        val compilationResult = doCompilation(root)
+        assertIs<Either.Left<*>>(compilationResult)
+        assertEquals(CompilationPropertyCheckerError.CompilationSuccess, compilationResult.value)
+
+        val cloningService = project.service<ProjectCloningService>()
+        val cloned = runBlocking { cloningService.clone(project) }
+        kotlin.test.assertNotNull(cloned)
+        val secondRoot = cloned.guessProjectDir()
+        kotlin.test.assertNotNull(secondRoot)
+        assert(secondRoot.toNioPath().resolve("settings.gradle.kts").deleteIfExists())
+        val compilationResult2 = doCompilation(secondRoot, cloned, checkGradle = false)
+        assertIs<Either.Left<*>>(compilationResult2)
+        assertEquals(CompilationPropertyCheckerError.InvalidBuildSystem, compilationResult2.value)
+        runBlocking(Dispatchers.EDT) {
+            ProjectManager.getInstance().closeAndDispose(cloned)
+        }
     }
 
     private fun doCompilation(

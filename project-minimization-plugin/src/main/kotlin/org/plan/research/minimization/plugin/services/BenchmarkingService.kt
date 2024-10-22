@@ -15,12 +15,10 @@ import arrow.core.None
 import arrow.core.Option
 import arrow.core.raise.option
 import com.charleskorn.kaml.Yaml
-import com.intellij.collaboration.async.awaitCancelling
 import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.openapi.progress.runBlockingCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessProjectDir
@@ -35,7 +33,6 @@ import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.io.path.readText
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.map
 
 @Service(Service.Level.PROJECT)
 class BenchmarkingService(private val rootProject: Project, private val cs: CoroutineScope) {
@@ -79,28 +76,24 @@ class BenchmarkingService(private val rootProject: Project, private val cs: Coro
         root.resolve(Path(project.path))
     }
 
-    private fun openBenchmarkProject(project: BenchmarkProject): Option<Project> = option {
+    private suspend fun openBenchmarkProject(project: BenchmarkProject): Option<Project> = option {
         val root = getBenchmarkProjectRoot(project).bind()
-        runBlockingCancellable {
-            withContext(Dispatchers.EDT) {
-                ProjectUtil.openOrImportAsync(root) ?: raise(None)
-            }
+        withContext(Dispatchers.EDT) {
+            ProjectUtil.openOrImportAsync(root) ?: raise(None)
         }
     }
 
-    private fun BenchmarkProject.process(): Either<MinimizationError, Project>? {
+    private suspend fun BenchmarkProject.process(): Either<MinimizationError, Project>? {
         val gradleBuildTask = loadReproduceScript(this@process) ?: "build"
         val openedProject = openBenchmarkProject(this@process).getOrNull() ?: return null
         try {
             setMinimizationSettings(openedProject, gradleBuildTask)
             val minimizationService = openedProject.service<MinimizationService>()
-            val result = runBlockingCancellable { minimizationService.minimizeProject(openedProject).awaitCancelling() }
+            val result = minimizationService.minimizeProject(openedProject).await()
             return result
         } finally {
-            runBlockingCancellable {
-                withContext(Dispatchers.EDT) {
-                    closeProject(openedProject)
-                }
+            withContext(Dispatchers.EDT + NonCancellable) {
+                closeProject(openedProject)
             }
         }
     }

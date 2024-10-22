@@ -32,4 +32,5 @@ class MinimizationPluginState : BaseState() {
         TransformationDescriptors.PATH_RELATIVIZATION,
     )
     var exceptionComparingStrategy by enum<ExceptionComparingStrategy>(ExceptionComparingStrategy.SIMPLE)
+    var propertyCheckerProjectModificationLens by enum<ProjectItemLensDescriptor>(ProjectItemLensDescriptor.FILE_DELETING)
 }

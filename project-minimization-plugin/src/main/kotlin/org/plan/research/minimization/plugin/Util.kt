@@ -1,9 +1,5 @@
 package org.plan.research.minimization.plugin
 
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VfsUtil
-import com.intellij.openapi.vfs.VfsUtilCore
-import com.intellij.openapi.vfs.VirtualFile
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.impl.DDMin
 import org.plan.research.minimization.core.algorithm.dd.impl.ProbabilisticDD
@@ -22,8 +18,11 @@ import org.plan.research.minimization.plugin.model.exception.ExceptionTransforma
 import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.model.state.*
 import org.plan.research.minimization.plugin.snapshot.ProjectCloningSnapshotManager
-import java.nio.file.Path
 
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.openapi.vfs.VfsUtilCore
+import com.intellij.openapi.vfs.VirtualFile
 
 fun SnapshotStrategy.getSnapshotManager(project: Project): SnapshotManager =
     when (this) {
@@ -50,7 +49,7 @@ fun CompilationStrategy.getCompilationStrategy(): BuildExceptionProvider =
 fun VirtualFile.getAllNestedElements(): List<VirtualFile> = buildList {
     VfsUtilCore.iterateChildrenRecursively(
         this@getAllNestedElements,
-        null
+        null,
     ) {
         add(it)
         true
@@ -58,9 +57,11 @@ fun VirtualFile.getAllNestedElements(): List<VirtualFile> = buildList {
 }
 
 fun List<VirtualFile>.getAllParents(root: VirtualFile): List<VirtualFile> = buildSet {
+    @Suppress("AVOID_NESTED_FUNCTIONS")
     fun traverseParents(vertex: VirtualFile?) {
-        if (vertex == null || contains(vertex) || VfsUtil.isAncestor(vertex, root, false))
+        if (vertex == null || contains(vertex) || VfsUtil.isAncestor(vertex, root, false)) {
             return
+        }
         add(vertex)
         traverseParents(vertex.parent)
     }
@@ -69,8 +70,6 @@ fun List<VirtualFile>.getAllParents(root: VirtualFile): List<VirtualFile> = buil
 
 fun List<ProjectFileDDItem>.toVirtualFiles(context: IJDDContext): List<VirtualFile> =
     mapNotNull { it.getVirtualFile(context) }
-
-fun Path.drop(n: Int): Path = subpath(n, nameCount)
 
 fun ExceptionComparingStrategy.getExceptionComparator() = when (this) {
     ExceptionComparingStrategy.SIMPLE -> SimpleExceptionComparator()

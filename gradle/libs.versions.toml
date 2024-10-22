@@ -6,8 +6,11 @@ coroutines = "1.8.0"
 arrow = "1.2.4"
 logging = "2.1.21"
 logback = "1.2.11"
+diktat = "2.0.0"
 
 [libraries]
+diktat-gradle-plugin = { module = "com.saveourtool.diktat:diktat-gradle-plugin", version.ref = "diktat" }
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
@@ -16,5 +19,4 @@ logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "lo
 
 
 [plugins]
-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 intellij = { id = "org.jetbrains.intellij.platform", version.ref = "intellij" }

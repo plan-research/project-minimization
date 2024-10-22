@@ -1,12 +1,19 @@
 package org.plan.research.minimization.plugin.snapshot
 
-import arrow.core.Either
+import org.plan.research.minimization.plugin.errors.SnapshotError.*
+import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
+import org.plan.research.minimization.plugin.model.snapshot.TransactionBody
+import org.plan.research.minimization.plugin.model.snapshot.TransactionResult
+import org.plan.research.minimization.plugin.services.ProjectCloningService
+
 import arrow.core.raise.either
 import arrow.core.raise.recover
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
+
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
@@ -44,11 +51,10 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
      */
     override suspend fun <T> transaction(
         context: IJDDContext,
-        action: suspend TransactionBody<T>.(newContext: IJDDContext) -> IJDDContext
-    ): Either<SnapshotError<T>, IJDDContext> = either {
+        action: suspend TransactionBody<T>.(newContext: IJDDContext) -> IJDDContext,
+    ): TransactionResult<T> = either {
         statLogger.info { "Snapshot manager start's transaction" }
         generalLogger.info { "Snapshot manager start's transaction" }
-
         val clonedProject = projectCloning.clone(context.project)
             ?: raise(TransactionCreationFailed("Failed to create project"))
         val clonedContext = context.copy(project = clonedProject)

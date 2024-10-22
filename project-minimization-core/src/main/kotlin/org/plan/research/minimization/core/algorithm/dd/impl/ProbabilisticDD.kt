@@ -1,24 +1,27 @@
 package org.plan.research.minimization.core.algorithm.dd.impl
 
-import kotlinx.coroutines.yield
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.model.DDContext
 import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.PropertyTester
+
 import java.util.*
+
 import kotlin.collections.ArrayDeque
 import kotlin.math.exp
+import kotlinx.coroutines.yield
 
 /**
  * Probabilistic Delta Debugging.
  *
  * This version doesn't support caching mechanisms.
  */
+@Suppress("MAGIC_NUMBER", "FLOAT_IN_ACCURATE_CALCULATIONS")
 class ProbabilisticDD : DDAlgorithm {
     override suspend fun <C : DDContext, T : DDItem> minimize(
         context: C, items: List<T>,
-        propertyTester: PropertyTester<C, T>
+        propertyTester: PropertyTester<C, T>,
     ): DDAlgorithmResult<C, T> {
         var currentContext = context
         val buffer = ArrayDeque<T>()
@@ -47,18 +50,20 @@ class ProbabilisticDD : DDAlgorithm {
                 ifRight = { updatedContext ->
                     currentContext = updatedContext
                     excludedItems.clear()
-                }
+                },
             )
         }
         return DDAlgorithmResult(currentContext, currentItems)
     }
 
     private fun <T> merge(
-        probs: Map<T, Double>, buffer: ArrayDeque<T>,
-        currentItems: MutableList<T>, excludedItems: MutableList<T>
+        probs: Map<T, Double>,
+        buffer: ArrayDeque<T>,
+        currentItems: MutableList<T>,
+        excludedItems: MutableList<T>,
     ) {
-        var index = 0
         buffer.clear()
+        var index = 0
         while (excludedItems.isNotEmpty()) {
             val itemToAdd = if (buffer.isNotEmpty()) {
                 if (probs[buffer.first()]!! < probs[excludedItems.last()]!!) {

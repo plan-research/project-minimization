@@ -8,14 +8,15 @@ on:
     branches:
       - 'main'
 
-permissions:
-  contents: read
-  actions: read
-  checks: write
-
 jobs:
   diktat:
     runs-on: ubuntu-22.04
+    permissions:
+      # required for all workflows
+      security-events: write
+      # only required for workflows in private repositories
+      actions: read
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4

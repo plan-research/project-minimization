@@ -8,6 +8,7 @@ import org.plan.research.minimization.plugin.getExceptionComparator
 import org.plan.research.minimization.plugin.getExceptionTransformations
 import org.plan.research.minimization.plugin.logging.withLog
 import org.plan.research.minimization.plugin.getLens
+import org.plan.research.minimization.plugin.lenses.FileDeletingItemLens
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.ProjectFileDDItem
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
@@ -30,12 +31,11 @@ class FileTreeHierarchyGenerator : ProjectHierarchyProducer<ProjectFileDDItem> {
 
         val settings = project.service<MinimizationPluginSettings>()
         val compilerPropertyTester = project.service<BuildExceptionProviderService>()
-        val lens = settings.state.propertyCheckerProjectModificationLens.getLens()
         val propertyTester = SameExceptionPropertyTester
             .create<ProjectFileDDItem>(
                 compilerPropertyTester,
                 settings.state.exceptionComparingStrategy.getExceptionComparator(),
-                lens,
+                FileDeletingItemLens(),
                 fromContext,
             )
             .getOrElse { raise(NoExceptionFound) }

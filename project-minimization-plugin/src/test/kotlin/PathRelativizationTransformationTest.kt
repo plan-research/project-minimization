@@ -13,7 +13,14 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 
 class PathRelativizationTransformationTest : JavaCodeInsightFixtureTestCase() {
+
+    override fun setUp() {
+        super.setUp()
+        project.service<ProjectCloningService>().isTest = true
+    }
+
     override fun runInDispatchThread(): Boolean = false
+
     fun testGenericKotlinCompilationError() {
         val project = myFixture.project
         val projectLocation = project.guessProjectDir()!!.toNioPath()

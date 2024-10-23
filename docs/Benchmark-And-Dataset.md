@@ -58,3 +58,8 @@ projects:
       tags: ["android", "mpp", "pcla", "rust"]
       issue: KT-56630
 ```
+
+# Benchmarking
+The collected dataset is used for benchmarking. To use benchmarking:
+- Open the dataset folder wth IDEA with the minimization plugin
+- Click the Benchmarking action "Tool > Run the benchmark on the dataset"

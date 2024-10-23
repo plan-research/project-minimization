@@ -9,12 +9,10 @@ import org.plan.research.minimization.plugin.services.ProjectCloningService
 
 import arrow.core.raise.either
 import arrow.core.raise.recover
-import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.project.ex.ProjectManagerEx
 
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 
@@ -66,8 +64,8 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
 
     private suspend fun closeProject(context: IJDDContext) {
         // TODO: think about deleting the project
-        withContext(NonCancellable + Dispatchers.EDT) {
-            ProjectManager.getInstance().closeAndDispose(context.project)
+        withContext(NonCancellable) {
+            ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(context.project)
         }
     }
 }

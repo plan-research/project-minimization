@@ -4,6 +4,8 @@ import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerEr
 import org.plan.research.minimization.plugin.execution.IdeaCompilationException
 import org.plan.research.minimization.plugin.execution.exception.KotlincExceptionTranslator
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
+import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.exception.CompilationResult
 
 import arrow.core.Either
 import arrow.core.raise.*
@@ -49,7 +51,8 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
      *
      * or [CompilationPropertyCheckerError] if the compilation has been successful or some other error occurred
      */
-    override suspend fun checkCompilation(project: Project) = either {
+    override suspend fun checkCompilation(context: IJDDContext): CompilationResult = either {
+        val project = context.project
         val gradleTasks = extractGradleTasks(project).bind()
         // If not gradle tasks were found ⇒ this is not a Gradle project
         ensure(gradleTasks.isNotEmpty()) { CompilationPropertyCheckerError.InvalidBuildSystem }

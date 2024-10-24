@@ -3,20 +3,14 @@ package org.plan.research.minimization.plugin.execution
 import org.plan.research.minimization.core.model.PropertyTestResult
 import org.plan.research.minimization.core.model.PropertyTester
 import org.plan.research.minimization.core.model.PropertyTesterError
-import org.plan.research.minimization.plugin.apply
 import org.plan.research.minimization.plugin.errors.SnapshotError
-import org.plan.research.minimization.plugin.model.BuildExceptionProvider
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.IJDDItem
-import org.plan.research.minimization.plugin.model.ProjectFileDDItem
+import org.plan.research.minimization.plugin.model.*
 import org.plan.research.minimization.plugin.model.exception.CompilationException
 import org.plan.research.minimization.plugin.model.exception.ExceptionComparator
-import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
 import org.plan.research.minimization.plugin.services.SnapshotManagerService
 
 import arrow.core.getOrElse
 import arrow.core.raise.option
-import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 
@@ -26,8 +20,8 @@ import com.intellij.openapi.project.Project
 class SameExceptionPropertyTester<T : IJDDItem> private constructor(
     rootProject: Project,
     private val buildExceptionProvider: BuildExceptionProvider,
-    private val transformations: List<ExceptionTransformation>,
     private val comparator: ExceptionComparator,
+    private val lens: ProjectItemLens,
     private val initialException: CompilationException,
 ) : PropertyTester<IJDDContext, T> {
     private val snapshotManager = rootProject.service<SnapshotManagerService>()
@@ -42,19 +36,13 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
         snapshotManager.transaction(context) { newContext ->
             context.currentLevel ?: return@transaction newContext
 
-            val targetFiles = context.currentLevel.minus(items.toSet()).filterIsInstance<ProjectFileDDItem>()
-
-            writeAction {
-                targetFiles.forEach { item ->
-                    item.getVirtualFile(newContext)?.delete(this)
-                }
-            }
+            lens.focusOn(items, newContext)  // Assume that `newContext` has the same `.currentLevel` as `context`
 
             val compilationResult = buildExceptionProvider
-                .checkCompilation(newContext.project)
+                .checkCompilation(newContext)
                 .getOrElse { raise(PropertyTesterError.NoProperty) }
 
-            if (comparator.areEquals(initialException, compilationResult.apply(transformations, newContext))) {
+            if (comparator.areEquals(initialException, compilationResult)) {
                 newContext
             } else {
                 raise(PropertyTesterError.UnknownProperty)
@@ -70,16 +58,17 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
         suspend fun <T : IJDDItem> create(
             compilerPropertyChecker: BuildExceptionProvider,
             exceptionComparator: ExceptionComparator,
-            transformations: List<ExceptionTransformation>,
+            lens: ProjectItemLens,
             context: IJDDContext,
         ) = option {
-            val initialException = compilerPropertyChecker.checkCompilation(context.originalProject).getOrNone().bind()
+            val copiedContext = context.copy(project = context.originalProject)
+            val initialException = compilerPropertyChecker.checkCompilation(copiedContext).getOrNone().bind()
             SameExceptionPropertyTester<T>(
                 context.originalProject,
                 compilerPropertyChecker,
-                transformations,
                 exceptionComparator,
-                initialException.apply(transformations, context.copy(project = context.originalProject)),
+                lens,
+                initialException,
             )
         }
     }

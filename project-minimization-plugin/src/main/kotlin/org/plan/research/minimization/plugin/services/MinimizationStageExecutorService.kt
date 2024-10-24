@@ -79,7 +79,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         context.withProgress {
             ddAlgorithm.minimize(
                 it,
-                project.service<PsiWithBodiesCollectorService>().psiElementsWithBody,
+                project.service<PsiWithBodiesCollectorService>().getElementsWithBody(),
                 propertyChecker
             ).context
         }

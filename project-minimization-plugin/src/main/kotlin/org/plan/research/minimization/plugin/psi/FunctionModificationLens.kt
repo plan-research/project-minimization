@@ -1,6 +1,7 @@
 package org.plan.research.minimization.plugin.psi
 
 import com.intellij.openapi.application.EDT
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.roots.ex.ProjectRootManagerEx
 import com.intellij.openapi.util.Key
@@ -25,7 +26,9 @@ class FunctionModificationLens : ProjectItemLens {
             items.forEach { item -> item.underlyingObject.element?.putUserData(MAPPED_FOR_DELETION_KEY, true) }
         }
         val visitor = ModifyingBodyKtVisitor(currentContext.originalProject, currentContext.project)
-        currentContext.project.acceptOnAllKotlinFiles(visitor)
+        readAction {
+            currentContext.project.acceptOnAllKotlinFiles(visitor)
+        }
 
         withContext(Dispatchers.EDT) { // For synchronization
             writeAction {

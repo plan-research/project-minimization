@@ -11,6 +11,7 @@ import arrow.core.raise.option
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.util.progress.SequentialProgressReporter
 
@@ -23,11 +24,61 @@ class FileTreeHierarchicalDDGenerator(
 ) : HierarchicalDDGenerator<IJDDContext, ProjectFileDDItem> {
     private var reporter: ProgressReporter? = null
 
+    private fun propagateAndMergeRoots(
+        contentRoots: List<VirtualFile>,
+        srcRoots: List<VirtualFile>,
+        sourceRoots: List<VirtualFile>,
+    ): List<VirtualFile> {
+        // propagate src roots (replace them with their children) if it contains any content root
+        // 0 - need to propagate, 1 - it's a content root, 2 - already propagated or added
+        val propagationStatus = HashMap<VirtualFile, Int>()
+        for (contentRoot in contentRoots) {
+            propagationStatus[contentRoot] = 1
+            var parent: VirtualFile? = contentRoot.parent
+            while (parent != null) {
+                propagationStatus.putIfAbsent(parent, 0) ?: break
+                parent = parent.parent
+            }
+        }
+
+        val queue = ArrayDeque<VirtualFile>()
+        queue.addAll(srcRoots)
+
+        val roots = mutableListOf<VirtualFile>()
+        while (queue.isNotEmpty()) {
+            val root = queue.removeFirst()
+            val status = propagationStatus[root]
+            propagationStatus[root] = 2
+            when (status) {
+                0 -> queue.addAll(root.children)
+                1, 2 -> {}
+                else -> roots.add(root)
+            }
+        }
+
+        // delete all sourceRoots that are in any of the already added roots
+        val sourceRootsToAdd = sourceRoots.filter { sourceRoot ->
+            roots.none { src -> VfsUtil.isAncestor(src, sourceRoot, false) }
+        }
+        roots.addAll(sourceRootsToAdd)
+
+        return roots
+    }
+
+    private fun findPossibleRoots(context: IJDDContext): List<VirtualFile> {
+        val rootManager = ProjectRootManager.getInstance(context.project)
+
+        val sourceRoots = rootManager.contentSourceRoots.toList()
+        val contentRoots = rootManager.contentRoots.toList()
+        val srcRoots = contentRoots.mapNotNull { it.findChild("src") }
+
+        return propagateAndMergeRoots(contentRoots, srcRoots, sourceRoots)
+    }
+
     override suspend fun generateFirstLevel(context: IJDDContext) =
         option {
             val level = smartReadAction(context.project) {
-                val roots = ProjectRootManager.getInstance(context.project).contentSourceRoots
-                    .takeIf { it.isNotEmpty() } ?: arrayOf(context.projectDir)
+                val roots = findPossibleRoots(context)
 
                 context.progressReporter?.let {
                     reporter = ProgressReporter(it, context.projectDir.toNioPath(), roots)
@@ -66,7 +117,7 @@ class FileTreeHierarchicalDDGenerator(
      * @property reporter An instance of [SequentialProgressReporter] used for updating the progress.
      * @constructor Creates a new instance of [ProgressReporter] based on the given root path and the array of root files.
      */
-    private class ProgressReporter(val reporter: SequentialProgressReporter, root: Path, roots: Array<VirtualFile>) {
+    private class ProgressReporter(val reporter: SequentialProgressReporter, root: Path, roots: List<VirtualFile>) {
         @Volatile
         private var currentLevel = 0
         private val levelMaxDepths = HashMap<Path, Int>()
@@ -83,7 +134,7 @@ class FileTreeHierarchicalDDGenerator(
          * @param root The root path from which relative paths are computed and stored.
          * @param roots An array of VirtualFile representing the starting points to compute levels.
          */
-        private fun computeLevels(root: Path, roots: Array<VirtualFile>) {
+        private fun computeLevels(root: Path, roots: List<VirtualFile>) {
             val stack = mutableListOf<StackEntry>()
             roots.forEach {
                 stack.add(StackEntry(it, 1))

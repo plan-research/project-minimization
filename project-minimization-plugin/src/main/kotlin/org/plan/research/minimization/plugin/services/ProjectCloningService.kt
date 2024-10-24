@@ -45,6 +45,24 @@ class ProjectCloningService(private val rootProject: Project) {
     // TODO: JBRes-1977
     var isTest: Boolean = false
 
+    suspend fun forceImportGradleProject(project: Project) {
+        if (!isTest) {
+            try {
+                ExternalSystemUtil.refreshProject(
+                    project.guessProjectDir()!!.path,
+                    ImportSpecBuilder(project, GRADLE_SYSTEM_ID)
+                        .use(ProgressExecutionMode.MODAL_SYNC)
+                        .build(),
+                )
+            } catch (e: Throwable) {
+                withContext(NonCancellable) {
+                    ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(project)
+                }
+                throw e
+            }
+        }
+    }
+
     /**
      * Perform a full clone of the project
      *
@@ -63,29 +81,11 @@ class ProjectCloningService(private val rootProject: Project) {
             clonedProjectPath
         }
 
-        val clonedProject = ProjectUtil.openOrImportAsync(clonedProjectPath, OpenProjectTask {
+        return ProjectUtil.openOrImportAsync(clonedProjectPath, OpenProjectTask {
             forceOpenInNewFrame = true
             runConversionBeforeOpen = false
             isRefreshVfsNeeded = !isTest
-        }) ?: return null
-
-        if (!isTest) {
-            try {
-                ExternalSystemUtil.refreshProject(
-                    clonedProjectPath.pathString,
-                    ImportSpecBuilder(clonedProject, GRADLE_SYSTEM_ID)
-                        .use(ProgressExecutionMode.MODAL_SYNC)
-                        .build(),
-                )
-            } catch (e: Throwable) {
-                withContext(NonCancellable) {
-                    ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(clonedProject)
-                }
-                throw e
-            }
-        }
-
-        return clonedProject
+        })
     }
 
     private fun isImportant(file: VirtualFile, root: VirtualFile): Boolean {

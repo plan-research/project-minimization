@@ -26,6 +26,7 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
                 either {
                     val clonedProject = projectCloning.clone(project)
                         ?: raise(MinimizationError.CloningFailed)
+                    projectCloning.forceImportGradleProject(clonedProject)
                     var currentProject = IJDDContext(clonedProject, project)
 
                     reportSequentialProgress(stages.size) { reporter ->
@@ -33,6 +34,7 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
                             reporter.itemStep("Minimization step: ${stage.name}") {
                                 currentProject = stage.apply(currentProject, executor).bind()
                             }
+                            projectCloning.forceImportGradleProject(currentProject.project)
                         }
                     }
 

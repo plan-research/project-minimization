@@ -12,6 +12,7 @@ import org.plan.research.minimization.plugin.model.state.DDStrategy
 import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
 import org.plan.research.minimization.plugin.model.state.TransformationDescriptors
 import org.plan.research.minimization.plugin.services.MinimizationService
+import org.plan.research.minimization.plugin.services.ProjectCloningService
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 import kotlin.io.path.Path
 import kotlin.io.path.name
@@ -31,6 +32,7 @@ class MinimizationServiceTest : GradleProjectBaseTest() {
                 ddAlgorithm = DDStrategy.DD_MIN
             ))
         }
+        project.service<ProjectCloningService>().isTest = true
     }
 
     fun testKt71260() {

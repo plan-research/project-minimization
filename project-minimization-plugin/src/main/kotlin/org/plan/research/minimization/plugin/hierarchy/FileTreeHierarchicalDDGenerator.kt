@@ -30,13 +30,12 @@ class FileTreeHierarchicalDDGenerator(
         sourceRoots: List<VirtualFile>,
     ): List<VirtualFile> {
         // propagate src roots (replace them with their children) if it contains any content root
-        // 0 - need to propagate, 1 - it's a content root, 2 - already propagated or added
-        val propagationStatus = HashMap<VirtualFile, Int>()
+        val propagationStatus = HashMap<VirtualFile, PropagationStatus>()
         for (contentRoot in contentRoots) {
-            propagationStatus[contentRoot] = 1
+            propagationStatus[contentRoot] = PropagationStatus.IS_CONTENT_ROOT
             var parent: VirtualFile? = contentRoot.parent
             while (parent != null) {
-                propagationStatus.putIfAbsent(parent, 0) ?: break
+                propagationStatus.putIfAbsent(parent, PropagationStatus.NEED_TO_PROPAGATE) ?: break
                 parent = parent.parent
             }
         }
@@ -48,10 +47,10 @@ class FileTreeHierarchicalDDGenerator(
         while (queue.isNotEmpty()) {
             val root = queue.removeFirst()
             val status = propagationStatus[root]
-            propagationStatus[root] = 2
+            propagationStatus[root] = PropagationStatus.ALREADY_PROPAGATED_OR_ADDED
             when (status) {
-                0 -> queue.addAll(root.children)
-                1, 2 -> {}
+                PropagationStatus.NEED_TO_PROPAGATE -> queue.addAll(root.children)
+                PropagationStatus.IS_CONTENT_ROOT, PropagationStatus.ALREADY_PROPAGATED_OR_ADDED -> {}
                 else -> roots.add(root)
             }
         }
@@ -105,6 +104,13 @@ class FileTreeHierarchicalDDGenerator(
             reporter?.updateProgress(nextFiles)
             HDDLevel(minimizationResult.context.copy(currentLevel = nextFiles), nextFiles, propertyTester)
         }
+
+    private enum class PropagationStatus {
+        ALREADY_PROPAGATED_OR_ADDED,
+        IS_CONTENT_ROOT,
+        NEED_TO_PROPAGATE,
+        ;
+    }
 
     /**
      * ProgressReporter is a class responsible for managing and reporting the progress of a hierarchical

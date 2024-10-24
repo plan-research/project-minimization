@@ -157,7 +157,7 @@ class GradleCompilationTest : GradleProjectBaseTest() {
             cloningService.clone(project)
         }
         kotlin.test.assertNotNull(snapshot)
-        val compilationResult2 = doCompilation(snapshot.guessProjectDir()!!, snapshot)
+        val compilationResult2 = doCompilation(snapshot.guessProjectDir()!!, snapshot, checkGradle = false)
 
         assertNotEquals(compilationResult, compilationResult2)
         assertIs<Either.Right<IdeaCompilationException>>(compilationResult)

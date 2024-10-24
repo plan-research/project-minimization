@@ -1,0 +1,50 @@
+<configuration>
+
+    <!-- Appender for console output -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Appender for TRACE, DEBUG, INFO, WARN, ERROR -->
+    <appender name="DEBUG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/logs.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/logs-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Appender for STATISTICS logs -->
+    <appender name="STATISTICS_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/statistics.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/statistics-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Logger for STATISTICS (write only in statistics.log) -->
+    <logger name="STATISTICS" level="INFO" additivity="false">
+        <appender-ref ref="STATISTICS_FILE" />
+    </logger>
+
+    <!-- Logger for your package (write in logs.log and Console) -->
+    <logger name="org.plan.research.minimization" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="DEBUG_FILE" />
+    </logger>
+
+    <!-- Root logger limited to ERROR level to avoid logs from external libraries -->
+    <root level="ERROR">
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+</configuration>

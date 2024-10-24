@@ -6,6 +6,7 @@ import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoRootFo
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.getExceptionComparator
 import org.plan.research.minimization.plugin.getExceptionTransformations
+import org.plan.research.minimization.plugin.logging.withLog
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.ProjectFileDDItem
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
@@ -35,6 +36,7 @@ class FileTreeHierarchyGenerator : ProjectHierarchyProducer<ProjectFileDDItem> {
                 fromContext,
             )
             .getOrElse { raise(NoExceptionFound) }
+            .withLog()
         FileTreeHierarchicalDDGenerator(propertyTester)
     }
 }

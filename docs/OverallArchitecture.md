@@ -109,6 +109,7 @@ Here are some implementations of SnapshotManager:
 - **Settings.**
 [MinimizationPluginState][state] ([doc][settings-doc]) describes settings such as minimization stages, their order and own settings for each stage.
 
+  
 
 [stage-doc]: MinimizationStages.md
 [fl-stage-doc]: MinimizationStages.md#File-level-stage

@@ -8,6 +8,7 @@ import org.plan.research.minimization.plugin.execution.comparable.SimpleExceptio
 import org.plan.research.minimization.plugin.execution.gradle.GradleBuildExceptionProvider
 import org.plan.research.minimization.plugin.execution.transformer.PathRelativizationTransformation
 import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchyGenerator
+import org.plan.research.minimization.plugin.logging.withLog
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.ProjectFileDDItem
@@ -37,7 +38,7 @@ fun DDStrategy.getDDAlgorithm(): DDAlgorithm =
     when (this) {
         DDStrategy.DD_MIN -> DDMin()
         DDStrategy.PROBABILISTIC_DD -> ProbabilisticDD()
-    }
+    }.withLog()
 
 fun CompilationStrategy.getCompilationStrategy(): BuildExceptionProvider =
     when (this) {

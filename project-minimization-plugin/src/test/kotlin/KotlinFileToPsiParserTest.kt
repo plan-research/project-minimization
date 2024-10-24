@@ -1,6 +1,7 @@
+import com.intellij.openapi.components.service
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
-import org.plan.research.minimization.plugin.psi.TopLevelFunctionModifierManager
+import org.plan.research.minimization.plugin.services.PsiWithBodiesCollectorService
 import kotlin.test.assertIs
 
 class KotlinFileToPsiParserTest: JavaCodeInsightFixtureTestCase() {
@@ -9,7 +10,7 @@ class KotlinFileToPsiParserTest: JavaCodeInsightFixtureTestCase() {
     }
     fun testFunctions() {
         myFixture.configureByFile("functions.kt")
-        val manager = TopLevelFunctionModifierManager(project)
+        val manager = project.service<PsiWithBodiesCollectorService>()
         val elements = manager.psiElementsWithBody
         assertSize(3, elements)
         val (first, second, third) = elements
@@ -22,7 +23,7 @@ class KotlinFileToPsiParserTest: JavaCodeInsightFixtureTestCase() {
     }
     fun testLambdas() {
         myFixture.configureByFile("lambda.kt")
-        val manager = TopLevelFunctionModifierManager(project)
+        val manager = project.service<PsiWithBodiesCollectorService>()
         val elements = manager.psiElementsWithBody
         assertSize(3, elements)
         val (first, second, third) = elements
@@ -32,7 +33,7 @@ class KotlinFileToPsiParserTest: JavaCodeInsightFixtureTestCase() {
     }
     fun testLambdaAsDefaultParameterIsNotReplaceable() {
         myFixture.configureByFile("lambda-as-default.kt")
-        val manager = TopLevelFunctionModifierManager(project)
+        val manager = project.service<PsiWithBodiesCollectorService>()
         val elements = manager.psiElementsWithBody
         assertSize(1, elements)
         val (first) = elements
@@ -40,7 +41,7 @@ class KotlinFileToPsiParserTest: JavaCodeInsightFixtureTestCase() {
     }
     fun testSimpleClass() {
         myFixture.configureByFile("simple-class.kt")
-        val manager = TopLevelFunctionModifierManager(project)
+        val manager = project.service<PsiWithBodiesCollectorService>()
         val elements = manager.psiElementsWithBody
         assertSize(6, elements)
         val (funA, funSimple, funSimple2, funSimple3, funOverridden) = elements

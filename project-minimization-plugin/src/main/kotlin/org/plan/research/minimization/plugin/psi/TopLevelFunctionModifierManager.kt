@@ -1,41 +1,52 @@
 package org.plan.research.minimization.plugin.psi
 
-import arrow.core.Either
-import arrow.core.raise.either
-import arrow.core.raise.ensure
-import arrow.core.raise.ensureNotNull
+import com.intellij.openapi.application.invokeLater
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.ProjectRootManager
-import com.intellij.openapi.vfs.VirtualFile
-import org.jetbrains.kotlin.KtPsiSourceFile
-import org.jetbrains.kotlin.idea.core.util.toPsiFile
-import org.jetbrains.kotlin.psi.KtFile
-import org.plan.research.minimization.plugin.errors.PsiFileTransformationError
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.jetbrains.kotlin.psi.*
 
+@Service(Service.Level.PROJECT)
 class TopLevelFunctionModifierManager(private val rootProject: Project) {
-    val psiElementsWithBody: List<PsiWithBodyDDItem> by lazy {
-        val index = ProjectRootManager.getInstance(rootProject).fileIndex
-        val collectedElements = buildList<PsiWithBodyDDItem> {
-            index.iterateContent { fileOrDir ->
-                parse(fileOrDir).onRight { addAll(it) }
-                true
-            }
-        }
-        collectedElements
+    private val psiFactory = KtPsiFactory(rootProject)
+
+    fun replaceBody(classInitializer: KtClassInitializer) {
+        invokeLater { classInitializer.body?.replace(psiFactory.createBlock(BLOCK_TEXT)) }
     }
 
-    private fun parse(file: VirtualFile): Either<PsiFileTransformationError, List<PsiWithBodyDDItem>> = either {
-        val psiFile = file.toPsiFile(rootProject)
-        ensureNotNull(psiFile) { PsiFileTransformationError.NoAssociatedPsiFile }
-        ensure(psiFile is KtFile) {
-            PsiFileTransformationError.InvalidPsiFileType(
-                psiFile::class.qualifiedName ?: "null"
+    fun replaceBody(function: KtNamedFunction) = when {
+        function.hasBlockBody() -> invokeLater {
+            function.bodyBlockExpression!!.replace(
+                psiFactory.createBlock(
+                    BLOCK_TEXT
+                )
             )
         }
-        val visitor = BodyElementAcquiringKtVisitor(rootProject)
-        psiFile.accept(visitor)
-        visitor.collectedElements
+
+        function.hasBody() -> invokeLater {
+            function.bodyExpression!!.replace(
+                psiFactory.createExpression(
+                    BLOCKLESS_TEXT
+                )
+            )
+        }
+
+        else -> {}
     }
 
+    fun replaceBody(lambdaExpression: KtLambdaExpression) = invokeLater {
+        lambdaExpression.bodyExpression!!.replace(
+            psiFactory.createExpression(
+                BLOCK_TEXT
+            )
+        )
+    }
+
+    fun replaceBody(accessor: KtPropertyAccessor) = invokeLater {
+        accessor.bodyBlockExpression!!.replace(psiFactory.createBlock(BLOCK_TEXT))
+    }
+
+    companion object {
+        private const val BLOCKLESS_TEXT = " TODO(\"Removed by DD\")"
+        private const val BLOCK_TEXT = "{ $BLOCKLESS_TEXT) }"
+    }
 }

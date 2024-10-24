@@ -21,9 +21,13 @@ import org.plan.research.minimization.plugin.model.state.*
 import org.plan.research.minimization.plugin.snapshot.ProjectCloningSnapshotManager
 
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
+import org.jetbrains.kotlin.idea.core.util.toPsiFile
+import org.jetbrains.kotlin.idea.structuralsearch.visitor.KotlinRecursiveElementVisitor
+import org.jetbrains.kotlin.psi.KtFile
 
 fun SnapshotStrategy.getSnapshotManager(project: Project): SnapshotManager =
     when (this) {
@@ -86,3 +90,14 @@ fun ProjectItemLensDescriptor.getLens() = when (this) {
 
 suspend fun CompilationException.apply(transformations: List<ExceptionTransformation>, context: IJDDContext) =
     transformations.fold(this) { acc, it -> acc.apply(it, context) }
+
+fun Project.acceptOnAllKotlinFiles(visitor: KotlinRecursiveElementVisitor) {
+    val fileIndex = ProjectRootManager.getInstance(this).fileIndex
+    fileIndex.iterateContent { fileOrDir ->
+        val psiFile = fileOrDir.toPsiFile(this)
+        if (psiFile is KtFile) {
+            psiFile.accept(visitor)
+        }
+        true
+    }
+}

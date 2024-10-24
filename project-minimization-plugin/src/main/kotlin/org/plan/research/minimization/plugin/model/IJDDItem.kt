@@ -34,11 +34,20 @@ data class ProjectFileDDItem(val localPath: Path) : IJDDItem {
 }
 
 sealed interface PsiWithBodyDDItem : IJDDItem {
-    data class ClassInitializer(val underlyingObject: SmartPsiElementPointer<KtClassInitializer>) : PsiWithBodyDDItem
-    data class NamedFunctionWithBlock(val underlyingObject: SmartPsiElementPointer<KtNamedFunction>) : PsiWithBodyDDItem
-    data class NamedFunctionWithoutBlock(val underlyingObject: SmartPsiElementPointer<KtNamedFunction>) :
+    val underlyingObject: SmartPsiElementPointer<out PsiElement>
+
+    data class ClassInitializer(override val underlyingObject: SmartPsiElementPointer<KtClassInitializer>) :
         PsiWithBodyDDItem
 
-    data class LambdaExpression(val underlyingObject: SmartPsiElementPointer<KtLambdaExpression>) : PsiWithBodyDDItem
-    data class PropertyAccessor(val underlyingObject: SmartPsiElementPointer<KtPropertyAccessor>) : PsiWithBodyDDItem
+    data class NamedFunctionWithBlock(override val underlyingObject: SmartPsiElementPointer<KtNamedFunction>) :
+        PsiWithBodyDDItem
+
+    data class NamedFunctionWithoutBlock(override val underlyingObject: SmartPsiElementPointer<KtNamedFunction>) :
+        PsiWithBodyDDItem
+
+    data class LambdaExpression(override val underlyingObject: SmartPsiElementPointer<KtLambdaExpression>) :
+        PsiWithBodyDDItem
+
+    data class PropertyAccessor(override val underlyingObject: SmartPsiElementPointer<KtPropertyAccessor>) :
+        PsiWithBodyDDItem
 }

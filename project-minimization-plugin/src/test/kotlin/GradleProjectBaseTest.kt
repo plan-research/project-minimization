@@ -1,6 +1,7 @@
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.smartReadAction
+import com.intellij.openapi.components.service
 import com.intellij.openapi.externalSystem.importing.ImportSpecBuilder
 import com.intellij.openapi.externalSystem.service.execution.ExternalSystemJdkUtil
 import com.intellij.openapi.externalSystem.service.execution.ProgressExecutionMode
@@ -16,6 +17,8 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.plugins.gradle.settings.GradleProjectSettings
 import org.jetbrains.plugins.gradle.settings.GradleSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
+import org.plan.research.minimization.plugin.model.state.TransformationDescriptors
+import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 import kotlin.test.assertNotEquals
 
 
@@ -83,5 +86,19 @@ abstract class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
         }
         myFixture.copyFileToProject("core/gradlew", "gradlew")
         myFixture.copyFileToProject("core/gradlew.bat", "gradlew.bat")
+    }
+
+    protected fun enableDeduplication() {
+        val settings = project.service<MinimizationPluginSettings>().state
+        if (!settings.minimizationTransformations.contains(TransformationDescriptors.PATH_RELATIVIZATION)) {
+            settings.minimizationTransformations.add(
+                TransformationDescriptors.PATH_RELATIVIZATION
+            )
+        }
+    }
+
+    protected fun disableDeduplication() {
+        val settings = project.service<MinimizationPluginSettings>().state
+        settings.minimizationTransformations.remove(TransformationDescriptors.PATH_RELATIVIZATION)
     }
 }

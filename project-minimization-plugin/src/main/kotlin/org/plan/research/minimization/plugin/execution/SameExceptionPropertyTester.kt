@@ -1,18 +1,20 @@
 package org.plan.research.minimization.plugin.execution
 
-import org.plan.research.minimization.core.model.PropertyTestResult
-import org.plan.research.minimization.core.model.PropertyTester
-import org.plan.research.minimization.core.model.PropertyTesterError
-import org.plan.research.minimization.plugin.errors.SnapshotError
-import org.plan.research.minimization.plugin.model.*
-import org.plan.research.minimization.plugin.model.exception.CompilationException
-import org.plan.research.minimization.plugin.model.exception.ExceptionComparator
-import org.plan.research.minimization.plugin.services.SnapshotManagerService
-
 import arrow.core.getOrElse
 import arrow.core.raise.option
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import org.plan.research.minimization.core.model.PropertyTestResult
+import org.plan.research.minimization.core.model.PropertyTester
+import org.plan.research.minimization.core.model.PropertyTesterError
+import org.plan.research.minimization.plugin.errors.SnapshotError
+import org.plan.research.minimization.plugin.model.BuildExceptionProvider
+import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.IJDDItem
+import org.plan.research.minimization.plugin.model.ProjectItemLens
+import org.plan.research.minimization.plugin.model.exception.CompilationException
+import org.plan.research.minimization.plugin.model.exception.ExceptionComparator
+import org.plan.research.minimization.plugin.services.SnapshotManagerService
 
 /**
  * A property tester for Delta Debugging algorithm that leverages different compilation strategies
@@ -61,8 +63,7 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
             lens: ProjectItemLens,
             context: IJDDContext,
         ) = option {
-            val copiedContext = context.copy(project = context.originalProject)
-            val initialException = compilerPropertyChecker.checkCompilation(copiedContext).getOrNone().bind()
+            val initialException = compilerPropertyChecker.checkCompilation(context).getOrNone().bind()
             SameExceptionPropertyTester<T>(
                 context.originalProject,
                 compilerPropertyChecker,

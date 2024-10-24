@@ -55,7 +55,7 @@ class PathRelativizationTransformation : ExceptionTransformation {
     }
 
     private fun transformPath(path: Path, context: IJDDContext): Path {
-        val projectBase = context.project.guessProjectDir()?.toNioPathOrNull() ?: return path
+        val projectBase = context.projectDir.toNioPathOrNull() ?: return path
         return path.relativeTo(projectBase)
     }
 

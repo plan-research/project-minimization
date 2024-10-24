@@ -70,7 +70,7 @@ class ProjectCloningSnapshotTest : ProjectCloningBaseTest() {
             selectedFiles.getAllFiles(project) + project.guessProjectDir()!!.getPathContentPair(project)
 
         val clonedProject = runBlocking {
-            val context = IJDDContext(projectCloning.clone(project)!!, project)
+            val context = IJDDContext(projectCloning.cloneAndOpenProject(project)!!, project)
             snapshotManager.transaction<Unit>(context) { newContext ->
                 writeAction {
                     VfsUtil.iterateChildrenRecursively(newContext.project.guessProjectDir()!!, null) {

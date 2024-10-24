@@ -23,13 +23,10 @@ object DumbCompiler : BuildExceptionProvider {
 
     override suspend fun checkCompilation(context: IJDDContext): CompilationResult =
         either {
-            val project = context.project
             val paths = targetPaths ?: return@either DumbException(Throwable())
 
-            val baseDir = project.guessProjectDir() ?: raise(CompilationPropertyCheckerError.CompilationSuccess)
-
             for (path in paths) {
-                ensureNotNull(baseDir.findFileByRelativePath(path)) { CompilationPropertyCheckerError.CompilationSuccess }
+                ensureNotNull(context.projectDir.findFileByRelativePath(path)) { CompilationPropertyCheckerError.CompilationSuccess }
             }
 
             DumbException(THROWABLE)

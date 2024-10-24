@@ -71,7 +71,7 @@ class FileLevelStageTest : JavaCodeInsightFixtureTestCase() {
         }
 
         val minimizedProject = runBlocking {
-            val clonedProject = project.service<ProjectCloningService>().clone(project)!!
+            val clonedProject = project.service<ProjectCloningService>().cloneAndOpenProject(project)!!
             val context = IJDDContext(clonedProject, project)
             stage.apply(context, executor)
         }.getOrNull()?.project

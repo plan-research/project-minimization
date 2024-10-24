@@ -34,7 +34,7 @@ class DDAlgorithmWithLog(
         try {
             result = innerDDAlgorithm.minimize(context, items, propertyTester)
         } catch (e: Throwable) {
-            generalLogger.error { "DDAlgorithm ended up with error: ${e.message}" }
+            generalLogger.error(e) { "DDAlgorithm ended up with error" }
             throw e
         }
 

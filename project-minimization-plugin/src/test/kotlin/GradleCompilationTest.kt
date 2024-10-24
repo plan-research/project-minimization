@@ -156,7 +156,7 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         val compilationResult = doCompilation(root)
         val cloningService = myFixture.project.service<ProjectCloningService>()
         val snapshot = runBlocking {
-            cloningService.clone(project)
+            cloningService.cloneAndOpenProject(project)
         }
         kotlin.test.assertNotNull(snapshot)
         val compilationResult2 = doCompilation(snapshot.guessProjectDir()!!, snapshot, checkGradle = false)

@@ -1,11 +1,8 @@
 package org.plan.research.minimization.plugin.model
 
-import org.plan.research.minimization.core.model.DDItem
-
 import com.intellij.openapi.vfs.VirtualFile
-
+import org.plan.research.minimization.core.model.DDItem
 import java.nio.file.Path
-
 import kotlin.io.path.relativeTo
 
 sealed interface IJDDItem : DDItem
@@ -21,6 +18,9 @@ data class ProjectFileDDItem(val localPath: Path) : IJDDItem {
         context.projectDir.findFileByRelativePath(localPath.toString())
 
     companion object {
+        fun createFromOriginal(context: IJDDContext, virtualFile: VirtualFile): ProjectFileDDItem =
+            ProjectFileDDItem(virtualFile.toNioPath().relativeTo(context.originalProjectDir.toNioPath()))
+
         fun create(context: IJDDContext, virtualFile: VirtualFile): ProjectFileDDItem =
             ProjectFileDDItem(virtualFile.toNioPath().relativeTo(context.projectDir.toNioPath()))
     }

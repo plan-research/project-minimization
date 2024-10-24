@@ -1,5 +1,10 @@
 package org.plan.research.minimization.plugin.snapshot
 
+import arrow.core.raise.either
+import arrow.core.raise.recover
+import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
+import mu.KotlinLogging
 import org.plan.research.minimization.plugin.errors.SnapshotError.*
 import org.plan.research.minimization.plugin.logging.statLogger
 import org.plan.research.minimization.plugin.model.IJDDContext
@@ -7,16 +12,6 @@ import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.model.snapshot.TransactionBody
 import org.plan.research.minimization.plugin.model.snapshot.TransactionResult
 import org.plan.research.minimization.plugin.services.ProjectCloningService
-
-import arrow.core.raise.either
-import arrow.core.raise.recover
-import com.intellij.openapi.components.service
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ex.ProjectManagerEx
-import mu.KotlinLogging
-
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.withContext
 
 /**
  * Manages the creation and handling of project cloning snapshots for transactions.
@@ -46,9 +41,9 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
     ): TransactionResult<T> = either {
         statLogger.info { "Snapshot manager start's transaction" }
         generalLogger.info { "Snapshot manager start's transaction" }
-        val clonedProject = projectCloning.clone(context.project)
+        val clonedProjectDir = projectCloning.cloneProject(context.projectDir)
             ?: raise(TransactionCreationFailed("Failed to create project"))
-        val clonedContext = context.copy(project = clonedProject)
+        val clonedContext = context.copy(projectDir = clonedProjectDir)
 
         try {
             recover<T, _>(
@@ -74,8 +69,8 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
 
     private suspend fun closeProject(context: IJDDContext) {
         // TODO: think about deleting the project
-        withContext(NonCancellable) {
-            ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(context.project)
-        }
+//        withContext(NonCancellable) {
+//            ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(context.project)
+//        }
     }
 }

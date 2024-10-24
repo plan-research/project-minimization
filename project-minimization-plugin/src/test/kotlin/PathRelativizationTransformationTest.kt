@@ -43,7 +43,7 @@ class PathRelativizationTransformationTest : JavaCodeInsightFixtureTestCase() {
         assertEquals(1, transformedError.position.lineNumber)
         assertEquals(1, transformedError.position.columnNumber)
 
-        val snapshot = runBlocking { project.service<ProjectCloningService>().clone(project)!! }
+        val snapshot = runBlocking { project.service<ProjectCloningService>().cloneAndOpenProject(project)!! }
         val snapshotLocation = snapshot.guessProjectDir()!!.toNioPath()
         val snapshotContext = IJDDContext(snapshot)
 
@@ -87,7 +87,7 @@ class PathRelativizationTransformationTest : JavaCodeInsightFixtureTestCase() {
         assertEquals(1, transformed.position.lineNumber)
         assertEquals(1, transformed.position.columnNumber)
 
-        val snapshot = runBlocking { project.service<ProjectCloningService>().clone(project)!! }
+        val snapshot = runBlocking { project.service<ProjectCloningService>().cloneAndOpenProject(project)!! }
         val snapshotLocation = snapshot.guessProjectDir()!!.toNioPath()
         val snapshotContext = IJDDContext(snapshot)
 
@@ -121,7 +121,7 @@ class PathRelativizationTransformationTest : JavaCodeInsightFixtureTestCase() {
         kotlin.test.assertNotNull(transformed)
         assert(!transformed.message.contains(projectLocation.toString()))
 
-        val snapshot = runBlocking { project.service<ProjectCloningService>().clone(project)!! }
+        val snapshot = runBlocking { project.service<ProjectCloningService>().cloneAndOpenProject(project)!! }
         val snapshotLocation = snapshot.guessProjectDir()!!.toNioPath()
         val snapshotContext = IJDDContext(snapshot)
 

@@ -51,7 +51,7 @@ class ProjectCloningTest : ProjectCloningBaseTest() {
         val project = myFixture.project
         val files = originalFileSet ?: project.getAllFiles()
         val projectCloningService = project.service<ProjectCloningService>()
-        val clonedProject = runBlocking { projectCloningService.clone(project) }
+        val clonedProject = runBlocking { projectCloningService.cloneAndOpenProject(project) }
         assertNotNull(clonedProject)
         val clonedFiles = clonedProject!!.getAllFiles()
         assertEquals(files, clonedFiles)
@@ -65,13 +65,13 @@ class ProjectCloningTest : ProjectCloningBaseTest() {
         val project = myFixture.project
         val files = originalFileSet ?: project.getAllFiles()
         val projectCloningService = project.service<ProjectCloningService>()
-        val clonedProject = runBlocking { projectCloningService.clone(project) }
+        val clonedProject = runBlocking { projectCloningService.cloneAndOpenProject(project) }
         assertNotNull(clonedProject)
         val clonedFiles = clonedProject!!.getAllFiles()
         assertEquals(files, clonedFiles)
 
         val clonedClonedProject =
-            runBlocking { projectCloningService.clone(clonedProject) }
+            runBlocking { projectCloningService.cloneAndOpenProject(clonedProject) }
         assertNotNull(clonedClonedProject)
         val clonedClonedFiles = clonedClonedProject!!.getAllFiles()
         assertEquals(files, clonedClonedFiles)

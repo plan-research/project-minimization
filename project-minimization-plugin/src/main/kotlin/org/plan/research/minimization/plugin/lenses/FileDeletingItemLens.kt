@@ -6,8 +6,11 @@ import org.plan.research.minimization.plugin.model.ProjectFileDDItem
 import org.plan.research.minimization.plugin.model.ProjectItemLens
 
 import com.intellij.openapi.application.writeAction
+import mu.KotlinLogging
 
 class FileDeletingItemLens : ProjectItemLens {
+    private val logger = KotlinLogging.logger { }
+
     override suspend fun focusOn(items: List<IJDDItem>, currentContext: IJDDContext) {
         val targetFiles = currentContext
             .currentLevel
@@ -17,7 +20,10 @@ class FileDeletingItemLens : ProjectItemLens {
 
         writeAction {
             targetFiles.forEach { item ->
-                item.getVirtualFile(currentContext)?.delete(this)
+                item.getVirtualFile(currentContext)?.let {
+                    logger.debug { "Deleting ${item.localPath}, $it" }
+                    it.delete(this)
+                }
             }
         }
     }

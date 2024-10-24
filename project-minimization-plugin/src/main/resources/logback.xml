@@ -9,7 +9,7 @@
 
     <!-- Appender for TRACE, DEBUG, INFO, WARN, ERROR -->
     <appender name="DEBUG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/logs.log</file>
+        <file>/home/rustamsadykov/my-logs/logs.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>logs/logs-%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory>
@@ -21,7 +21,7 @@
 
     <!-- Appender for STATISTICS logs -->
     <appender name="STATISTICS_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/statistics.log</file>
+        <file>/home/rustamsadykov/my-logs/statistics.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>logs/statistics-%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory>

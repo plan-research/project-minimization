@@ -4,6 +4,8 @@ kotlin = "1.9.23"
 intellij = "2.1.0"
 coroutines = "1.8.0"
 arrow = "1.2.4"
+logging = "2.1.21"
+logback = "1.2.11"
 diktat = "2.0.0"
 
 [libraries]
@@ -12,6 +14,9 @@ kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", v
 
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
+kotlin-logging = { module = "io.github.microutils:kotlin-logging-jvm", version.ref = "logging" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+
 
 [plugins]
 intellij = { id = "org.jetbrains.intellij.platform", version.ref = "intellij" }

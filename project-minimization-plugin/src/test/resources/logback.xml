@@ -1,0 +1,20 @@
+<configuration>
+
+    <!-- Appender for console output (for tests only) -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Logger for your package (write logs only to console) -->
+    <logger name="org.plan.research.minimization" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
+    <!-- Root logger (limited to ERROR level) -->
+    <root level="ERROR">
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+</configuration>

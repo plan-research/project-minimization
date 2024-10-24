@@ -1,6 +1,7 @@
 package org.plan.research.minimization.plugin.snapshot
 
 import org.plan.research.minimization.plugin.errors.SnapshotError.*
+import org.plan.research.minimization.plugin.logging.statLogger
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.model.snapshot.TransactionBody
@@ -12,6 +13,7 @@ import arrow.core.raise.recover
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ex.ProjectManagerEx
+import mu.KotlinLogging
 
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
@@ -23,6 +25,7 @@ import kotlinx.coroutines.withContext
  */
 class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
     private val projectCloning = rootProject.service<ProjectCloningService>()
+    private val generalLogger = KotlinLogging.logger {}
 
     /**
      * Executes a transaction within the provided context,
@@ -41,6 +44,8 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
         context: IJDDContext,
         action: suspend TransactionBody<T>.(newContext: IJDDContext) -> IJDDContext,
     ): TransactionResult<T> = either {
+        statLogger.info { "Snapshot manager start's transaction" }
+        generalLogger.info { "Snapshot manager start's transaction" }
         val clonedProject = projectCloning.clone(context.project)
             ?: raise(TransactionCreationFailed("Failed to create project"))
         val clonedContext = context.copy(project = clonedProject)
@@ -59,7 +64,12 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
             throw e
         }
     }.onRight {
+        generalLogger.info { "Transaction completed successfully" }
+        statLogger.info { "Transaction result: success" }
         closeProject(context)
+    }.onLeft { error ->
+        generalLogger.error { "Transaction failed with error: $error" }
+        statLogger.info { "Transaction result: error" }
     }
 
     private suspend fun closeProject(context: IJDDContext) {

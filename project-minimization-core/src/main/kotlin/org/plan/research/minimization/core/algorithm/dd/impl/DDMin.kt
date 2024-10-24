@@ -40,7 +40,6 @@ class DDMin : DDAlgorithm {
                     repeat(node.size) {
                         smallItems.add(currentItems.removeFirst())
                     }
-
                     if (testSmall) {
                         if (!node.smallChecked) {
                             val toBreak = propertyTester.test(currentContext, smallItems)

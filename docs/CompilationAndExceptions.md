@@ -132,6 +132,24 @@ This simple interface allows comparing two exceptions to equality.
 The current implementations are
 * [SimpleExceptionComparator][simple-comparator] is a comparator that uses Kotlin `equals()` for comparison.
 
+## Lenses
+
+Before the compilation we need to leave only chosen by Delta Debugging algorithm items of the project. 
+It could be as deleting files as replacing functions with `TODO()`. 
+To do this exists [ProjectItemLens][project-item-lens] — 
+an interface which defines how to focus on a different item of the project.
+
+It contains only one method `focusOn(items: List<IJDDItem>, currentContext: IJDDContext)`,
+which allow focusing on `items` in `currentContext`.
+
+## Property Testing
+For property testing we use an implementation named [SameExceptionPropertyTester][same-exception-checker]. 
+It tests if the chosen items from the project produce the same exception as the initial one.
+To do that, it uses several interfaces:
+1. Comparator: see [above](#exception-comparing)
+2. Build Exception Provider: see [compilation](#gradle) part
+3. Lens for focusing on specific projects of the project: see lens part
+
 [build-exception-provider]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/execution/gradle/GradleBuildExceptionProvider.kt
 
 [run-process-adapter]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/execution/gradle/GradleRunProcessAdapter.kt
@@ -151,3 +169,4 @@ The current implementations are
 [exception-comparator]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/exception/ExceptionComparator.kt
 
 [simple-comparator]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/execution/comparable/SimpleExceptionComparator.kt
+[project-item-lens]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/ProjectItemLens.kt

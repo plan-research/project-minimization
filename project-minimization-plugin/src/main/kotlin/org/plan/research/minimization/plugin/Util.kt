@@ -8,6 +8,7 @@ import org.plan.research.minimization.plugin.execution.comparable.SimpleExceptio
 import org.plan.research.minimization.plugin.execution.gradle.GradleBuildExceptionProvider
 import org.plan.research.minimization.plugin.execution.transformer.PathRelativizationTransformation
 import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchyGenerator
+import org.plan.research.minimization.plugin.lenses.FileDeletingItemLens
 import org.plan.research.minimization.plugin.logging.withLog
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
 import org.plan.research.minimization.plugin.model.IJDDContext
@@ -77,6 +78,10 @@ fun ExceptionComparingStrategy.getExceptionComparator() = when (this) {
 
 fun TransformationDescriptors.getExceptionTransformations() = when (this) {
     TransformationDescriptors.PATH_RELATIVIZATION -> PathRelativizationTransformation()
+}
+
+fun ProjectItemLensDescriptor.getLens() = when (this) {
+    ProjectItemLensDescriptor.FILE_DELETING -> FileDeletingItemLens()
 }
 
 suspend fun CompilationException.apply(transformations: List<ExceptionTransformation>, context: IJDDContext) =

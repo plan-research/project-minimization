@@ -1,31 +1,35 @@
 package org.plan.research.minimization.plugin.logging
 
-import mu.KotlinLogging
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.model.DDContext
 import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.PropertyTester
 
-class DDAlgorithmWithLog (
-    private val innerDDAlgorithm: DDAlgorithm
-) : DDAlgorithm {
+import mu.KotlinLogging
 
+class DDAlgorithmWithLog(
+    private val innerDDAlgorithm: DDAlgorithm,
+) : DDAlgorithm {
     private val generalLogger = KotlinLogging.logger {}
 
     override suspend fun <C : DDContext, T : DDItem> minimize(
         context: C, items: List<T>,
-        propertyTester: PropertyTester<C, T>
+        propertyTester: PropertyTester<C, T>,
     ): DDAlgorithmResult<C, T> {
         val result: DDAlgorithmResult<C, T>
 
-        generalLogger.info { "Start minimization algorithm \n" +
+        generalLogger.info {
+            "Start minimization algorithm \n" +
                 "Context - ${context::class.simpleName}, \n" +
                 "items - ${(items.firstOrNull() ?: NoSuchElementException())::class.simpleName} \n" +
-                "propertyTester - ${propertyTester::class.simpleName}" }
-        generalLogger.trace { "Context - $context \n" +
+                "propertyTester - ${propertyTester::class.simpleName}"
+        }
+        generalLogger.trace {
+            "Context - $context \n" +
                 "items - $items \n" +
-                "propertyTester - $propertyTester" }
+                "propertyTester - $propertyTester"
+        }
 
         try {
             result = innerDDAlgorithm.minimize(context, items, propertyTester)
@@ -34,9 +38,11 @@ class DDAlgorithmWithLog (
             throw e
         }
 
-        statLogger.info { "Start: ${items.size}, " +
+        statLogger.info {
+            "Start: ${items.size}, " +
                 "End: ${result.items.size}, " +
-                "Ratio: ${result.items.size.toDouble() / items.size}" }
+                "Ratio: ${result.items.size.toDouble() / items.size}"
+        }
         generalLogger.info { "End minimization algorithm" }
 
         return result

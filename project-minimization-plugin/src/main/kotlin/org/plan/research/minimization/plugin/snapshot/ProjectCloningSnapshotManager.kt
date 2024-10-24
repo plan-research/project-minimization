@@ -1,15 +1,5 @@
 package org.plan.research.minimization.plugin.snapshot
 
-import arrow.core.raise.either
-import arrow.core.raise.recover
-import com.intellij.openapi.application.EDT
-import com.intellij.openapi.components.service
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ProjectManager
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.withContext
-import mu.KotlinLogging
 import org.plan.research.minimization.plugin.errors.SnapshotError.*
 import org.plan.research.minimization.plugin.logging.statLogger
 import org.plan.research.minimization.plugin.model.IJDDContext
@@ -18,6 +8,18 @@ import org.plan.research.minimization.plugin.model.snapshot.TransactionBody
 import org.plan.research.minimization.plugin.model.snapshot.TransactionResult
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 
+import arrow.core.raise.either
+import arrow.core.raise.recover
+import com.intellij.openapi.application.EDT
+import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectManager
+import mu.KotlinLogging
+
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
+
 /**
  * Manages the creation and handling of project cloning snapshots for transactions.
  *
@@ -25,7 +27,6 @@ import org.plan.research.minimization.plugin.services.ProjectCloningService
  */
 class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
     private val projectCloning = rootProject.service<ProjectCloningService>()
-
     private val generalLogger = KotlinLogging.logger {}
 
     /**

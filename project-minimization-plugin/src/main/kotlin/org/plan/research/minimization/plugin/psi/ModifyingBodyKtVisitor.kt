@@ -80,11 +80,11 @@ class ModifyingBodyKtVisitor(
     }
 
     private fun PsiElement.shouldDelete(): Boolean =
-        getUserData(ZIPPED_NODE_KEY)?.getUserData(MAPPED_FOR_DELETION_KEY) == true
+        getUserData(ZIPPED_NODE_KEY)?.getUserData(MAPPED_AS_STORED_KEY) != true
 
 
     companion object {
         private val ZIPPED_NODE_KEY = Key<PsiElement>("MINIMIZATION_ZIPPED_NODE")
-        val MAPPED_FOR_DELETION_KEY = Key<Boolean>("MINIMIZATION_MAPPED_FOR_DELETION_KEY")
+        val MAPPED_AS_STORED_KEY = Key<Boolean>("MAPPED_AS_STORED_FOR_MINIMIZATION")
     }
 }

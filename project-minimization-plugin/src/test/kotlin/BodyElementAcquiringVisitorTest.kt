@@ -102,4 +102,34 @@ class BodyElementAcquiringVisitorTest: JavaCodeInsightFixtureTestCase() {
             }
         }
     }
+    fun testComplexClass() {
+        val visitor = BodyElementAcquiringKtVisitor(project)
+        val psiFile = myFixture.configureByFile("complex-class.kt")
+        assertIs<KtFile>(psiFile)
+        runBlocking {
+            readAction {
+                psiFile.accept(visitor)
+            }
+        }
+        assertSize(6, visitor.collectedElements)
+        val (first, second, third, fourth, fifth) = visitor.collectedElements
+        val sixth = visitor.collectedElements[5]
+        assertIs<PsiWithBodyDDItem.NamedFunctionWithBlock>(first)
+        assertIs<PsiWithBodyDDItem.NamedFunctionWithoutBlock>(second)
+        assertIs<PsiWithBodyDDItem.ClassInitializer>(third)
+        assertIs<PsiWithBodyDDItem.PropertyAccessor>(fourth)
+        assertIs<PsiWithBodyDDItem.PropertyAccessor>(fifth)
+        assertIs<PsiWithBodyDDItem.PropertyAccessor>(sixth)
+        runBlocking {
+            readAction {
+                assertEquals("method", first.underlyingObject.element!!.name)
+                assertEquals("method2", second.underlyingObject.element!!.name)
+                assertEquals(true, fourth.underlyingObject.element!!.isGetter)
+                assertEquals(true, fourth.underlyingObject.element!!.hasBlockBody())
+                assertEquals(true, fifth.underlyingObject.element!!.isGetter)
+                assertEquals(false, fifth.underlyingObject.element!!.hasBlockBody())
+                assertEquals(true, sixth.underlyingObject.element!!.isSetter)
+            }
+        }
+    }
 }

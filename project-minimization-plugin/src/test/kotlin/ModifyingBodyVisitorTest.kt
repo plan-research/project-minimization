@@ -26,7 +26,7 @@ class ModifyingBodyVisitorTest : JavaCodeInsightFixtureTestCase() {
         val elements = runBlocking { getAllElements(psiFile) }
         runBlocking {
             markElements(elements) {
-                it is PsiWithBodyDDItem.NamedFunctionWithBlock
+                it !is PsiWithBodyDDItem.NamedFunctionWithBlock
             }
         }
 
@@ -40,7 +40,7 @@ class ModifyingBodyVisitorTest : JavaCodeInsightFixtureTestCase() {
         val elements = runBlocking { getAllElements(psiFile) }
         runBlocking {
             markElements(elements) {
-                it is PsiWithBodyDDItem.NamedFunctionWithoutBlock
+                it !is PsiWithBodyDDItem.NamedFunctionWithoutBlock
             }
         }
 
@@ -54,12 +54,13 @@ class ModifyingBodyVisitorTest : JavaCodeInsightFixtureTestCase() {
         val elements = runBlocking { getAllElements(psiFile) }
         runBlocking {
             markElements(elements) {
-                it is PsiWithBodyDDItem.NamedFunctionWithBlock
+                it !is PsiWithBodyDDItem.NamedFunctionWithBlock
             }
         }
 
         runBlocking { doTest(psiFile, "modification-results/simple-class_1.kt") }
     }
+
     fun testSimpleClassWithoutBody() {
         val vfsFile = myFixture.copyFileToProject("simple-class.kt", "simple-class_2.kt")
         val psiFile = runBlocking { readAction { vfsFile.toPsiFile(project) } }
@@ -67,13 +68,56 @@ class ModifyingBodyVisitorTest : JavaCodeInsightFixtureTestCase() {
         val elements = runBlocking { getAllElements(psiFile) }
         runBlocking {
             markElements(elements) {
-                it is PsiWithBodyDDItem.NamedFunctionWithoutBlock
+                it !is PsiWithBodyDDItem.NamedFunctionWithoutBlock
             }
         }
 
         runBlocking { doTest(psiFile, "modification-results/simple-class_2.kt") }
     }
 
+    fun testLambda() {
+        val vfsFile = myFixture.copyFileToProject("lambda.kt", "lambda-1.kt")
+        val psiFile = runBlocking { readAction { vfsFile.toPsiFile(project) } }
+        assertIs<KtFile>(psiFile)
+        val elements = runBlocking { getAllElements(psiFile) }
+        runBlocking {
+            markElements(elements) {
+                it !is PsiWithBodyDDItem.LambdaExpression
+            }
+        }
+
+        runBlocking { doTest(psiFile, "modification-results/lambda_1.kt") }
+    }
+
+    private fun doTestComplexClass(id: Int, filter: suspend (PsiWithBodyDDItem) -> Boolean) {
+        val vfsFile = myFixture.copyFileToProject("complex-class.kt", "complex-class_$id.kt")
+        val psiFile = runBlocking { readAction { vfsFile.toPsiFile(project) } }
+        assertIs<KtFile>(psiFile)
+        val elements = runBlocking { getAllElements(psiFile) }
+        runBlocking {
+            markElements(elements, filter)
+        }
+
+        runBlocking { doTest(psiFile, "modification-results/complex-class_$id.kt") }
+    }
+
+    fun testComplexClassMethods() {
+        doTestComplexClass(1) {
+            it !is PsiWithBodyDDItem.NamedFunctionWithoutBlock &&
+                    it !is PsiWithBodyDDItem.NamedFunctionWithBlock &&
+                    it !is PsiWithBodyDDItem.LambdaExpression
+        }
+    }
+    fun testComplexClassInitBlocks() {
+        doTestComplexClass(2) {
+            it !is PsiWithBodyDDItem.ClassInitializer
+        }
+    }
+    fun testComplexClassPropertyAccessors() {
+        doTestComplexClass(3) {
+            it !is PsiWithBodyDDItem.PropertyAccessor
+        }
+    }
 
     private suspend fun doTest(psiFile: KtFile, expectedFile: String) {
         val visitor = readAction { ModifyingBodyKtVisitor(project, project) }
@@ -105,7 +149,7 @@ class ModifyingBodyVisitorTest : JavaCodeInsightFixtureTestCase() {
             if (filter(element)) {
                 writeAction {
                     element.underlyingObject.element?.putUserData(
-                        ModifyingBodyKtVisitor.MAPPED_FOR_DELETION_KEY,
+                        ModifyingBodyKtVisitor.MAPPED_AS_STORED_KEY,
                         true
                     )
                 }

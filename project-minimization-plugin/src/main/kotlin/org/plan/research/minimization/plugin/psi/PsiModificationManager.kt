@@ -1,7 +1,6 @@
 package org.plan.research.minimization.plugin.psi
 
 import com.intellij.openapi.application.EDT
-import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.command.writeCommandAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
@@ -15,7 +14,11 @@ class PsiModificationManager(private val rootProject: Project, private val cs: C
     private val psiFactory = KtPsiFactory(rootProject)
 
     fun replaceBody(classInitializer: KtClassInitializer) {
-        invokeLater { classInitializer.body?.replace(psiFactory.createBlock(BLOCKLESS_TEXT)) }
+        cs.launch(Dispatchers.EDT) {
+            writeCommandAction(rootProject, "Replacing Class Initializer") {
+                classInitializer.body?.replace(psiFactory.createBlock(BLOCKLESS_TEXT))
+            }
+        }
     }
 
     fun replaceBody(function: KtNamedFunction) = when {
@@ -44,17 +47,16 @@ class PsiModificationManager(private val rootProject: Project, private val cs: C
 
     fun replaceBody(lambdaExpression: KtLambdaExpression) = cs.launch(Dispatchers.EDT) {
         writeCommandAction(rootProject, "Replacing Lambda Body Expression") {
-            lambdaExpression.bodyExpression!!.replace(
-                psiFactory.createExpression(
-                    BLOCKLESS_TEXT
-                )
-            )
+            lambdaExpression.bodyExpression!!.replace(psiFactory.createLambdaExpression("", BLOCKLESS_TEXT).bodyExpression!!)
         }
     }
 
     fun replaceBody(accessor: KtPropertyAccessor) = cs.launch(Dispatchers.EDT) {
         writeCommandAction(rootProject, "Replacing Accessor Body") {
-            accessor.bodyBlockExpression!!.replace(psiFactory.createBlock(BLOCKLESS_TEXT))
+            when {
+                accessor.hasBlockBody() -> accessor.bodyBlockExpression!!.replace(psiFactory.createBlock(BLOCKLESS_TEXT))
+                accessor.hasBody() -> accessor.bodyExpression!!.replace(psiFactory.createExpression(BLOCKLESS_TEXT))
+            }
         }
     }
 

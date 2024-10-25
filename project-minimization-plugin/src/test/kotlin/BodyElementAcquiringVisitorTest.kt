@@ -111,24 +111,28 @@ class BodyElementAcquiringVisitorTest: JavaCodeInsightFixtureTestCase() {
                 psiFile.accept(visitor)
             }
         }
-        assertSize(6, visitor.collectedElements)
+        assertSize(8, visitor.collectedElements)
         val (first, second, third, fourth, fifth) = visitor.collectedElements
         val sixth = visitor.collectedElements[5]
+        val seventh = visitor.collectedElements[6]
+        val eighth = visitor.collectedElements[7]
         assertIs<PsiWithBodyDDItem.NamedFunctionWithBlock>(first)
         assertIs<PsiWithBodyDDItem.NamedFunctionWithoutBlock>(second)
-        assertIs<PsiWithBodyDDItem.ClassInitializer>(third)
-        assertIs<PsiWithBodyDDItem.PropertyAccessor>(fourth)
+        assertIs<PsiWithBodyDDItem.LambdaExpression>(third)
+        assertIs<PsiWithBodyDDItem.ClassInitializer>(fourth)
         assertIs<PsiWithBodyDDItem.PropertyAccessor>(fifth)
         assertIs<PsiWithBodyDDItem.PropertyAccessor>(sixth)
+        assertIs<PsiWithBodyDDItem.PropertyAccessor>(seventh)
+        assertIs<PsiWithBodyDDItem.ClassInitializer>(eighth)
         runBlocking {
             readAction {
                 assertEquals("method", first.underlyingObject.element!!.name)
                 assertEquals("method2", second.underlyingObject.element!!.name)
-                assertEquals(true, fourth.underlyingObject.element!!.isGetter)
-                assertEquals(true, fourth.underlyingObject.element!!.hasBlockBody())
                 assertEquals(true, fifth.underlyingObject.element!!.isGetter)
-                assertEquals(false, fifth.underlyingObject.element!!.hasBlockBody())
-                assertEquals(true, sixth.underlyingObject.element!!.isSetter)
+                assertEquals(true, fifth.underlyingObject.element!!.hasBlockBody())
+                assertEquals(true, sixth.underlyingObject.element!!.isGetter)
+                assertEquals(false, sixth.underlyingObject.element!!.hasBlockBody())
+                assertEquals(true, seventh.underlyingObject.element!!.isSetter)
             }
         }
     }

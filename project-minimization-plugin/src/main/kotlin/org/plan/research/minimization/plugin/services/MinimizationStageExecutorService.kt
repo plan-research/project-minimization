@@ -23,10 +23,8 @@ import org.plan.research.minimization.plugin.psi.FunctionModificationLens
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 @Service(Service.Level.PROJECT)
-class MinimizationStageExecutorService : MinimizationStageExecutor {
-    private val generalLogger = KotlinLogging.logger {}
-
 class MinimizationStageExecutorService(private val project: Project) : MinimizationStageExecutor {
+    private val generalLogger = KotlinLogging.logger {}
     override suspend fun executeFileLevelStage(context: IJDDContext, fileLevelStage: FileLevelStage) = either {
         generalLogger.info { "Start File level stage" }
         statLogger.info {

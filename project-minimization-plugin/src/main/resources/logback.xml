@@ -1,4 +1,5 @@
 <configuration>
+    <property name="LOG_PATH" value="${idea.log.path}" />
 
     <!-- Appender for console output -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
@@ -9,9 +10,9 @@
 
     <!-- Appender for TRACE, DEBUG, INFO, WARN, ERROR -->
     <appender name="DEBUG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/logs.log</file>
+        <file>${LOG_PATH}/logs.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>logs/logs-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>${LOG_PATH}/logs-%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory>
         </rollingPolicy>
         <encoder>
@@ -21,9 +22,9 @@
 
     <!-- Appender for STATISTICS logs -->
     <appender name="STATISTICS_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/statistics.log</file>
+        <file>${LOG_PATH}/statistics.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>logs/statistics-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>${LOG_PATH}/statistics-%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory>
         </rollingPolicy>
         <encoder>

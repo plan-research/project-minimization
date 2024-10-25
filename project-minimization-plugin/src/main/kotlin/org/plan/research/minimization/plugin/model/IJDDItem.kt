@@ -9,7 +9,6 @@ import org.jetbrains.kotlin.psi.KtClassInitializer
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
-import org.jetbrains.kotlin.psi.KtPropertyDelegate
 
 import java.nio.file.Path
 
@@ -39,15 +38,15 @@ sealed interface PsiWithBodyDDItem : IJDDItem {
     data class ClassInitializer(override val underlyingObject: SmartPsiElementPointer<KtClassInitializer>) :
         PsiWithBodyDDItem
 
-    data class NamedFunctionWithBlock(override val underlyingObject: SmartPsiElementPointer<KtNamedFunction>) :
-        PsiWithBodyDDItem
-
-    data class NamedFunctionWithoutBlock(override val underlyingObject: SmartPsiElementPointer<KtNamedFunction>) :
-        PsiWithBodyDDItem
-
     data class LambdaExpression(override val underlyingObject: SmartPsiElementPointer<KtLambdaExpression>) :
         PsiWithBodyDDItem
 
     data class PropertyAccessor(override val underlyingObject: SmartPsiElementPointer<KtPropertyAccessor>) :
+        PsiWithBodyDDItem
+
+    data class NamedFunctionWithBlock(override val underlyingObject: SmartPsiElementPointer<KtNamedFunction>) :
+        PsiWithBodyDDItem
+
+    data class NamedFunctionWithoutBlock(override val underlyingObject: SmartPsiElementPointer<KtNamedFunction>) :
         PsiWithBodyDDItem
 }

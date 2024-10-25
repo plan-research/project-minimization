@@ -37,36 +37,49 @@ class ModifyingBodyKtVisitor(
     }
 
     override fun visitClassInitializer(initializer: KtClassInitializer) {
-        if (!initializer.shouldDelete()) return
+        if (!initializer.shouldDelete()) {
+            return
+        }
         modificationManager.replaceBody(initializer)
     }
 
     override fun visitNamedFunction(function: KtNamedFunction) {
-        if (!function.shouldDelete()) return
+        if (!function.shouldDelete()) {
+            return
+        }
         modificationManager.replaceBody(function)
     }
 
     override fun visitLambdaExpression(lambdaExpression: KtLambdaExpression) {
-        if (!lambdaExpression.shouldDelete()) return
+        if (!lambdaExpression.shouldDelete()) {
+            return
+        }
         modificationManager.replaceBody(lambdaExpression)
     }
 
     override fun visitPropertyAccessor(accessor: KtPropertyAccessor) {
-        if (!accessor.hasBody() || !accessor.shouldDelete()) return
+        if (!accessor.hasBody() || !accessor.shouldDelete()) {
+            return
+        }
         modificationManager.replaceBody(accessor)
     }
 
     override fun visitElement(element: PsiElement) {
-        if (element is KtFile)
+        if (element is KtFile) {
             initKtFile(element)
+        }
 
         val zippedChildren = element.getUserData(ZIPPED_NODE_KEY)?.children ?: return
         val children = element.children
-        if (children.size != zippedChildren.size) return
+        if (children.size != zippedChildren.size) {
+            return
+        }
         val zipped = children
             .zip(zippedChildren)
 
-        if (zipped.any { (child, zippedChild) -> child::class != zippedChild::class }) return
+        if (zipped.any { (child, zippedChild) -> child::class != zippedChild::class }) {
+            return
+        }
         zipped.forEach { (child, zippedChild) -> child.putUserData(ZIPPED_NODE_KEY, zippedChild) }
 
         super.visitElement(element)
@@ -75,13 +88,12 @@ class ModifyingBodyKtVisitor(
     private fun initKtFile(file: KtFile) {
         val copiedPath = file.virtualFile.toNioPathOrNull() ?: return
         val pathToLookup = copiedPath.relativeTo(newProjectRoot)
-        val originalElement = files[pathToLookup] ?: return // Extra file, haven't found during original lookup
+        val originalElement = files[pathToLookup] ?: return  // Extra file, haven't found during original lookup
         file.putUserData(ZIPPED_NODE_KEY, originalElement)
     }
 
     private fun PsiElement.shouldDelete(): Boolean =
         getUserData(ZIPPED_NODE_KEY)?.getUserData(MAPPED_AS_STORED_KEY) != true
-
 
     companion object {
         private val ZIPPED_NODE_KEY = Key<PsiElement>("MINIMIZATION_ZIPPED_NODE")

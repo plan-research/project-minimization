@@ -1,18 +1,17 @@
 package org.plan.research.minimization.plugin.psi
 
+import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+
 import com.intellij.openapi.project.Project
-import com.intellij.psi.PsiElement
 import com.intellij.psi.SmartPointerManager
-import com.intellij.psi.SmartPsiElementPointer
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.idea.structuralsearch.visitor.KotlinRecursiveElementVisitor
 import org.jetbrains.kotlin.psi.KtClassInitializer
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
 
-class BodyElementAcquiringKtVisitor(rootProject: Project): KotlinRecursiveElementVisitor() {
+class BodyElementAcquiringKtVisitor(rootProject: Project) : KotlinRecursiveElementVisitor() {
     private val smartPointerManager = SmartPointerManager.getInstance(rootProject)
 
     val collectedElements: List<PsiWithBodyDDItem>
@@ -27,11 +26,14 @@ class BodyElementAcquiringKtVisitor(rootProject: Project): KotlinRecursiveElemen
     @RequiresReadLock
     override fun visitNamedFunction(function: KtNamedFunction) {
         val pointer = smartPointerManager.createSmartPsiElementPointer<KtNamedFunction>(function)
-        if (!function.hasBody()) return
-        if (function.hasBlockBody())
+        if (!function.hasBody()) {
+            return
+        }
+        if (function.hasBlockBody()) {
             resultedElements.add(PsiWithBodyDDItem.NamedFunctionWithBlock(pointer))
-        else
+        } else {
             resultedElements.add(PsiWithBodyDDItem.NamedFunctionWithoutBlock(pointer))
+        }
     }
 
     @RequiresReadLock
@@ -42,9 +44,10 @@ class BodyElementAcquiringKtVisitor(rootProject: Project): KotlinRecursiveElemen
 
     @RequiresReadLock
     override fun visitPropertyAccessor(accessor: KtPropertyAccessor) {
-        if (!accessor.hasBody()) return
+        if (!accessor.hasBody()) {
+            return
+        }
         val pointer = smartPointerManager.createSmartPsiElementPointer<KtPropertyAccessor>(accessor)
         resultedElements.add(PsiWithBodyDDItem.PropertyAccessor(pointer))
     }
-
 }

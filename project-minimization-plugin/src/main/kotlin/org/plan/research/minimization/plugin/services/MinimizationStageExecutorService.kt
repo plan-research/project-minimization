@@ -2,25 +2,25 @@ package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDD
 import org.plan.research.minimization.plugin.errors.MinimizationError
+import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.getDDAlgorithm
+import org.plan.research.minimization.plugin.getExceptionComparator
 import org.plan.research.minimization.plugin.getHierarchyCollectionStrategy
 import org.plan.research.minimization.plugin.logging.statLogger
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.MinimizationStageExecutor
+import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.plan.research.minimization.plugin.psi.FunctionModificationLens
+import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 import arrow.core.getOrElse
 import arrow.core.raise.either
 import com.intellij.openapi.components.Service
-import mu.KotlinLogging
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
-import org.plan.research.minimization.plugin.getExceptionComparator
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
-import org.plan.research.minimization.plugin.psi.FunctionModificationLens
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
+import mu.KotlinLogging
 
 @Service(Service.Level.PROJECT)
 class MinimizationStageExecutorService(private val project: Project) : MinimizationStageExecutor {
@@ -72,13 +72,13 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
             buildExceptionProvider,
             exceptionComparator,
             lens,
-            context
+            context,
         ).getOrElse { raise(MinimizationError.PropertyCheckerFailed) }
         context.withProgress {
             ddAlgorithm.minimize(
                 it,
                 project.service<PsiWithBodiesCollectorService>().getElementsWithBody(),
-                propertyChecker
+                propertyChecker,
             ).context
         }
     }

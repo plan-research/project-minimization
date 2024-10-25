@@ -1,7 +1,5 @@
 package org.plan.research.minimization.plugin
 
-import com.intellij.openapi.application.readAction
-import com.intellij.openapi.application.smartReadAction
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.impl.DDMin
 import org.plan.research.minimization.core.algorithm.dd.impl.ProbabilisticDD
@@ -29,7 +27,6 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.idea.structuralsearch.visitor.KotlinRecursiveElementVisitor
-import org.jetbrains.kotlin.idea.util.application.runAction
 import org.jetbrains.kotlin.psi.KtFile
 
 fun SnapshotStrategy.getSnapshotManager(project: Project): SnapshotManager =

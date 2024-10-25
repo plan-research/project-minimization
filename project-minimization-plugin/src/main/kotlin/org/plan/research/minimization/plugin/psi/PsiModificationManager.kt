@@ -4,10 +4,11 @@ import com.intellij.openapi.application.EDT
 import com.intellij.openapi.command.writeCommandAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
+import org.jetbrains.kotlin.psi.*
+
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.jetbrains.kotlin.psi.*
 
 @Service(Service.Level.PROJECT)
 class PsiModificationManager(private val rootProject: Project, private val cs: CoroutineScope) {
@@ -26,8 +27,8 @@ class PsiModificationManager(private val rootProject: Project, private val cs: C
             writeCommandAction(rootProject, "Replacing Function Body Block") {
                 function.bodyBlockExpression!!.replace(
                     psiFactory.createBlock(
-                        BLOCKLESS_TEXT
-                    )
+                        BLOCKLESS_TEXT,
+                    ),
                 )
             }
         }
@@ -36,8 +37,8 @@ class PsiModificationManager(private val rootProject: Project, private val cs: C
             writeCommandAction(rootProject, "Replacing Function Body Expression") {
                 function.bodyExpression!!.replace(
                     psiFactory.createExpression(
-                        BLOCKLESS_TEXT
-                    )
+                        BLOCKLESS_TEXT,
+                    ),
                 )
             }
         }

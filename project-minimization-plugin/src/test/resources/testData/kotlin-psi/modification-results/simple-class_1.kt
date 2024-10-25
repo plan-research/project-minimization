@@ -6,24 +6,20 @@ class A: I {
 }
 class C(): I {
     fun simpleMethod() {
-        println("566")
+        TODO("Removed by DD")
     }
 
     fun simpleMethod2(x: Int, y: Int): Int {
-        return x + y
+        TODO("Removed by DD")
     }
 
     fun simpleMethod3(a: Int, b: Int): Int = a + b
 
     override fun overridden() {
-        println("hi from overridden")
+        TODO("Removed by DD")
     }
 
     fun complexMethod() {
-        fun doNotParseThis() {
-            fun andThisAsWell() {
-                TODO()
-            }
-        }
+        TODO("Removed by DD")
     }
 }

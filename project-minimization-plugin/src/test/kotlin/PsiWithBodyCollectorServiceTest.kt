@@ -1,8 +1,10 @@
+import com.intellij.codeInsight.PsiEquivalenceUtil
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.guessProjectDir
+import com.intellij.psi.PsiElement
 import com.intellij.psi.impl.PsiManagerEx
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import kotlinx.coroutines.Dispatchers

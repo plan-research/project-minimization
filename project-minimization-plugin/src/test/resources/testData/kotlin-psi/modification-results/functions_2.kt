@@ -9,6 +9,6 @@ fun b(x: Int, y: Int, z: Int) {
     println("Hey, again!")
 }
 
-fun c(): Int = 5
+fun c(): Int = TODO("Removed by DD")
 
-fun d() = println("Wow, such a good place for change")
+fun d() = TODO("Removed by DD")

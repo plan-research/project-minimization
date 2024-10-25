@@ -3,21 +3,13 @@ package org.plan.research.minimization.plugin.psi
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
-import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.roots.ex.ProjectRootManagerEx
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.vfs.toNioPathOrNull
 import com.intellij.psi.PsiElement
-import com.intellij.psi.SmartPsiElementPointer
-import com.intellij.psi.impl.PsiManagerEx
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.idea.structuralsearch.visitor.KotlinRecursiveElementVisitor
-import org.jetbrains.kotlin.psi.KtClassInitializer
-import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.psi.KtLambdaExpression
-import org.jetbrains.kotlin.psi.KtNamedFunction
-import org.jetbrains.kotlin.psi.KtPropertyAccessor
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.jetbrains.kotlin.psi.*
 import java.nio.file.Path
 import kotlin.io.path.relativeTo
 
@@ -27,7 +19,7 @@ class ModifyingBodyKtVisitor(
 ) : KotlinRecursiveElementVisitor() {
     private val files: Map<Path, KtFile>
     private val newProjectRoot = newProject.guessProjectDir()!!.toNioPath()
-    private val modificationManager = newProject.service<TopLevelFunctionModifierManager>()
+    private val modificationManager = newProject.service<PsiModificationManager>()
 
     init {
         val projectFiles = ProjectRootManagerEx.getInstance(rootProject).fileIndex
@@ -60,7 +52,7 @@ class ModifyingBodyKtVisitor(
     }
 
     override fun visitPropertyAccessor(accessor: KtPropertyAccessor) {
-        if (!accessor.hasBody() || !accessor.hasBody()) return
+        if (!accessor.hasBody() || !accessor.shouldDelete()) return
         modificationManager.replaceBody(accessor)
     }
 
@@ -88,10 +80,11 @@ class ModifyingBodyKtVisitor(
     }
 
     private fun PsiElement.shouldDelete(): Boolean =
-        getUserData(ZIPPED_NODE_KEY)?.getUserData(FunctionModificationLens.MAPPED_FOR_DELETION_KEY) == true
+        getUserData(ZIPPED_NODE_KEY)?.getUserData(MAPPED_FOR_DELETION_KEY) == true
 
 
     companion object {
         private val ZIPPED_NODE_KEY = Key<PsiElement>("MINIMIZATION_ZIPPED_NODE")
+        val MAPPED_FOR_DELETION_KEY = Key<Boolean>("MINIMIZATION_MAPPED_FOR_DELETION_KEY")
     }
 }

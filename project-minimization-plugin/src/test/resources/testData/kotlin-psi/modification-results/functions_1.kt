@@ -1,12 +1,9 @@
 fun a(x: Int) {
-    println("HEY!")
+    TODO("Removed by DD")
 }
 
 fun b(x: Int, y: Int, z: Int) {
-    fun doNotParseIt() {
-        TODO()
-    }
-    println("Hey, again!")
+    TODO("Removed by DD")
 }
 
 fun c(): Int = 5

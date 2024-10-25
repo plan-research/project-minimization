@@ -14,6 +14,7 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.IJDDItem
 import org.plan.research.minimization.plugin.model.ProjectItemLens
 import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.plan.research.minimization.plugin.psi.ModifyingBodyKtVisitor.Companion.MAPPED_FOR_DELETION_KEY
 
 class FunctionModificationLens : ProjectItemLens {
     override suspend fun focusOn(
@@ -35,9 +36,5 @@ class FunctionModificationLens : ProjectItemLens {
                 items.forEach { item -> item.underlyingObject.element?.putUserData(MAPPED_FOR_DELETION_KEY, false) }
             }
         }
-    }
-
-    companion object {
-        val MAPPED_FOR_DELETION_KEY = Key<Boolean>("MINIMIZATION_MAPPED_FOR_DELETION_KEY")
     }
 }

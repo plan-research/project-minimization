@@ -21,16 +21,18 @@ class BodyElementAcquiringVisitorTest: JavaCodeInsightFixtureTestCase() {
             }
         }
 
-        assertSize(3, visitor.collectedElements)
-        val (first, second, third) = visitor.collectedElements
+        assertSize(4, visitor.collectedElements)
+        val (first, second, third, fourth) = visitor.collectedElements
         assertIs<PsiWithBodyDDItem.NamedFunctionWithBlock>(first)
         assertIs<PsiWithBodyDDItem.NamedFunctionWithBlock>(second)
         assertIs<PsiWithBodyDDItem.NamedFunctionWithoutBlock>(third)
+        assertIs<PsiWithBodyDDItem.NamedFunctionWithoutBlock>(fourth)
         runBlocking {
             readAction {
                 assertEquals("a", first.underlyingObject.element!!.name)
                 assertEquals("b", second.underlyingObject.element!!.name)
-                assertEquals("d", third.underlyingObject.element!!.name)
+                assertEquals("c", third.underlyingObject.element!!.name)
+                assertEquals("d", fourth.underlyingObject.element!!.name)
             }
         }
     }

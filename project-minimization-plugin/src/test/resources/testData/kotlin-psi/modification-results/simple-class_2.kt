@@ -2,7 +2,7 @@ interface I {
     fun overridden(): Unit
 }
 class A: I {
-    fun overridden() = Unit
+    fun overridden() = TODO("Removed by DD")
 }
 class C(): I {
     fun simpleMethod() {
@@ -13,7 +13,7 @@ class C(): I {
         return x + y
     }
 
-    fun simpleMethod3(a: Int, b: Int): Int = a + b
+    fun simpleMethod3(a: Int, b: Int): Int = TODO("Removed by DD")
 
     override fun overridden() {
         println("hi from overridden")

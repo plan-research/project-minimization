@@ -11,6 +11,10 @@ import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
 
+/**
+ * Visitor class for acquiring elements that has a replaceable body. Collects only top-level elements of these types.
+ *
+ */
 class BodyElementAcquiringKtVisitor(rootProject: Project) : KotlinRecursiveElementVisitor() {
     private val smartPointerManager = SmartPointerManager.getInstance(rootProject)
 
@@ -23,6 +27,7 @@ class BodyElementAcquiringKtVisitor(rootProject: Project) : KotlinRecursiveEleme
         val pointer = smartPointerManager.createSmartPsiElementPointer(initializer)
         resultedElements.add(PsiWithBodyDDItem.ClassInitializer(pointer))
     }
+
     @RequiresReadLock
     override fun visitNamedFunction(function: KtNamedFunction) {
         val pointer = smartPointerManager.createSmartPsiElementPointer<KtNamedFunction>(function)

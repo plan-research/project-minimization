@@ -10,11 +10,16 @@ import org.plan.research.minimization.plugin.psi.ModifyingBodyKtVisitor.Companio
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.writeAction
+import mu.KotlinLogging
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import mu.KotlinLogging
 
+/**
+ * A lens that focuses on functions within a project.
+ * It ensures that relevant function elements
+ * are marked, processed, and reset appropriately within the given context.
+ */
 class FunctionModificationLens : ProjectItemLens {
     private val logger = KotlinLogging.logger {}
     override suspend fun focusOn(
@@ -22,7 +27,7 @@ class FunctionModificationLens : ProjectItemLens {
         currentContext: IJDDContext,
     ) {
         if (items.any { it !is PsiWithBodyDDItem }) {
-            logger.warn { "Some items from $items are not PsiWithBodyDDItem. The wrong lens is used. "}
+            logger.warn { "Some items from $items are not PsiWithBodyDDItem. The wrong lens is used. " }
             return
         }
         val items = items as List<PsiWithBodyDDItem>
@@ -36,13 +41,12 @@ class FunctionModificationLens : ProjectItemLens {
         }
         logger.info { "PSI Element Visitor has finished successfully" }
 
-
         withContext(Dispatchers.EDT) {
             // For synchronization
             writeAction {
                 items.forEach { item -> item.underlyingObject.element?.putUserData(MAPPED_AS_STORED_KEY, false) }
             }
         }
-        logger.info { "All PSI keys returned to the initial state. The focus is complete"}
+        logger.info { "All PSI keys returned to the initial state. The focus is complete" }
     }
 }

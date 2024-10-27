@@ -4,12 +4,17 @@ import com.intellij.openapi.application.EDT
 import com.intellij.openapi.command.writeCommandAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import org.jetbrains.kotlin.psi.*
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+
+/**
+ * Service that provides functions to modify the bodies of various Kotlin elements within a project.
+ *
+ */
 @Service(Service.Level.PROJECT)
 class PsiModificationManager(private val rootProject: Project, private val cs: CoroutineScope) {
     private val logger = KotlinLogging.logger {}
@@ -56,15 +61,15 @@ class PsiModificationManager(private val rootProject: Project, private val cs: C
             lambdaExpression.bodyExpression!!.replace(
                 psiFactory.createLambdaExpression(
                     "",
-                    BLOCKLESS_TEXT
-                ).bodyExpression!!
+                    BLOCKLESS_TEXT,
+                ).bodyExpression!!,
             )
         }
     }
 
     fun replaceBody(accessor: KtPropertyAccessor) = cs.launch(Dispatchers.EDT) {
         writeCommandAction(rootProject, "Replacing Accessor Body") {
-            logger.debug { "Replacing accessor body: ${accessor.name} in ${accessor.containingFile.virtualFile.path}"}
+            logger.debug { "Replacing accessor body: ${accessor.name} in ${accessor.containingFile.virtualFile.path}" }
             when {
                 accessor.hasBlockBody() -> accessor.bodyBlockExpression!!.replace(psiFactory.createBlock(BLOCKLESS_TEXT))
                 accessor.hasBody() -> accessor.bodyExpression!!.replace(psiFactory.createExpression(BLOCKLESS_TEXT))

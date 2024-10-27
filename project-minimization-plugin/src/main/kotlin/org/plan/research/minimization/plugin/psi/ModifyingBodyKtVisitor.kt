@@ -13,6 +13,15 @@ import org.jetbrains.kotlin.psi.*
 import java.nio.file.Path
 import kotlin.io.path.relativeTo
 
+/**
+ * The visitor
+ * that basically follows the rules
+ * described in [BodyElementAcquiringKtVisitor] to access the top-level elements with body.
+ * In that case the body is replaced using [PsiModificationManager]
+ *
+ * @param rootProject The root project containing the original Kotlin files.
+ * @param newProject The new project where modifications should  be applied.
+ */
 class ModifyingBodyKtVisitor(
     private val rootProject: Project,
     newProject: Project,

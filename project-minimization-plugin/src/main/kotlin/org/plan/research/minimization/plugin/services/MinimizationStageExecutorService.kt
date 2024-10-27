@@ -1,6 +1,5 @@
 package org.plan.research.minimization.plugin.services
 
-import arrow.core.Either
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDD
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
@@ -16,6 +15,7 @@ import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
 import org.plan.research.minimization.plugin.psi.FunctionModificationLens
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
+import arrow.core.Either
 import arrow.core.getOrElse
 import arrow.core.raise.either
 import com.intellij.openapi.components.Service
@@ -54,7 +54,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         context: IJDDContext,
         functionLevelStage: FunctionLevelStage,
     ) = either {
-        generalLogger.info { "Start Function level stage"}
+        generalLogger.info { "Start Function level stage" }
         statLogger.info {
             "Function level stage settings. DDAlgorithm: ${functionLevelStage.ddAlgorithm::class.simpleName}"
         }
@@ -72,7 +72,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
             lens,
             context,
         ).getOrElse {
-            generalLogger.error { "Property checker creation failed. Aborted"}
+            generalLogger.error { "Property checker creation failed. Aborted" }
             raise(MinimizationError.PropertyCheckerFailed)
         }
         context.withProgress {

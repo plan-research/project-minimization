@@ -13,16 +13,20 @@ import com.intellij.openapi.application.writeAction
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import mu.KotlinLogging
 
 class FunctionModificationLens : ProjectItemLens {
+    private val logger = KotlinLogging.logger {}
     override suspend fun focusOn(
         items: List<IJDDItem>,
         currentContext: IJDDContext,
     ) {
         if (items.any { it !is PsiWithBodyDDItem }) {
+            logger.warn { "Some items from $items are not PsiWithBodyDDItem. The wrong lens is used. "}
             return
         }
         val items = items as List<PsiWithBodyDDItem>
+        logger.info { "Storing stored information into underlying PSI element" }
         writeAction {
             items.forEach { item -> item.underlyingObject.element?.putUserData(MAPPED_AS_STORED_KEY, true) }
         }
@@ -30,6 +34,8 @@ class FunctionModificationLens : ProjectItemLens {
         readAction {
             currentContext.project.acceptOnAllKotlinFiles(visitor)
         }
+        logger.info { "PSI Element Visitor has finished successfully" }
+
 
         withContext(Dispatchers.EDT) {
             // For synchronization
@@ -37,5 +43,6 @@ class FunctionModificationLens : ProjectItemLens {
                 items.forEach { item -> item.underlyingObject.element?.putUserData(MAPPED_AS_STORED_KEY, false) }
             }
         }
+        logger.info { "All PSI keys returned to the initial state. The focus is complete"}
     }
 }

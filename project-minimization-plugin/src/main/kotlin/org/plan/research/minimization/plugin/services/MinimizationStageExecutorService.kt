@@ -1,5 +1,6 @@
 package org.plan.research.minimization.plugin.services
 
+import arrow.core.Either
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDD
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
@@ -47,19 +48,16 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         context.withProgress {
             hierarchicalDD.minimize(it, hierarchy)
         }
-    }.onRight {
-        generalLogger.info { "End File level stage" }
-        statLogger.info { "File level stage result: success" }
-    }.onLeft { error ->
-        generalLogger.info { "End File level stage" }
-        statLogger.info { "File level stage result: $error" }
-        generalLogger.error { "File level stage failed with error: $error" }
-    }
+    }.logResult("File")
 
     override suspend fun executeFunctionLevelStage(
         context: IJDDContext,
         functionLevelStage: FunctionLevelStage,
     ) = either {
+        generalLogger.info { "Start Function level stage"}
+        statLogger.info {
+            "Function level stage settings. DDAlgorithm: ${functionLevelStage.ddAlgorithm::class.simpleName}"
+        }
         val ddAlgorithm = functionLevelStage.ddAlgorithm.getDDAlgorithm()
         val buildExceptionProvider = project.service<BuildExceptionProviderService>()
         val exceptionComparator = project
@@ -73,7 +71,10 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
             exceptionComparator,
             lens,
             context,
-        ).getOrElse { raise(MinimizationError.PropertyCheckerFailed) }
+        ).getOrElse {
+            generalLogger.error { "Property checker creation failed. Aborted"}
+            raise(MinimizationError.PropertyCheckerFailed)
+        }
         context.withProgress {
             ddAlgorithm.minimize(
                 it,
@@ -81,5 +82,14 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
                 propertyChecker,
             ).context
         }
+    }.logResult("Function")
+
+    private fun<A, B> Either<A, B>.logResult(stageName: String) = onRight {
+        generalLogger.info { "End $stageName level stage" }
+        statLogger.info { "$stageName level stage result: success" }
+    }.onLeft { error ->
+        generalLogger.info { "End $stageName level stage" }
+        statLogger.info { "$stageName level stage result: $error" }
+        generalLogger.error { "$stageName level stage failed with error: $error" }
     }
 }

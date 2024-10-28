@@ -1,5 +1,7 @@
 package org.plan.research.minimization.plugin.services
 
+import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
+
 import com.intellij.ide.impl.OpenProjectTask
 import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.application.readAction
@@ -16,16 +18,17 @@ import com.intellij.openapi.util.io.findOrCreateDirectory
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.toNioPathOrNull
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.idea.configuration.GRADLE_SYSTEM_ID
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
+
 import java.nio.file.Path
 import java.util.*
+
 import kotlin.io.path.copyTo
 import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 
 /**
  * Service responsible for cloning a given project.

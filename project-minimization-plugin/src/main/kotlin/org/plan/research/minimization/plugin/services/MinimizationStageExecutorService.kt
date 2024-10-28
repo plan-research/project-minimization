@@ -18,6 +18,7 @@ import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 import arrow.core.Either
 import arrow.core.getOrElse
 import arrow.core.raise.either
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -30,8 +31,8 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         generalLogger.info { "Start File level stage" }
         statLogger.info {
             "File level stage settings, " +
-                    "Hierarchy strategy: ${fileLevelStage.hierarchyCollectionStrategy::class.simpleName}, " +
-                    "DDAlgorithm: ${fileLevelStage.ddAlgorithm::class.simpleName}"
+                "Hierarchy strategy: ${fileLevelStage.hierarchyCollectionStrategy::class.simpleName}, " +
+                "DDAlgorithm: ${fileLevelStage.ddAlgorithm::class.simpleName}"
         }
 
         val baseAlgorithm = fileLevelStage.ddAlgorithm.getDDAlgorithm()
@@ -78,11 +79,19 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         context.withProgress {
             ddAlgorithm.minimize(
                 it,
-                project.service<PsiWithBodiesCollectorService>().getElementsWithBody(),
+                project.service<PsiWithBodiesCollectorService>().getElementsWithBody().also { it.logPsiElements() },
                 propertyChecker,
             ).context
         }
     }.logResult("Function")
+
+    private suspend fun List<PsiWithBodyDDItem>.logPsiElements() {
+        val text = readAction { mapNotNull { it.underlyingObject.element?.text } }
+        generalLogger.debug {
+            "Starting DD Algorithm with following elements:\n" +
+                text.joinToString("\n") { "\t- $it" }
+        }
+    }
 
     private fun <A, B> Either<A, B>.logResult(stageName: String) = onRight {
         generalLogger.info { "End $stageName level stage" }

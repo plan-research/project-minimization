@@ -65,7 +65,7 @@ class FileTreeHierarchicalDDGenerator(
     }
 
     private fun findPossibleRoots(context: IJDDContext): List<VirtualFile> {
-        val rootManager = ProjectRootManager.getInstance(context.project)
+        val rootManager = ProjectRootManager.getInstance(context.indexProject)
 
         val sourceRoots = rootManager.contentSourceRoots.toList()
         val contentRoots = rootManager.contentRoots.toList()
@@ -76,14 +76,14 @@ class FileTreeHierarchicalDDGenerator(
 
     override suspend fun generateFirstLevel(context: IJDDContext) =
         option {
-            val level = smartReadAction(context.project) {
-                val roots = findPossibleRoots(context).takeIf { it.isNotEmpty() } ?: listOf(context.projectDir)
+            val level = smartReadAction(context.indexProject) {
+                val roots = findPossibleRoots(context).takeIf { it.isNotEmpty() } ?: listOf(context.indexProjectDir)
 
                 context.progressReporter?.let {
-                    reporter = ProgressReporter(it, context.projectDir.toNioPath(), roots)
+                    reporter = ProgressReporter(it, context.indexProjectDir.toNioPath(), roots)
                 }
 
-                roots.map { ProjectFileDDItem.create(context, it) }
+                roots.map { ProjectFileDDItem.createFromIndexProject(context, it) }
             }
 
             reporter?.updateProgress(level)

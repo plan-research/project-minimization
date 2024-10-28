@@ -2,7 +2,9 @@ package org.plan.research.minimization.plugin.snapshot
 
 import org.plan.research.minimization.plugin.errors.SnapshotError.*
 import org.plan.research.minimization.plugin.logging.statLogger
+import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.model.snapshot.TransactionBody
 import org.plan.research.minimization.plugin.model.snapshot.TransactionResult
@@ -46,9 +48,14 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
     ): TransactionResult<T> = either {
         statLogger.info { "Snapshot manager start's transaction" }
         generalLogger.info { "Snapshot manager start's transaction" }
-        val clonedProject = projectCloning.clone(context.project)
-            ?: raise(TransactionCreationFailed("Failed to create project"))
-        val clonedContext = context.copy(project = clonedProject)
+        val clonedContext = when (context) {
+            is LightIJDDContext -> TODO()
+            is HeavyIJDDContext -> {
+                val clonedProject = projectCloning.clone(context.project)
+                    ?: raise(TransactionCreationFailed("Failed to create project"))
+                context.copy(project = clonedProject)
+            }
+        }
 
         try {
             recover<T, _>(
@@ -74,8 +81,10 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
 
     private suspend fun closeProject(context: IJDDContext) {
         // TODO: think about deleting the project
-        withContext(NonCancellable) {
-            ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(context.project)
+        if (context is HeavyIJDDContext) {
+            withContext(NonCancellable) {
+                ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(context.project)
+            }
         }
     }
 }

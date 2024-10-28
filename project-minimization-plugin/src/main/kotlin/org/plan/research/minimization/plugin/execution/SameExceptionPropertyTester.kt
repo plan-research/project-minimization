@@ -61,8 +61,7 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
             lens: ProjectItemLens,
             context: IJDDContext,
         ) = option {
-            val copiedContext = context.copy(project = context.originalProject)
-            val initialException = compilerPropertyChecker.checkCompilation(copiedContext).getOrNone().bind()
+            val initialException = compilerPropertyChecker.checkCompilation(context).getOrNone().bind()
             SameExceptionPropertyTester<T>(
                 context.originalProject,
                 compilerPropertyChecker,

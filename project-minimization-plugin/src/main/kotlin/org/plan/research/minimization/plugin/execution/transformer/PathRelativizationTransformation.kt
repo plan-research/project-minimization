@@ -6,7 +6,6 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
 import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 
-import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.toNioPathOrNull
 
 import java.nio.file.Path
@@ -55,7 +54,7 @@ class PathRelativizationTransformation : ExceptionTransformation {
     }
 
     private fun transformPath(path: Path, context: IJDDContext): Path {
-        val projectBase = context.project.guessProjectDir()?.toNioPathOrNull() ?: return path
+        val projectBase = context.projectDir.toNioPathOrNull() ?: return path
         return path.relativeTo(projectBase)
     }
 

@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.plugin.errors.MinimizationError
-import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 import arrow.core.raise.either
@@ -34,12 +34,12 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
                     projectCloning.forceImportGradleProject(clonedProject)
                     generalLogger.info { "Project clone end" }
 
-                    var currentProject = IJDDContext(clonedProject, project)
+                    var currentProject = HeavyIJDDContext(clonedProject, project)
 
                     reportSequentialProgress(stages.size) { reporter ->
                         for (stage in stages) {
                             reporter.itemStep("Minimization step: ${stage.name}") {
-                                currentProject = stage.apply(currentProject, executor).bind()
+                                currentProject = stage.apply(currentProject, executor).bind() as HeavyIJDDContext
                             }
                             projectCloning.forceImportGradleProject(currentProject.project)
                         }

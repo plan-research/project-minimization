@@ -47,7 +47,7 @@ class ModifyingBodyKtVisitor(
     }
 
     override fun visitClassInitializer(initializer: KtClassInitializer) {
-        if (!initializer.shouldDelete() || !initializer.hasBody()) {
+        if (!initializer.shouldDelete() || initializer.body == null) {
             return
         }
         modificationManager.replaceBody(initializer)

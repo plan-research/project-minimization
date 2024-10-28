@@ -1,5 +1,12 @@
 package org.plan.research.minimization.plugin.execution.gradle
 
+import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
+import org.plan.research.minimization.plugin.execution.IdeaCompilationException
+import org.plan.research.minimization.plugin.execution.exception.KotlincExceptionTranslator
+import org.plan.research.minimization.plugin.model.BuildExceptionProvider
+import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.exception.CompilationResult
+
 import arrow.core.Either
 import arrow.core.raise.*
 import com.intellij.build.output.KotlincOutputParser
@@ -14,8 +21,6 @@ import com.intellij.openapi.application.EDT
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.util.Disposer
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import mu.KotlinLogging
 import org.gradle.tooling.model.GradleProject
 import org.gradle.tooling.model.GradleTask
@@ -23,13 +28,9 @@ import org.jetbrains.plugins.gradle.service.execution.GradleExecutionHelper
 import org.jetbrains.plugins.gradle.service.execution.GradleExternalTaskConfigurationType
 import org.jetbrains.plugins.gradle.service.execution.GradleRunConfiguration
 import org.jetbrains.plugins.gradle.util.GradleConstants
-import org.jetbrains.plugins.groovy.lang.resolve.log
-import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
-import org.plan.research.minimization.plugin.execution.IdeaCompilationException
-import org.plan.research.minimization.plugin.execution.exception.KotlincExceptionTranslator
-import org.plan.research.minimization.plugin.model.BuildExceptionProvider
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.exception.CompilationResult
+
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * An implementation of the [BuildExceptionProvider]
@@ -41,11 +42,12 @@ import org.plan.research.minimization.plugin.model.exception.CompilationResult
 class GradleBuildExceptionProvider : BuildExceptionProvider {
     private val gradleOutputParser = KotlincOutputParser()
     private val kotlincExceptionTranslator = KotlincExceptionTranslator()
+    private val logger = KotlinLogging.logger { }
 
     /**
      * Checks the compilation of the given project, ensuring it has the necessary Gradle tasks and runs them.
      *
-     * @param project The project to check compilation for.
+     * @param context The project's context to check compilation for.
      * @return `List<BuildEvent>` if the compilation has been failed by kotlinc.
      * Each [BuildEvent][com.intellij.build.events.BuildEvent] contains some error
      *
@@ -190,8 +192,6 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
         }
     }
 
-    private val logger = KotlinLogging.logger { }
-
     /**
      * Parses the results of a Gradle console run and constructs an [IdeaCompilationException] using the parsed errors.
      *
@@ -205,9 +205,9 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
             while (true) {
                 val line = outputReader.readLine() ?: break
                 if (!gradleOutputParser.parse(
-                        line,
-                        outputReader,
-                    ) { add(kotlincExceptionTranslator.parseException(it)) }
+                    line,
+                    outputReader,
+                ) { add(kotlincExceptionTranslator.parseException(it)) }
                 ) {
                     break
                 }
@@ -215,7 +215,7 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
         }
 
         logger.debug {
-            "Parsed errors:\n${parsedErrors.joinToString("\n") { error -> 
+            "Parsed errors:\n${parsedErrors.joinToString("\n") { error ->
                 error.fold(
                     ifLeft = { "Parsing failed with error:\n$it" },
                     ifRight = { "Error parsed successfully:\n$it" },

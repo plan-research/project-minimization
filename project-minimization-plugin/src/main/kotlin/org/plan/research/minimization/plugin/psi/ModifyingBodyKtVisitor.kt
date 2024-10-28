@@ -10,6 +10,7 @@ import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.idea.structuralsearch.visitor.KotlinRecursiveElementVisitor
 import org.jetbrains.kotlin.psi.*
+import org.jetbrains.kotlin.psi.psiUtil.hasBody
 import java.nio.file.Path
 import kotlin.io.path.relativeTo
 
@@ -46,14 +47,14 @@ class ModifyingBodyKtVisitor(
     }
 
     override fun visitClassInitializer(initializer: KtClassInitializer) {
-        if (!initializer.shouldDelete()) {
+        if (!initializer.shouldDelete() || !initializer.hasBody()) {
             return
         }
         modificationManager.replaceBody(initializer)
     }
 
     override fun visitNamedFunction(function: KtNamedFunction) {
-        if (!function.shouldDelete()) {
+        if (!function.shouldDelete() || !function.hasBody()) {
             return
         }
         modificationManager.replaceBody(function)

@@ -33,7 +33,7 @@ class PsiModificationManager(private val rootProject: Project, private val cs: C
         function.hasBlockBody() -> cs.launch(Dispatchers.EDT) {
             writeCommandAction(rootProject, "Replacing Function Body Block") {
                 logger.debug { "Replacing function body block: ${function.name} in ${function.containingFile.virtualFile.path}" }
-                function.bodyBlockExpression!!.replace(
+                function.bodyBlockExpression?.replace(
                     psiFactory.createBlock(
                         BLOCKLESS_TEXT,
                     ),

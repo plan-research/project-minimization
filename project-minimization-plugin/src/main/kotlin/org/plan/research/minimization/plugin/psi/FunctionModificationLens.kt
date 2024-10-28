@@ -31,6 +31,13 @@ class FunctionModificationLens : ProjectItemLens {
             return
         }
         val items = items as List<PsiWithBodyDDItem>
+        writeAction {
+            logger.debug {
+                "Focusing on:\n" + items.joinToString("\n") {
+                    "\t- ${it.underlyingObject.element?.text?.lines()?.joinToString("\n") { "\t  $it" }}"
+                }
+            }
+        }
         logger.info { "Storing stored information into underlying PSI element" }
         writeAction {
             items.forEach { item -> item.underlyingObject.element?.putUserData(MAPPED_AS_STORED_KEY, true) }

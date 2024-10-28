@@ -18,16 +18,25 @@ import org.plan.research.minimization.plugin.model.exception.CompilationExceptio
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
 import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.model.state.*
+import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.snapshot.ProjectCloningSnapshotManager
 
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileVisitor
+import com.intellij.openapi.vfs.toNioPathOrNull
+import mu.KotlinLogging
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.idea.structuralsearch.visitor.KotlinRecursiveElementVisitor
 import org.jetbrains.kotlin.psi.KtFile
+
+import kotlin.io.path.relativeTo
+
+private val logger = KotlinLogging.logger {}
 
 fun SnapshotStrategy.getSnapshotManager(project: Project): SnapshotManager =
     when (this) {
@@ -92,12 +101,23 @@ suspend fun CompilationException.apply(transformations: List<ExceptionTransforma
     transformations.fold(this) { acc, it -> acc.apply(it, context) }
 
 fun Project.acceptOnAllKotlinFiles(visitor: KotlinRecursiveElementVisitor) {
-    val fileIndex = ProjectRootManager.getInstance(this).fileIndex
-    fileIndex.iterateContent { fileOrDir ->
-        val psiFile = fileOrDir.toPsiFile(this)
-        if (psiFile is KtFile) {
-            psiFile.accept(visitor)
+    val snapshotPath = service<MinimizationPluginSettings>().state.temporaryProjectLocation
+    VfsUtil.visitChildrenRecursively(guessProjectDir()!!, object : VirtualFileVisitor<Void>() {
+        override fun visitFileEx(file: VirtualFile): Result {
+            if (file.name == snapshotPath && file.isDirectory) {
+                return SKIP_CHILDREN
+            }
+            logger.debug {
+                "Visiting file: ${
+                    file.toNioPathOrNull()?.relativeTo(guessProjectDir()!!.toNioPath())
+                } using ${visitor::class.simpleName}"
+            }
+            val psiFile = file.toPsiFile(this@acceptOnAllKotlinFiles)
+            if (psiFile is KtFile) {
+                psiFile.accept(visitor)
+            }
+            super.visitFileEx(file)
+            return CONTINUE
         }
-        true
-    }
+    })
 }

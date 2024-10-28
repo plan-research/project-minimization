@@ -30,6 +30,10 @@ sealed interface MinimizationStage {
         context: IJDDContext,
         executor: MinimizationStageExecutor,
     ): Either<MinimizationError, IJDDContext>
+
+    companion object {
+        fun stageTypes(): Array<String> = arrayOf("FileLevelStage")
+    }
 }
 
 /**

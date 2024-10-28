@@ -58,7 +58,7 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
         val gradleTasks = extractGradleTasks(project).bind()
         // If not gradle tasks were found ⇒ this is not a Gradle project
         ensure(gradleTasks.isNotEmpty()) { CompilationPropertyCheckerError.InvalidBuildSystem }
-        val buildTask = gradleTasks.findOrFail("compileKotlin").bind()
+        val buildTask = gradleTasks.findOrFail("build").bind()
         val cleanTask = gradleTasks.findOrFail("clean").bind()
 
         val cleanResult = runTask(project, cleanTask).bind()

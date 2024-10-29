@@ -30,6 +30,13 @@
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
+        <applicationConfigurable
+                parentId="tools"
+                instance="org.plan.research.minimization.plugin.settings.AppSettingsConfigurable"
+                id="org.plan.research.minimization.plugin.settings.AppSettingsConfigurable"
+                displayName="Project Minimization"/>
+        <applicationService
+                serviceImplementation="org.plan.research.minimization.plugin.settings.AppSettings"/>
     </extensions>
     <actions>
         <action id="org.plan.research.minimization.plugin.MinimizeProjectAction"

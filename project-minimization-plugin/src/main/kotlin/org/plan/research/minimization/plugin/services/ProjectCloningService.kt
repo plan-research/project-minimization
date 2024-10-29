@@ -1,9 +1,13 @@
 package org.plan.research.minimization.plugin.services
 
+import org.plan.research.minimization.plugin.model.HeavyIJDDContext
+import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 import com.intellij.ide.impl.OpenProjectTask
 import com.intellij.ide.impl.ProjectUtil
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.externalSystem.importing.ImportSpecBuilder
@@ -14,6 +18,7 @@ import com.intellij.openapi.project.ex.ProjectManagerEx
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.project.isProjectOrWorkspaceFile
 import com.intellij.openapi.util.io.findOrCreateDirectory
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.toNioPathOrNull
 import org.jetbrains.kotlin.idea.configuration.GRADLE_SYSTEM_ID
@@ -45,6 +50,20 @@ class ProjectCloningService(private val rootProject: Project) {
     // TODO: JBRes-1977
     var isTest: Boolean = false
 
+    private suspend fun openProject(projectPath: Path, forceImport: Boolean): Project? {
+        val project = ProjectUtil.openOrImportAsync(projectPath, OpenProjectTask {
+            forceOpenInNewFrame = true
+            runConversionBeforeOpen = false
+            isRefreshVfsNeeded = !isTest
+        }) ?: return null
+
+        if (forceImport) {
+            forceImportGradleProject(project)
+        }
+
+        return project
+    }
+
     suspend fun forceImportGradleProject(project: Project) {
         if (!isTest) {
             try {
@@ -63,29 +82,34 @@ class ProjectCloningService(private val rootProject: Project) {
         }
     }
 
-    /**
-     * Perform a full clone of the project
-     *
-     * @param project A project to clone
-     * @return a cloned project
-     */
-    suspend fun clone(project: Project): Project? {
-        val projectRoot = project.guessProjectDir() ?: return null
+    suspend fun clone(context: IJDDContext): IJDDContext? =
+        when (context) {
+            is HeavyIJDDContext -> clone(context)
+            is LightIJDDContext -> clone(context)
+        }
 
-        val clonedProjectPath = withContext(Dispatchers.IO) {
+    suspend fun clone(context: LightIJDDContext): LightIJDDContext? {
+        val clonedPath = cloneProjectImpl(context.projectDir)
+        val clonedProjectDir = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(clonedPath) ?: return null
+        return context.copy(projectDir = clonedProjectDir)
+    }
+
+    suspend fun clone(context: HeavyIJDDContext): HeavyIJDDContext? {
+        val clonedPath = cloneProjectImpl(context.projectDir)
+        val clonedProject = openProject(clonedPath, false) ?: return null
+        return context.copy(project = clonedProject)
+    }
+
+    private suspend fun cloneProjectImpl(projectDir: VirtualFile): Path {
+        projectDir.refresh(false, true)
+        return withContext(Dispatchers.IO) {
             val clonedProjectPath = createNewProjectDirectory()
             val snapshotLocation = getSnapshotLocation()
-            projectRoot.copyTo(clonedProjectPath) {
-                isImportant(it, projectRoot) && it.toNioPath() != snapshotLocation
+            projectDir.copyTo(clonedProjectPath) {
+                isImportant(it, projectDir) && it.toNioPath() != snapshotLocation
             }
             clonedProjectPath
         }
-
-        return ProjectUtil.openOrImportAsync(clonedProjectPath, OpenProjectTask {
-            forceOpenInNewFrame = true
-            runConversionBeforeOpen = false
-            isRefreshVfsNeeded = !isTest
-        })
     }
 
     private fun isImportant(file: VirtualFile, root: VirtualFile): Boolean {
@@ -106,15 +130,19 @@ class ProjectCloningService(private val rootProject: Project) {
             .toNioPath()
             .findOrCreateDirectory(tempProjectsDirectoryName)
 
-    private fun VirtualFile.copyTo(destination: Path, root: Boolean = true, filter: (VirtualFile) -> Boolean) {
+    private suspend fun VirtualFile.copyTo(destination: Path, root: Boolean = true, filter: (VirtualFile) -> Boolean) {
         if (!filter(this)) {
             return
         }
         val originalPath = this.toNioPathOrNull() ?: return
         val fileDestination = if (root) destination else destination.resolve(name)
-        originalPath.copyTo(fileDestination, overwrite = true)
+        try {
+            originalPath.copyTo(fileDestination, overwrite = true)
+        } catch (e: Throwable) {
+            return
+        }
         if (isDirectory) {
-            for (child in children) {
+            for (child in readAction { children }) {
                 child.copyTo(fileDestination, false, filter)
             }
         }

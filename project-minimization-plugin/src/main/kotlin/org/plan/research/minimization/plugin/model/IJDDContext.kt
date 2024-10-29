@@ -44,7 +44,7 @@ sealed class IJDDContext(
  */
 class HeavyIJDDContext(
     val project: Project,
-    originalProject: Project,
+    originalProject: Project = project,
     currentLevel: List<ProjectFileDDItem>? = null,
     progressReporter: SequentialProgressReporter? = null,
 ) : IJDDContext(originalProject, currentLevel, progressReporter) {

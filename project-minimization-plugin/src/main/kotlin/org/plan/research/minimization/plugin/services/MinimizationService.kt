@@ -27,14 +27,13 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
             withBackgroundProgress(project, "Minimizing project") {
                 either {
                     generalLogger.info { "Start Project minimization" }
+                    var currentProject = HeavyIJDDContext(project)
 
                     generalLogger.info { "Clonning project..." }
-                    val clonedProject = projectCloning.clone(project)
+                    currentProject = projectCloning.clone(currentProject)
                         ?: raise(MinimizationError.CloningFailed)
-                    projectCloning.forceImportGradleProject(clonedProject)
+                    projectCloning.forceImportGradleProject(currentProject.project)
                     generalLogger.info { "Project clone end" }
-
-                    var currentProject = HeavyIJDDContext(clonedProject, project)
 
                     reportSequentialProgress(stages.size) { reporter ->
                         for (stage in stages) {

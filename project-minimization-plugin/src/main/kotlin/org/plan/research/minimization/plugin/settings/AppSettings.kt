@@ -38,6 +38,8 @@ class AppSettings : PersistentStateComponent<AppSettings.State> {
         var transformations: List<TransformationDescriptors> = arrayListOf(
             TransformationDescriptors.PATH_RELATIVIZATION,
         ),
+        var configMode: StageConfigMode = StageConfigMode.DEFAULT,
+        var isFileStageEnabled: Boolean = true,
     )
 
     companion object {

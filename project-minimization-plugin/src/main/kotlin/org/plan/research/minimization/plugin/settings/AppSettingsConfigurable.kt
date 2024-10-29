@@ -31,7 +31,9 @@ class AppSettingsConfigurable : Configurable {
             mySettingsComponent?.snapshotStrategy != state.snapshotStrategy ||
             mySettingsComponent?.exceptionComparingStrategy != state.exceptionComparingStrategy ||
             mySettingsComponent?.stages != state.stages ||
-            mySettingsComponent?.transformations != state.transformations
+            mySettingsComponent?.transformations != state.transformations ||
+            mySettingsComponent?.isFileStageEnabled != state.isFileStageEnabled ||
+            mySettingsComponent?.configMode != state.configMode
     }
 
     override fun apply() {
@@ -49,6 +51,8 @@ class AppSettingsConfigurable : Configurable {
             transformations = mySettingsComponent?.transformations ?: arrayListOf(
                 TransformationDescriptors.PATH_RELATIVIZATION,
             )
+            isFileStageEnabled = mySettingsComponent?.isFileStageEnabled ?: true
+            configMode = mySettingsComponent?.configMode ?: StageConfigMode.DEFAULT
         }
     }
 
@@ -60,6 +64,8 @@ class AppSettingsConfigurable : Configurable {
         mySettingsComponent?.exceptionComparingStrategy = state.exceptionComparingStrategy
         mySettingsComponent?.stages = state.stages
         mySettingsComponent?.transformations = state.transformations
+        mySettingsComponent?.isFileStageEnabled = state.isFileStageEnabled
+        mySettingsComponent?.configMode = state.configMode
     }
 
     override fun disposeUIResources() {

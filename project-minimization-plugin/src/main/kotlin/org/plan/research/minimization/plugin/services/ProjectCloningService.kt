@@ -137,12 +137,15 @@ class ProjectCloningService(private val rootProject: Project) {
         val originalPath = this.toNioPathOrNull() ?: return
         val fileDestination = if (root) destination else destination.resolve(name)
         try {
-            originalPath.copyTo(fileDestination, overwrite = true)
+            withContext(Dispatchers.IO) {
+                originalPath.copyTo(fileDestination, overwrite = true)
+            }
         } catch (e: Throwable) {
             return
         }
         if (isDirectory) {
-            for (child in readAction { children }) {
+            val childrenCopy = readAction { children }
+            for (child in childrenCopy) {
                 child.copyTo(fileDestination, false, filter)
             }
         }

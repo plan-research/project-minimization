@@ -19,6 +19,7 @@ import com.intellij.execution.runners.ProgramRunner
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.util.Disposer
+import mu.KotlinLogging
 import org.gradle.tooling.model.GradleProject
 import org.gradle.tooling.model.GradleTask
 import org.jetbrains.plugins.gradle.service.execution.GradleExecutionHelper
@@ -39,11 +40,12 @@ import kotlinx.coroutines.withContext
 class GradleBuildExceptionProvider : BuildExceptionProvider {
     private val gradleOutputParser = KotlincOutputParser()
     private val kotlincExceptionTranslator = KotlincExceptionTranslator()
+    private val logger = KotlinLogging.logger { }
 
     /**
      * Checks the compilation of the given project, ensuring it has the necessary Gradle tasks and runs them.
      *
-     * @param context The context to check compilation for.
+     * @param context The project's context to check compilation for.
      * @return `List<BuildEvent>` if the compilation has been failed by kotlinc.
      * Each [BuildEvent][com.intellij.build.events.BuildEvent] contains some error
      *
@@ -83,7 +85,7 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
      */
     private suspend fun runTask(
         context: IJDDContext,
-        task: GradleTask,
+        task: ExecutableGradleTask,
     ): Either<CompilationPropertyCheckerError, GradleConsoleRunResult> = either {
         val endProcessDisposable = Disposer.newDisposable()
 
@@ -112,16 +114,16 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
 
     private fun buildConfiguration(
         context: IJDDContext,
-        task: GradleTask,
+        task: ExecutableGradleTask,
     ): GradleRunConfiguration {
         val configurationFactory = GradleExternalTaskConfigurationType.getInstance().factory
         val configuration = GradleRunConfiguration(context.indexProject, configurationFactory, "Gradle Test Project Compilation")
         configuration.settings.apply {
             externalSystemIdString = GradleConstants.SYSTEM_ID.id
-            taskNames = listOf(task.path)
+            taskNames = listOf(task.executableName)
             externalProjectPath = context.projectDir.path
             isPassParentEnvs = true
-            scriptParameters = "--quiet"
+            scriptParameters = "--quiet --no-configuration-cache"
         }
         return configuration
     }
@@ -147,6 +149,17 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
                 }
             }
 
+    private fun extractGradleTasksFromModel(gradleModel: GradleProject): Map<String, GradleTask> =
+        buildMap {
+            val queue = ArrayDeque<GradleProject>()
+            queue.add(gradleModel)
+            while (queue.isNotEmpty()) {
+                val model = queue.removeFirst()
+                putAll(model.tasks.map { it.path to it })
+                queue.addAll(model.children)
+            }
+        }
+
     private fun extractGradleTasks(context: IJDDContext) = either {
         val gradleExecutionHelper = GradleExecutionHelper()
         catch(
@@ -154,17 +167,22 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
                 gradleExecutionHelper.execute(context.projectDir.path, null) { connection ->
                     connection.action()
                     val gradleModel = connection.model(GradleProject::class.java).get()
-                    gradleModel.tasks.toList()
+                    extractGradleTasksFromModel(gradleModel)
                 }
             },
             catch = { it: Throwable -> raise(CompilationPropertyCheckerError.BuildSystemFail(cause = it)) },
         )
     }
 
-    private fun List<GradleTask>.findOrFail(name: String) = either {
-        val task = this@findOrFail.firstOrNull { it.name == name }
-        ensureNotNull(task) { CompilationPropertyCheckerError.InvalidBuildSystem }
-        task
+    private fun Map<String, GradleTask>.findOrFail(name: String) = either {
+        if (name.startsWith(':')) {
+            get(name)?.let {
+                ExecutableGradleTask.fromTask(it)
+            } ?: raise(CompilationPropertyCheckerError.InvalidBuildSystem)
+        } else {
+            ensure(values.any { it.name == name }) { CompilationPropertyCheckerError.InvalidBuildSystem }
+            ExecutableGradleTask.fromName(name)
+        }
     }
 
     /**
@@ -189,11 +207,35 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
             }
         }
 
-        // TODO: somehow report failed to parsed errors
+        logger.debug {
+            "Parsed errors:\n${parsedErrors.joinToString("\n") { error ->
+                error.fold(
+                    ifLeft = { "Parsing failed with error:\n$it" },
+                    ifRight = { "Error parsed successfully:\n$it" },
+                )
+            }}"
+        }
 
         return IdeaCompilationException(
             parsedErrors
                 .mapNotNull { it.getOrNull() },
         )
+    }
+
+    private sealed interface ExecutableGradleTask {
+        val executableName: String
+
+        data class ExactGradleTask(val task: GradleTask) : ExecutableGradleTask {
+            override val executableName: String = task.path
+        }
+
+        data class GeneralGradleTask(val name: String) : ExecutableGradleTask {
+            override val executableName: String = name
+        }
+
+        companion object {
+            fun fromTask(task: GradleTask) = ExactGradleTask(task)
+            fun fromName(name: String) = GeneralGradleTask(name)
+        }
     }
 }

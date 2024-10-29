@@ -38,8 +38,13 @@ class AppSettings : PersistentStateComponent<AppSettings.State> {
         var transformations: List<TransformationDescriptors> = arrayListOf(
             TransformationDescriptors.PATH_RELATIVIZATION,
         ),
+
         var configMode: StageConfigMode = StageConfigMode.DEFAULT,
-        var isFileStageEnabled: Boolean = true,
+        var isFileStageEnabled: Boolean = false,
+        var selectedHierarchyStrategy: HierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
+        var selectedDDStrategy: DDStrategy = DDStrategy.PROBABILISTIC_DD,
+        var isHierarchyStrategyEnabled: Boolean = false,
+        var isDDAlgorithmEnabled: Boolean = false,
     )
 
     companion object {

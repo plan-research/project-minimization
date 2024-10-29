@@ -33,7 +33,11 @@ class AppSettingsConfigurable : Configurable {
             mySettingsComponent?.stages != state.stages ||
             mySettingsComponent?.transformations != state.transformations ||
             mySettingsComponent?.isFileStageEnabled != state.isFileStageEnabled ||
-            mySettingsComponent?.configMode != state.configMode
+            mySettingsComponent?.configMode != state.configMode ||
+            mySettingsComponent?.selectedHierarchyStrategy != state.selectedHierarchyStrategy ||
+            mySettingsComponent?.selectedDDStrategy != state.selectedDDStrategy ||
+            mySettingsComponent?.isHierarchyStrategyEnabled != state.isHierarchyStrategyEnabled ||
+            mySettingsComponent?.isDDAlgorithmEnabled != state.isDDAlgorithmEnabled
     }
 
     override fun apply() {
@@ -51,8 +55,12 @@ class AppSettingsConfigurable : Configurable {
             transformations = mySettingsComponent?.transformations ?: arrayListOf(
                 TransformationDescriptors.PATH_RELATIVIZATION,
             )
-            isFileStageEnabled = mySettingsComponent?.isFileStageEnabled ?: true
+            isFileStageEnabled = mySettingsComponent?.isFileStageEnabled ?: false
             configMode = mySettingsComponent?.configMode ?: StageConfigMode.DEFAULT
+            selectedHierarchyStrategy = mySettingsComponent?.selectedHierarchyStrategy ?: HierarchyCollectionStrategy.FILE_TREE
+            selectedDDStrategy = mySettingsComponent?.selectedDDStrategy ?: DDStrategy.PROBABILISTIC_DD
+            isHierarchyStrategyEnabled = mySettingsComponent?.isHierarchyStrategyEnabled ?: false
+            isDDAlgorithmEnabled = mySettingsComponent?.isDDAlgorithmEnabled ?: false
         }
     }
 
@@ -66,6 +74,10 @@ class AppSettingsConfigurable : Configurable {
         mySettingsComponent?.transformations = state.transformations
         mySettingsComponent?.isFileStageEnabled = state.isFileStageEnabled
         mySettingsComponent?.configMode = state.configMode
+        mySettingsComponent?.selectedHierarchyStrategy = state.selectedHierarchyStrategy
+        mySettingsComponent?.selectedDDStrategy = state.selectedDDStrategy
+        mySettingsComponent?.isHierarchyStrategyEnabled = state.isHierarchyStrategyEnabled
+        mySettingsComponent?.isDDAlgorithmEnabled = state.isDDAlgorithmEnabled
     }
 
     override fun disposeUIResources() {

@@ -4,6 +4,7 @@ import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 import com.intellij.ide.impl.OpenProjectTask
 import com.intellij.ide.impl.ProjectUtil
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.externalSystem.importing.ImportSpecBuilder
@@ -14,6 +15,7 @@ import com.intellij.openapi.project.ex.ProjectManagerEx
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.project.isProjectOrWorkspaceFile
 import com.intellij.openapi.util.io.findOrCreateDirectory
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.toNioPathOrNull
 import org.jetbrains.kotlin.idea.configuration.GRADLE_SYSTEM_ID
@@ -72,14 +74,16 @@ class ProjectCloningService(private val rootProject: Project) {
     suspend fun clone(project: Project): Project? {
         val projectRoot = project.guessProjectDir() ?: return null
 
-        val clonedProjectPath = withContext(Dispatchers.IO) {
-            val clonedProjectPath = createNewProjectDirectory()
-            val snapshotLocation = getSnapshotLocation()
-            projectRoot.copyTo(clonedProjectPath) {
-                isImportant(it, projectRoot) && it.toNioPath() != snapshotLocation
-            }
-            clonedProjectPath
+        projectRoot.refresh(false, true)
+
+        val clonedProjectPath = withContext(Dispatchers.IO) { createNewProjectDirectory() }
+        val snapshotLocation = getSnapshotLocation()
+        projectRoot.copyTo(clonedProjectPath) {
+            isImportant(it, projectRoot) && it.toNioPath() != snapshotLocation
         }
+
+        LocalFileSystem.getInstance().refreshAndFindFileByNioFile(clonedProjectPath)
+            ?.refresh(false, true)
 
         return ProjectUtil.openOrImportAsync(clonedProjectPath, OpenProjectTask {
             forceOpenInNewFrame = true
@@ -106,15 +110,22 @@ class ProjectCloningService(private val rootProject: Project) {
             .toNioPath()
             .findOrCreateDirectory(tempProjectsDirectoryName)
 
-    private fun VirtualFile.copyTo(destination: Path, root: Boolean = true, filter: (VirtualFile) -> Boolean) {
+    private suspend fun VirtualFile.copyTo(destination: Path, root: Boolean = true, filter: (VirtualFile) -> Boolean) {
         if (!filter(this)) {
             return
         }
         val originalPath = this.toNioPathOrNull() ?: return
         val fileDestination = if (root) destination else destination.resolve(name)
-        originalPath.copyTo(fileDestination, overwrite = true)
+        try {
+            withContext(Dispatchers.IO) {
+                originalPath.copyTo(fileDestination, overwrite = true)
+            }
+        } catch (e: Throwable) {
+            return
+        }
         if (isDirectory) {
-            for (child in children) {
+            val childrenCopy = readAction { children }
+            for (child in childrenCopy) {
                 child.copyTo(fileDestination, false, filter)
             }
         }

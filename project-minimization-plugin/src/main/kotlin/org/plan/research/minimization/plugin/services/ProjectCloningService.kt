@@ -75,13 +75,11 @@ class ProjectCloningService(private val rootProject: Project) {
         val projectRoot = project.guessProjectDir() ?: return null
 
         projectRoot.refresh(false, true)
-        val clonedProjectPath = withContext(Dispatchers.IO) {
-            val clonedProjectPath = createNewProjectDirectory()
-            val snapshotLocation = getSnapshotLocation()
-            projectRoot.copyTo(clonedProjectPath) {
-                isImportant(it, projectRoot) && it.toNioPath() != snapshotLocation
-            }
-            clonedProjectPath
+
+        val clonedProjectPath = withContext(Dispatchers.IO) { createNewProjectDirectory() }
+        val snapshotLocation = getSnapshotLocation()
+        projectRoot.copyTo(clonedProjectPath) {
+            isImportant(it, projectRoot) && it.toNioPath() != snapshotLocation
         }
 
         LocalFileSystem.getInstance().refreshAndFindFileByNioFile(clonedProjectPath)
@@ -119,7 +117,9 @@ class ProjectCloningService(private val rootProject: Project) {
         val originalPath = this.toNioPathOrNull() ?: return
         val fileDestination = if (root) destination else destination.resolve(name)
         try {
-            originalPath.copyTo(fileDestination, overwrite = true)
+            withContext(Dispatchers.IO) {
+                originalPath.copyTo(fileDestination, overwrite = true)
+            }
         } catch (e: Throwable) {
             return
         }

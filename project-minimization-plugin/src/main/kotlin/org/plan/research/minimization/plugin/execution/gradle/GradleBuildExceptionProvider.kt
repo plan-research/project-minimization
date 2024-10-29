@@ -3,32 +3,41 @@ package org.plan.research.minimization.plugin.execution.gradle
 import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
 import org.plan.research.minimization.plugin.execution.IdeaCompilationException
 import org.plan.research.minimization.plugin.execution.exception.KotlincExceptionTranslator
+import org.plan.research.minimization.plugin.execution.gradle.GradleConsoleRunResult.Companion.EXIT_CODE_FAIL
+import org.plan.research.minimization.plugin.execution.gradle.GradleConsoleRunResult.Companion.EXIT_CODE_OK
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.CompilationResult
 
 import arrow.core.Either
-import arrow.core.raise.*
+import arrow.core.raise.catch
+import arrow.core.raise.either
+import arrow.core.raise.ensure
 import com.intellij.build.output.KotlincOutputParser
-import com.intellij.execution.ExecutionTargetManager
-import com.intellij.execution.Executor
-import com.intellij.execution.executors.DefaultRunExecutor
-import com.intellij.execution.runners.ExecutionEnvironment
-import com.intellij.execution.runners.ExecutionEnvironmentBuilder
-import com.intellij.execution.runners.ProgramRunner
-import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.EDT
-import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.externalSystem.model.task.ExternalSystemTaskId
+import com.intellij.openapi.externalSystem.model.task.ExternalSystemTaskType
+import com.intellij.openapi.projectRoots.ProjectJdkTable
+import com.intellij.platform.ide.progress.withBackgroundProgress
+import com.intellij.platform.util.progress.reportSequentialProgress
 import mu.KotlinLogging
+import org.gradle.tooling.GradleConnectionException
+import org.gradle.tooling.ProjectConnection
+import org.gradle.tooling.ResultHandler
+import org.gradle.tooling.internal.consumer.DefaultCancellationTokenSource
 import org.gradle.tooling.model.GradleProject
 import org.gradle.tooling.model.GradleTask
 import org.jetbrains.plugins.gradle.service.execution.GradleExecutionHelper
-import org.jetbrains.plugins.gradle.service.execution.GradleExternalTaskConfigurationType
-import org.jetbrains.plugins.gradle.service.execution.GradleRunConfiguration
+import org.jetbrains.plugins.gradle.settings.DistributionType
+import org.jetbrains.plugins.gradle.settings.GradleExecutionSettings
+import org.jetbrains.plugins.gradle.settings.GradleSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
+
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 /**
  * An implementation of the [BuildExceptionProvider]
@@ -52,24 +61,80 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
      * or [CompilationPropertyCheckerError] if the compilation has been successful or some other error occurred
      */
     override suspend fun checkCompilation(context: IJDDContext): CompilationResult = either {
-        val gradleTasks = extractGradleTasks(context).bind()
-        // If not gradle tasks were found ⇒ this is not a Gradle project
-        ensure(gradleTasks.isNotEmpty()) { CompilationPropertyCheckerError.InvalidBuildSystem }
-        val buildTask = gradleTasks.findOrFail("build").bind()
-        val cleanTask = gradleTasks.findOrFail("clean").bind()
+        withBackgroundProgress(context.indexProject, "Gradle building", cancellable = false) {
+            reportSequentialProgress(4) { reporter ->
+                val gradleTasks = reporter.itemStep("Extracting gradle tasks") { extractGradleTasks(context).bind() }
+                // If not gradle tasks were found ⇒ this is not a Gradle project
+                ensure(gradleTasks.isNotEmpty()) { CompilationPropertyCheckerError.InvalidBuildSystem }
+                val buildTask = gradleTasks.findOrFail("build").bind()
+                val cleanTask = gradleTasks.findOrFail("clean").bind()
 
-        val cleanResult = runTask(context, cleanTask).bind()
-        ensure(cleanResult.exitCode == 0) {
-            CompilationPropertyCheckerError.BuildSystemFail(
-                cause = IllegalStateException(
-                    "Clean task failed: ${cleanResult.stdOut}",
-                ),
-            )
+                val cleanResult = reporter.itemStep("Running clean task") { runTask(context, cleanTask).bind() }
+                ensure(cleanResult.exitCode == EXIT_CODE_OK) {
+                    CompilationPropertyCheckerError.BuildSystemFail(
+                        cause = IllegalStateException(
+                            "Clean task failed: ${cleanResult.stdOut}",
+                        ),
+                    )
+                }
+
+                val buildResult = reporter.itemStep("Running build task") { runTask(context, buildTask).bind() }
+                ensure(buildResult.exitCode != EXIT_CODE_OK) { CompilationPropertyCheckerError.CompilationSuccess }
+                reporter.itemStep("Parsing results") {
+                    parseResults("test-build-${context.indexProject.name}", buildResult)
+                }
+            }
+        }
+    }
+
+    private fun buildGradleExecutionSettings(context: IJDDContext): GradleExecutionSettings {
+        // Retrieve the Gradle settings from the opened project
+        val gradleSettings = GradleSettings.getInstance(context.indexProject)
+
+        // Since the external project isn't linked, we'll use settings from the opened project's first linked project
+        val defaultProjectSettings = gradleSettings.linkedProjectsSettings.firstOrNull()
+
+        // Create the GradleExecutionSettings instance
+        val executionSettings = GradleExecutionSettings(
+            defaultProjectSettings?.gradleHome,
+            gradleSettings.serviceDirectoryPath,
+            defaultProjectSettings?.distributionType ?: DistributionType.DEFAULT_WRAPPED,
+            false,
+        )
+
+        // Set the Gradle JVM (Java home)
+        val gradleJvm = defaultProjectSettings?.gradleJvm
+        gradleJvm?.let {
+            val sdk = ProjectJdkTable.getInstance().findJdk(gradleJvm)
+            sdk?.let {
+                executionSettings.javaHome = sdk.homePath
+            }
         }
 
-        val buildResult = runTask(context, buildTask).bind()
-        ensure(buildResult.exitCode != 0) { CompilationPropertyCheckerError.CompilationSuccess }
-        parseResults("test-build-${context.indexProject.name}", buildResult)
+        // Return the configured execution settings
+        return executionSettings
+    }
+
+    @Suppress("TYPE_ALIAS")
+    private suspend inline fun <T> executeWithGradleConnection(
+        context: IJDDContext,
+        crossinline block: (ProjectConnection, Continuation<T>) -> Unit,
+    ): T {
+        val gradleExecutionHelper = GradleExecutionHelper()
+        val settings = buildGradleExecutionSettings(context)
+        val cancellation = DefaultCancellationTokenSource()
+        val taskId = ExternalSystemTaskId.create(
+            GradleConstants.SYSTEM_ID, ExternalSystemTaskType.EXECUTE_TASK, context.indexProject,
+        )
+        return suspendCancellableCoroutine { cont ->
+            cont.invokeOnCancellation { cancellation.cancel() }
+            gradleExecutionHelper.execute(
+                context.projectDir.path, settings,
+                taskId, null, cancellation.token(),
+            ) { connection ->
+                block(connection, cont)
+            }
+        }
     }
 
     /**
@@ -87,67 +152,39 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
         context: IJDDContext,
         task: ExecutableGradleTask,
     ): Either<CompilationPropertyCheckerError, GradleConsoleRunResult> = either {
-        val endProcessDisposable = Disposer.newDisposable()
+        logger.info { "Run gradle task: ${task.executableName}" }
 
-        val processAdapter = GradleRunProcessAdapter()
-        val configuration = buildConfiguration(context, task)
-        val executor = DefaultRunExecutor.getRunExecutorInstance()
-        val executionEnvironment =
-            buildEnvironment(context, executor, configuration, processAdapter, endProcessDisposable)
+        val std = ByteArrayOutputStream()
+        val err = ByteArrayOutputStream()
 
-        val runner = ProgramRunner.getRunner(executor.id, configuration)
-        // Don't know any situation when it could happen
-        ensureNotNull(runner) { CompilationPropertyCheckerError.InvalidBuildSystem }
-
-        try {
-            withContext(Dispatchers.EDT) {
-                catch(
-                    block = { runner.execute(executionEnvironment) },
-                    catch = { raise(CompilationPropertyCheckerError.BuildSystemFail(it)) },
-                )
-            }
-            processAdapter.getRunResult()  // Wait until writeAction is done
-        } finally {
-            Disposer.dispose(endProcessDisposable)
-        }
-    }
-
-    private fun buildConfiguration(
-        context: IJDDContext,
-        task: ExecutableGradleTask,
-    ): GradleRunConfiguration {
-        val configurationFactory = GradleExternalTaskConfigurationType.getInstance().factory
-        val configuration = GradleRunConfiguration(context.indexProject, configurationFactory, "Gradle Test Project Compilation")
-        configuration.settings.apply {
-            externalSystemIdString = GradleConstants.SYSTEM_ID.id
-            taskNames = listOf(task.executableName)
-            externalProjectPath = context.projectDir.path
-            isPassParentEnvs = true
-            scriptParameters = "--quiet --no-configuration-cache"
-        }
-        return configuration
-    }
-
-    private fun buildEnvironment(
-        context: IJDDContext,
-        executor: Executor,
-        configuration: GradleRunConfiguration,
-        processAdapter: GradleRunProcessAdapter,
-        endProcessDisposable: Disposable,
-    ): ExecutionEnvironment =
-        ExecutionEnvironmentBuilder
-            .create(executor, configuration)
-            .target(ExecutionTargetManager.getActiveTarget(context.indexProject))
-            .build { descriptor ->
-                descriptor.processHandler?.let {
-                    it.addProcessListener(processAdapter, endProcessDisposable)
-                    Disposer.register(endProcessDisposable) {
-                        if (!it.isProcessTerminated && !it.isProcessTerminating) {
-                            it.destroyProcess()
-                        }
+        val exitCode = executeWithGradleConnection(context) { connection, cont ->
+            connection.newBuild()
+                .forTasks(task.executableName)
+                .setStandardOutput(std)
+                .setStandardError(err)
+                .withArguments("--no-configuration-cache", "--quiet")
+                .run(object : ResultHandler<Void> {
+                    override fun onComplete(result: Void?) {
+                        cont.resume(EXIT_CODE_OK)
                     }
-                }
-            }
+
+                    override fun onFailure(exception: GradleConnectionException) {
+                        cont.resume(EXIT_CODE_FAIL)
+                    }
+                })
+        }
+
+        val error = err.toString(Charsets.UTF_8)
+        val stdout = std.toString(Charsets.UTF_8)
+        logger.debug { "STD: $stdout" }
+        logger.debug { "ERR: $error" }
+
+        GradleConsoleRunResult(
+            exitCode = exitCode,
+            stdOut = stdout,
+            stdErr = error,
+        )
+    }
 
     private fun extractGradleTasksFromModel(gradleModel: GradleProject): Map<String, GradleTask> =
         buildMap {
@@ -160,17 +197,26 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
             }
         }
 
-    private fun extractGradleTasks(context: IJDDContext) = either {
-        val gradleExecutionHelper = GradleExecutionHelper()
+    private suspend fun extractGradleTasks(context: IJDDContext) = either {
         catch(
             block = {
-                gradleExecutionHelper.execute(context.projectDir.path, null) { connection ->
-                    connection.action()
-                    val gradleModel = connection.model(GradleProject::class.java).get()
-                    extractGradleTasksFromModel(gradleModel)
+                val model = executeWithGradleConnection(context) { connection, cont ->
+                    connection.model(GradleProject::class.java).get(object : ResultHandler<GradleProject> {
+                        override fun onComplete(result: GradleProject) {
+                            cont.resume(result)
+                        }
+
+                        override fun onFailure(exception: GradleConnectionException) {
+                            cont.resumeWithException(exception)
+                        }
+                    })
                 }
+                extractGradleTasksFromModel(model)
             },
-            catch = { it: Throwable -> raise(CompilationPropertyCheckerError.BuildSystemFail(cause = it)) },
+            catch = {
+                logger.error(it) { "HERE" }
+                raise(CompilationPropertyCheckerError.BuildSystemFail(cause = it))
+            },
         )
     }
 
@@ -197,23 +243,21 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
         val parsedErrors = buildList {
             while (true) {
                 val line = outputReader.readLine() ?: break
-                if (!gradleOutputParser.parse(
-                    line,
-                    outputReader,
-                ) { add(kotlincExceptionTranslator.parseException(it)) }
-                ) {
+                if (!gradleOutputParser.parse(line, outputReader) { add(kotlincExceptionTranslator.parseException(it)) }) {
                     break
                 }
             }
         }
 
         logger.debug {
-            "Parsed errors:\n${parsedErrors.joinToString("\n") { error ->
-                error.fold(
-                    ifLeft = { "Parsing failed with error:\n$it" },
-                    ifRight = { "Error parsed successfully:\n$it" },
-                )
-            }}"
+            "Parsed errors:\n${
+                parsedErrors.joinToString("\n") { error ->
+                        error.fold(
+                            ifLeft = { "Parsing failed with error:\n$it" },
+                            ifRight = { "Error parsed successfully:\n$it" },
+                        )
+                    }
+            }"
         }
 
         return IdeaCompilationException(

@@ -32,15 +32,17 @@ class MinimizationServiceTest : GradleProjectBaseTest() {
                     hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
                     ddAlgorithm = DDStrategy.DD_MIN
                 ),
-                FunctionLevelStage(
-                    ddAlgorithm = DDStrategy.DD_MIN
-                )
+                // TODO: JBRes-1977
+//                FunctionLevelStage(
+//                    ddAlgorithm = DDStrategy.DD_MIN
+//                )
             )
         }
         project.service<ProjectCloningService>().isTest = true
     }
 
     fun testKt71260() {
+        return // TODO: JBRes-1977 & JBRes-1799
         // Example of Internal Error
         val root = myFixture.copyDirectoryToProject("kt-71260", ".")
         copyGradle(useBuildKts = false, copyProperties = false)

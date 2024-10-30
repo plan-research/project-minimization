@@ -20,11 +20,11 @@ import com.intellij.platform.util.progress.reportSequentialProgress
 data class IJDDContext(
     val project: Project,
     val originalProject: Project = project,
-    val currentLevel: List<ProjectFileDDItem>? = null,
+    val currentLevel: List<IJDDItem>? = null,
     val progressReporter: SequentialProgressReporter? = null,
 ) : DDContext {
     val projectDir: VirtualFile by lazy { project.guessProjectDir()!! }
-    val currentLevelVirtualFiles: List<VirtualFile>? by lazy { currentLevel?.toVirtualFiles(this) }
+    val currentLevelVirtualFiles: List<VirtualFile>? by lazy { currentLevel?.filterIsInstance<ProjectFileDDItem>()?.toVirtualFiles(this) }
 
     suspend fun withProgress(action: suspend (IJDDContext) -> IJDDContext): IJDDContext =
         reportSequentialProgress { reporter ->

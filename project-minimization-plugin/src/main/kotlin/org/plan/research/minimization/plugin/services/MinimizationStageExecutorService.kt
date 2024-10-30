@@ -79,14 +79,20 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         context.withProgress {
             ddAlgorithm.minimize(
                 it,
-                project.service<PsiWithBodiesCollectorService>().getElementsWithBody().also { it.logPsiElements() },
+                project.service<PsiAndRootManagerService>().findAllPsiWithBodyItems().also { it.logPsiElements() },
                 propertyChecker,
             ).context
         }
     }.logResult("Function")
 
     private suspend fun List<PsiWithBodyDDItem>.logPsiElements() {
-        val text = readAction { mapNotNull { it.underlyingObject.element?.text } }
+        if (!generalLogger.isDebugEnabled) {
+            return
+        }
+        val psiManagingService = project.service<PsiAndRootManagerService>()
+        val text = mapNotNull {
+            psiManagingService.getPsiElementFromItem(it)?.let { readAction { it.text } }
+        }
         generalLogger.debug {
             "Starting DD Algorithm with following elements:\n" +
                 text.joinToString("\n") { "\t- $it" }

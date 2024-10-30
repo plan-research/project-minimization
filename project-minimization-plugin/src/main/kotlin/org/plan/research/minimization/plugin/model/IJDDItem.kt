@@ -4,8 +4,9 @@ import org.plan.research.minimization.core.model.DDItem
 
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
-import com.intellij.psi.SmartPsiElementPointer
+import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.psi.KtClassInitializer
+import org.jetbrains.kotlin.psi.KtDeclarationWithBody
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
@@ -32,21 +33,30 @@ data class ProjectFileDDItem(val localPath: Path) : IJDDItem {
     }
 }
 
-sealed interface PsiWithBodyDDItem : IJDDItem {
-    val underlyingObject: SmartPsiElementPointer<out PsiElement>
+data class PsiWithBodyDDItem(
+    val localPath: Path,
+    val childrenPath: List<Int>,
+) : IJDDItem {
+    companion object {
+        fun isCompatible(psiElement: PsiElement) = (psiElement is KtNamedFunction ||
+            psiElement is KtClassInitializer ||
+            psiElement is KtLambdaExpression ||
+            psiElement is KtPropertyAccessor) && (psiElement !is KtDeclarationWithBody || psiElement.hasBody())
 
-    data class ClassInitializer(override val underlyingObject: SmartPsiElementPointer<KtClassInitializer>) :
-        PsiWithBodyDDItem
-
-    data class LambdaExpression(override val underlyingObject: SmartPsiElementPointer<KtLambdaExpression>) :
-        PsiWithBodyDDItem
-
-    data class PropertyAccessor(override val underlyingObject: SmartPsiElementPointer<KtPropertyAccessor>) :
-        PsiWithBodyDDItem
-
-    data class NamedFunctionWithBlock(override val underlyingObject: SmartPsiElementPointer<KtNamedFunction>) :
-        PsiWithBodyDDItem
-
-    data class NamedFunctionWithoutBlock(override val underlyingObject: SmartPsiElementPointer<KtNamedFunction>) :
-        PsiWithBodyDDItem
+        @RequiresReadLock
+        fun create(element: PsiElement, parentPath: List<Int>, localPath: Path): PsiWithBodyDDItem =
+            if (isCompatible(element)) {
+                PsiWithBodyDDItem(
+                    localPath,
+                    parentPath,
+                )
+            } else {
+                error(
+                    "Invalid Psi Element. " +
+                        "Supported types: " +
+                        "KtNamedFunction, KtClassInitializer, KtPropertyAccessor, KtLambdaExpression, " +
+                        "but got ${element.javaClass.simpleName}",
+                )
+            }
+    }
 }

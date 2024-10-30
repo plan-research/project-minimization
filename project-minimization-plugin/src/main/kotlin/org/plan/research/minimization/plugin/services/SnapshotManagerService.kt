@@ -20,8 +20,8 @@ class SnapshotManagerService(private val rootProject: Project) : SnapshotManager
             .snapshotStrategy
             .getSnapshotManager(rootProject)
 
-    override suspend fun <T> transaction(
-        context: IJDDContext,
-        action: suspend TransactionBody<T>.(newContext: IJDDContext) -> IJDDContext,
-    ): TransactionResult<T> = underlyingObject.transaction(context, action)
+    override suspend fun <T, C : IJDDContext> transaction(
+        context: C,
+        action: suspend TransactionBody<T>.(newContext: C) -> C,
+    ): TransactionResult<T, C> = underlyingObject.transaction(context, action)
 }

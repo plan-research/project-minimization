@@ -42,10 +42,10 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
      * @param action A suspendable lambda function that takes a new transactional context and returns the updated context.
      * @return Either a `SnapshotError` encapsulating the error in case of failure, or the updated `IJDDContext` in case of success.
      */
-    override suspend fun <T> transaction(
-        context: IJDDContext,
-        action: suspend TransactionBody<T>.(newContext: IJDDContext) -> IJDDContext,
-    ): TransactionResult<T> = either {
+    override suspend fun <T, C : IJDDContext> transaction(
+        context: C,
+        action: suspend TransactionBody<T>.(newContext: C) -> C,
+    ): TransactionResult<T, C> = either {
         statLogger.info { "Snapshot manager start's transaction" }
         generalLogger.info { "Snapshot manager start's transaction" }
         val clonedContext = projectCloning.clone(context)
@@ -55,7 +55,8 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
             recover<T, _>(
                 block = {
                     val transaction = TransactionBody(this@recover)
-                    transaction.action(clonedContext)
+                    @Suppress("UNCHECKED_CAST")
+                    transaction.action(clonedContext as C)
                 },
                 recover = { raise(Aborted(it)) },
                 catch = { raise(TransactionFailed(it)) },

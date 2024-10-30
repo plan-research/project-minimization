@@ -8,6 +8,7 @@ import com.intellij.openapi.externalSystem.service.execution.ProgressExecutionMo
 import com.intellij.openapi.externalSystem.service.project.ProjectDataManager
 import com.intellij.openapi.externalSystem.util.ExternalSystemUtil
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.vfs.VirtualFile
@@ -40,8 +41,8 @@ abstract class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
         }
     }
 
-    protected suspend fun importGradleProject(root: VirtualFile, project: Project = this.project) {
-        val projectPath = root.path
+    protected suspend fun importGradleProject(project: Project) {
+        val projectPath = project.guessProjectDir()!!.path
         val gradleSettings = GradleSettings.getInstance(project)
         val projectSettings = GradleProjectSettings().apply {
             externalProjectPath = projectPath
@@ -60,7 +61,7 @@ abstract class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
         }
     }
 
-    protected suspend fun assertGradleLoaded(project: Project = this.project) {
+    protected suspend fun assertGradleLoaded(project: Project) {
         val data = smartReadAction(project) {
             ProjectDataManager
                 .getInstance()

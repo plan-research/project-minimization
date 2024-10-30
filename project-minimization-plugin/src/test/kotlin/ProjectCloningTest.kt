@@ -4,6 +4,7 @@ import com.intellij.openapi.project.ProjectManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertNotEquals
+import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 
 class ProjectCloningTest : ProjectCloningBaseTest() {
@@ -51,12 +52,13 @@ class ProjectCloningTest : ProjectCloningBaseTest() {
         val project = myFixture.project
         val files = originalFileSet ?: project.getAllFiles()
         val projectCloningService = project.service<ProjectCloningService>()
-        val clonedProject = runBlocking { projectCloningService.clone(project) }
-        assertNotNull(clonedProject)
-        val clonedFiles = clonedProject!!.getAllFiles()
+        val context = HeavyIJDDContext(project)
+        val clonedContext = runBlocking { projectCloningService.clone(context) }
+        assertNotNull(clonedContext)
+        val clonedFiles = clonedContext!!.project.getAllFiles()
         assertEquals(files, clonedFiles)
         runBlocking(Dispatchers.EDT) {
-            ProjectManager.getInstance().closeAndDispose(clonedProject)
+            ProjectManager.getInstance().closeAndDispose(clonedContext.project)
         }
         return files
     }
@@ -65,21 +67,22 @@ class ProjectCloningTest : ProjectCloningBaseTest() {
         val project = myFixture.project
         val files = originalFileSet ?: project.getAllFiles()
         val projectCloningService = project.service<ProjectCloningService>()
-        val clonedProject = runBlocking { projectCloningService.clone(project) }
-        assertNotNull(clonedProject)
-        val clonedFiles = clonedProject!!.getAllFiles()
+        val context = HeavyIJDDContext(project)
+        val clonedContext = runBlocking { projectCloningService.clone(context) }
+        assertNotNull(clonedContext)
+        val clonedFiles = clonedContext!!.project.getAllFiles()
         assertEquals(files, clonedFiles)
 
-        val clonedClonedProject =
-            runBlocking { projectCloningService.clone(clonedProject) }
-        assertNotNull(clonedClonedProject)
-        val clonedClonedFiles = clonedClonedProject!!.getAllFiles()
+        val clonedClonedContext =
+            runBlocking { projectCloningService.clone(clonedContext) }
+        assertNotNull(clonedClonedContext)
+        val clonedClonedFiles = clonedClonedContext!!.project.getAllFiles()
         assertEquals(files, clonedClonedFiles)
-        assertNotEquals(clonedProject, clonedClonedProject)
+        assertNotEquals(clonedContext, clonedClonedContext)
 
         runBlocking(Dispatchers.EDT) {
-            ProjectManager.getInstance().closeAndDispose(clonedClonedProject)
-            ProjectManager.getInstance().closeAndDispose(clonedProject)
+            ProjectManager.getInstance().closeAndDispose(clonedClonedContext.project)
+            ProjectManager.getInstance().closeAndDispose(clonedContext.project)
         }
         return files
     }

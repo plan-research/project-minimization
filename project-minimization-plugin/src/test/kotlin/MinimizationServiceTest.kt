@@ -7,6 +7,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.plan.research.minimization.plugin.model.FileLevelStage
+import org.plan.research.minimization.plugin.model.HeavyIJDDContext
+import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.model.state.DDStrategy
 import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
@@ -41,10 +43,10 @@ class MinimizationServiceTest : GradleProjectBaseTest() {
         copyGradle(useBuildKts = false, copyProperties = false)
 
         runBlocking {
-            importGradleProject(root)
-            assertGradleLoaded()
+            importGradleProject(project)
+            assertGradleLoaded(project)
 
-            val expectedFiles = readAction { root.getAllFiles(project).filterGradleAndBuildFiles() }
+            val expectedFiles = readAction { root.getAllFiles(root.toNioPath()).filterGradleAndBuildFiles() }
 
             val service = project.service<MinimizationService>()
             val minimizedProject = service.minimizeProject(project).await().getOrNull()
@@ -52,11 +54,13 @@ class MinimizationServiceTest : GradleProjectBaseTest() {
             minimizedProject!!
 
             val actualFiles = readAction {
-                minimizedProject.guessProjectDir()!!.getAllFiles(minimizedProject).filterGradleAndBuildFiles()
+                minimizedProject.projectDir.getAllFiles(minimizedProject.projectDir.toNioPath()).filterGradleAndBuildFiles()
             }
 
-            withContext(Dispatchers.EDT) {
-                ProjectManager.getInstance().closeAndDispose(minimizedProject)
+            if (minimizedProject is HeavyIJDDContext) {
+                withContext(Dispatchers.EDT) {
+                    ProjectManager.getInstance().closeAndDispose(minimizedProject.project)
+                }
             }
             val filterFileName = setOf(
                 Path("src/jsMain"),

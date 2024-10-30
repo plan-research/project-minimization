@@ -12,6 +12,7 @@ import org.plan.research.minimization.plugin.execution.IdeaCompilationException
 import org.plan.research.minimization.plugin.execution.exception.KotlincErrorSeverity
 import org.plan.research.minimization.plugin.execution.exception.KotlincException
 import org.plan.research.minimization.plugin.execution.transformer.PathRelativizationTransformation
+import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.CompilationResult
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
@@ -30,25 +31,28 @@ class GradleCompilationTest : GradleProjectBaseTest() {
     }
 
     fun testWithFreshlyInitializedProject() {
-        val root = myFixture.copyDirectoryToProject("fresh", ".")
+        myFixture.copyDirectoryToProject("fresh", ".")
         copyGradle()
-        val compilationResult = doCompilation(root)
+        val context = HeavyIJDDContext(project)
+        val compilationResult = doCompilation(context)
         assertIs<Either.Left<*>>(compilationResult)
         assertEquals(CompilationPropertyCheckerError.CompilationSuccess, compilationResult.value)
     }
 
     fun testWithFreshlyInitializedProjectK2() {
-        val root = myFixture.copyDirectoryToProject("fresh", ".")
+        myFixture.copyDirectoryToProject("fresh", ".")
         copyGradle(useK2 = true)
-        val compilationResult = doCompilation(root)
+        val context = HeavyIJDDContext(project)
+        val compilationResult = doCompilation(context)
         assertIs<Either.Left<*>>(compilationResult)
         assertEquals(CompilationPropertyCheckerError.CompilationSuccess, compilationResult.value)
     }
 
     fun testWithFreshlyInitializedProjectSyntaxError() {
-        val root = myFixture.copyDirectoryToProject("fresh-non-compilable", ".")
+        myFixture.copyDirectoryToProject("fresh-non-compilable", ".")
         copyGradle()
-        val compilationResult = doCompilation(root)
+        val context = HeavyIJDDContext(project)
+        val compilationResult = doCompilation(context)
         assertIs<Either.Right<IdeaCompilationException>>(compilationResult)
         val buildErrors = compilationResult.value.kotlincExceptions
         assertSize(2, buildErrors)
@@ -59,15 +63,16 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         )
         assertEquals("Unresolved reference: dfskjhl", buildErrors[1].message)
 
-        val compilationResult2 = doCompilation(root, linkProject = false)
+        val compilationResult2 = doCompilation(context, linkProject = false)
         assertIs<Either.Right<IdeaCompilationException>>(compilationResult2)
         assertEquals(compilationResult.value, compilationResult2.value)
     }
 
     fun testWithFreshlyInitializedProjectSyntaxErrorK2() {
-        val root = myFixture.copyDirectoryToProject("fresh-non-compilable", ".")
+        myFixture.copyDirectoryToProject("fresh-non-compilable", ".")
         copyGradle(useK2 = true)
-        val compilationResult = doCompilation(root)
+        val context = HeavyIJDDContext(project)
+        val compilationResult = doCompilation(context)
         assertIs<Either.Right<IdeaCompilationException>>(compilationResult)
         val buildErrors = compilationResult.value.kotlincExceptions
         assertSize(2, buildErrors)
@@ -80,15 +85,16 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         assertEquals("Unresolved reference 'dfskjhl'.", buildErrors[1].message)
         assertEquals(KotlincErrorSeverity.ERROR, buildErrors[1].severity)
 
-        val compilationResult2 = doCompilation(root, linkProject = false)
+        val compilationResult2 = doCompilation(context, linkProject = false)
         assertIs<Either.Right<IdeaCompilationException>>(compilationResult2)
         assertEquals(compilationResult.value, compilationResult2.value)
     }
 
     fun testWithFreshlyInitializedProjectSyntaxErrorMigrationK1K2() {
-        val root = myFixture.copyDirectoryToProject("fresh-non-compilable", ".")
+        myFixture.copyDirectoryToProject("fresh-non-compilable", ".")
         copyGradle(useK2 = false)
-        val compilationResult = doCompilation(root)
+        val context = HeavyIJDDContext(project)
+        val compilationResult = doCompilation(context)
         assertIs<Either.Right<IdeaCompilationException>>(compilationResult)
 
         val buildErrors = compilationResult.value.kotlincExceptions
@@ -103,7 +109,7 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         assertEquals(KotlincErrorSeverity.ERROR, buildErrors[1].severity)
 
         copyGradle(useK2 = true)
-        val compilationResult2 = doCompilation(root, linkProject = false)
+        val compilationResult2 = doCompilation(context, linkProject = false)
         assertIs<Either.Right<IdeaCompilationException>>(compilationResult2)
 
         val buildErrors2 = compilationResult2.value.kotlincExceptions
@@ -121,9 +127,10 @@ class GradleCompilationTest : GradleProjectBaseTest() {
 
     fun testKt71260() {
         // Example of Internal Error
-        val root = myFixture.copyDirectoryToProject("kt-71260", ".")
+        myFixture.copyDirectoryToProject("kt-71260", ".")
         copyGradle(useBuildKts = false)
-        val compilationResult = doCompilation(root)
+        val context = HeavyIJDDContext(project)
+        val compilationResult = doCompilation(context)
         assertIs<Either.Right<IdeaCompilationException>>(compilationResult)
         val buildErrors = compilationResult.value.kotlincExceptions
         assertIs<List<KotlincException.BackendCompilerException>>(buildErrors)
@@ -131,35 +138,38 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         assertEquals("Case2.kt", buildErrors[0].position.filePath.name)
         assert(buildErrors[0].stacktrace.isNotBlank())
 
-        val compilationResult2 = doCompilation(root, linkProject = false)
+        val compilationResult2 = doCompilation(context, linkProject = false)
         assertIs<Either.Right<IdeaCompilationException>>(compilationResult2)
         assertEquals(compilationResult.value, compilationResult2.value)
     }
 
     fun testMavenProject() {
-        val root = myFixture.copyDirectoryToProject("maven-project", ".")
-        val compilationResult = doCompilation(root, checkGradle = false)
+        myFixture.copyDirectoryToProject("maven-project", ".")
+        val context = HeavyIJDDContext(project)
+        val compilationResult = doCompilation(context, checkGradle = false)
         assertIs<Either.Left<*>>(compilationResult)
         assertEquals(CompilationPropertyCheckerError.InvalidBuildSystem, compilationResult.value)
     }
 
     fun testEmptyProject() {
-        val compilationResult = doCompilation(project.guessProjectDir()!!, checkGradle = false)
+        val context = HeavyIJDDContext(project)
+        val compilationResult = doCompilation(context, checkGradle = false)
         assertIs<Either.Left<*>>(compilationResult)
         assertEquals(CompilationPropertyCheckerError.InvalidBuildSystem, compilationResult.value)
     }
 
     fun testInterProjectEquals() {
         disableDeduplication()
-        val root = myFixture.copyDirectoryToProject("kt-71260", ".")
+        myFixture.copyDirectoryToProject("kt-71260", ".")
         copyGradle(useBuildKts = false)
-        val compilationResult = doCompilation(root)
+        val context = HeavyIJDDContext(project)
+        val compilationResult = doCompilation(context)
         val cloningService = myFixture.project.service<ProjectCloningService>()
         val snapshot = runBlocking {
-            cloningService.clone(project)
+            cloningService.clone(context)
         }
         kotlin.test.assertNotNull(snapshot)
-        val compilationResult2 = doCompilation(snapshot.guessProjectDir()!!, snapshot, checkGradle = false)
+        val compilationResult2 = doCompilation(snapshot, checkGradle = false)
 
         assertNotEquals(compilationResult, compilationResult2)
         assertIs<Either.Right<IdeaCompilationException>>(compilationResult)
@@ -168,21 +178,22 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         val transformer = PathRelativizationTransformation()
         val transformedResults = runBlocking {
             listOf(
-                compilationResult.value.apply(transformer, IJDDContext(project)),
-                compilationResult2.value.apply(transformer, IJDDContext(snapshot))
+                compilationResult.value.apply(transformer, context),
+                compilationResult2.value.apply(transformer, snapshot)
             )
         }
         assertEquals(transformedResults[0], transformedResults[1])
 
         runBlocking(Dispatchers.EDT) {
-            ProjectManager.getInstance().closeAndDispose(snapshot)
+            ProjectManager.getInstance().closeAndDispose(snapshot.project)
         }
     }
 
     fun testAnalysisProject() {
         val root = myFixture.copyDirectoryToProject("analysis-error", ".")
         copyGradle(useBuildKts = false)
-        val compilationResult = doCompilation(root)
+        val context = HeavyIJDDContext(project)
+        val compilationResult = doCompilation(context)
 
         assertIs<Either.Right<IdeaCompilationException>>(compilationResult)
         val buildErrors = compilationResult.value.kotlincExceptions
@@ -193,24 +204,25 @@ class GradleCompilationTest : GradleProjectBaseTest() {
         assert(buildErrors[0].message.startsWith("While analysing "))
         assert(buildErrors[0].message.endsWith("java.lang.IllegalArgumentException: Failed requirement."))
 
-        val compilationResult2 = doCompilation(root, linkProject = false)
+        val compilationResult2 = doCompilation(context, linkProject = false)
         assertIs<Either.Right<IdeaCompilationException>>(compilationResult2)
         assertEquals(compilationResult.value, compilationResult2.value)
     }
 
     private fun doCompilation(
-        root: VirtualFile,
-        project: Project = myFixture.project,
+        context: IJDDContext,
         checkGradle: Boolean = true,
         linkProject: Boolean = true,
     ): CompilationResult = runBlocking {
-        if (linkProject) importGradleProject(root, project)
-        if (checkGradle) assertGradleLoaded(project)
-        getCompilationResult(project)
+        if (context is HeavyIJDDContext) {
+            if (linkProject) importGradleProject(context.project)
+            if (checkGradle) assertGradleLoaded(context.project)
+        }
+        getCompilationResult(context)
     }
 
-    private suspend fun getCompilationResult(project: Project): CompilationResult {
+    private suspend fun getCompilationResult(context: IJDDContext): CompilationResult {
         val propertyCheckerService = myFixture.project.service<BuildExceptionProviderService>()
-        return propertyCheckerService.checkCompilation(IJDDContext(project))
+        return propertyCheckerService.checkCompilation(context)
     }
 }

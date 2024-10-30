@@ -4,7 +4,7 @@ import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.psi.*
 import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
-import org.plan.research.minimization.plugin.services.PsiAndRootManagerService
+import org.plan.research.minimization.plugin.psi.MinimizationPsiManager
 import kotlin.test.assertIs
 
 class PsiAndRootManagerServiceTest : JavaCodeInsightFixtureTestCase() {
@@ -14,7 +14,7 @@ class PsiAndRootManagerServiceTest : JavaCodeInsightFixtureTestCase() {
 
     override fun runInDispatchThread(): Boolean = false
     fun testFunctions() {
-        val service = project.service<PsiAndRootManagerService>()
+        val service = project.service<MinimizationPsiManager>()
         val psiFile = myFixture.configureByFile("functions.kt")
         assertIs<KtFile>(psiFile)
         val elements = runBlocking {
@@ -43,7 +43,7 @@ class PsiAndRootManagerServiceTest : JavaCodeInsightFixtureTestCase() {
     }
 
     fun testLambdas() {
-        val service = project.service<PsiAndRootManagerService>()
+        val service = project.service<MinimizationPsiManager>()
         val psiFile = myFixture.configureByFile("lambda.kt")
         assertIs<KtFile>(psiFile)
         val elements = runBlocking {
@@ -63,7 +63,7 @@ class PsiAndRootManagerServiceTest : JavaCodeInsightFixtureTestCase() {
     }
 
     fun testLambdaAsDefaultParameterIsNotReplaceable() {
-        val service = project.service<PsiAndRootManagerService>()
+        val service = project.service<MinimizationPsiManager>()
         val psiFile = myFixture.configureByFile("lambda-as-default.kt")
         assertIs<KtFile>(psiFile)
         val elements = runBlocking {
@@ -81,7 +81,7 @@ class PsiAndRootManagerServiceTest : JavaCodeInsightFixtureTestCase() {
     }
 
     fun testSimpleClass() {
-        val service = project.service<PsiAndRootManagerService>()
+        val service = project.service<MinimizationPsiManager>()
         val psiFile = myFixture.configureByFile("simple-class.kt")
         assertIs<KtFile>(psiFile)
         val elements = runBlocking {
@@ -122,7 +122,7 @@ class PsiAndRootManagerServiceTest : JavaCodeInsightFixtureTestCase() {
     }
 
     fun testComplexClass() {
-        val service = project.service<PsiAndRootManagerService>()
+        val service = project.service<MinimizationPsiManager>()
         val psiFile = myFixture.configureByFile("complex-class.kt")
         assertIs<KtFile>(psiFile)
         val elements = runBlocking {
@@ -174,7 +174,7 @@ class PsiAndRootManagerServiceTest : JavaCodeInsightFixtureTestCase() {
         }
         return 0
     }
-    private fun List<PsiWithBodyDDItem>.getPsi(service: PsiAndRootManagerService) = runBlocking {
+    private fun List<PsiWithBodyDDItem>.getPsi(service: MinimizationPsiManager) = runBlocking {
         sortedWith { a, b -> compare(a.childrenPath, b.childrenPath) }
             .map { service.getPsiElementFromItem(it) }
     }

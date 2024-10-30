@@ -7,10 +7,7 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
-import org.plan.research.minimization.plugin.psi.PsiModificationManager
-import kotlin.io.path.Path
-import kotlin.io.path.nameWithoutExtension
-import kotlin.io.path.relativeTo
+import org.plan.research.minimization.plugin.psi.MinimizationPsiManager
 import kotlin.test.assertIs
 
 class PsiTrieModificationTest : PsiTrieTestBase() {
@@ -76,7 +73,7 @@ class PsiTrieModificationTest : PsiTrieTestBase() {
         filter: (PsiElement) -> Boolean,
     ) = runBlocking {
         val selectedPsi = selectElements { filter(it.psi!!) }
-        val psiModificationManager = project.service<PsiModificationManager>()
+        val psiModificationManager = project.service<MinimizationPsiManager>()
         super.doTest(psiFile, selectedPsi, psiModificationManager::replaceBody)
         val expectedFile = myFixture.configureByFile("modification-results/$expectedFile")
         assertIs<KtFile>(expectedFile)

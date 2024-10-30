@@ -12,7 +12,7 @@ import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtFile
 import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
 import org.plan.research.minimization.plugin.psi.PsiItemStorage
-import org.plan.research.minimization.plugin.services.PsiAndRootManagerService
+import org.plan.research.minimization.plugin.psi.MinimizationPsiManager
 import kotlin.test.assertIs
 
 abstract class PsiTrieTestBase : JavaCodeInsightFixtureTestCase() {
@@ -24,7 +24,7 @@ abstract class PsiTrieTestBase : JavaCodeInsightFixtureTestCase() {
 
 
     protected suspend fun getAllElements(): List<PsiWithBodyDDItem> {
-        val service = project.service<PsiAndRootManagerService>()
+        val service = project.service<MinimizationPsiManager>()
         return service.findAllPsiWithBodyItems()
     }
 
@@ -52,7 +52,7 @@ abstract class PsiTrieTestBase : JavaCodeInsightFixtureTestCase() {
     protected val PsiWithBodyDDItem.psi: KtExpression?
         get() = runBlocking {
             project
-                .service<PsiAndRootManagerService>()
+                .service<MinimizationPsiManager>()
                 .getPsiElementFromItem(this@psi)
         }
 

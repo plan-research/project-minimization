@@ -13,6 +13,7 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.MinimizationStageExecutor
 import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
 import org.plan.research.minimization.plugin.psi.FunctionModificationLens
+import org.plan.research.minimization.plugin.psi.MinimizationPsiManager
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 import arrow.core.Either
@@ -79,7 +80,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         context.withProgress {
             ddAlgorithm.minimize(
                 it,
-                project.service<PsiAndRootManagerService>().findAllPsiWithBodyItems().also { it.logPsiElements() },
+                project.service<MinimizationPsiManager>().findAllPsiWithBodyItems().also { it.logPsiElements() },
                 propertyChecker,
             ).context
         }
@@ -89,7 +90,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         if (!generalLogger.isDebugEnabled) {
             return
         }
-        val psiManagingService = project.service<PsiAndRootManagerService>()
+        val psiManagingService = project.service<MinimizationPsiManager>()
         val text = mapNotNull {
             psiManagingService.getPsiElementFromItem(it)?.let { readAction { it.text } }
         }

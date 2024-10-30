@@ -6,7 +6,7 @@ import org.plan.research.minimization.core.algorithm.dd.hierarchical.Hierarchica
 import org.plan.research.minimization.core.model.PropertyTester
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.ProjectFileDDItem
-import org.plan.research.minimization.plugin.services.PsiAndRootManagerService
+import org.plan.research.minimization.plugin.services.RootsManagerService
 
 import arrow.core.raise.option
 import com.intellij.openapi.application.readAction
@@ -27,7 +27,7 @@ class FileTreeHierarchicalDDGenerator(
     override suspend fun generateFirstLevel(context: IJDDContext) =
         option {
             val level = smartReadAction(context.project) {
-                val rootManager = context.project.service<PsiAndRootManagerService>()
+                val rootManager = context.project.service<RootsManagerService>()
                 val roots = rootManager.findPossibleRoots().takeIf { it.isNotEmpty() } ?: listOf(context.projectDir)
 
                 context.progressReporter?.let {

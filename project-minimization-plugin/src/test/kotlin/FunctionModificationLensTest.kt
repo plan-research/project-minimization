@@ -21,8 +21,8 @@ import org.jetbrains.kotlin.psi.KtPropertyAccessor
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
 import org.plan.research.minimization.plugin.psi.FunctionModificationLens
+import org.plan.research.minimization.plugin.psi.MinimizationPsiManager
 import org.plan.research.minimization.plugin.services.ProjectCloningService
-import org.plan.research.minimization.plugin.services.PsiAndRootManagerService
 import kotlin.collections.filter
 import kotlin.collections.find
 import kotlin.collections.findLast
@@ -88,7 +88,7 @@ class FunctionModificationLensTest : JavaCodeInsightFixtureTestCase() {
 
     private suspend fun doTest(elements: List<PsiWithBodyDDItem>, expectedFolder: String) {
         val projectCloningService = project.service<ProjectCloningService>()
-        val psiGetterService = project.service<PsiAndRootManagerService>()
+        val psiGetterService = project.service<MinimizationPsiManager>()
         val cloned = projectCloningService.clone(project)
         kotlin.test.assertNotNull(cloned)
         try {
@@ -123,7 +123,7 @@ class FunctionModificationLensTest : JavaCodeInsightFixtureTestCase() {
     private val PsiWithBodyDDItem.psi: KtExpression?
         get() = runBlocking {
             project
-                .service<PsiAndRootManagerService>()
+                .service<MinimizationPsiManager>()
                 .getPsiElementFromItem(this@psi)
         }
 
@@ -132,7 +132,7 @@ class FunctionModificationLensTest : JavaCodeInsightFixtureTestCase() {
     private fun List<PsiWithBodyDDItem>.filterByPsi(filter: (PsiElement) -> Boolean) = filter { filter(it.psi!!) }
 
     private suspend fun getAllElements(vfs: VirtualFile, project: Project): List<PsiWithBodyDDItem> {
-        val service = project.service<PsiAndRootManagerService>()
+        val service = project.service<MinimizationPsiManager>()
         val elements = service.findAllPsiWithBodyItems()
         val vfsRelativePath = project.guessProjectDir()!!.toNioPath().relativize(vfs.toNioPath())
         return elements.filter { it.localPath == vfsRelativePath }

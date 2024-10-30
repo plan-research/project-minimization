@@ -4,7 +4,6 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.IJDDItem
 import org.plan.research.minimization.plugin.model.ProjectItemLens
 import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
-import org.plan.research.minimization.plugin.services.PsiAndRootManagerService
 
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
@@ -53,7 +52,7 @@ class FunctionModificationLens : ProjectItemLens {
         if (!logger.isDebugEnabled) {
             return
         }
-        val psiManager = context.project.service<PsiAndRootManagerService>()
+        val psiManager = context.project.service<MinimizationPsiManager>()
         val psiElements = items.map { psiManager.getPsiElementFromItem(it) }
         readAction {
             logger.trace {
@@ -75,8 +74,8 @@ class FunctionModificationLens : ProjectItemLens {
             logger.error { "The desired path for focused path $relativePath is not a Kotlin file in the project (name=${currentContext.project.name})" }
             return
         }
-        val psiModificationManager = currentContext.project.service<PsiModificationManager>()
+        val psiManager = currentContext.project.service<MinimizationPsiManager>()
         logger.info { "Processing all focused elements in " }
-        trie.processMarkedElements(psiFile, psiModificationManager::replaceBody)
+        trie.processMarkedElements(psiFile, psiManager::replaceBody)
     }
 }

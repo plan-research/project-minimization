@@ -13,6 +13,10 @@ import org.jetbrains.kotlin.psi.KtFile
 
 import kotlin.io.path.relativeTo
 
+/**
+ * The PsiProcessor class provides utilities for fetching PSI elements within a given project.
+ *
+ */
 class PsiProcessor(private val project: Project) {
     private val rootPath = project.guessProjectDir()!!.toNioPath()
 

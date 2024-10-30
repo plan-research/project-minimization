@@ -20,13 +20,16 @@ import mu.KotlinLogging
 import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.psi.*
 
+import kotlin.io.path.relativeTo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private typealias ClassKtExpression = Class<out KtExpression>
 
 /**
- * Service that provides functions to modify the bodies of various Kotlin elements within a project.
+ * Service that provides functions to
+ *  * Obtain a list of all the psi elements that could be modified
+ *  * Modify the body of that object to replace it with `TODO()`
  *
  */
 @Service(Service.Level.PROJECT)
@@ -111,11 +114,21 @@ class MinimizationPsiManager(private val rootProject: Project) {
                 .takeIf { it.isNotEmpty() }
                 ?: listOf(rootProject.guessProjectDir()!!)
         }
+        logger.debug {
+            val root = rootProject.guessProjectDir()!!.toNioPath()
+            "Found ${roots.size} roots: ${roots.map { it.toNioPath().relativeTo(root) }}"
+        }
         val kotlinFiles = smartReadAction(rootProject) {
             FileTypeIndex.getFiles(
                 KotlinFileType.INSTANCE,
                 GlobalSearchScopes.directoriesScope(rootProject, true, *roots.toTypedArray()),
             )
+        }
+        logger.debug {
+            "Found ${kotlinFiles.size} kotlin files"
+        }
+        if (kotlinFiles.isEmpty()) {
+            logger.warn { "Found 0 kotlin files!" }
         }
         return extractAllPsi(kotlinFiles).mapNotNull { readAction { psiProcessor.getPsiElementParentPath(it) } }
     }
@@ -150,6 +163,9 @@ class MinimizationPsiManager(private val rootProject: Project) {
                 allPsiClasses.flatMap { clazz ->
                     PsiTreeUtil.collectElementsOfType(ktFile, clazz)
                         .filter { it !is KtDeclarationWithBody || it.hasBody() }
+                        .also {
+                            logger.debug { "Found ${it.size} ${clazz.simpleName} elements" }
+                        }
                 }
             }
         }

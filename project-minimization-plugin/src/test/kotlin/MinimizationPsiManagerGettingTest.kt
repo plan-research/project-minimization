@@ -7,7 +7,7 @@ import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
 import org.plan.research.minimization.plugin.psi.MinimizationPsiManager
 import kotlin.test.assertIs
 
-class PsiAndRootManagerServiceTest : JavaCodeInsightFixtureTestCase() {
+class MinimizationPsiManagerGettingTest : JavaCodeInsightFixtureTestCase() {
     override fun getTestDataPath(): String {
         return "src/test/resources/testData/kotlin-psi"
     }

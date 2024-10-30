@@ -4,6 +4,7 @@ import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
 
 import com.intellij.openapi.application.readAction
 import com.intellij.psi.PsiElement
+import mu.KotlinLogging
 import org.jetbrains.kotlin.utils.addToStdlib.same
 
 /**
@@ -13,10 +14,20 @@ import org.jetbrains.kotlin.utils.addToStdlib.same
 class PsiTrie private constructor() {
     private val children: MutableMap<Int, PsiTrie> = mutableMapOf()
     private var isMarked: Boolean = false
+    private val logger = KotlinLogging.logger {}
     var hasMarkedElements: Boolean = false
         private set
+
     suspend fun processMarkedElements(element: PsiElement, processor: suspend (PsiElement) -> Unit) {
         if (isMarked) {
+            if (logger.isTraceEnabled) {
+                // to preserve suspended context
+                logger.trace(
+                    readAction {
+                        "Processing marked element: ${element.textOffset} in ${element.containingFile.virtualFile.path}"
+                    },
+                )
+            }
             processor(element)
             return
         }

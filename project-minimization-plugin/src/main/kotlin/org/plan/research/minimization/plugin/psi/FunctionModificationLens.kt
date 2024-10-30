@@ -46,10 +46,11 @@ class FunctionModificationLens : ProjectItemLens {
         )
 
         currentLevelTrie.usedPaths.forEach { focusOnInsideFile(currentContext, currentLevelTrie, it) }
+        logger.info { "Focusing complete" }
     }
 
     private suspend fun logFocusedItems(items: List<PsiWithBodyDDItem>, context: IJDDContext) {
-        if (!logger.isDebugEnabled) {
+        if (!logger.isTraceEnabled) {
             return
         }
         val psiManager = context.project.service<MinimizationPsiManager>()
@@ -61,6 +62,7 @@ class FunctionModificationLens : ProjectItemLens {
             }
         }
     }
+
     private suspend fun focusOnInsideFile(currentContext: IJDDContext, trie: PsiItemStorage, relativePath: Path) {
         val virtualFile = smartReadAction(currentContext.project) {
             currentContext.projectDir.findFile(relativePath.toString())
@@ -75,7 +77,7 @@ class FunctionModificationLens : ProjectItemLens {
             return
         }
         val psiManager = currentContext.project.service<MinimizationPsiManager>()
-        logger.info { "Processing all focused elements in " }
+        logger.info { "Processing all focused elements in $relativePath" }
         trie.processMarkedElements(psiFile, psiManager::replaceBody)
     }
 }

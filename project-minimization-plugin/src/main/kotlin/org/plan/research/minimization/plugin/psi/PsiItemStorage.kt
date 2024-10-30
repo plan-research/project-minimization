@@ -11,6 +11,9 @@ import java.nio.file.Path
 
 import kotlin.io.path.relativeTo
 
+/**
+ * A per-file storage for [PsiTrie]
+ */
 class PsiItemStorage private constructor(private val map: Map<Path, PsiTrie>, private val project: Project) {
     val usedPaths: Set<Path>
         get() = map.keys

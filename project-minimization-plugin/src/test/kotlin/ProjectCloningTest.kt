@@ -1,13 +1,13 @@
-import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.service
-import com.intellij.openapi.project.ProjectManager
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertNotEquals
 import org.plan.research.minimization.plugin.model.HeavyIJDDContext
+import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 
-class ProjectCloningTest : ProjectCloningBaseTest() {
+@Suppress("UNCHECKED_CAST")
+abstract class ProjectCloningTest<C : IJDDContext> : ProjectCloningBaseTest(), TestWithContext<C> {
     fun testOneFileProject() {
         myFixture.configureByFile("oneFileProject.txt")
         doFullCloningTest()
@@ -52,14 +52,12 @@ class ProjectCloningTest : ProjectCloningBaseTest() {
         val project = myFixture.project
         val files = originalFileSet ?: project.getAllFiles()
         val projectCloningService = project.service<ProjectCloningService>()
-        val context = HeavyIJDDContext(project)
+        val context = createContext(project)
         val clonedContext = runBlocking { projectCloningService.clone(context) }
         assertNotNull(clonedContext)
-        val clonedFiles = clonedContext!!.project.getAllFiles()
+        val clonedFiles = clonedContext!!.projectDir.getAllFiles(clonedContext.projectDir.toNioPath())
         assertEquals(files, clonedFiles)
-        runBlocking(Dispatchers.EDT) {
-            ProjectManager.getInstance().closeAndDispose(clonedContext.project)
-        }
+        deleteContext(clonedContext as C)
         return files
     }
 
@@ -67,23 +65,29 @@ class ProjectCloningTest : ProjectCloningBaseTest() {
         val project = myFixture.project
         val files = originalFileSet ?: project.getAllFiles()
         val projectCloningService = project.service<ProjectCloningService>()
-        val context = HeavyIJDDContext(project)
+        val context = createContext(project)
         val clonedContext = runBlocking { projectCloningService.clone(context) }
         assertNotNull(clonedContext)
-        val clonedFiles = clonedContext!!.project.getAllFiles()
+        val clonedFiles = clonedContext!!.projectDir.getAllFiles(clonedContext.projectDir.toNioPath())
         assertEquals(files, clonedFiles)
 
         val clonedClonedContext =
             runBlocking { projectCloningService.clone(clonedContext) }
         assertNotNull(clonedClonedContext)
-        val clonedClonedFiles = clonedClonedContext!!.project.getAllFiles()
+        val clonedClonedFiles = clonedClonedContext!!.projectDir.getAllFiles(clonedClonedContext.projectDir.toNioPath())
         assertEquals(files, clonedClonedFiles)
         assertNotEquals(clonedContext, clonedClonedContext)
 
-        runBlocking(Dispatchers.EDT) {
-            ProjectManager.getInstance().closeAndDispose(clonedClonedContext.project)
-            ProjectManager.getInstance().closeAndDispose(clonedContext.project)
-        }
+        deleteContext(clonedContext as C)
+        deleteContext(clonedClonedContext as C)
         return files
     }
 }
+
+class ProjectCloningLightTest :
+    ProjectCloningTest<LightIJDDContext>(),
+    TestWithContext<LightIJDDContext> by TestWithLightContext()
+
+class ProjectCloningHeavyTest :
+    ProjectCloningTest<HeavyIJDDContext>(),
+    TestWithContext<HeavyIJDDContext> by TestWithHeavyContext()

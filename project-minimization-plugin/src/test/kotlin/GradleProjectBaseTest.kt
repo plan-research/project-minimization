@@ -42,14 +42,17 @@ abstract class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
     }
 
     protected suspend fun importGradleProject(project: Project) {
-        val projectPath = project.guessProjectDir()!!.path
-        val gradleSettings = GradleSettings.getInstance(project)
-        val projectSettings = GradleProjectSettings().apply {
-            externalProjectPath = projectPath
-            gradleJvm = sdk.name
+        val projectPath = smartReadAction(project) {
+            val projectPath = project.guessProjectDir()!!.path
+            val gradleSettings = GradleSettings.getInstance(project)
+            val projectSettings = GradleProjectSettings().apply {
+                externalProjectPath = projectPath
+                gradleJvm = sdk.name
+            }
+            gradleSettings.unlinkExternalProject(projectPath)
+            gradleSettings.linkProject(projectSettings)
+            projectPath
         }
-        gradleSettings.unlinkExternalProject(projectPath)
-        gradleSettings.linkProject(projectSettings)
 
         withContext(Dispatchers.EDT) {
             ExternalSystemUtil.refreshProject(

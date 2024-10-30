@@ -214,7 +214,7 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
                 extractGradleTasksFromModel(model)
             },
             catch = {
-                logger.error(it) { "HERE" }
+                logger.error(it) { "Error while extracting gradle tasks" }
                 raise(CompilationPropertyCheckerError.BuildSystemFail(cause = it))
             },
         )

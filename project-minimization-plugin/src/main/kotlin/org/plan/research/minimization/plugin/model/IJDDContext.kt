@@ -79,6 +79,8 @@ class LightIJDDContext(
 ) : IJDDContext(originalProject, currentLevel, progressReporter) {
     override val indexProject: Project = originalProject
 
+    constructor(project: Project) : this(project.guessProjectDir()!!, project)
+
     fun copy(
         projectDir: VirtualFile,
         currentLevel: List<ProjectFileDDItem>? = this.currentLevel,

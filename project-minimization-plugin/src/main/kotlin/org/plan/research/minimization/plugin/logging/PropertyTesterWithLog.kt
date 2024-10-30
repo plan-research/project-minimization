@@ -15,6 +15,7 @@ class PropertyTesterWithLog<C : DDContext, T : DDItem>(
     override suspend fun test(context: C, items: List<T>): PropertyTestResult<C> {
         generalLogger.trace { "Property test number of items - ${items.size}" }
         generalLogger.trace { "Property test items - $items" }
+        statLogger.info { "Property Test started with size: ${items.size}" }
         val result = innerTester.test(context, items)
         result.fold({ error ->
             generalLogger.debug { "Property Test resulted with error: $error" }

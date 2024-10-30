@@ -8,7 +8,6 @@ import arrow.core.Either
 import arrow.core.Option
 import arrow.core.getOrElse
 import arrow.core.raise.either
-import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
 import arrow.core.raise.option
 import com.intellij.build.events.BuildEvent
@@ -38,17 +37,22 @@ class KotlincExceptionTranslator : BuildEventTranslator {
         }
 
     private fun transformCompilationError(buildEvent: BuildEvent) = either {
-        ensure(buildEvent is FileMessageEvent) {
-            raise(
+        when (buildEvent) {
+            is FileMessageEvent -> {
+                val filePosition = CaretPosition.fromFilePosition(buildEvent.filePosition)
+                KotlincException.GeneralKotlincException(filePosition, buildEvent.message, buildEvent.severity())
+            }
+
+            is MessageEvent -> KotlincException.GeneralKotlincException(null, buildEvent.message, buildEvent.severity())
+
+            else -> raise(
                 CompilationPropertyCheckerError.BuildSystemFail(
                     cause = IllegalStateException(
-                        "Invalid event type: ${buildEvent.javaClass}, but expected FileMessageEvent",
+                        "Invalid event type: ${buildEvent.javaClass}",
                     ),
                 ),
             )
         }
-        val filePosition = CaretPosition.fromFilePosition(buildEvent.filePosition)
-        KotlincException.GeneralKotlincException(filePosition, buildEvent.message, buildEvent.severity())
     }
 
     private fun parseInternalException(

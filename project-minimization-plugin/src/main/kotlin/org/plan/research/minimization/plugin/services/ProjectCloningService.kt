@@ -50,7 +50,7 @@ class ProjectCloningService(private val rootProject: Project) {
     // TODO: JBRes-1977
     var isTest: Boolean = false
 
-    private suspend fun openProject(projectPath: Path, forceImport: Boolean): Project? {
+    suspend fun openProject(projectPath: Path, forceImport: Boolean): Project? {
         val project = ProjectUtil.openOrImportAsync(projectPath, OpenProjectTask {
             forceOpenInNewFrame = true
             runConversionBeforeOpen = false
@@ -91,6 +91,7 @@ class ProjectCloningService(private val rootProject: Project) {
     suspend fun clone(context: LightIJDDContext): LightIJDDContext? {
         val clonedPath = cloneProjectImpl(context.projectDir)
         val clonedProjectDir = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(clonedPath) ?: return null
+        clonedProjectDir.refresh(false, true)
         return context.copy(projectDir = clonedProjectDir)
     }
 

@@ -11,6 +11,7 @@ import org.plan.research.minimization.plugin.services.ProjectCloningService
 
 import arrow.core.raise.either
 import arrow.core.raise.recover
+import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ex.ProjectManagerEx
@@ -73,10 +74,12 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
     }
 
     private suspend fun closeProject(context: IJDDContext) {
-        // TODO: think about deleting the project
-        if (context is HeavyIJDDContext) {
-            withContext(NonCancellable) {
+        withContext(NonCancellable) {
+            if (context is HeavyIJDDContext) {
                 ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(context.project)
+            }
+            writeAction {
+                context.projectDir.run { delete(fileSystem) }
             }
         }
     }

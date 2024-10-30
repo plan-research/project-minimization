@@ -2,6 +2,8 @@ package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.model.HeavyIJDDContext
+import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 import arrow.core.raise.either
@@ -22,29 +24,29 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
     private val projectCloning = project.service<ProjectCloningService>()
     private val generalLogger = KotlinLogging.logger {}
 
-    fun minimizeProject(project: Project) =
+    fun minimizeProject(project: Project, onComplete: suspend (IJDDContext) -> Unit = { }) =
         coroutineScope.async {
             withBackgroundProgress(project, "Minimizing project") {
                 either {
                     generalLogger.info { "Start Project minimization" }
-                    var currentProject = HeavyIJDDContext(project)
+                    var context: IJDDContext = LightIJDDContext(project)
 
                     generalLogger.info { "Clonning project..." }
-                    currentProject = projectCloning.clone(currentProject)
+                    context = projectCloning.clone(context)
                         ?: raise(MinimizationError.CloningFailed)
-                    projectCloning.forceImportGradleProject(currentProject.project)
+                    importIfNeeded(context)
                     generalLogger.info { "Project clone end" }
 
                     reportSequentialProgress(stages.size) { reporter ->
                         for (stage in stages) {
                             reporter.itemStep("Minimization step: ${stage.name}") {
-                                currentProject = stage.apply(currentProject, executor).bind() as HeavyIJDDContext
+                                context = stage.apply(context, executor).bind()
                             }
-                            projectCloning.forceImportGradleProject(currentProject.project)
+                            importIfNeeded(context)
                         }
                     }
 
-                    currentProject.project
+                    context.also { onComplete(it) }
                 }.onRight {
                     generalLogger.info { "End Project minimization" }
                 }.onLeft { error ->
@@ -53,4 +55,10 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
                 }
             }
         }
+
+    private suspend fun importIfNeeded(context: IJDDContext) {
+        if (context is HeavyIJDDContext) {
+            projectCloning.forceImportGradleProject(context.project)
+        }
+    }
 }

@@ -1,13 +1,13 @@
 package org.plan.research.minimization.plugin.settings
 
 import org.plan.research.minimization.plugin.model.FileLevelStage
+import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.MinimizationStage
 import org.plan.research.minimization.plugin.model.state.*
 
 import com.intellij.openapi.components.BaseState
 import com.intellij.util.xmlb.annotations.Property
 import com.intellij.util.xmlb.annotations.XCollection
-import org.plan.research.minimization.plugin.model.FunctionLevelStage
 
 class MinimizationPluginState : BaseState() {
     var currentCompilationStrategy by enum<CompilationStrategy>(CompilationStrategy.GRADLE_IDEA)
@@ -27,7 +27,7 @@ class MinimizationPluginState : BaseState() {
         ),
         FunctionLevelStage(
             ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
-        )
+        ),
     )
 
     @Property(surroundWithTag = false)

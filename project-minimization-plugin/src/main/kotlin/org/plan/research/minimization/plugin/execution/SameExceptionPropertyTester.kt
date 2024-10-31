@@ -4,6 +4,7 @@ import org.plan.research.minimization.core.model.PropertyTestResult
 import org.plan.research.minimization.core.model.PropertyTester
 import org.plan.research.minimization.core.model.PropertyTesterError
 import org.plan.research.minimization.plugin.errors.SnapshotError
+import org.plan.research.minimization.plugin.logging.withLog
 import org.plan.research.minimization.plugin.model.*
 import org.plan.research.minimization.plugin.model.exception.CompilationException
 import org.plan.research.minimization.plugin.model.exception.ExceptionComparator
@@ -14,7 +15,6 @@ import arrow.core.raise.option
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import mu.KotlinLogging
-import org.plan.research.minimization.plugin.logging.withLog
 
 /**
  * A property tester for Delta Debugging algorithm that leverages different compilation strategies

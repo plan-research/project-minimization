@@ -6,13 +6,13 @@ import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTest
 import org.plan.research.minimization.plugin.getDDAlgorithm
 import org.plan.research.minimization.plugin.getExceptionComparator
 import org.plan.research.minimization.plugin.getHierarchyCollectionStrategy
+import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
 import org.plan.research.minimization.plugin.logging.statLogger
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.MinimizationStageExecutor
 import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
-import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 import arrow.core.Either
@@ -31,8 +31,8 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         generalLogger.info { "Start File level stage" }
         statLogger.info {
             "File level stage settings, " +
-                    "Hierarchy strategy: ${fileLevelStage.hierarchyCollectionStrategy::class.simpleName}, " +
-                    "DDAlgorithm: ${fileLevelStage.ddAlgorithm::class.simpleName}"
+                "Hierarchy strategy: ${fileLevelStage.hierarchyCollectionStrategy::class.simpleName}, " +
+                "DDAlgorithm: ${fileLevelStage.ddAlgorithm::class.simpleName}"
         }
 
         val baseAlgorithm = fileLevelStage.ddAlgorithm.getDDAlgorithm()
@@ -60,7 +60,6 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
             "Function level stage settings. DDAlgorithm: ${functionLevelStage.ddAlgorithm::class.simpleName}"
         }
         val ddAlgorithm = functionLevelStage.ddAlgorithm.getDDAlgorithm()
-        val buildExceptionProvider = project.service<BuildExceptionProviderService>()
         val exceptionComparator = project
             .service<MinimizationPluginSettings>()
             .state
@@ -71,7 +70,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
             .service<MinimizationPsiManager>()
             .findAllPsiWithBodyItems()
         val propertyChecker = SameExceptionPropertyTester.create<PsiWithBodyDDItem>(
-            buildExceptionProvider,
+            this@MinimizationStageExecutorService.project.service<BuildExceptionProviderService>(),
             exceptionComparator,
             lens,
             context,
@@ -102,7 +101,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         }
         generalLogger.debug {
             "Starting DD Algorithm with following elements:\n" +
-                    text.joinToString("\n") { "\t- $it" }
+                text.joinToString("\n") { "\t- $it" }
         }
     }
 

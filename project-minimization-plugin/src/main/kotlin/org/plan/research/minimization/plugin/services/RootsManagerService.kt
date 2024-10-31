@@ -6,7 +6,6 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
-import org.plan.research.minimization.plugin.model.IJDDContext
 
 @Service(Service.Level.APP)
 class RootsManagerService {

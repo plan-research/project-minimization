@@ -16,6 +16,9 @@ import java.nio.file.Path
 
 import kotlin.io.path.relativeTo
 
+private typealias ClassKtExpression = Class<out KtExpression>
+private typealias ClassDeclarationWithBody = Class<out KtDeclarationWithBody>
+
 sealed interface IJDDItem : DDItem
 
 /**
@@ -34,20 +37,25 @@ data class ProjectFileDDItem(val localPath: Path) : IJDDItem {
     }
 }
 
-private typealias ClassKtExpression = Class<out KtExpression>
-private typealias ClassDeclarationWithBody = Class<out KtDeclarationWithBody>
-
-
 data class PsiWithBodyDDItem(
     val localPath: Path,
     val childrenPath: List<Int>,
 ) : IJDDItem {
     companion object {
+        val WITH_BODY_JAVA_CLASSES: List<ClassDeclarationWithBody> = listOf(
+            KtNamedFunction::class.java,
+            KtPropertyAccessor::class.java,
+        )
+        val WO_BODY_JAVA_CLASSES: List<ClassKtExpression> = listOf(
+            KtLambdaExpression::class.java,
+            KtClassInitializer::class.java,
+        )
+        val PSI_ALL_JAVA_CLASSES: List<ClassKtExpression> = WITH_BODY_JAVA_CLASSES + WO_BODY_JAVA_CLASSES
         fun isCompatible(psiElement: PsiElement) =
             PSI_ALL_JAVA_CLASSES.any { it.isInstance(psiElement) } && hasBodyIfAvailable(psiElement) != false
 
         fun hasBodyIfAvailable(psiElement: PsiElement): Boolean? = WITH_BODY_JAVA_CLASSES
-            .find { it.isInstance(psiElement)}
+            .find { it.isInstance(psiElement) }
             ?.let { (psiElement as KtDeclarationWithBody) }
             ?.hasBody()
 
@@ -66,15 +74,5 @@ data class PsiWithBodyDDItem(
                         "but got ${element.javaClass.simpleName}",
                 )
             }
-
-        val WITH_BODY_JAVA_CLASSES: List<ClassDeclarationWithBody> = listOf(
-            KtNamedFunction::class.java,
-            KtPropertyAccessor::class.java,
-        )
-        val WO_BODY_JAVA_CLASSES: List<ClassKtExpression> = listOf(
-            KtLambdaExpression::class.java,
-            KtClassInitializer::class.java
-        )
-        val PSI_ALL_JAVA_CLASSES: List<ClassKtExpression> = WITH_BODY_JAVA_CLASSES + WO_BODY_JAVA_CLASSES
     }
 }

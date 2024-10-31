@@ -31,8 +31,8 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         generalLogger.info { "Start File level stage" }
         statLogger.info {
             "File level stage settings, " +
-                    "Hierarchy strategy: ${fileLevelStage.hierarchyCollectionStrategy::class.simpleName}, " +
-                    "DDAlgorithm: ${fileLevelStage.ddAlgorithm::class.simpleName}"
+                "Hierarchy strategy: ${fileLevelStage.hierarchyCollectionStrategy::class.simpleName}, " +
+                "DDAlgorithm: ${fileLevelStage.ddAlgorithm::class.simpleName}"
         }
 
         val baseAlgorithm = fileLevelStage.ddAlgorithm.getDDAlgorithm()
@@ -101,7 +101,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         }
         generalLogger.trace {
             "Starting DD Algorithm with following elements:\n" +
-                    text.joinToString("\n") { "\t- $it" }
+                text.joinToString("\n") { "\t- $it" }
         }
     }
 

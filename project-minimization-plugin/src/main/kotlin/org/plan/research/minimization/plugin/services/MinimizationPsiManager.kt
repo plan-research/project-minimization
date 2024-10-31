@@ -1,6 +1,8 @@
 package org.plan.research.minimization.plugin.services
 
+import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.plan.research.minimization.plugin.psi.PsiProcessor
 
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
@@ -8,7 +10,6 @@ import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.command.writeCommandAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFile
@@ -30,9 +31,6 @@ import org.jetbrains.kotlin.psi.KtPsiFactory
 import kotlin.io.path.relativeTo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.jetbrains.kotlin.idea.base.util.projectScope
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.psi.PsiProcessor
 
 /**
  * Service that provides functions to
@@ -141,8 +139,9 @@ class MinimizationPsiManager(private val rootProject: Project) {
                 val fileTypes = getAllFileTypesInProject(rootProject)
                 val asString = fileTypes
                     .toList()
-                    .map { (type, files) -> "${type.name}: ${files.map {it.toNioPath().relativeTo(rootProject.guessProjectDir()!!.toNioPath()) }}"}
-                "However, there are fileTypes and its files:\n$asString"}
+                    .map { (type, files) -> "${type.name}: ${files.map { it.toNioPath().relativeTo(rootProject.guessProjectDir()!!.toNioPath()) }}" }
+                "However, there are fileTypes and its files:\n$asString"
+            }
         }
         return extractAllPsi(kotlinFiles).mapNotNull { readAction { psiProcessor.getPsiElementParentPath(it) } }
     }
@@ -166,8 +165,6 @@ class MinimizationPsiManager(private val rootProject: Project) {
     private suspend fun extractAllPsi(files: Collection<VirtualFile>): List<KtExpression> =
         files.flatMap { kotlinFile ->
             val ktFile = readAction { psiProcessor.getKtFile(kotlinFile) } ?: return@flatMap emptyList()
-
-
             smartReadAction(rootProject) {
                 PsiWithBodyDDItem.PSI_ALL_JAVA_CLASSES.flatMap { clazz ->
                     PsiTreeUtil.collectElementsOfType(ktFile, clazz)
@@ -184,18 +181,17 @@ class MinimizationPsiManager(private val rootProject: Project) {
             }
         }
 
-   private fun getAllFileTypesInProject(project: Project): Map<FileType, List<VirtualFile>> = buildMap {
-
+    private fun getAllFileTypesInProject(project: Project) = buildMap {
         FileBasedIndex.getInstance().processAllKeys(
             FileTypeIndex.NAME, { fileType ->
                 val filesOfType = FileBasedIndex.getInstance().getContainingFiles(
-                    FileTypeIndex.NAME, fileType, project.projectScope()
+                    FileTypeIndex.NAME, fileType, project.projectScope(),
                 )
                 if (filesOfType.isNotEmpty()) {
                     put(fileType, filesOfType.toList())
                 }
                 true
-            }, project
+            }, project,
         )
     }
 

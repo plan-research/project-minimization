@@ -89,7 +89,10 @@ Project's components are represented as [IJDDItem][ij-item], which has such inhe
   - `ProjectFileDDItem` represents any file of the project.
 
 - **IJDDContext.**
-The algorithm context is represented as [IJDDContext][ij-context], which contains the current minimized `Project`.
+The algorithm context is represented as [IJDDContext][ij-context], which contains the current minimized project.
+There are several representations of the context:
+  - `LightIJDDContext` represents a project as a directory where it's located.
+  - `HeavyIJDDContext` represents a project as an opened IDEA project.
 
 - **Minimization Stages.** 
 As shown on the sequence diagram, the minimization process consists of minimization stages ([doc][stage-doc]).

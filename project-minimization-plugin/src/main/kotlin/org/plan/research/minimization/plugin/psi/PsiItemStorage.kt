@@ -3,9 +3,9 @@ package org.plan.research.minimization.plugin.psi
 import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
 
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.guessProjectDir
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import org.plan.research.minimization.plugin.model.IJDDContext
 
 import java.nio.file.Path
 
@@ -14,10 +14,10 @@ import kotlin.io.path.relativeTo
 /**
  * A per-file storage for [PsiTrie]
  */
-class PsiItemStorage private constructor(private val map: Map<Path, PsiTrie>, private val project: Project) {
+class PsiItemStorage private constructor(private val map: Map<Path, PsiTrie>, context: IJDDContext) {
     val usedPaths: Set<Path>
         get() = map.keys
-    private val rootPath = project.guessProjectDir()!!.toNioPath()
+    private val rootPath = context.projectDir.toNioPath()
 
     suspend fun processMarkedElements(rootElement: PsiFile, processor: suspend (PsiElement) -> Unit) {
         val relativePath = rootElement.virtualFile.toNioPath().relativeTo(rootPath)
@@ -29,12 +29,12 @@ class PsiItemStorage private constructor(private val map: Map<Path, PsiTrie>, pr
         fun create(
             items: List<PsiWithBodyDDItem>,
             markedElements: Set<PsiWithBodyDDItem>,
-            currentProject: Project,
+            context: IJDDContext,
         ): PsiItemStorage {
             val focusedMap = markedElements.groupBy(PsiWithBodyDDItem::localPath)
             val map = items.groupBy(PsiWithBodyDDItem::localPath)
                 .mapValues { (key, items) -> PsiTrie.create(items, focusedMap[key]?.toSet() ?: emptySet()) }
-            return PsiItemStorage(map.filterValues(PsiTrie::hasMarkedElements), currentProject)
+            return PsiItemStorage(map.filterValues(PsiTrie::hasMarkedElements), context)
         }
     }
 }

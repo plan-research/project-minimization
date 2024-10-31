@@ -14,6 +14,7 @@ import arrow.core.raise.option
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import mu.KotlinLogging
+import org.plan.research.minimization.plugin.logging.withLog
 
 /**
  * A property tester for Delta Debugging algorithm that leverages different compilation strategies
@@ -71,7 +72,9 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
                 exceptionComparator,
                 lens,
                 initialException,
-            ).also { it.logger.debug { "Initial exception is $initialException" } }
+            )
+                .also { it.logger.debug { "Initial exception is $initialException" } }
+                .withLog()
         }
     }
 }

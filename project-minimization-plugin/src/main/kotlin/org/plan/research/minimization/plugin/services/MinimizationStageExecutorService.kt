@@ -32,8 +32,8 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         generalLogger.info { "Start File level stage" }
         statLogger.info {
             "File level stage settings, " +
-                "Hierarchy strategy: ${fileLevelStage.hierarchyCollectionStrategy::class.simpleName}, " +
-                "DDAlgorithm: ${fileLevelStage.ddAlgorithm::class.simpleName}"
+                    "Hierarchy strategy: ${fileLevelStage.hierarchyCollectionStrategy::class.simpleName}, " +
+                    "DDAlgorithm: ${fileLevelStage.ddAlgorithm::class.simpleName}"
         }
 
         val baseAlgorithm = fileLevelStage.ddAlgorithm.getDDAlgorithm()
@@ -68,6 +68,9 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
             .exceptionComparingStrategy
             .getExceptionComparator()
         val lens = FunctionModificationLens()
+        val firstLevel = project
+            .service<MinimizationPsiManager>()
+            .findAllPsiWithBodyItems()
         val propertyChecker = SameExceptionPropertyTester.create<PsiWithBodyDDItem>(
             buildExceptionProvider,
             exceptionComparator,
@@ -77,13 +80,17 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
             generalLogger.error { "Property checker creation failed. Aborted" }
             raise(MinimizationError.PropertyCheckerFailed)
         }
-        context.withProgress {
-            ddAlgorithm.minimize(
-                it,
-                project.service<MinimizationPsiManager>().findAllPsiWithBodyItems().also { it.logPsiElements() },
-                propertyChecker,
-            ).context
-        }
+
+        firstLevel.logPsiElements()
+        context
+            .copy(currentLevel = firstLevel)
+            .withProgress {
+                ddAlgorithm.minimize(
+                    it,
+                    firstLevel,
+                    propertyChecker,
+                ).context
+            }
     }.logResult("Function")
 
     private suspend fun List<PsiWithBodyDDItem>.logPsiElements() {
@@ -96,7 +103,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         }
         generalLogger.debug {
             "Starting DD Algorithm with following elements:\n" +
-                text.joinToString("\n") { "\t- $it" }
+                    text.joinToString("\n") { "\t- $it" }
         }
     }
 

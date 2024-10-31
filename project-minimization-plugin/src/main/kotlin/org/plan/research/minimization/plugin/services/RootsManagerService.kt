@@ -5,9 +5,10 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
+import org.plan.research.minimization.plugin.model.IJDDContext
 
-@Service(Service.Level.PROJECT)
-class RootsManagerService(private val rootProject: Project) {
+@Service(Service.Level.APP)
+class RootsManagerService {
     private fun propagateAndMergeRoots(
         contentRoots: List<VirtualFile>,
         srcRoots: List<VirtualFile>,
@@ -48,8 +49,8 @@ class RootsManagerService(private val rootProject: Project) {
         return roots
     }
 
-    fun findPossibleRoots(): List<VirtualFile> {
-        val rootManager = ProjectRootManager.getInstance(rootProject)
+    fun findPossibleRoots(context: IJDDContext): List<VirtualFile> {
+        val rootManager = ProjectRootManager.getInstance(context.project)
 
         val sourceRoots = rootManager.contentSourceRoots.toList()
         val contentRoots = rootManager.contentRoots.toList()

@@ -10,6 +10,7 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtFile
+import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
 import org.plan.research.minimization.plugin.psi.PsiItemStorage
 import org.plan.research.minimization.plugin.psi.MinimizationPsiManager
@@ -38,7 +39,7 @@ abstract class PsiTrieTestBase : JavaCodeInsightFixtureTestCase() {
         psiProcessor: suspend (PsiElement) -> Unit
     ) {
         val allPsi = getAllElements()
-        val psiTrie = PsiItemStorage.create(allPsi, selectedPsi.toSet(), project)
+        val psiTrie = PsiItemStorage.create(allPsi, selectedPsi.toSet(), IJDDContext(project))
         psiTrie.processMarkedElements(psiFile, psiProcessor)
         withContext(Dispatchers.EDT) {
             PlatformTestUtil.dispatchAllEventsInIdeEventQueue()

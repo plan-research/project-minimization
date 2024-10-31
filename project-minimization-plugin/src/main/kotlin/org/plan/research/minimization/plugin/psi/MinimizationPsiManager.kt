@@ -9,6 +9,7 @@ import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.command.writeCommandAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFile
@@ -16,6 +17,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScopes
 import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.util.indexing.FileBasedIndex
 import mu.KotlinLogging
 import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.psi.*
@@ -23,6 +25,8 @@ import org.jetbrains.kotlin.psi.*
 import kotlin.io.path.relativeTo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.jetbrains.kotlin.idea.base.util.projectScope
+import org.plan.research.minimization.plugin.model.IJDDContext
 
 private typealias ClassKtExpression = Class<out KtExpression>
 
@@ -107,10 +111,10 @@ class MinimizationPsiManager(private val rootProject: Project) {
     }
 
     suspend fun findAllPsiWithBodyItems(): List<PsiWithBodyDDItem> {
-        val rootManager = rootProject.service<RootsManagerService>()
+        val rootManager = service<RootsManagerService>()
         val roots = smartReadAction(rootProject) {
             rootManager
-                .findPossibleRoots()
+                .findPossibleRoots(IJDDContext(rootProject))
                 .takeIf { it.isNotEmpty() }
                 ?: listOf(rootProject.guessProjectDir()!!)
         }
@@ -129,6 +133,12 @@ class MinimizationPsiManager(private val rootProject: Project) {
         }
         if (kotlinFiles.isEmpty()) {
             logger.warn { "Found 0 kotlin files!" }
+            logger.trace {
+                val fileTypes = getAllFileTypesInProject(rootProject)
+                val asString = fileTypes
+                    .toList()
+                    .map { (type, files) -> "${type.name}: ${files.map {it.toNioPath().relativeTo(rootProject.guessProjectDir()!!.toNioPath()) }}"}
+                "However, there are fileTypes and its files:\n$asString"}
         }
         return extractAllPsi(kotlinFiles).mapNotNull { readAction { psiProcessor.getPsiElementParentPath(it) } }
     }
@@ -153,22 +163,34 @@ class MinimizationPsiManager(private val rootProject: Project) {
         files.flatMap { kotlinFile ->
             val ktFile = readAction { psiProcessor.getKtFile(kotlinFile) } ?: return@flatMap emptyList()
 
-            val allPsiClasses: List<ClassKtExpression> = listOf(
-                KtNamedFunction::class.java,
-                KtPropertyAccessor::class.java,
-                KtLambdaExpression::class.java,
-                KtClassInitializer::class.java,
-            )
+
             smartReadAction(rootProject) {
-                allPsiClasses.flatMap { clazz ->
+                PsiWithBodyDDItem.PSI_ALL_JAVA_CLASSES.flatMap { clazz ->
                     PsiTreeUtil.collectElementsOfType(ktFile, clazz)
-                        .filter { it !is KtDeclarationWithBody || it.hasBody() }
+                        .filter { PsiWithBodyDDItem.hasBodyIfAvailable(it) != false }
                         .also {
-                            logger.debug { "Found ${it.size} ${clazz.simpleName} elements" }
+                            logger.debug {
+                                val projectRoot = rootProject.guessProjectDir()!!.toNioPath()
+                                "Found ${it.size} ${clazz.simpleName} elements in ${kotlinFile.toNioPath().relativeTo(projectRoot)}" }
                         }
                 }
             }
         }
+
+    fun getAllFileTypesInProject(project: Project): Map<FileType, List<VirtualFile>> = buildMap {
+
+        FileBasedIndex.getInstance().processAllKeys(
+            FileTypeIndex.NAME, { fileType ->
+                val filesOfType = FileBasedIndex.getInstance().getContainingFiles(
+                    FileTypeIndex.NAME, fileType, project.projectScope()
+                )
+                if (filesOfType.isNotEmpty()) {
+                    put(fileType, filesOfType.toList())
+                }
+                true
+            }, project
+        )
+    }
 
     companion object {
         private const val BLOCKLESS_TEXT = "TODO(\"Removed by DD\")"

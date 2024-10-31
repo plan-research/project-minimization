@@ -27,8 +27,8 @@ class FileTreeHierarchicalDDGenerator(
     override suspend fun generateFirstLevel(context: IJDDContext) =
         option {
             val level = smartReadAction(context.project) {
-                val rootManager = context.project.service<RootsManagerService>()
-                val roots = rootManager.findPossibleRoots().takeIf { it.isNotEmpty() } ?: listOf(context.projectDir)
+                val rootManager = service<RootsManagerService>()
+                val roots = rootManager.findPossibleRoots(context).takeIf { it.isNotEmpty() } ?: listOf(context.projectDir)
 
                 context.progressReporter?.let {
                     reporter = ProgressReporter(it, context.projectDir.toNioPath(), roots)

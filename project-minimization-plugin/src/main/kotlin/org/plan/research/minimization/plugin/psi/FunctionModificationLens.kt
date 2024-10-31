@@ -42,7 +42,7 @@ class FunctionModificationLens : ProjectItemLens {
         val currentLevelTrie = PsiItemStorage.create(
             currentLevel,
             currentLevel.toSet() - items.toSet(),
-            currentContext.project,
+            currentContext,
         )
 
         currentLevelTrie.usedPaths.forEach { focusOnInsideFile(currentContext, currentLevelTrie, it) }

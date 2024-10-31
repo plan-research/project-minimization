@@ -8,8 +8,8 @@ import mu.KotlinLogging
 import org.jetbrains.kotlin.utils.addToStdlib.same
 
 /**
- * A trie for Psi traversing. The implementation is mutable in terms of marking. However, new items could not be added.
- * TODO!!!!!
+ * The PsiTrie class represents a trie structure designed to store and process
+ * PSI elements associated with specific PSI elements in the root project.
  */
 class PsiTrie private constructor() {
     private val children: MutableMap<Int, PsiTrie> = mutableMapOf()

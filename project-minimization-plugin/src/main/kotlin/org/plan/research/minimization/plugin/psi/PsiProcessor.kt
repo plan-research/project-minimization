@@ -1,15 +1,16 @@
 package org.plan.research.minimization.plugin.psi
 
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
-
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
+import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.impl.PsiManagerEx
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.psi.KtFile
+import org.plan.research.minimization.plugin.model.IJDDContext
 
 import kotlin.io.path.relativeTo
 

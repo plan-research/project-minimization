@@ -1,10 +1,11 @@
 package org.plan.research.minimization.plugin.psi
 
-import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
 
+import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import org.plan.research.minimization.plugin.model.IJDDContext
 
 import java.nio.file.Path
 

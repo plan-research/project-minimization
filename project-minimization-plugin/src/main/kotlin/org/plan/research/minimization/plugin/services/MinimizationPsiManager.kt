@@ -1,7 +1,4 @@
-package org.plan.research.minimization.plugin.psi
-
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
-import org.plan.research.minimization.plugin.services.RootsManagerService
+package org.plan.research.minimization.plugin.services
 
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
@@ -18,17 +15,21 @@ import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScopes
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.indexing.FileBasedIndex
-import mu.KotlinLogging
-import org.jetbrains.kotlin.idea.KotlinFileType
-import org.jetbrains.kotlin.psi.*
-
-import kotlin.io.path.relativeTo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import mu.KotlinLogging
+import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.idea.base.util.projectScope
+import org.jetbrains.kotlin.psi.KtClassInitializer
+import org.jetbrains.kotlin.psi.KtExpression
+import org.jetbrains.kotlin.psi.KtLambdaExpression
+import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.KtPropertyAccessor
+import org.jetbrains.kotlin.psi.KtPsiFactory
 import org.plan.research.minimization.plugin.model.IJDDContext
-
-private typealias ClassKtExpression = Class<out KtExpression>
+import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.plan.research.minimization.plugin.psi.PsiProcessor
+import kotlin.io.path.relativeTo
 
 /**
  * Service that provides functions to
@@ -165,13 +166,16 @@ class MinimizationPsiManager(private val rootProject: Project) {
 
 
             smartReadAction(rootProject) {
-                PsiWithBodyDDItem.PSI_ALL_JAVA_CLASSES.flatMap { clazz ->
+                PsiWithBodyDDItem.Companion.PSI_ALL_JAVA_CLASSES.flatMap { clazz ->
                     PsiTreeUtil.collectElementsOfType(ktFile, clazz)
-                        .filter { PsiWithBodyDDItem.hasBodyIfAvailable(it) != false }
+                        .filter { PsiWithBodyDDItem.Companion.hasBodyIfAvailable(it) != false }
                         .also {
                             logger.debug {
                                 val projectRoot = rootProject.guessProjectDir()!!.toNioPath()
-                                "Found ${it.size} ${clazz.simpleName} elements in ${kotlinFile.toNioPath().relativeTo(projectRoot)}" }
+                                "Found ${it.size} ${clazz.simpleName} elements in ${
+                                    kotlinFile.toNioPath().relativeTo(projectRoot)
+                                }"
+                            }
                         }
                 }
             }

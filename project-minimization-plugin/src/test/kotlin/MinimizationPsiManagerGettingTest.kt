@@ -4,7 +4,7 @@ import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.psi.*
 import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
-import org.plan.research.minimization.plugin.psi.MinimizationPsiManager
+import org.plan.research.minimization.plugin.services.MinimizationPsiManager
 import kotlin.test.assertIs
 
 class MinimizationPsiManagerGettingTest : JavaCodeInsightFixtureTestCase() {

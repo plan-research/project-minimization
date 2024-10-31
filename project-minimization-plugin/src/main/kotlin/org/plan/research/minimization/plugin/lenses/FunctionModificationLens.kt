@@ -1,9 +1,4 @@
-package org.plan.research.minimization.plugin.psi
-
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.IJDDItem
-import org.plan.research.minimization.plugin.model.ProjectItemLens
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+package org.plan.research.minimization.plugin.lenses
 
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
@@ -12,7 +7,12 @@ import com.intellij.openapi.vfs.findFile
 import mu.KotlinLogging
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.psi.KtFile
-
+import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.IJDDItem
+import org.plan.research.minimization.plugin.model.ProjectItemLens
+import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.plan.research.minimization.plugin.services.MinimizationPsiManager
+import org.plan.research.minimization.plugin.psi.PsiItemStorage
 import java.nio.file.Path
 
 /**
@@ -39,7 +39,7 @@ class FunctionModificationLens : ProjectItemLens {
 
         val items = items as List<PsiWithBodyDDItem>
         logFocusedItems(items, currentContext)
-        val currentLevelTrie = PsiItemStorage.create(
+        val currentLevelTrie = PsiItemStorage.Companion.create(
             currentLevel,
             currentLevel.toSet() - items.toSet(),
             currentContext,
@@ -58,7 +58,7 @@ class FunctionModificationLens : ProjectItemLens {
         readAction {
             logger.trace {
                 "Focusing on items: \n" +
-                    psiElements.joinToString("\n") { "\t- ${it?.text}" }
+                        psiElements.joinToString("\n") { "\t- ${it?.text}" }
             }
         }
     }

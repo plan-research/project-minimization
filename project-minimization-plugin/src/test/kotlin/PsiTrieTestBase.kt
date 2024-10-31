@@ -13,7 +13,7 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
 import org.plan.research.minimization.plugin.psi.PsiItemStorage
-import org.plan.research.minimization.plugin.psi.MinimizationPsiManager
+import org.plan.research.minimization.plugin.services.MinimizationPsiManager
 import kotlin.test.assertIs
 
 abstract class PsiTrieTestBase : JavaCodeInsightFixtureTestCase() {

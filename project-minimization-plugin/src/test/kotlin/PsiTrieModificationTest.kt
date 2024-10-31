@@ -7,7 +7,7 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
-import org.plan.research.minimization.plugin.psi.MinimizationPsiManager
+import org.plan.research.minimization.plugin.services.MinimizationPsiManager
 import kotlin.test.assertIs
 
 class PsiTrieModificationTest : PsiTrieTestBase() {

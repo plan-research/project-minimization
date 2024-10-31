@@ -20,8 +20,8 @@ import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
-import org.plan.research.minimization.plugin.psi.FunctionModificationLens
-import org.plan.research.minimization.plugin.psi.MinimizationPsiManager
+import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
+import org.plan.research.minimization.plugin.services.MinimizationPsiManager
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 import kotlin.collections.filter
 import kotlin.collections.find

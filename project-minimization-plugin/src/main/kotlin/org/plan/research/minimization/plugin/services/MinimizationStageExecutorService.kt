@@ -12,8 +12,7 @@ import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.MinimizationStageExecutor
 import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
-import org.plan.research.minimization.plugin.psi.FunctionModificationLens
-import org.plan.research.minimization.plugin.psi.MinimizationPsiManager
+import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 import arrow.core.Either

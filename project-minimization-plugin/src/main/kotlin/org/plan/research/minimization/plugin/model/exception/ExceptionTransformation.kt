@@ -19,4 +19,6 @@ interface ExceptionTransformation {
 
     suspend fun transform(exception: BackendCompilerException, context: IJDDContext): BackendCompilerException =
         exception
+
+    suspend fun transform(exception: KspException, context: IJDDContext) = exception
 }

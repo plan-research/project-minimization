@@ -54,6 +54,9 @@ class PathRelativizationTransformation : ExceptionTransformation {
         )
     }
 
+    override suspend fun transform(exception: KspException, context: IJDDContext): KspException =
+        exception.copy(message = exception.message.replaceRootDir(context))
+
     private fun transformPath(path: Path, context: IJDDContext): Path {
         val projectBase = context.project.guessProjectDir()?.toNioPathOrNull() ?: return path
         return path.relativeTo(projectBase)

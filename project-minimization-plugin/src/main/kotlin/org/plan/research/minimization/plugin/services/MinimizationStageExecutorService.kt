@@ -92,14 +92,14 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
     }.logResult("Function")
 
     private suspend fun List<PsiWithBodyDDItem>.logPsiElements() {
-        if (!generalLogger.isDebugEnabled) {
+        if (!generalLogger.isTraceEnabled) {
             return
         }
         val psiManagingService = project.service<MinimizationPsiManager>()
         val text = mapNotNull {
             psiManagingService.getPsiElementFromItem(it)?.let { readAction { it.text } }
         }
-        generalLogger.debug {
+        generalLogger.trace {
             "Starting DD Algorithm with following elements:\n" +
                 text.joinToString("\n") { "\t- $it" }
         }

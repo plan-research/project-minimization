@@ -20,7 +20,7 @@ class SettingsUITest : BasePlatformTestCase() {
         assertEquals(SnapshotStrategy.PROJECT_CLONING, settings.snapshotStrategy)
         assertEquals(ExceptionComparingStrategy.SIMPLE, settings.exceptionComparingStrategy)
         assertEquals(listOf(FileLevelStage(HierarchyCollectionStrategy.FILE_TREE, DDStrategy.PROBABILISTIC_DD)), settings.stages)
-        assertEquals(listOf(TransformationDescriptors.PATH_RELATIVIZATION), settings.transformations)
+        assertEquals(listOf(TransformationDescriptors.PATH_RELATIVIZATION), settings.minimizationTransformations)
     }
 
     fun testUpdateSettings() {
@@ -32,7 +32,7 @@ class SettingsUITest : BasePlatformTestCase() {
         settings.stages = mutableListOf(
             FileLevelStage(HierarchyCollectionStrategy.FILE_TREE, DDStrategy.DD_MIN)
         )
-        settings.transformations = mutableListOf(TransformationDescriptors.PATH_RELATIVIZATION)
+        settings.minimizationTransformations = mutableListOf(TransformationDescriptors.PATH_RELATIVIZATION)
 
         AppSettings.getInstance().loadState(settings)
 
@@ -44,7 +44,7 @@ class SettingsUITest : BasePlatformTestCase() {
             listOf(FileLevelStage(HierarchyCollectionStrategy.FILE_TREE, DDStrategy.DD_MIN)),
             updatedSettings.stages
         )
-        assertEquals(listOf(TransformationDescriptors.PATH_RELATIVIZATION), updatedSettings.transformations)
+        assertEquals(listOf(TransformationDescriptors.PATH_RELATIVIZATION), updatedSettings.minimizationTransformations)
     }
 
     fun testSetAndGetCompilationStrategy() {

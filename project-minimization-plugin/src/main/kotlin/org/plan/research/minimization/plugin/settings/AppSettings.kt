@@ -9,7 +9,6 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import org.jetbrains.annotations.NonNls
-import com.intellij.openapi.components.BaseState
 import com.intellij.util.xmlb.annotations.Property
 import com.intellij.util.xmlb.annotations.XCollection
 
@@ -44,7 +43,7 @@ class AppSettings : PersistentStateComponent<AppSettings.State> {
 
         @Property(surroundWithTag = false)
         @XCollection(style = XCollection.Style.v1, elementName = "minimizationTransformations")
-        var transformations: MutableList<TransformationDescriptors> = mutableListOf(
+        var minimizationTransformations: MutableList<TransformationDescriptors> = mutableListOf(
             TransformationDescriptors.PATH_RELATIVIZATION,
         ),
 

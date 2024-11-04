@@ -7,6 +7,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.DumbService
+import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 /**
  * An action class responsible for minimizing a given project.
@@ -28,6 +29,7 @@ class MinimizeProjectAction : AnAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
+        project.service<MinimizationPluginSettings>().state.updateSettingsState()
         val minimizationService = project.service<MinimizationService>()
         minimizationService.minimizeProject(project)
     }

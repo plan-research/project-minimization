@@ -2,35 +2,41 @@ package org.plan.research.minimization.plugin.settings
 
 import com.intellij.openapi.components.BaseState
 
-class MinimizationPluginStateObservable(state: AppSettings): BaseState() {
+class MinimizationPluginStateObservable: BaseState() {
+    private var localState = MinimizationPluginState(AppSettings.getInstance())
+
+    fun updateSettingsState() {
+        localState = MinimizationPluginState(AppSettings.getInstance())
+    }
+
     var compilationStrategy = StateDelegate(
-        getter = { state.state.compilationStrategy },
-        setter = { state.state.compilationStrategy = it }
+        getter = { localState.compilationStrategy },
+        setter = { localState.compilationStrategy = it }
     )
 
     var temporaryProjectLocation = StateDelegate(
-        getter = { state.state.temporaryProjectLocation },
-        setter = { state.state.temporaryProjectLocation = it }
+        getter = { localState.temporaryProjectLocation },
+        setter = { localState.temporaryProjectLocation = it }
     )
 
     var snapshotStrategy = StateDelegate(
-        getter = { state.state.snapshotStrategy },
-        setter = { state.state.snapshotStrategy = it }
+        getter = { localState.snapshotStrategy },
+        setter = { localState.snapshotStrategy = it }
     )
 
     var exceptionComparingStrategy = StateDelegate(
-        getter = { state.state.exceptionComparingStrategy },
-        setter = { state.state.exceptionComparingStrategy = it }
+        getter = { localState.exceptionComparingStrategy },
+        setter = { localState.exceptionComparingStrategy = it }
     )
 
     var stages = StateDelegate(
-        getter = { state.state.stages },
-        setter = { state.state.stages = it }
+        getter = { localState.stages },
+        setter = { localState.stages = it }
     )
 
     var minimizationTransformations = StateDelegate(
-        getter = { state.state.transformations },
-        setter = { state.state.transformations = it }
+        getter = { localState.minimizationTransformations },
+        setter = { localState.minimizationTransformations = it }
     )
 
 }
@@ -40,9 +46,9 @@ class StateDelegate<T>(private val getter: () -> T,  private val setter: (T) -> 
 
     inner class ChangeDelegate<V>(private val transform: (T) -> V) {
         private var value: V = transform(getter())
-        operator fun getValue(thisRef: Any?, property: Any?): V {
-            return value
-        }
+
+        operator fun getValue(thisRef: Any?, property: Any?): V = value
+
         fun onValueChanged(newValue: T) {
             value = transform(newValue)
         }

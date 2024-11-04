@@ -31,7 +31,7 @@ class AppSettingsConfigurable : Configurable {
             mySettingsComponent?.snapshotStrategy != state.snapshotStrategy ||
             mySettingsComponent?.exceptionComparingStrategy != state.exceptionComparingStrategy ||
             mySettingsComponent?.stages != state.stages ||
-            mySettingsComponent?.transformations != state.transformations ||
+            mySettingsComponent?.transformations != state.minimizationTransformations ||
             mySettingsComponent?.isFileStageEnabled != state.isFileStageEnabled ||
             mySettingsComponent?.configMode != state.configMode ||
             mySettingsComponent?.selectedHierarchyStrategy != state.selectedHierarchyStrategy ||
@@ -52,7 +52,7 @@ class AppSettingsConfigurable : Configurable {
                     ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
                 ),
             )).toMutableList()
-            transformations = (mySettingsComponent?.transformations ?: arrayListOf(
+            minimizationTransformations = (mySettingsComponent?.transformations ?: arrayListOf(
                 TransformationDescriptors.PATH_RELATIVIZATION,
             )).toMutableList()
             isFileStageEnabled = mySettingsComponent?.isFileStageEnabled ?: false
@@ -71,7 +71,7 @@ class AppSettingsConfigurable : Configurable {
         mySettingsComponent?.snapshotStrategy = state.snapshotStrategy
         mySettingsComponent?.exceptionComparingStrategy = state.exceptionComparingStrategy
         mySettingsComponent?.stages = state.stages
-        mySettingsComponent?.transformations = state.transformations
+        mySettingsComponent?.transformations = state.minimizationTransformations
         mySettingsComponent?.isFileStageEnabled = state.isFileStageEnabled
         mySettingsComponent?.configMode = state.configMode
         mySettingsComponent?.selectedHierarchyStrategy = state.selectedHierarchyStrategy

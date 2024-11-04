@@ -16,9 +16,19 @@ data class CaretPosition(val filePath: Path, val lineNumber: Int, val columnNumb
             lineNumber = from.startLine,
             columnNumber = from.startColumn,
         )
+
         fun fromString(from: String): CaretPosition {
+            if (isOldFileFormatString(from)) {
+                return CaretPosition(
+                    filePath = Path.of(from.removePrefix("File being compiled: ")),
+                    lineNumber = -1,
+                    columnNumber = -1,
+                )
+            }
             val (filePath, line, column) = from.split(":")  // In general paths with ":" will break it. But why should we care now?
             return CaretPosition(Path.of(filePath), line.toInt(), column.toInt())
         }
+
+        private fun isOldFileFormatString(string: String) = string.startsWith("File being compiled:")
     }
 }

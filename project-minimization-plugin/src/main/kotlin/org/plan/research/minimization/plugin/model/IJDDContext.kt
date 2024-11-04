@@ -20,7 +20,7 @@ import com.intellij.platform.util.progress.reportSequentialProgress
  */
 sealed class IJDDContext(
     val originalProject: Project,
-    val currentLevel: List<ProjectFileDDItem>?,
+    val currentLevel: List<IJDDItem>?,
     val progressReporter: SequentialProgressReporter?,
 ) : DDContext {
     abstract val projectDir: VirtualFile
@@ -28,7 +28,7 @@ sealed class IJDDContext(
     val indexProjectDir: VirtualFile by lazy { indexProject.guessProjectDir()!! }
 
     abstract fun copy(
-        currentLevel: List<ProjectFileDDItem>? = this.currentLevel,
+        currentLevel: List<IJDDItem>? = this.currentLevel,
         progressReporter: SequentialProgressReporter? = this.progressReporter,
     ): IJDDContext
 
@@ -45,7 +45,7 @@ sealed class IJDDContext(
 class HeavyIJDDContext(
     val project: Project,
     originalProject: Project = project,
-    currentLevel: List<ProjectFileDDItem>? = null,
+    currentLevel: List<IJDDItem>? = null,
     progressReporter: SequentialProgressReporter? = null,
 ) : IJDDContext(originalProject, currentLevel, progressReporter) {
     override val projectDir: VirtualFile by lazy { project.guessProjectDir()!! }
@@ -53,7 +53,7 @@ class HeavyIJDDContext(
 
     fun copy(
         project: Project,
-        currentLevel: List<ProjectFileDDItem>? = this.currentLevel,
+        currentLevel: List<IJDDItem>? = this.currentLevel,
         progressReporter: SequentialProgressReporter? = this.progressReporter,
     ): HeavyIJDDContext = HeavyIJDDContext(
         project,
@@ -63,7 +63,7 @@ class HeavyIJDDContext(
     )
 
     override fun copy(
-        currentLevel: List<ProjectFileDDItem>?,
+        currentLevel: List<IJDDItem>?,
         progressReporter: SequentialProgressReporter?,
     ): HeavyIJDDContext = copy(project, currentLevel, progressReporter)
 }
@@ -74,7 +74,7 @@ class HeavyIJDDContext(
 class LightIJDDContext(
     override val projectDir: VirtualFile,
     originalProject: Project,
-    currentLevel: List<ProjectFileDDItem>? = null,
+    currentLevel: List<IJDDItem>? = null,
     progressReporter: SequentialProgressReporter? = null,
 ) : IJDDContext(originalProject, currentLevel, progressReporter) {
     override val indexProject: Project = originalProject
@@ -83,7 +83,7 @@ class LightIJDDContext(
 
     fun copy(
         projectDir: VirtualFile,
-        currentLevel: List<ProjectFileDDItem>? = this.currentLevel,
+        currentLevel: List<IJDDItem>? = this.currentLevel,
         progressReporter: SequentialProgressReporter? = this.progressReporter,
     ): LightIJDDContext = LightIJDDContext(
         projectDir,
@@ -93,7 +93,7 @@ class LightIJDDContext(
     )
 
     override fun copy(
-        currentLevel: List<ProjectFileDDItem>?,
+        currentLevel: List<IJDDItem>?,
         progressReporter: SequentialProgressReporter?,
     ): IJDDContext = copy(projectDir, currentLevel, progressReporter)
 }

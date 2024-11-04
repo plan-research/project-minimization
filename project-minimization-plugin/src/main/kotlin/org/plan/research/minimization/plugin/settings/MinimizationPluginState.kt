@@ -1,6 +1,7 @@
 package org.plan.research.minimization.plugin.settings
 
 import org.plan.research.minimization.plugin.model.FileLevelStage
+import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.MinimizationStage
 import org.plan.research.minimization.plugin.model.state.*
 
@@ -19,9 +20,12 @@ class MinimizationPluginState : BaseState() {
 
     @Property(surroundWithTag = false)
     @XCollection(style = XCollection.Style.v1, elementName = "stage")
-    val stages: MutableList<MinimizationStage> = mutableListOf(
+    var stages: MutableList<MinimizationStage> = mutableListOf(
         FileLevelStage(
             hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
+            ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
+        ),
+        FunctionLevelStage(
             ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
         ),
     )

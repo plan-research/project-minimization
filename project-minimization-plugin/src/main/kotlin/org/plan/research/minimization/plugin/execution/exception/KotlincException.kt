@@ -62,4 +62,14 @@ sealed interface KotlincException : CompilationException {
             context: IJDDContext,
         ) = transformation.transform(this, context)
     }
+    data class KspException(
+        val message: String,
+        val stacktrace: String,
+        val severity: KotlincErrorSeverity = KotlincErrorSeverity.UNKNOWN,
+    ) : KotlincException {
+        override suspend fun apply(
+            transformation: ExceptionTransformation,
+            context: IJDDContext,
+        ) = transformation.transform(this, context)
+    }
 }

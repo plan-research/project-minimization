@@ -6,12 +6,12 @@ import org.plan.research.minimization.core.algorithm.dd.hierarchical.Hierarchica
 import org.plan.research.minimization.core.model.PropertyTester
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.ProjectFileDDItem
+import org.plan.research.minimization.plugin.services.RootsManagerService
 
 import arrow.core.raise.option
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
-import com.intellij.openapi.roots.ProjectRootManager
-import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.openapi.components.service
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.util.progress.SequentialProgressReporter
 
@@ -24,60 +24,11 @@ class FileTreeHierarchicalDDGenerator(
 ) : HierarchicalDDGenerator<IJDDContext, ProjectFileDDItem> {
     private var reporter: ProgressReporter? = null
 
-    private fun propagateAndMergeRoots(
-        contentRoots: List<VirtualFile>,
-        srcRoots: List<VirtualFile>,
-        sourceRoots: List<VirtualFile>,
-    ): List<VirtualFile> {
-        // propagate src roots (replace them with their children) if it contains any content root
-        val propagationStatus = HashMap<VirtualFile, PropagationStatus>()
-        for (contentRoot in contentRoots) {
-            propagationStatus[contentRoot] = PropagationStatus.IS_CONTENT_ROOT
-            var parent: VirtualFile? = contentRoot.parent
-            while (parent != null) {
-                propagationStatus.putIfAbsent(parent, PropagationStatus.NEED_TO_PROPAGATE) ?: break
-                parent = parent.parent
-            }
-        }
-
-        val queue = ArrayDeque<VirtualFile>()
-        queue.addAll(srcRoots)
-
-        val roots = mutableListOf<VirtualFile>()
-        while (queue.isNotEmpty()) {
-            val root = queue.removeFirst()
-            val status = propagationStatus[root]
-            propagationStatus[root] = PropagationStatus.ALREADY_PROPAGATED_OR_ADDED
-            when (status) {
-                PropagationStatus.NEED_TO_PROPAGATE -> queue.addAll(root.children)
-                PropagationStatus.IS_CONTENT_ROOT, PropagationStatus.ALREADY_PROPAGATED_OR_ADDED -> {}
-                else -> roots.add(root)
-            }
-        }
-
-        // delete all sourceRoots that are in any of the already added roots
-        val sourceRootsToAdd = sourceRoots.filter { sourceRoot ->
-            roots.none { src -> VfsUtil.isAncestor(src, sourceRoot, false) }
-        }
-        roots.addAll(sourceRootsToAdd)
-
-        return roots
-    }
-
-    private fun findPossibleRoots(context: IJDDContext): List<VirtualFile> {
-        val rootManager = ProjectRootManager.getInstance(context.indexProject)
-
-        val sourceRoots = rootManager.contentSourceRoots.toList()
-        val contentRoots = rootManager.contentRoots.toList()
-        val srcRoots = contentRoots.mapNotNull { it.findChild("src") }
-
-        return propagateAndMergeRoots(contentRoots, srcRoots, sourceRoots)
-    }
-
     override suspend fun generateFirstLevel(context: IJDDContext) =
         option {
             val level = smartReadAction(context.indexProject) {
-                val roots = findPossibleRoots(context).takeIf { it.isNotEmpty() } ?: listOf(context.indexProjectDir)
+                val rootManager = service<RootsManagerService>()
+                val roots = rootManager.findPossibleRoots(context).takeIf { it.isNotEmpty() } ?: listOf(context.indexProjectDir)
 
                 context.progressReporter?.let {
                     reporter = ProgressReporter(it, context.indexProjectDir.toNioPath(), roots)
@@ -104,13 +55,6 @@ class FileTreeHierarchicalDDGenerator(
             reporter?.updateProgress(nextFiles)
             HDDLevel(minimizationResult.context.copy(currentLevel = nextFiles), nextFiles, propertyTester)
         }
-
-    private enum class PropagationStatus {
-        ALREADY_PROPAGATED_OR_ADDED,
-        IS_CONTENT_ROOT,
-        NEED_TO_PROPAGATE,
-        ;
-    }
 
     /**
      * ProgressReporter is a class responsible for managing and reporting the progress of a hierarchical

@@ -16,7 +16,7 @@ import arrow.core.raise.ensure
 import com.intellij.build.output.KotlincOutputParser
 import com.intellij.openapi.externalSystem.model.task.ExternalSystemTaskId
 import com.intellij.openapi.externalSystem.model.task.ExternalSystemTaskType
-import com.intellij.openapi.projectRoots.ProjectJdkTable
+import com.intellij.openapi.externalSystem.service.execution.ExternalSystemJdkUtil
 import com.intellij.platform.ide.progress.withBackgroundProgress
 import com.intellij.platform.util.progress.reportSequentialProgress
 import mu.KotlinLogging
@@ -33,6 +33,7 @@ import org.jetbrains.plugins.gradle.settings.GradleSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
 
 import java.io.ByteArrayOutputStream
+import java.io.File
 
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
@@ -87,38 +88,52 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
         }
     }
 
-    private fun buildGradleExecutionSettings(context: IJDDContext): GradleExecutionSettings {
+    private fun buildGradleExecutionSettings(context: IJDDContext): GradleExecutionSettings? {
         // Retrieve the Gradle settings from the opened project
         val gradleSettings = GradleSettings.getInstance(context.indexProject)
 
         // Since the external project isn't linked, we'll use settings from the opened project's first linked project
-        val defaultProjectSettings = gradleSettings.linkedProjectsSettings.firstOrNull()
+        val defaultProjectSettings = gradleSettings.linkedProjectsSettings.firstOrNull() ?: return null
 
         // Create the GradleExecutionSettings instance
         val executionSettings = GradleExecutionSettings(
-            defaultProjectSettings?.gradleHome,
+            defaultProjectSettings.gradleHome,
             gradleSettings.serviceDirectoryPath,
-            defaultProjectSettings?.distributionType ?: DistributionType.DEFAULT_WRAPPED,
+            defaultProjectSettings.distributionType ?: DistributionType.DEFAULT_WRAPPED,
             false,
         )
 
         // Set the Gradle JVM (Java home)
-        val gradleJvm = defaultProjectSettings?.gradleJvm
+        val gradleJvm = defaultProjectSettings.gradleJvm
+        logger.debug { "Gradle JVM: $gradleJvm" }
         gradleJvm?.let {
-            val sdk = ProjectJdkTable.getInstance().findJdk(gradleJvm)
+            val sdk = ExternalSystemJdkUtil.getJdk(context.indexProject, gradleJvm)
+            logger.debug { "Found sdk: $sdk" }
             sdk?.let {
                 executionSettings.javaHome = sdk.homePath
+                logger.debug {
+                    """
+                       Target jvm: ${sdk.name},
+                        homePath: ${sdk.homePath},
+                        version: ${sdk.versionString},
+                        type: ${sdk.sdkType.name}
+                    """.trimIndent()
+                }
             }
         }
 
         // Return the configured execution settings
-        return executionSettings
+        return executionSettings.also {
+            logger.debug {
+                "Execution gradle settings: $it"
+            }
+        }
     }
 
     @Suppress("TYPE_ALIAS")
     private suspend inline fun <T> executeWithGradleConnection(
         context: IJDDContext,
-        crossinline block: (ProjectConnection, Continuation<T>) -> Unit,
+        crossinline block: (ProjectConnection, Continuation<T>, String?) -> Unit,
     ): T {
         val gradleExecutionHelper = GradleExecutionHelper()
         val settings = buildGradleExecutionSettings(context)
@@ -132,7 +147,7 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
                 context.projectDir.path, settings,
                 taskId, null, cancellation.token(),
             ) { connection ->
-                block(connection, cont)
+                block(connection, cont, settings?.javaHome)
             }
         }
     }
@@ -157,11 +172,12 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
         val std = ByteArrayOutputStream()
         val err = ByteArrayOutputStream()
 
-        val exitCode = executeWithGradleConnection(context) { connection, cont ->
+        val exitCode = executeWithGradleConnection(context) { connection, cont, javaHome ->
             connection.newBuild()
                 .forTasks(task.executableName)
                 .setStandardOutput(std)
                 .setStandardError(err)
+                .setJavaHome(javaHome?.let { File(it) })
                 .withArguments("--no-configuration-cache", "--quiet")
                 .run(object : ResultHandler<Void> {
                     override fun onComplete(result: Void?) {
@@ -200,16 +216,18 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
     private suspend fun extractGradleTasks(context: IJDDContext) = either {
         catch(
             block = {
-                val model = executeWithGradleConnection(context) { connection, cont ->
-                    connection.model(GradleProject::class.java).get(object : ResultHandler<GradleProject> {
-                        override fun onComplete(result: GradleProject) {
-                            cont.resume(result)
-                        }
+                val model = executeWithGradleConnection(context) { connection, cont, javaHome ->
+                    connection.model(GradleProject::class.java)
+                        .setJavaHome(javaHome?.let { File(it) })
+                        .get(object : ResultHandler<GradleProject> {
+                            override fun onComplete(result: GradleProject) {
+                                cont.resume(result)
+                            }
 
-                        override fun onFailure(exception: GradleConnectionException) {
-                            cont.resumeWithException(exception)
-                        }
-                    })
+                            override fun onFailure(exception: GradleConnectionException) {
+                                cont.resumeWithException(exception)
+                            }
+                        })
                 }
                 extractGradleTasksFromModel(model)
             },
@@ -226,7 +244,7 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
                 ExecutableGradleTask.fromTask(it)
             } ?: raise(CompilationPropertyCheckerError.InvalidBuildSystem)
         } else {
-            ensure(values.any { it.name == name }) { CompilationPropertyCheckerError.InvalidBuildSystem }
+            ensure(values.any { it.path.endsWith(":$name") }) { CompilationPropertyCheckerError.InvalidBuildSystem }
             ExecutableGradleTask.fromName(name)
         }
     }
@@ -243,7 +261,11 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
         val parsedErrors = buildList {
             while (true) {
                 val line = outputReader.readLine() ?: break
-                if (!gradleOutputParser.parse(line, outputReader) { add(kotlincExceptionTranslator.parseException(it)) }) {
+                if (!gradleOutputParser.parse(
+                    line,
+                    outputReader,
+                ) { add(kotlincExceptionTranslator.parseException(it)) }
+                ) {
                     break
                 }
             }

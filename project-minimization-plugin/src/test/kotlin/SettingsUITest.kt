@@ -2,6 +2,7 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import org.plan.research.minimization.plugin.settings.AppSettingsComponent
 import org.plan.research.minimization.plugin.model.state.*
 import org.plan.research.minimization.plugin.model.FileLevelStage
+import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.settings.AppSettings
 
 class SettingsUITest : BasePlatformTestCase() {
@@ -19,7 +20,10 @@ class SettingsUITest : BasePlatformTestCase() {
         assertEquals("minimization-project-snapshots", settings.temporaryProjectLocation)
         assertEquals(SnapshotStrategy.PROJECT_CLONING, settings.snapshotStrategy)
         assertEquals(ExceptionComparingStrategy.SIMPLE, settings.exceptionComparingStrategy)
-        assertEquals(listOf(FileLevelStage(HierarchyCollectionStrategy.FILE_TREE, DDStrategy.PROBABILISTIC_DD)), settings.stages)
+        assertEquals(
+            listOf(FileLevelStage(HierarchyCollectionStrategy.FILE_TREE, DDStrategy.PROBABILISTIC_DD),
+                FunctionLevelStage(ddAlgorithm = DDStrategy.PROBABILISTIC_DD)
+            ), settings.stages)
         assertEquals(listOf(TransformationDescriptors.PATH_RELATIVIZATION), settings.minimizationTransformations)
     }
 

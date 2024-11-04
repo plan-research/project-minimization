@@ -60,11 +60,10 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
             "Function level stage settings. DDAlgorithm: ${functionLevelStage.ddAlgorithm::class.simpleName}"
         }
         val ddAlgorithm = functionLevelStage.ddAlgorithm.getDDAlgorithm()
-        val exceptionComparator = project
+        val exceptionComparator by project
             .service<MinimizationPluginSettings>()
             .state
-            .exceptionComparingStrategy
-            .getExceptionComparator()
+            .exceptionComparingStrategy.onChange { it.getExceptionComparator() }
         val lens = FunctionModificationLens()
         val firstLevel = project
             .service<MinimizationPsiManager>()

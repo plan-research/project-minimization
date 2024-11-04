@@ -22,7 +22,6 @@ class BuildExceptionProviderService(
         .state
         .minimizationTransformations
         .onChange { transList -> transList.map { it.getExceptionTransformations() } }
-
     private val underlyingObject: BuildExceptionProvider by initialProject
         .service<MinimizationPluginSettings>()
         .state

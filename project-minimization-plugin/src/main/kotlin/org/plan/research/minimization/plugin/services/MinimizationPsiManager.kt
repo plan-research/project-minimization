@@ -1,6 +1,5 @@
 package org.plan.research.minimization.plugin.services
 
-import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
 import org.plan.research.minimization.plugin.psi.PsiProcessor
 
@@ -116,7 +115,7 @@ class MinimizationPsiManager(private val rootProject: Project) {
         val rootManager = service<RootsManagerService>()
         val roots = smartReadAction(rootProject) {
             rootManager
-                .findPossibleRoots(IJDDContext(rootProject))
+                .findPossibleRoots(rootProject)
                 .takeIf { it.isNotEmpty() }
                 ?: listOf(rootProject.guessProjectDir()!!)
         }

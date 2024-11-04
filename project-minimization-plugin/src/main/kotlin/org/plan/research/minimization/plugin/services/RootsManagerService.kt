@@ -1,8 +1,7 @@
 package org.plan.research.minimization.plugin.services
 
-import org.plan.research.minimization.plugin.model.IJDDContext
-
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
@@ -49,8 +48,8 @@ class RootsManagerService {
         return roots
     }
 
-    fun findPossibleRoots(context: IJDDContext): List<VirtualFile> {
-        val rootManager = ProjectRootManager.getInstance(context.project)
+    fun findPossibleRoots(project: Project): List<VirtualFile> {
+        val rootManager = ProjectRootManager.getInstance(project)
 
         val sourceRoots = rootManager.contentSourceRoots.toList()
         val contentRoots = rootManager.contentRoots.toList()

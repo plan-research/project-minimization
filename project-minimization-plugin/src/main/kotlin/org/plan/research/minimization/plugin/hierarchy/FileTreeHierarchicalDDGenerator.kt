@@ -28,7 +28,7 @@ class FileTreeHierarchicalDDGenerator(
         option {
             val level = smartReadAction(context.indexProject) {
                 val rootManager = service<RootsManagerService>()
-                val roots = rootManager.findPossibleRoots(context).takeIf { it.isNotEmpty() } ?: listOf(context.indexProjectDir)
+                val roots = rootManager.findPossibleRoots(context.indexProject).takeIf { it.isNotEmpty() } ?: listOf(context.indexProjectDir)
 
                 context.progressReporter?.let {
                     reporter = ProgressReporter(it, context.indexProjectDir.toNioPath(), roots)

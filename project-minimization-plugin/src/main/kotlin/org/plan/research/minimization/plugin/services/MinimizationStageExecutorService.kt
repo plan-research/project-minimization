@@ -8,15 +8,11 @@ import org.plan.research.minimization.plugin.getExceptionComparator
 import org.plan.research.minimization.plugin.getHierarchyCollectionStrategy
 import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
 import org.plan.research.minimization.plugin.logging.statLogger
-import org.plan.research.minimization.plugin.model.FileLevelStage
-import org.plan.research.minimization.plugin.model.FunctionLevelStage
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.MinimizationStageExecutor
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 import arrow.core.Either
 import arrow.core.getOrElse
+import arrow.core.raise.Raise
 import arrow.core.raise.either
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.Service
@@ -24,10 +20,12 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ex.ProjectManagerEx
 import mu.KotlinLogging
+import org.plan.research.minimization.plugin.model.*
 
 @Service(Service.Level.PROJECT)
 class MinimizationStageExecutorService(private val project: Project) : MinimizationStageExecutor {
     private val generalLogger = KotlinLogging.logger {}
+    private val cloningService = project.service<ProjectCloningService>()
 
     private suspend fun makeLight(context: IJDDContext): LightIJDDContext = when (context) {
         is HeavyIJDDContext -> {
@@ -45,6 +43,15 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         is LightIJDDContext -> context
     }
 
+    private suspend fun Raise<MinimizationError>.makeHeavy(context: IJDDContext): HeavyIJDDContext = when (context) {
+        is HeavyIJDDContext -> context
+        is LightIJDDContext -> {
+            val openedProject = cloningService.openProject(context.projectDir.toNioPath(), true)
+                ?: raise(MinimizationError.CloningFailed)
+            HeavyIJDDContext(openedProject, context.originalProject, context.currentLevel, context.progressReporter)
+        }
+    }
+
     override suspend fun executeFileLevelStage(context: IJDDContext, fileLevelStage: FileLevelStage) = either {
         generalLogger.info { "Start File level stage" }
         statLogger.info {
@@ -53,7 +60,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
                 "DDAlgorithm: ${fileLevelStage.ddAlgorithm::class.simpleName}"
         }
 
-        val lightContext = makeLight(context)
+        val heavyContext = makeHeavy(context)
 
         val baseAlgorithm = fileLevelStage.ddAlgorithm.getDDAlgorithm()
         val hierarchicalDD = HierarchicalDD(baseAlgorithm)
@@ -62,11 +69,11 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         val hierarchy = fileLevelStage
             .hierarchyCollectionStrategy
             .getHierarchyCollectionStrategy()
-            .produce(lightContext)
+            .produce(heavyContext)
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
 
         generalLogger.info { "Minimize" }
-        lightContext.withProgress {
+        heavyContext.withProgress {
             hierarchicalDD.minimize(it, hierarchy)
         }
     }.logResult("File")
@@ -79,6 +86,9 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         statLogger.info {
             "Function level stage settings. DDAlgorithm: ${functionLevelStage.ddAlgorithm::class.simpleName}"
         }
+
+        val lightContext = makeLight(context)
+
         val ddAlgorithm = functionLevelStage.ddAlgorithm.getDDAlgorithm()
         val exceptionComparator = project
             .service<MinimizationPluginSettings>()
@@ -93,7 +103,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
             this@MinimizationStageExecutorService.project.service<BuildExceptionProviderService>(),
             exceptionComparator,
             lens,
-            context,
+            lightContext,
         ).getOrElse {
             generalLogger.error { "Property checker creation failed. Aborted" }
             raise(MinimizationError.PropertyCheckerFailed)

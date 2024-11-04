@@ -24,8 +24,6 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import mu.KotlinLogging
 
-private val logger = KotlinLogging.logger {}
-
 fun SnapshotStrategy.getSnapshotManager(project: Project): SnapshotManager =
     when (this) {
         SnapshotStrategy.PROJECT_CLONING -> ProjectCloningSnapshotManager(project)

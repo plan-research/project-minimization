@@ -3,7 +3,7 @@ import com.intellij.openapi.components.service
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.psi.*
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.plan.research.minimization.plugin.model.PsiDDItem
 import org.plan.research.minimization.plugin.services.MinimizationPsiManager
 import kotlin.test.assertIs
 
@@ -174,7 +174,7 @@ class MinimizationPsiManagerGettingTest : JavaCodeInsightFixtureTestCase() {
         }
         return 0
     }
-    private fun List<PsiWithBodyDDItem>.getPsi(service: MinimizationPsiManager) = runBlocking {
+    private fun List<PsiDDItem>.getPsi(service: MinimizationPsiManager) = runBlocking {
         sortedWith { a, b -> compare(a.childrenPath, b.childrenPath) }
             .map { service.getPsiElementFromItem(it) }
     }

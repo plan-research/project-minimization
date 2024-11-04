@@ -11,7 +11,7 @@ import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtFile
 import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.plan.research.minimization.plugin.model.PsiDDItem
 import org.plan.research.minimization.plugin.psi.PsiItemStorage
 import org.plan.research.minimization.plugin.services.MinimizationPsiManager
 import kotlin.test.assertIs
@@ -24,18 +24,18 @@ abstract class PsiTrieTestBase : JavaCodeInsightFixtureTestCase() {
     override fun runInDispatchThread(): Boolean = false
 
 
-    protected suspend fun getAllElements(): List<PsiWithBodyDDItem> {
+    protected open suspend fun getAllElements(): List<PsiDDItem> {
         val service = project.service<MinimizationPsiManager>()
         return service.findAllPsiWithBodyItems()
     }
 
     protected suspend fun selectElements(
-        filter: (PsiWithBodyDDItem) -> Boolean
+        filter: (PsiDDItem) -> Boolean
     ) = getAllElements().filter(filter)
 
     protected open suspend fun doTest(
         psiFile: KtFile,
-        selectedPsi: List<PsiWithBodyDDItem>,
+        selectedPsi: List<PsiDDItem>,
         psiProcessor: suspend (PsiElement) -> Unit
     ) {
         val allPsi = getAllElements()
@@ -50,7 +50,7 @@ abstract class PsiTrieTestBase : JavaCodeInsightFixtureTestCase() {
 //        }
     }
 
-    protected val PsiWithBodyDDItem.psi: KtExpression?
+    protected val PsiDDItem.psi: KtExpression?
         get() = runBlocking {
             project
                 .service<MinimizationPsiManager>()

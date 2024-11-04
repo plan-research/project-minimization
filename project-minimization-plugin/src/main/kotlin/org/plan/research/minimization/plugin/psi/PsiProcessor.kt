@@ -1,6 +1,6 @@
 package org.plan.research.minimization.plugin.psi
 
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.plan.research.minimization.plugin.model.PsiDDItem
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
@@ -21,14 +21,32 @@ class PsiProcessor(private val project: Project) {
     private val rootPath = project.guessProjectDir()!!.toNioPath()
 
     @RequiresReadLock
-    fun getPsiElementParentPath(
+    fun buildReplaceablePsiItem(
         element: PsiElement,
-    ): PsiWithBodyDDItem? {
+    ): PsiDDItem? {
+        val (currentFile, parentPath) = buildParentPath(element) { !PsiDDItem.isCompatible(it) } ?: return null
+        val localPath = currentFile.virtualFile.toNioPath().relativeTo(rootPath)
+        return PsiDDItem.create(parentPath, localPath)
+    }
+
+    fun buildDeletablePsiItem(
+        element: PsiElement,
+    ): PsiDDItem {
+        val (currentFile, parentPath) = buildParentPath(element) { true }!!
+        val localPath = currentFile.virtualFile.toNioPath().relativeTo(rootPath)
+        return PsiDDItem.create(parentPath, localPath)
+    }
+
+    @RequiresReadLock
+    private fun buildParentPath(
+        element: PsiElement,
+        isElementRestricted: (PsiElement) -> Boolean,
+    ): Pair<PsiFile, List<Int>>? {
         var currentElement: PsiElement = element
         val path = buildList {
             while (currentElement.parent != null && currentElement !is PsiFile) {
                 val parent = currentElement.parent
-                if (PsiWithBodyDDItem.isCompatible(parent)) {
+                if (!isElementRestricted(parent)) {
                     return null
                 }
                 val position = getChildPosition(parent, currentElement)
@@ -37,10 +55,7 @@ class PsiProcessor(private val project: Project) {
             }
         }
         require(currentElement is PsiFile)
-        val currentFile = currentElement as PsiFile
-        val localPath = currentFile.virtualFile.toNioPath().relativeTo(rootPath)
-        val parentPath = path.reversed()
-        return PsiWithBodyDDItem.create(element, parentPath, localPath)
+        return currentElement to path.reversed()
     }
 
     @RequiresReadLock

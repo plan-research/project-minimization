@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.psi
 
 import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.plan.research.minimization.plugin.model.PsiDDItem
 
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
@@ -26,12 +26,12 @@ class PsiItemStorage private constructor(private val map: Map<Path, PsiTrie>, co
 
     companion object {
         fun create(
-            items: List<PsiWithBodyDDItem>,
-            markedElements: Set<PsiWithBodyDDItem>,
+            items: List<PsiDDItem>,
+            markedElements: Set<PsiDDItem>,
             context: IJDDContext,
         ): PsiItemStorage {
-            val focusedMap = markedElements.groupBy(PsiWithBodyDDItem::localPath)
-            val map = items.groupBy(PsiWithBodyDDItem::localPath)
+            val focusedMap = markedElements.groupBy(PsiDDItem::localPath)
+            val map = items.groupBy(PsiDDItem::localPath)
                 .mapValues { (key, items) -> PsiTrie.create(items, focusedMap[key]?.toSet() ?: emptySet()) }
             return PsiItemStorage(map.filterValues(PsiTrie::hasMarkedElements), context)
         }

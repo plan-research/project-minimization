@@ -19,7 +19,7 @@ import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
 import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.plan.research.minimization.plugin.model.PsiDDItem
 import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
 import org.plan.research.minimization.plugin.services.MinimizationPsiManager
 import org.plan.research.minimization.plugin.services.ProjectCloningService
@@ -86,7 +86,7 @@ class FunctionModificationLensTest : JavaCodeInsightFixtureTestCase() {
         }
     }
 
-    private suspend fun doTest(elements: List<PsiWithBodyDDItem>, expectedFolder: String) {
+    private suspend fun doTest(elements: List<PsiDDItem>, expectedFolder: String) {
         val projectCloningService = project.service<ProjectCloningService>()
         val psiGetterService = project.service<MinimizationPsiManager>()
         val cloned = projectCloningService.clone(project)
@@ -120,18 +120,18 @@ class FunctionModificationLensTest : JavaCodeInsightFixtureTestCase() {
         }
     }
 
-    private val PsiWithBodyDDItem.psi: KtExpression?
+    private val PsiDDItem.psi: KtExpression?
         get() = runBlocking {
             project
                 .service<MinimizationPsiManager>()
                 .getPsiElementFromItem(this@psi)
         }
 
-    private fun List<PsiWithBodyDDItem>.findByPsi(filter: (PsiElement) -> Boolean) = find { filter(it.psi!!) }
-    private fun List<PsiWithBodyDDItem>.findLastByPsi(filter: (PsiElement) -> Boolean) = findLast { filter(it.psi!!) }
-    private fun List<PsiWithBodyDDItem>.filterByPsi(filter: (PsiElement) -> Boolean) = filter { filter(it.psi!!) }
+    private fun List<PsiDDItem>.findByPsi(filter: (PsiElement) -> Boolean) = find { filter(it.psi!!) }
+    private fun List<PsiDDItem>.findLastByPsi(filter: (PsiElement) -> Boolean) = findLast { filter(it.psi!!) }
+    private fun List<PsiDDItem>.filterByPsi(filter: (PsiElement) -> Boolean) = filter { filter(it.psi!!) }
 
-    private suspend fun getAllElements(vfs: VirtualFile, project: Project): List<PsiWithBodyDDItem> {
+    private suspend fun getAllElements(vfs: VirtualFile, project: Project): List<PsiDDItem> {
         val service = project.service<MinimizationPsiManager>()
         val elements = service.findAllPsiWithBodyItems()
         val vfsRelativePath = project.guessProjectDir()!!.toNioPath().relativize(vfs.toNioPath())

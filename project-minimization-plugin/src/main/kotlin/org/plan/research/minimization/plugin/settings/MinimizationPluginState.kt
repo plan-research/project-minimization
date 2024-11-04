@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.settings
 
 import org.plan.research.minimization.plugin.model.FileLevelStage
-import org.plan.research.minimization.plugin.model.FunctionLevelStage
+import org.plan.research.minimization.plugin.model.FunctionLevelBodyReplacementStage
 import org.plan.research.minimization.plugin.model.MinimizationStage
 import org.plan.research.minimization.plugin.model.state.*
 
@@ -25,7 +25,7 @@ class MinimizationPluginState : BaseState() {
             hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
             ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
         ),
-        FunctionLevelStage(
+        FunctionLevelBodyReplacementStage(
             ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
         ),
     )

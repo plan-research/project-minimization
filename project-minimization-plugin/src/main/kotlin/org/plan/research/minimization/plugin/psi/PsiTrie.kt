@@ -1,6 +1,6 @@
 package org.plan.research.minimization.plugin.psi
 
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.plan.research.minimization.plugin.model.PsiDDItem
 
 import com.intellij.openapi.application.readAction
 import com.intellij.psi.PsiElement
@@ -40,7 +40,7 @@ class PsiTrie private constructor() {
         }
     }
 
-    private fun add(item: PsiWithBodyDDItem, isFocused: Boolean, depth: Int = 0) {
+    private fun add(item: PsiDDItem, isFocused: Boolean, depth: Int = 0) {
         if (depth == item.childrenPath.size) {
             this.isMarked = isFocused
             hasMarkedElements = isFocused
@@ -53,8 +53,8 @@ class PsiTrie private constructor() {
     }
 
     companion object {
-        fun create(items: List<PsiWithBodyDDItem>, markedElements: Set<PsiWithBodyDDItem>): PsiTrie {
-            require(items.same(PsiWithBodyDDItem::localPath))
+        fun create(items: List<PsiDDItem>, markedElements: Set<PsiDDItem>): PsiTrie {
+            require(items.same(PsiDDItem::localPath))
             val rootNode = PsiTrie()
             items.forEach { rootNode.add(it, markedElements.contains(it)) }
             return rootNode

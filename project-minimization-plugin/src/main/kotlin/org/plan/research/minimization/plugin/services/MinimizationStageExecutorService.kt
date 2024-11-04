@@ -6,13 +6,10 @@ import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTest
 import org.plan.research.minimization.plugin.getDDAlgorithm
 import org.plan.research.minimization.plugin.getExceptionComparator
 import org.plan.research.minimization.plugin.getHierarchyCollectionStrategy
+import org.plan.research.minimization.plugin.hierarchy.DeletablePsiElementHierarchyGenerator
 import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
 import org.plan.research.minimization.plugin.logging.statLogger
-import org.plan.research.minimization.plugin.model.FileLevelStage
-import org.plan.research.minimization.plugin.model.FunctionLevelStage
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.MinimizationStageExecutor
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.plan.research.minimization.plugin.model.*
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 import arrow.core.Either
@@ -53,13 +50,13 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
 
     override suspend fun executeFunctionLevelStage(
         context: IJDDContext,
-        functionLevelStage: FunctionLevelStage,
+        functionLevelBodyReplacementStage: FunctionLevelBodyReplacementStage,
     ) = either {
         generalLogger.info { "Start Function level stage" }
         statLogger.info {
-            "Function level stage settings. DDAlgorithm: ${functionLevelStage.ddAlgorithm::class.simpleName}"
+            "Function level stage settings. DDAlgorithm: ${functionLevelBodyReplacementStage.ddAlgorithm::class.simpleName}"
         }
-        val ddAlgorithm = functionLevelStage.ddAlgorithm.getDDAlgorithm()
+        val ddAlgorithm = functionLevelBodyReplacementStage.ddAlgorithm.getDDAlgorithm()
         val exceptionComparator = project
             .service<MinimizationPluginSettings>()
             .state
@@ -69,7 +66,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         val firstLevel = project
             .service<MinimizationPsiManager>()
             .findAllPsiWithBodyItems()
-        val propertyChecker = SameExceptionPropertyTester.create<PsiWithBodyDDItem>(
+        val propertyChecker = SameExceptionPropertyTester.create<PsiDDItem>(
             this@MinimizationStageExecutorService.project.service<BuildExceptionProviderService>(),
             exceptionComparator,
             lens,
@@ -89,9 +86,9 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
                     propertyChecker,
                 ).context
             }
-    }.logResult("Function")
+    }.logResult("Function Body Replacement")
 
-    private suspend fun List<PsiWithBodyDDItem>.logPsiElements() {
+    private suspend fun List<PsiDDItem>.logPsiElements() {
         if (!generalLogger.isTraceEnabled) {
             return
         }
@@ -104,6 +101,26 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
                 text.joinToString("\n") { "\t- $it" }
         }
     }
+
+    override suspend fun executeFunctionDeletingStage(
+        context: IJDDContext,
+        functionDeletingStage: FunctionDeletingStage,
+    ) = either {
+        generalLogger.info { "Start Function deleting stage" }
+        statLogger.info {
+            "Function deleting stage settings, " +
+                "DDAlgorithm: ${functionDeletingStage.ddAlgorithm::class.simpleName}"
+        }
+        val ddAlgorithm = functionDeletingStage.ddAlgorithm.getDDAlgorithm()
+        val hierarchicalDD = HierarchicalDD(ddAlgorithm)
+        val hierarchy = DeletablePsiElementHierarchyGenerator()
+            .produce(context)
+            .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
+
+        context.withProgress {
+            hierarchicalDD.minimize(it, hierarchy)
+        }
+    }.logResult("Function Deleting")
 
     private fun <A, B> Either<A, B>.logResult(stageName: String) = onRight {
         generalLogger.info { "End $stageName level stage" }

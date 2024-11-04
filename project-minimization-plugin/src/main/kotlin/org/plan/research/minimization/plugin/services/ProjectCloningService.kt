@@ -37,11 +37,11 @@ import kotlinx.coroutines.withContext
  */
 @Service(Service.Level.PROJECT)
 class ProjectCloningService(private val rootProject: Project) {
-    private val tempProjectsDirectoryName = rootProject
+    private val tempProjectsDirectoryName by rootProject
         .service<MinimizationPluginSettings>()
         .state
         .temporaryProjectLocation
-        ?: ""
+        .onChange { it }
     private val importantFiles = setOf("modules.xml", "misc.xml", "libraries")
 
     // TODO: JBRes-1977

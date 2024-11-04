@@ -9,6 +9,9 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import org.jetbrains.annotations.NonNls
+import com.intellij.openapi.components.BaseState
+import com.intellij.util.xmlb.annotations.Property
+import com.intellij.util.xmlb.annotations.XCollection
 
 @State(
     name = "org.intellij.sdk.settings.AppSettings",
@@ -29,13 +32,19 @@ class AppSettings : PersistentStateComponent<AppSettings.State> {
         var temporaryProjectLocation: String = "minimization-project-snapshots",
         var snapshotStrategy: SnapshotStrategy = SnapshotStrategy.PROJECT_CLONING,
         var exceptionComparingStrategy: ExceptionComparingStrategy = ExceptionComparingStrategy.SIMPLE,
-        var stages: List<MinimizationStage> = arrayListOf(
+
+        @Property(surroundWithTag = false)
+        @XCollection(style = XCollection.Style.v1, elementName = "stage")
+        var stages: MutableList<MinimizationStage> = mutableListOf(
             FileLevelStage(
                 hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
                 ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
             ),
         ),
-        var transformations: List<TransformationDescriptors> = arrayListOf(
+
+        @Property(surroundWithTag = false)
+        @XCollection(style = XCollection.Style.v1, elementName = "minimizationTransformations")
+        var transformations: MutableList<TransformationDescriptors> = mutableListOf(
             TransformationDescriptors.PATH_RELATIVIZATION,
         ),
 

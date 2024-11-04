@@ -28,11 +28,13 @@ class FileTreeHierarchyGenerator : ProjectHierarchyProducer<ProjectFileDDItem> {
         ensureNotNull(project.guessProjectDir()) { NoRootFound }
 
         val settings = project.service<MinimizationPluginSettings>()
+        val exceptionStrategy by settings.state.exceptionComparingStrategy.onChange { it.getExceptionComparator() }
         val compilerPropertyTester = project.service<BuildExceptionProviderService>()
         val propertyTester = SameExceptionPropertyTester
             .create<ProjectFileDDItem>(
                 compilerPropertyTester,
-                settings.state.exceptionComparingStrategy.getExceptionComparator(),
+                exceptionStrategy,
+//                settings.state.exceptionComparingStrategy.getExceptionComparator(),
                 FileDeletingItemLens(),
                 fromContext,
             )

@@ -22,16 +22,22 @@ class MinimizationServiceTest : GradleProjectBaseTest() {
 
     override fun setUp() {
         super.setUp()
-        project.service<MinimizationPluginSettings>().state.apply {
-            currentCompilationStrategy = CompilationStrategy.GRADLE_IDEA
-            minimizationTransformations.clear()
-            minimizationTransformations.add(TransformationDescriptors.PATH_RELATIVIZATION)
-            stages.clear()
-            stages.add(FileLevelStage(
-                hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
-                ddAlgorithm = DDStrategy.DD_MIN
-            ))
-        }
+        val state = service<MinimizationPluginSettings>().state
+
+        var currentCompilationStrategy by state.compilationStrategy.mutable()
+        currentCompilationStrategy = CompilationStrategy.GRADLE_IDEA
+
+        val minimizationTransformations by state.minimizationTransformations.mutable()
+        minimizationTransformations.clear()
+        minimizationTransformations.add(TransformationDescriptors.PATH_RELATIVIZATION)
+
+        val stages by state.stages.mutable()
+        stages.clear()
+        stages.add(FileLevelStage(
+            hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
+            ddAlgorithm = DDStrategy.DD_MIN
+        ))
+
         project.service<ProjectCloningService>().isTest = true
     }
 

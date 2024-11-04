@@ -17,20 +17,31 @@ import com.intellij.openapi.project.Project
 class BuildExceptionProviderService(
     private val initialProject: Project,
 ) : BuildExceptionProvider {
-    private val transformations: List<ExceptionTransformation>
-        get() = initialProject
-            .service<MinimizationPluginSettings>()
-            .state
-            .minimizationTransformations
-            .map { it.getExceptionTransformations() }
+    private val transformations: List<ExceptionTransformation> by initialProject
+        .service<MinimizationPluginSettings>()
+        .state
+        .minimizationTransformations
+        .onChange { transList -> transList.map { it.getExceptionTransformations() } }
 
-    private val underlyingObject: BuildExceptionProvider
-        get() = initialProject
-            .service<MinimizationPluginSettings>()
-            .state
-            .currentCompilationStrategy
-            .getCompilationStrategy()
-            .withTransformations(transformations)
+//        get() = initialProject
+//            .service<MinimizationPluginSettings>()
+//            .state
+//            .minimizationTransformations
+//            .map { it.getExceptionTransformations() }
+
+    private val underlyingObject: BuildExceptionProvider by initialProject
+        .service<MinimizationPluginSettings>()
+        .state
+        .compilationStrategy
+        .onChange { it.getCompilationStrategy().withTransformations(transformations) }
+
+
+//        get() = initialProject
+//            .service<MinimizationPluginSettings>()
+//            .state
+//            .currentCompilationStrategy
+//            .getCompilationStrategy()
+//            .withTransformations(transformations)
 
     override suspend fun checkCompilation(context: IJDDContext): CompilationResult =
         underlyingObject

@@ -25,7 +25,8 @@ import kotlin.test.assertNotEquals
 class GradleCompilationTest : GradleProjectBaseTest() {
     override fun setUp() {
         super.setUp()
-        project.service<MinimizationPluginSettings>().state.currentCompilationStrategy = CompilationStrategy.GRADLE_IDEA
+        var compilationStrategy by project.service<MinimizationPluginSettings>().state.compilationStrategy.mutable()
+        compilationStrategy = CompilationStrategy.GRADLE_IDEA
         project.service<ProjectCloningService>().isTest = true
     }
 

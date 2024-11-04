@@ -27,7 +27,8 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
 
     override fun setUp() {
         super.setUp()
-        project.service<MinimizationPluginSettings>().state.currentCompilationStrategy = CompilationStrategy.DUMB
+        var compilationStrategy by project.service<MinimizationPluginSettings>().state.compilationStrategy.mutable()
+        compilationStrategy = CompilationStrategy.DUMB
     }
 
     private val fileTreeHierarchyGenerator = FileTreeHierarchyGenerator()

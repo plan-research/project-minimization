@@ -46,15 +46,15 @@ class AppSettingsConfigurable : Configurable {
             temporaryProjectLocation = mySettingsComponent?.temporaryProjectLocation ?: "minimization-project-snapshots"
             snapshotStrategy = mySettingsComponent?.snapshotStrategy ?: SnapshotStrategy.PROJECT_CLONING
             exceptionComparingStrategy = mySettingsComponent?.exceptionComparingStrategy ?: ExceptionComparingStrategy.SIMPLE
-            stages = mySettingsComponent?.stages ?: arrayListOf(
+            stages = (mySettingsComponent?.stages ?: arrayListOf(
                 FileLevelStage(
                     hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
                     ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
                 ),
-            )
-            transformations = mySettingsComponent?.transformations ?: arrayListOf(
+            )).toMutableList()
+            transformations = (mySettingsComponent?.transformations ?: arrayListOf(
                 TransformationDescriptors.PATH_RELATIVIZATION,
-            )
+            )).toMutableList()
             isFileStageEnabled = mySettingsComponent?.isFileStageEnabled ?: false
             configMode = mySettingsComponent?.configMode ?: StageConfigMode.DEFAULT
             selectedHierarchyStrategy = mySettingsComponent?.selectedHierarchyStrategy ?: HierarchyCollectionStrategy.FILE_TREE

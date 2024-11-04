@@ -6,4 +6,7 @@ import com.intellij.openapi.components.State
 
 @Service(Service.Level.PROJECT)
 @State(name = "MinimizationPluginSettings")
-class MinimizationPluginSettings : SimplePersistentStateComponent<MinimizationPluginState>(MinimizationPluginState())
+class MinimizationPluginSettings : SimplePersistentStateComponent<MinimizationPluginStateObservable>(
+    MinimizationPluginStateObservable(AppSettings.getInstance())
+)
+//class MinimizationPluginSettings : SimplePersistentStateComponent<MinimizationPluginState>(MinimizationPluginState())

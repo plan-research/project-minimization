@@ -29,10 +29,10 @@ class SettingsUITest : BasePlatformTestCase() {
         settings.compilationStrategy = CompilationStrategy.DUMB
         settings.temporaryProjectLocation = "new-project-location"
         settings.snapshotStrategy = SnapshotStrategy.PROJECT_CLONING
-        settings.stages = listOf(
+        settings.stages = mutableListOf(
             FileLevelStage(HierarchyCollectionStrategy.FILE_TREE, DDStrategy.DD_MIN)
         )
-        settings.transformations = listOf(TransformationDescriptors.PATH_RELATIVIZATION)
+        settings.transformations = mutableListOf(TransformationDescriptors.PATH_RELATIVIZATION)
 
         AppSettings.getInstance().loadState(settings)
 

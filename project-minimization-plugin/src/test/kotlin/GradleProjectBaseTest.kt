@@ -90,8 +90,9 @@ abstract class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
 
     protected fun enableDeduplication() {
         val settings = project.service<MinimizationPluginSettings>().state
-        if (!settings.minimizationTransformations.contains(TransformationDescriptors.PATH_RELATIVIZATION)) {
-            settings.minimizationTransformations.add(
+        val minimizationTransformations by settings.minimizationTransformations.mutable()
+        if (!minimizationTransformations.contains(TransformationDescriptors.PATH_RELATIVIZATION)) {
+            minimizationTransformations.add(
                 TransformationDescriptors.PATH_RELATIVIZATION
             )
         }
@@ -99,6 +100,7 @@ abstract class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
 
     protected fun disableDeduplication() {
         val settings = project.service<MinimizationPluginSettings>().state
-        settings.minimizationTransformations.remove(TransformationDescriptors.PATH_RELATIVIZATION)
+        val minimizationTransformations by settings.minimizationTransformations.mutable()
+        minimizationTransformations.remove(TransformationDescriptors.PATH_RELATIVIZATION)
     }
 }

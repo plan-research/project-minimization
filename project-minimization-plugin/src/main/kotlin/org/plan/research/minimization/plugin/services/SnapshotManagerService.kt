@@ -13,12 +13,10 @@ import com.intellij.openapi.project.Project
 
 @Service(Service.Level.PROJECT)
 class SnapshotManagerService(private val rootProject: Project) : SnapshotManager {
-    private val underlyingObject: SnapshotManager
-        get() = rootProject
+    private val underlyingObject: SnapshotManager by rootProject
             .service<MinimizationPluginSettings>()
             .state
-            .snapshotStrategy
-            .getSnapshotManager(rootProject)
+            .snapshotStrategy.onChange { it.getSnapshotManager(rootProject) }
 
     override suspend fun <T> transaction(
         context: IJDDContext,

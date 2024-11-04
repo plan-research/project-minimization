@@ -13,6 +13,7 @@ import arrow.core.getOrElse
 import arrow.core.raise.option
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import mu.KotlinLogging
 
 /**
  * A property tester for Delta Debugging algorithm that leverages different compilation strategies
@@ -24,6 +25,7 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
     private val lens: ProjectItemLens,
     private val initialException: CompilationException,
 ) : PropertyTester<IJDDContext, T> {
+    private val logger = KotlinLogging.logger {}
     private val snapshotManager = rootProject.service<SnapshotManagerService>()
 
     /**
@@ -69,7 +71,7 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
                 exceptionComparator,
                 lens,
                 initialException,
-            )
+            ).also { it.logger.debug { "Initial exception is $initialException" } }
         }
     }
 }

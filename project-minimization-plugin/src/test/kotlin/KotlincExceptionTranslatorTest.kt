@@ -134,6 +134,45 @@ class KotlincExceptionTranslatorTest : JavaCodeInsightFixtureTestCase() {
             translated2.message
         )
         assert(translated2.stacktrace.lines().all { it.startsWith("\tat ") })
+
+        val oldBackendError = MockBuildEvent(
+            "org.jetbrains.kotlin.backend.common.BackendException: Backend Internal error: Exception during IR lowering",
+            "org.jetbrains.kotlin.backend.common.BackendException: Backend Internal error: Exception during IR lowering\n" +
+                    "File being compiled: /Users/Sergei.Kharitontcev-Beglov/Work/minimization/dataset/projects/kaliningraph/src/commonTest/kotlin/ai/hypergraph/kaliningraph/types/BinaryTest.kt\n" +
+                    "The root cause java.lang.RuntimeException was thrown at: org.jetbrains.kotlin.backend.jvm.codegen.FunctionCodegen.generate(FunctionCodegen.kt:50)\n" +
+                    "\tat org.jetbrains.kotlin.backend.common.CodegenUtil.reportBackendException(CodegenUtil.kt:239)\n" +
+                    "\tat org.jetbrains.kotlin.backend.common.CodegenUtil.reportBackendException\$default(CodegenUtil.kt:235)\n" +
+                    "\tat <REDACTED>\n" +
+                    "Caused by: java.lang.RuntimeException: Exception while generating code for:\n" +
+                    "FUN name:binaryTest visibility:public modality:FINAL <> (\$this:ai.hypergraph.kaliningraph.types.BinaryTest) returnType:kotlin.Unit\n" +
+                    "  annotations:\n" +
+                    "    Test\n" +
+                    "  \$this: VALUE_PARAMETER name:<this> type:ai.hypergraph.kaliningraph.types.BinaryTest\n" +
+                    "  BLOCK_BODY\n" +
+                    "    VAR name:fifteen type:kotlin.Int [val]\n" +
+                    "      CALL 'public final fun toInt\$default (i: kotlin.Int, j: kotlin.Int, \$mask0: kotlin.Int, \$handler: kotlin.Any?): kotlin.Int declared in ai.hypergraph.kaliningraph.types.BinaryKt' type=kotlin.Int origin=DEFAULT_DISPATCH_CALL\n" +
+                    "        \$receiver: CALL 'public final fun plus1 <B> (): ai.hypergraph.kaliningraph.types.T<B of ai.hypergraph.kaliningraph.types.BinaryKt.plus1> declared in ai.hypergraph.kaliningraph.types.BinaryKt' type=ai.hypergraph.kaliningraph.types.T<ai.hypergraph.kaliningraph.types.T<ai.hypergraph.kaliningraph.types.T<ai.hypergraph.kaliningraph.types.T<kotlin.Nothing>>>> origin=null\n" +
+                    "          <B>: ai.hypergraph.kaliningraph.types.T<ai.hypergraph.kaliningraph.types.T<ai.hypergraph.kaliningraph.types.T<kotlin.Nothing>>>\n" +
+                    "          \$receiver: CALL 'public final fun plus1 <B> (): ai.hypergraph.kaliningraph.types.F<ai.hypergraph.kaliningraph.types.T<B of ai.hypergraph.kaliningraph.types.BinaryKt.plus1>> declared in ai.hypergraph.kaliningraph.types.BinaryKt' type=ai.hypergraph.kaliningraph.types.F<ai.hypergraph.kaliningraph.types.T<ai.hypergraph.kaliningraph.types.T<ai.hypergraph.kaliningraph.types.T<kotlin.Nothing>>>> origin=null\n" +
+                    "            <B>: ai.hypergraph.kaliningraph.types.T<ai.hypergraph.kaliningraph.types.T<kotlin.Nothing>>\n" +
+                    "<REDACTED>" +
+                    "\n" +
+                    "\tat org.jetbrains.kotlin.backend.jvm.codegen.FunctionCodegen.generate(FunctionCodegen.kt:50)\n" +
+                    "\tat org.jetbrains.kotlin.backend.jvm.codegen.FunctionCodegen.generate\$default(FunctionCodegen.kt:43)\n" +
+                    "\t... 44 more\n" +
+                    "Caused by: java.lang.IndexOutOfBoundsException: Empty list doesn't contain element at index 0.\n" +
+                    "\tat kotlin.collections.EmptyList.get(Collections.kt:36)\n" +
+                    "\tat kotlin.collections.EmptyList.get(Collections.kt:24)\n" +
+                    "\t... 53 more\n" +
+                    "\n" ,
+            Kind.ERROR
+        )
+        val translated3 = translator.parseException(oldBackendError).getOrNull()
+        kotlin.test.assertNotNull(translated3)
+        assertIs<KotlincException.BackendCompilerException>(translated3)
+        // TODO: fix this when will be doing JBRes-1899
+//        assert(translated3.stacktrace.lines().all { it.startsWith("\tat ") })
+
     }
 
     fun testInvalidException() {

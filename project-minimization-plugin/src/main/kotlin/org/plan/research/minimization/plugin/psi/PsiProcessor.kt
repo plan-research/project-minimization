@@ -40,13 +40,13 @@ class PsiProcessor(private val project: Project) {
     @RequiresReadLock
     private fun buildParentPath(
         element: PsiElement,
-        isElementRestricted: (PsiElement) -> Boolean,
+        isElementAllowed: (PsiElement) -> Boolean,
     ): Pair<PsiFile, List<Int>>? {
         var currentElement: PsiElement = element
         val path = buildList {
             while (currentElement.parent != null && currentElement !is PsiFile) {
                 val parent = currentElement.parent
-                if (!isElementRestricted(parent)) {
+                if (!isElementAllowed(parent)) {
                     return null
                 }
                 val position = getChildPosition(parent, currentElement)
@@ -55,7 +55,7 @@ class PsiProcessor(private val project: Project) {
             }
         }
         require(currentElement is PsiFile)
-        return currentElement to path.reversed()
+        return (currentElement as PsiFile) to path.reversed()
     }
 
     @RequiresReadLock

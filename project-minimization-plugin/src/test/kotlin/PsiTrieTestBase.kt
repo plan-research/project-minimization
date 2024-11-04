@@ -1,7 +1,9 @@
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.service
 import com.intellij.psi.PsiElement
+import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import kotlinx.coroutines.Dispatchers
@@ -59,7 +61,7 @@ abstract class PsiTrieTestBase : JavaCodeInsightFixtureTestCase() {
 
     protected fun loadPsiFile(sourcePath: String, targetPath: String): KtFile {
         val vfsFile = myFixture.copyFileToProject(sourcePath, targetPath)
-        val psiFile = runBlocking { readAction { vfsFile.toPsiFile(project) } }
+        val psiFile = runBlocking { readAction { vfsFile.toPsiFile(project) } }!!
         assertIs<KtFile>(psiFile)
         return psiFile
     }

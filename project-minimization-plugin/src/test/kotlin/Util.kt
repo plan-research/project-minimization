@@ -49,3 +49,15 @@ fun Set<PathContent>.filterGradleAndBuildFiles(): Set<PathContent> =
             gradleFolders.any { folder -> folder in it }
         }
     }.toSet()
+
+fun generateAllPermutations(possibleIndices: Set<Int>): Sequence<List<Int>> {
+    if (possibleIndices.isEmpty()) {
+        return sequenceOf(emptyList())
+    }
+    return sequence {
+        for (element in possibleIndices) {
+            val next = possibleIndices - element
+            yieldAll(generateAllPermutations(next).map { listOf(element) + it })
+        }
+    }
+}

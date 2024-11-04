@@ -31,7 +31,7 @@ class PsiTrie private constructor() {
             processor(element)
             return
         }
-        for ((index, childTrie) in children) {
+        for ((index, childTrie) in children.entries.sortedByDescending { it.key }) {
             if (!childTrie.hasMarkedElements) {
                 continue
             }

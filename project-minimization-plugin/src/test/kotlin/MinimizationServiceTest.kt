@@ -15,7 +15,6 @@ import org.plan.research.minimization.plugin.services.MinimizationService
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 import kotlin.io.path.Path
-import kotlin.io.path.name
 import kotlin.test.assertEquals
 
 class MinimizationServiceTest : GradleProjectBaseTest() {

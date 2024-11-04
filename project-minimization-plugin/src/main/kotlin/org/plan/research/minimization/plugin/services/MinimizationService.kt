@@ -17,7 +17,10 @@ import kotlinx.coroutines.async
 
 @Service(Service.Level.PROJECT)
 class MinimizationService(project: Project, private val coroutineScope: CoroutineScope) {
-    private val stages by project.service<MinimizationPluginSettings>().state.stages.onChange { it }
+    private val stages by project.service<MinimizationPluginSettings>()
+        .state
+        .stages
+        .onChange { it }
     private val executor = project.service<MinimizationStageExecutorService>()
     private val projectCloning = project.service<ProjectCloningService>()
     private val generalLogger = KotlinLogging.logger {}

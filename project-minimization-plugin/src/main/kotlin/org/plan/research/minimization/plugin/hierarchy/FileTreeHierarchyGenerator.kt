@@ -34,7 +34,6 @@ class FileTreeHierarchyGenerator : ProjectHierarchyProducer<ProjectFileDDItem> {
             .create<ProjectFileDDItem>(
                 compilerPropertyTester,
                 exceptionStrategy,
-//                settings.state.exceptionComparingStrategy.getExceptionComparator(),
                 FileDeletingItemLens(),
                 fromContext,
             )

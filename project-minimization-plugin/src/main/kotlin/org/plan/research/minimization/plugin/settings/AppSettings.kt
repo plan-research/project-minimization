@@ -8,9 +8,9 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
-import org.jetbrains.annotations.NonNls
 import com.intellij.util.xmlb.annotations.Property
 import com.intellij.util.xmlb.annotations.XCollection
+import org.jetbrains.annotations.NonNls
 
 @State(
     name = "org.intellij.sdk.settings.AppSettings",

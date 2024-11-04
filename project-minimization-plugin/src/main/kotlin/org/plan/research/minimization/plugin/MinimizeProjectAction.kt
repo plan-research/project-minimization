@@ -1,13 +1,13 @@
 package org.plan.research.minimization.plugin
 
 import org.plan.research.minimization.plugin.services.MinimizationService
+import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.DumbService
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 /**
  * An action class responsible for minimizing a given project.

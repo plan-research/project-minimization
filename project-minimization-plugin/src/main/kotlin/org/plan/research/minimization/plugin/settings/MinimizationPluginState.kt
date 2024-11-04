@@ -6,7 +6,7 @@ import org.plan.research.minimization.plugin.model.state.*
 import com.intellij.util.xmlb.annotations.Property
 import com.intellij.util.xmlb.annotations.XCollection
 
-class MinimizationPluginState(state: AppSettings) {
+data class MinimizationPluginState(val state: AppSettings) {
     var compilationStrategy = state.state.compilationStrategy
     var temporaryProjectLocation = state.state.temporaryProjectLocation
     var snapshotStrategy = state.state.snapshotStrategy

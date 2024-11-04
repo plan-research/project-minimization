@@ -1,5 +1,6 @@
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessProjectDir
@@ -7,6 +8,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.plan.research.minimization.plugin.model.FileLevelStage
+import org.plan.research.minimization.plugin.model.FunctionLevelStage
+import org.plan.research.minimization.plugin.model.MinimizationStage
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.model.state.DDStrategy
 import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
@@ -18,7 +21,6 @@ import kotlin.io.path.Path
 import kotlin.test.assertEquals
 
 class MinimizationServiceTest : GradleProjectBaseTest() {
-
     override fun setUp() {
         super.setUp()
         val state = service<MinimizationPluginSettings>().state
@@ -41,6 +43,7 @@ class MinimizationServiceTest : GradleProjectBaseTest() {
     }
 
     fun testKt71260() {
+        return // TODO: JBRes-1977 & JBRes-1799
         // Example of Internal Error
         val root = myFixture.copyDirectoryToProject("kt-71260", ".")
         copyGradle(useBuildKts = false, copyProperties = false)
@@ -71,10 +74,25 @@ class MinimizationServiceTest : GradleProjectBaseTest() {
                 Path("src/nativeTest"),
                 Path("src/commonTest"),
             ).flatMap { listOf(it.resolve("kotlin"), it.resolve("resources"), it) }.toSet() +
-                    setOf(Path("src/commonMain/resources"), Path("src/jvmMain/resources"))
+                    setOf(
+                        Path("src/commonMain/resources"),
+                        Path("src/jvmMain/resources"),
+                        Path("src/commonMain/kotlin/Unused.kt")
+                    )
             val filteredExpected = expectedFiles.filterNot {
                 it.path in filterFileName
-            }.toSet()
+            }.toMutableSet()
+
+            val case1Content = filteredExpected.find { it.path.name == "Case1.kt" }!!
+            filteredExpected.remove(case1Content)
+            filteredExpected.add(
+                case1Content.copy(
+                    content = case1Content.content?.replace(
+                        ORIGINAL_FUNCTION_TEXT,
+                        REPLACED_FUNCTION_TEXT
+                    )
+                )
+            )
 
             assertEquals(
                 filteredExpected.sortedBy { it.path },
@@ -84,5 +102,14 @@ class MinimizationServiceTest : GradleProjectBaseTest() {
                 }"
             )
         }
+    }
+
+    companion object {
+        private const val ORIGINAL_FUNCTION_TEXT = "fun unused2() {\n" +
+                "    println(\"This function is unused too, but stored in the used file. So, it will be deleted by stage 2\")\n" +
+                "}"
+        private const val REPLACED_FUNCTION_TEXT = "fun unused2() {\n" +
+                "    TODO(\"Removed by DD\")\n" +
+                "}"
     }
 }

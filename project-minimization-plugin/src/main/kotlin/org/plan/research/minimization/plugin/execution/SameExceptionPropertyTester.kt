@@ -4,6 +4,7 @@ import org.plan.research.minimization.core.model.PropertyTestResult
 import org.plan.research.minimization.core.model.PropertyTester
 import org.plan.research.minimization.core.model.PropertyTesterError
 import org.plan.research.minimization.plugin.errors.SnapshotError
+import org.plan.research.minimization.plugin.logging.withLog
 import org.plan.research.minimization.plugin.model.*
 import org.plan.research.minimization.plugin.model.exception.CompilationException
 import org.plan.research.minimization.plugin.model.exception.ExceptionComparator
@@ -13,6 +14,7 @@ import arrow.core.getOrElse
 import arrow.core.raise.option
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import mu.KotlinLogging
 
 /**
  * A property tester for Delta Debugging algorithm that leverages different compilation strategies
@@ -24,6 +26,7 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
     private val lens: ProjectItemLens,
     private val initialException: CompilationException,
 ) : PropertyTester<IJDDContext, T> {
+    private val logger = KotlinLogging.logger {}
     private val snapshotManager = rootProject.service<SnapshotManagerService>()
 
     /**
@@ -70,6 +73,8 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
                 lens,
                 initialException,
             )
+                .also { it.logger.debug { "Initial exception is $initialException" } }
+                .withLog()
         }
     }
 }

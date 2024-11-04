@@ -15,6 +15,11 @@ interface MinimizationStageExecutor {
         context: IJDDContext,
         fileLevelStage: FileLevelStage,
     ): Either<MinimizationError, IJDDContext>
+
+    suspend fun executeFunctionLevelStage(
+        context: IJDDContext,
+        functionLevelStage: FunctionLevelStage,
+    ): Either<MinimizationError, IJDDContext>
 }
 
 /**
@@ -49,4 +54,16 @@ data class FileLevelStage(
 
     override suspend fun apply(context: IJDDContext, executor: MinimizationStageExecutor) =
         executor.executeFileLevelStage(context, this)
+}
+
+@Tag("functionLevelStage")
+data class FunctionLevelStage(
+    var ddAlgorithm: DDStrategy,
+) : MinimizationStage {
+    override val name: String = "Body Replacement Algorithm"
+
+    override suspend fun apply(
+        context: IJDDContext,
+        executor: MinimizationStageExecutor,
+    ): Either<MinimizationError, IJDDContext> = executor.executeFunctionLevelStage(context, this)
 }

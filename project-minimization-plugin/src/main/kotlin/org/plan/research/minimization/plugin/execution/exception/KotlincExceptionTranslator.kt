@@ -38,6 +38,9 @@ class KotlincExceptionTranslator : BuildEventTranslator {
         }
 
     private fun transformCompilationError(buildEvent: BuildEvent) = either {
+        if (buildEvent.message.startsWith("[ksp]")) {
+            return@either parseKspError(buildEvent).bind()
+        }
         ensure(buildEvent is FileMessageEvent) {
             raise(
                 CompilationPropertyCheckerError.BuildSystemFail(
@@ -51,13 +54,26 @@ class KotlincExceptionTranslator : BuildEventTranslator {
         KotlincException.GeneralKotlincException(filePosition, buildEvent.message, buildEvent.severity())
     }
 
+    private fun parseKspError(event: BuildEvent) = either {
+        val messageWithoutKsp = event.message.removePrefix("[ksp] ")
+        val (additionalMessage, stacktrace) = messageWithoutKsp.splitMessageAndStacktrace()
+            .getOrElse { raise(CompilationPropertyCheckerError.CompilationSuccess) }
+        KotlincException.KspException(
+            additionalMessage,
+            stacktrace,
+            (event as? MessageEvent)?.severity() ?: KotlincErrorSeverity.UNKNOWN,
+        )
+    }
+
     private fun parseInternalException(
         buildEvent: BuildEvent,
     ): Either<CompilationPropertyCheckerError, KotlincException> = either {
         val (exceptionType, exceptionMessage) = parseExceptionMessage(buildEvent.description ?: "")
             ?: raise(CompilationPropertyCheckerError.CompilationSuccess)
         when (exceptionType) {
-            BACKEND_COMPILER_EXCEPTION_CLASSNAME -> parseBackendCompilerException(exceptionMessage).bind()
+            BACKEND_COMPILER_EXCEPTION_CLASSNAME, COMMON_BACKEND_EXCEPTION_CLASSNAME ->
+                parseBackendCompilerException(exceptionMessage).bind()
+
             else -> parseGenericInternalCompilerException(exceptionMessage).bind()
         }
     }
@@ -94,7 +110,9 @@ class KotlincExceptionTranslator : BuildEventTranslator {
     private fun BuildEvent.isInternal(): Boolean =
         // FIXME: Not sure that is complete way to check if the exception is internal
         message.endsWith("Please report this problem https://kotl.in/issue") ||
-            message.startsWith("org.jetbrains.kotlin.util.FileAnalysisException")
+            message.startsWith("org.jetbrains.kotlin.util.FileAnalysisException") ||
+            message.startsWith(BACKEND_COMPILER_EXCEPTION_CLASSNAME) ||
+            message.startsWith(COMMON_BACKEND_EXCEPTION_CLASSNAME)
 
     private fun parseExceptionMessage(message: String): Pair<String, String>? {
         val colonIndex = message.indexOfOrNull(COLON) ?: return null
@@ -128,5 +146,8 @@ class KotlincExceptionTranslator : BuildEventTranslator {
         private const val BACKEND_COMPILER_EXCEPTION_CLASSNAME =
             "org.jetbrains.kotlin.backend.common.CompilationException"
         private const val COLON = ':'
+
+        private const val COMMON_BACKEND_EXCEPTION_CLASSNAME =
+            "org.jetbrains.kotlin.backend.common.BackendException"  // old version, I suppose
     }
 }

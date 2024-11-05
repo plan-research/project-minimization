@@ -31,7 +31,7 @@ class PathRelativizationTransformation : ExceptionTransformation {
         })
 
     override suspend fun transform(exception: GeneralKotlincException, context: IJDDContext): GeneralKotlincException {
-        val copiedCursorPosition = exception.position?.let { position ->
+        val copiedCursorPosition = exception.position.let { position ->
             val transformedPath = transformPath(position.filePath, context)
             position.copy(filePath = transformedPath)
         }

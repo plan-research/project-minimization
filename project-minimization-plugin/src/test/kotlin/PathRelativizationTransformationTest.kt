@@ -41,16 +41,16 @@ class PathRelativizationTransformationTest : JavaCodeInsightFixtureTestCase() {
         val transformedError = runBlocking { genericKotlinError.apply(transformation, context) }
         assert(!transformedError.message.contains(projectLocation.toString()))
         assertNotNull(transformedError.position)
-        assert(!transformedError.position!!.filePath.startsWith(projectLocation))
-        assert(transformedError.position!!.filePath.startsWith("Test.kt"))
-        assertEquals(1, transformedError.position!!.lineNumber)
-        assertEquals(1, transformedError.position!!.columnNumber)
+        assert(!transformedError.position.filePath.startsWith(projectLocation))
+        assert(transformedError.position.filePath.startsWith("Test.kt"))
+        assertEquals(1, transformedError.position.lineNumber)
+        assertEquals(1, transformedError.position.columnNumber)
 
         val snapshot = runBlocking { project.service<ProjectCloningService>().clone(context)!! }
         val snapshotLocation = snapshot.projectDir.toNioPath()
 
         val genericErrorInSnapshot = genericKotlinError.copy(
-            position = genericKotlinError.position?.copy(
+            position = genericKotlinError.position.copy(
                 filePath = snapshotLocation.resolve("Test.kt")
             )
         )
@@ -59,11 +59,11 @@ class PathRelativizationTransformationTest : JavaCodeInsightFixtureTestCase() {
         kotlin.test.assertNotNull(transformedInSnapshot)
         assert(!transformedInSnapshot.message.contains(projectLocation.toString()))
         assertNotNull(transformedInSnapshot.position)
-        assert(!transformedInSnapshot.position!!.filePath.startsWith(snapshotLocation))
-        assert(!transformedInSnapshot.position!!.filePath.startsWith(projectLocation))
-        assert(transformedInSnapshot.position!!.filePath.startsWith("Test.kt"))
-        assertEquals(1, transformedInSnapshot.position!!.lineNumber)
-        assertEquals(1, transformedInSnapshot.position!!.columnNumber)
+        assert(!transformedInSnapshot.position.filePath.startsWith(snapshotLocation))
+        assert(!transformedInSnapshot.position.filePath.startsWith(projectLocation))
+        assert(transformedInSnapshot.position.filePath.startsWith("Test.kt"))
+        assertEquals(1, transformedInSnapshot.position.lineNumber)
+        assertEquals(1, transformedInSnapshot.position.columnNumber)
         runBlocking(Dispatchers.EDT) { ProjectManager.getInstance().closeAndDispose(snapshot.project) }
     }
 

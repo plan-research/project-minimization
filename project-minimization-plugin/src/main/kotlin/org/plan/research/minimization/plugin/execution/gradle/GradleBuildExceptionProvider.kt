@@ -3,6 +3,7 @@ package org.plan.research.minimization.plugin.execution.gradle
 import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
 import org.plan.research.minimization.plugin.execution.IdeaCompilationException
 import org.plan.research.minimization.plugin.execution.exception.KotlincExceptionTranslator
+import org.plan.research.minimization.plugin.execution.exception.ParseKotlincExceptionResult
 import org.plan.research.minimization.plugin.execution.gradle.GradleConsoleRunResult.Companion.EXIT_CODE_FAIL
 import org.plan.research.minimization.plugin.execution.gradle.GradleConsoleRunResult.Companion.EXIT_CODE_OK
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
@@ -192,8 +193,8 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
 
         val error = err.toString(Charsets.UTF_8)
         val stdout = std.toString(Charsets.UTF_8)
-        logger.debug { "STD: $stdout" }
-        logger.debug { "ERR: $error" }
+        logger.trace { "STD: $stdout" }
+        logger.trace { "ERR: $error" }
 
         GradleConsoleRunResult(
             exitCode = exitCode,
@@ -271,21 +272,38 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
             }
         }
 
-        logger.debug {
-            "Parsed errors:\n${
-                parsedErrors.joinToString("\n") { error ->
-                        error.fold(
-                            ifLeft = { "Parsing failed with error:\n$it" },
-                            ifRight = { "Error parsed successfully:\n$it" },
-                        )
-                    }
-            }"
-        }
+        logParsedErrors(parsedErrors)
 
         return IdeaCompilationException(
             parsedErrors
                 .mapNotNull { it.getOrNull() },
         )
+    }
+
+    private fun logParsedErrors(parsedErrors: List<ParseKotlincExceptionResult>) {
+        if (logger.isDebugEnabled) {
+            logger.debug {
+                "Parsed errors:\n${
+                    parsedErrors.joinToString("\n") { error ->
+                            error.fold(
+                                ifLeft = { "Parsing failed with error:\n$it" },
+                                ifRight = { "Error parsed successfully:\n${it::class.simpleName}" },
+                            )
+                        }
+                }"
+            }
+        } else if (logger.isTraceEnabled) {
+            logger.trace {
+                "Parsed errors:\n${
+                    parsedErrors.joinToString("\n") { error ->
+                            error.fold(
+                                ifLeft = { "Parsing failed with error:\n$it" },
+                                ifRight = { "Error parsed successfully:\n$it" },
+                            )
+                        }
+                }"
+            }
+        }
     }
 
     private sealed interface ExecutableGradleTask {

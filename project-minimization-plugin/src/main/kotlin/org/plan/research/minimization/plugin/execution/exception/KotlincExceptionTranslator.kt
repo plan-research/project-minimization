@@ -16,6 +16,8 @@ import com.intellij.build.events.FileMessageEvent
 import com.intellij.build.events.MessageEvent
 import org.jetbrains.kotlin.utils.addToStdlib.indexOfOrNull
 
+typealias ParseKotlincExceptionResult = Either<CompilationPropertyCheckerError, KotlincException>
+
 /**
  * KotlincExceptionTranslator provides functionality to interpret build events and transform them into either
  * general compilation errors or internal Kotlin compiler exceptions.
@@ -28,7 +30,7 @@ class KotlincExceptionTranslator : BuildEventTranslator {
      * @return An [Either] containing a [CompilationPropertyCheckerError] if parsing fails,
      * or a [KotlincException] representing the parsed exception.
      */
-    override fun parseException(event: BuildEvent): Either<CompilationPropertyCheckerError, KotlincException> =
+    override fun parseException(event: BuildEvent): ParseKotlincExceptionResult =
         either {
             if (event.isInternal()) {
                 parseInternalException(event)
@@ -67,7 +69,7 @@ class KotlincExceptionTranslator : BuildEventTranslator {
 
     private fun parseInternalException(
         buildEvent: BuildEvent,
-    ): Either<CompilationPropertyCheckerError, KotlincException> = either {
+    ): ParseKotlincExceptionResult = either {
         val (exceptionType, exceptionMessage) = parseExceptionMessage(buildEvent.description ?: "")
             ?: raise(CompilationPropertyCheckerError.CompilationSuccess)
         when (exceptionType) {
@@ -80,7 +82,7 @@ class KotlincExceptionTranslator : BuildEventTranslator {
 
     private fun parseBackendCompilerException(
         exceptionMessage: String,
-    ): Either<CompilationPropertyCheckerError, KotlincException.BackendCompilerException> = either {
+    ): ParseKotlincExceptionResult = either {
         val (_, detailedMessage) = exceptionMessage.pollNextLine()  // Remove boilerplate about making an issue
         ensureNotNull(detailedMessage) { CompilationPropertyCheckerError.CompilationSuccess }
 

@@ -95,5 +95,5 @@ class LightIJDDContext(
     override fun copy(
         currentLevel: List<IJDDItem>?,
         progressReporter: SequentialProgressReporter?,
-    ): IJDDContext = copy(projectDir, currentLevel, progressReporter)
+    ): LightIJDDContext = copy(projectDir, currentLevel, progressReporter)
 }

@@ -1,5 +1,6 @@
 package org.plan.research.minimization.plugin.snapshot
 
+import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.errors.SnapshotError.*
 import org.plan.research.minimization.plugin.logging.statLogger
 import org.plan.research.minimization.plugin.model.HeavyIJDDContext
@@ -69,10 +70,7 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
         generalLogger.info { "Transaction completed successfully" }
         statLogger.info { "Transaction result: success" }
         closeProject(context)
-    }.onLeft { error ->
-        generalLogger.error { "Transaction failed with error: $error" }
-        statLogger.info { "Transaction result: error" }
-    }
+    }.onLeft { it.log() }
 
     private suspend fun closeProject(context: IJDDContext) {
         withContext(NonCancellable) {
@@ -82,6 +80,23 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
             writeAction {
                 context.projectDir.run { delete(fileSystem) }
             }
+        }
+    }
+
+    private fun <T> SnapshotError<T>.log() = when (this) {
+        is Aborted<*> -> {
+            generalLogger.info { "Transaction aborted. Reason: $reason" }
+            statLogger.info { "Transaction aborted" }
+        }
+
+        is TransactionFailed -> {
+            generalLogger.error(error) { "Transaction failed with error" }
+            statLogger.info { "Transaction failed with error" }
+        }
+
+        is TransactionCreationFailed -> {
+            generalLogger.error { "Failed to create project transaction. Reason: $reason" }
+            statLogger.info { "Failed to create project transaction" }
         }
     }
 }

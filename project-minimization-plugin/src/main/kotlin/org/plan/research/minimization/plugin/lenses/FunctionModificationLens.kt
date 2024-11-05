@@ -8,12 +8,18 @@ import org.plan.research.minimization.plugin.psi.PsiBodyReplacer
 import org.plan.research.minimization.plugin.psi.PsiItemStorage
 import org.plan.research.minimization.plugin.psi.PsiUtils
 
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
+import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.vfs.findFile
+import com.intellij.psi.PsiDocumentManager
 import mu.KotlinLogging
 
 import java.nio.file.Path
+
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * A lens that focuses on functions within a project.
@@ -78,7 +84,12 @@ class FunctionModificationLens : ProjectItemLens {
             return
         }
         val psiBodyReplacer = PsiBodyReplacer(currentContext)
-        logger.info { "Processing all focused elements in $relativePath" }
+        logger.debug { "Processing all focused elements in $relativePath" }
         trie.processMarkedElements(psiFile, psiBodyReplacer::replaceBody)
+        withContext(Dispatchers.EDT) {
+            writeAction {
+                PsiDocumentManager.getInstance(currentContext.indexProject).commitAllDocuments()
+            }
+        }
     }
 }

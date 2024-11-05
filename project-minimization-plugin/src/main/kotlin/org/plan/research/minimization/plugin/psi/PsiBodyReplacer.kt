@@ -21,7 +21,7 @@ import kotlinx.coroutines.withContext
 class PsiBodyReplacer(private val context: IJDDContext) {
     private val logger = KotlinLogging.logger {}
     private val psiFactory = KtPsiFactory(context.indexProject)
-    
+
     suspend fun replaceBody(classInitializer: KtClassInitializer) {
         withContext(Dispatchers.EDT) {
             writeCommandAction(context.indexProject, "Replacing Class Initializer") {
@@ -76,8 +76,8 @@ class PsiBodyReplacer(private val context: IJDDContext) {
         writeCommandAction(context.indexProject, "Replacing Accessor Body") {
             logger.debug { "Replacing accessor body: ${accessor.name} in ${accessor.containingFile.virtualFile.path}" }
             when {
-                accessor.hasBlockBody() -> accessor.bodyBlockExpression!!.replace(psiFactory.createBlock(BLOCKLESS_TEXT))
-                accessor.hasBody() -> accessor.bodyExpression!!.replace(psiFactory.createExpression(BLOCKLESS_TEXT))
+                accessor.bodyBlockExpression != null -> accessor.bodyBlockExpression!!.replace(psiFactory.createBlock(BLOCKLESS_TEXT))
+                accessor.bodyExpression != null -> accessor.bodyExpression!!.replace(psiFactory.createExpression(BLOCKLESS_TEXT))
             }
         }
     }

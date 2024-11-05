@@ -1,13 +1,21 @@
 package org.plan.research.minimization.plugin.services
 
+import org.plan.research.minimization.plugin.model.IJDDContext
+
 import com.intellij.openapi.components.Service
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
+import mu.KotlinLogging
+
+import java.nio.file.Path
+
+import kotlin.io.path.relativeTo
 
 @Service(Service.Level.APP)
 class RootsManagerService {
+    private val logger = KotlinLogging.logger { }
+
     private fun propagateAndMergeRoots(
         contentRoots: List<VirtualFile>,
         srcRoots: List<VirtualFile>,
@@ -48,14 +56,24 @@ class RootsManagerService {
         return roots
     }
 
-    fun findPossibleRoots(project: Project): List<VirtualFile> {
-        val rootManager = ProjectRootManager.getInstance(project)
+    fun findPossibleRoots(context: IJDDContext): List<Path> {
+        val rootManager = ProjectRootManager.getInstance(context.indexProject)
 
         val sourceRoots = rootManager.contentSourceRoots.toList()
         val contentRoots = rootManager.contentRoots.toList()
         val srcRoots = contentRoots.mapNotNull { it.findChild("src") }
 
-        return propagateAndMergeRoots(contentRoots, srcRoots, sourceRoots)
+        val mergedRoots = propagateAndMergeRoots(contentRoots, srcRoots, sourceRoots).takeIf { it.isNotEmpty() }
+            ?: listOf(context.indexProjectDir)
+
+        val indexRoot = context.indexProjectDir.toNioPath()
+        val resultRoots = mergedRoots.map { it.toNioPath().relativeTo(indexRoot) }
+
+        logger.debug {
+            "Found ${resultRoots.size} roots: $resultRoots"
+        }
+
+        return resultRoots
     }
 
     private enum class PropagationStatus {

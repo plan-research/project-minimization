@@ -34,9 +34,6 @@ data class ProjectFileDDItem(val localPath: Path) : IJDDItem {
     companion object {
         fun create(context: IJDDContext, virtualFile: VirtualFile): ProjectFileDDItem =
             ProjectFileDDItem(virtualFile.toNioPath().relativeTo(context.projectDir.toNioPath()))
-
-        fun createFromIndexProject(context: IJDDContext, virtualFile: VirtualFile): ProjectFileDDItem =
-            ProjectFileDDItem(virtualFile.toNioPath().relativeTo(context.indexProjectDir.toNioPath()))
     }
 }
 

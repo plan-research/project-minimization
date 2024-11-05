@@ -4,16 +4,14 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.IJDDItem
 import org.plan.research.minimization.plugin.model.ProjectItemLens
 import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.plan.research.minimization.plugin.psi.PsiBodyReplacer
 import org.plan.research.minimization.plugin.psi.PsiItemStorage
-import org.plan.research.minimization.plugin.services.MinimizationPsiManager
+import org.plan.research.minimization.plugin.psi.PsiUtils
 
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
-import com.intellij.openapi.components.service
 import com.intellij.openapi.vfs.findFile
 import mu.KotlinLogging
-import org.jetbrains.kotlin.idea.core.util.toPsiFile
-import org.jetbrains.kotlin.psi.KtFile
 
 import java.nio.file.Path
 
@@ -55,8 +53,7 @@ class FunctionModificationLens : ProjectItemLens {
         if (!logger.isTraceEnabled) {
             return
         }
-        val psiManager = context.indexProject.service<MinimizationPsiManager>()
-        val psiElements = items.map { psiManager.getPsiElementFromItem(it) }
+        val psiElements = items.map { readAction { PsiUtils.getPsiElementFromItem(context, it) } }
         readAction {
             logger.trace {
                 "Focusing on items: \n" +
@@ -73,13 +70,15 @@ class FunctionModificationLens : ProjectItemLens {
             logger.error { "The desired path for focused path $relativePath is not found in the project (name=${currentContext.projectDir.name})" }
             return
         }
-        val psiFile = readAction { virtualFile.toPsiFile(currentContext.indexProject) as? KtFile }
+        val psiFile = smartReadAction(currentContext.indexProject) {
+            PsiUtils.getKtFile(currentContext, virtualFile)
+        }
         psiFile ?: run {
             logger.error { "The desired path for focused path $relativePath is not a Kotlin file in the project (name=${currentContext.projectDir.name})" }
             return
         }
-        val psiManager = currentContext.indexProject.service<MinimizationPsiManager>()
+        val psiBodyReplacer = PsiBodyReplacer(currentContext)
         logger.info { "Processing all focused elements in $relativePath" }
-        trie.processMarkedElements(psiFile, psiManager::replaceBody)
+        trie.processMarkedElements(psiFile, psiBodyReplacer::replaceBody)
     }
 }

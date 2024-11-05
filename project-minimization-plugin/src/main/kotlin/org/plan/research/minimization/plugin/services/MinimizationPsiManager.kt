@@ -4,10 +4,8 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.PsiDDItem
 import org.plan.research.minimization.plugin.psi.PsiProcessor
 
-import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
-import com.intellij.openapi.command.writeCommandAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -20,16 +18,9 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.indexing.FileBasedIndex
 import mu.KotlinLogging
 import org.jetbrains.kotlin.idea.KotlinFileType
-import org.jetbrains.kotlin.psi.KtClassInitializer
-import org.jetbrains.kotlin.psi.KtExpression
-import org.jetbrains.kotlin.psi.KtLambdaExpression
-import org.jetbrains.kotlin.psi.KtNamedFunction
-import org.jetbrains.kotlin.psi.KtPropertyAccessor
-import org.jetbrains.kotlin.psi.KtPsiFactory
+import org.jetbrains.kotlin.psi.*
 
 import kotlin.io.path.relativeTo
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 /**
  * Service that provides functions to
@@ -40,74 +31,13 @@ import kotlinx.coroutines.withContext
 @Service(Service.Level.PROJECT)
 class MinimizationPsiManager(private val rootProject: Project) {
     private val logger = KotlinLogging.logger {}
-    private val psiFactory = KtPsiFactory(rootProject)
     private val psiProcessor = PsiProcessor(rootProject)
 
-    suspend fun replaceBody(classInitializer: KtClassInitializer) {
-        withContext(Dispatchers.EDT) {
-            writeCommandAction(rootProject, "Replacing Class Initializer") {
-                logger.debug { "Replacing class initializer body: ${classInitializer.name}" }
-                classInitializer.body?.replace(psiFactory.createBlock(BLOCKLESS_TEXT))
-            }
-        }
-    }
-
-    suspend fun replaceBody(function: KtNamedFunction) {
-        val (hasBlockBody, hasBody) = readAction { function.hasBlockBody() to function.hasBody() }
-        when {
-            hasBlockBody -> withContext(Dispatchers.EDT) {
-                writeCommandAction(rootProject, "Replacing Function Body Block") {
-                    logger.debug { "Replacing function body block: ${function.name} in ${function.containingFile.virtualFile.path}" }
-                    function.bodyBlockExpression?.replace(
-                        psiFactory.createBlock(
-                            BLOCKLESS_TEXT,
-                        ),
-                    )
-                }
-            }
-
-            hasBody -> withContext(Dispatchers.EDT) {
-                writeCommandAction(rootProject, "Replacing Function Body Expression") {
-                    logger.debug { "Replacing function body without block: ${function.name} in ${function.containingFile.virtualFile.path}" }
-                    function.bodyExpression!!.replace(
-                        psiFactory.createExpression(
-                            BLOCKLESS_TEXT,
-                        ),
-                    )
-                }
-            }
-
-            else -> {}
-        }
-    }
-
-    suspend fun replaceBody(lambdaExpression: KtLambdaExpression): Unit = withContext(Dispatchers.EDT) {
-        writeCommandAction(rootProject, "Replacing Lambda Body Expression") {
-            logger.debug { "Replacing lambda expression in ${lambdaExpression.containingFile.virtualFile.path}" }
-            lambdaExpression.bodyExpression!!.replace(
-                psiFactory.createLambdaExpression(
-                    "",
-                    BLOCKLESS_TEXT,
-                ).bodyExpression!!,
-            )
-        }
-    }
-
-    suspend fun replaceBody(accessor: KtPropertyAccessor): Unit = withContext(Dispatchers.EDT) {
-        writeCommandAction(rootProject, "Replacing Accessor Body") {
-            logger.debug { "Replacing accessor body: ${accessor.name} in ${accessor.containingFile.virtualFile.path}" }
-            when {
-                accessor.hasBlockBody() -> accessor.bodyBlockExpression!!.replace(psiFactory.createBlock(BLOCKLESS_TEXT))
-                accessor.hasBody() -> accessor.bodyExpression!!.replace(psiFactory.createExpression(BLOCKLESS_TEXT))
-            }
-        }
-    }
-
     suspend fun replaceBody(element: PsiElement): Unit = when (element) {
-        is KtClassInitializer -> replaceBody(element)
-        is KtNamedFunction -> replaceBody(element)
-        is KtLambdaExpression -> replaceBody(element)
-        is KtPropertyAccessor -> replaceBody(element)
+        is KtClassInitializer -> psiProcessor.replaceBody(element)
+        is KtNamedFunction -> psiProcessor.replaceBody(element)
+        is KtLambdaExpression -> psiProcessor.replaceBody(element)
+        is KtPropertyAccessor -> psiProcessor.replaceBody(element)
         else -> error("Invalid PSI element type: ${element::class.simpleName}. Expected one of: KtClassInitializer, KtNamedFunction, KtLambdaExpression, KtPropertyAccessor")
     }
 
@@ -136,11 +66,17 @@ class MinimizationPsiManager(private val rootProject: Project) {
             FileTypeIndex.getFiles(
                 KotlinFileType.INSTANCE,
                 GlobalSearchScopes.directoriesScope(rootProject, true, *roots.toTypedArray()),
-            )
+            ).toList()
         }
+        logFoundKotlinFiles(kotlinFiles)
         return extractAllPsi(kotlinFiles, classes)
     }
 
+    /**
+     * Transforms a PsiDDItem to a corresponding PsiElement
+     *
+     * @param item
+     */
     suspend fun getPsiElementFromItem(item: PsiDDItem): KtExpression? {
         val file = smartReadAction(rootProject) {
             rootProject.guessProjectDir()!!.findFileByRelativePath(item.localPath.toString())!!
@@ -178,7 +114,14 @@ class MinimizationPsiManager(private val rootProject: Project) {
             }
         }
 
-    private fun getAllFileTypesInProject(project: Project, files: List<VirtualFile>) = buildMap {
+    /**
+     * A function that provides all available file types in the project with the files of that file type.
+     * Used only in tracing logging.
+     *
+     * @param files a list of project source root to fetch files from
+     * @return a map from file type to files of that type
+     */
+    private fun getAllFileTypesInProject(files: List<VirtualFile>) = buildMap {
         FileBasedIndex.getInstance().processAllKeys(
             FileTypeIndex.NAME,
             { fileType ->
@@ -192,7 +135,7 @@ class MinimizationPsiManager(private val rootProject: Project) {
                 }
                 true
             },
-            project,
+            rootProject,
         )
     }
 
@@ -201,7 +144,7 @@ class MinimizationPsiManager(private val rootProject: Project) {
         if (files.isEmpty()) {
             logger.warn { "Found 0 kotlin files!" }
             logger.trace {
-                val fileTypes = getAllFileTypesInProject(rootProject, files)
+                val fileTypes = getAllFileTypesInProject(files)
                 val asString = fileTypes
                     .toList()
                     .map { (type, files) ->
@@ -214,9 +157,5 @@ class MinimizationPsiManager(private val rootProject: Project) {
                 "However, there are fileTypes and its files:\n$asString"
             }
         }
-    }
-
-    companion object {
-        private const val BLOCKLESS_TEXT = "TODO(\"Removed by DD\")"
     }
 }

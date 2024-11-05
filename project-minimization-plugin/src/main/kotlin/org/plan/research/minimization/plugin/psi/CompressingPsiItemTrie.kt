@@ -7,8 +7,7 @@ import org.jetbrains.kotlin.utils.addToStdlib.getOrPut
 import org.jetbrains.kotlin.utils.addToStdlib.same
 
 /**
- * The PsiTrie class represents a trie structure designed to store and process
- * PSI elements associated with specific PSI elements in the root project.
+ * The Trie that is designed to compress the children's path of the PSI item to quickly lookup for the child PSI DD element in the PSI tree
  */
 class CompressingPsiItemTrie private constructor() {
     private val children: MutableMap<Int, CompressingPsiItemTrie> = mutableMapOf()
@@ -16,6 +15,12 @@ class CompressingPsiItemTrie private constructor() {
     private val nextItem: MutableMap<Int, NextPsiDDItemInfo> = mutableMapOf()
     private var correspondingItem: PsiDDItem? = null
 
+    /**
+     * Retrieves the list of next PsiDDItems available from the current node in the trie structure.
+
+     *
+     * @return A list containing the next items in the trie.
+     */
     fun getNextItems() = nextItem.values.toList()
 
     private fun add(item: PsiDDItem, depth: Int = 0): NextPsiDDItemInfo {

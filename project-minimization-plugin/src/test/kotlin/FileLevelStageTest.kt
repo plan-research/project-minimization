@@ -13,7 +13,7 @@ import org.plan.research.minimization.plugin.model.state.DDStrategy
 import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
 import org.plan.research.minimization.plugin.services.MinimizationStageExecutorService
 import org.plan.research.minimization.plugin.services.ProjectCloningService
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
+import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 
 class FileLevelStageTest : JavaCodeInsightFixtureTestCase() {
     override fun getTestDataPath(): String {
@@ -24,9 +24,9 @@ class FileLevelStageTest : JavaCodeInsightFixtureTestCase() {
 
     override fun setUp() {
         super.setUp()
-        var compilationStrategy by project.service<MinimizationPluginSettings>().state.compilationStrategy.mutable()
+        var compilationStrategy by project.service<MinimizationPluginState>().stateObservable.compilationStrategy.mutable()
         compilationStrategy = CompilationStrategy.DUMB
-        val transformations by project.service<MinimizationPluginSettings>().state.minimizationTransformations.mutable()
+        val transformations by project.service<MinimizationPluginState>().stateObservable.minimizationTransformations.mutable()
         transformations.clear()
         project.service<ProjectCloningService>().isTest = true
     }

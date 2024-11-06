@@ -18,7 +18,7 @@ import org.jetbrains.plugins.gradle.settings.GradleProjectSettings
 import org.jetbrains.plugins.gradle.settings.GradleSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
 import org.plan.research.minimization.plugin.model.state.TransformationDescriptors
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
+import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 import kotlin.test.assertNotEquals
 
 
@@ -89,8 +89,7 @@ abstract class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
     }
 
     protected fun enableDeduplication() {
-        val settings = project.service<MinimizationPluginSettings>().state
-        val minimizationTransformations by settings.minimizationTransformations.mutable()
+        val minimizationTransformations by project.service<MinimizationPluginState>().stateObservable.minimizationTransformations.mutable()
         if (!minimizationTransformations.contains(TransformationDescriptors.PATH_RELATIVIZATION)) {
             minimizationTransformations.add(
                 TransformationDescriptors.PATH_RELATIVIZATION
@@ -99,8 +98,7 @@ abstract class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
     }
 
     protected fun disableDeduplication() {
-        val settings = project.service<MinimizationPluginSettings>().state
-        val minimizationTransformations by settings.minimizationTransformations.mutable()
+        val minimizationTransformations by project.service<MinimizationPluginState>().stateObservable.minimizationTransformations.mutable()
         minimizationTransformations.remove(TransformationDescriptors.PATH_RELATIVIZATION)
     }
 }

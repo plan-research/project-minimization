@@ -16,7 +16,7 @@ import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchicalDDGen
 import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchyGenerator
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
+import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 import kotlin.io.path.name
 import kotlin.test.assertIs
 
@@ -27,7 +27,7 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
 
     override fun setUp() {
         super.setUp()
-        var compilationStrategy by project.service<MinimizationPluginSettings>().state.compilationStrategy.mutable()
+        var compilationStrategy by project.service<MinimizationPluginState>().stateObservable.compilationStrategy.mutable()
         compilationStrategy = CompilationStrategy.DUMB
     }
 

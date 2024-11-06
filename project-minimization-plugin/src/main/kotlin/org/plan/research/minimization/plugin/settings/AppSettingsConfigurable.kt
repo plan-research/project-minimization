@@ -3,12 +3,14 @@ package org.plan.research.minimization.plugin.settings
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.state.*
 
+import com.intellij.openapi.components.service
 import com.intellij.openapi.options.Configurable
+import com.intellij.openapi.project.Project
 import org.jetbrains.annotations.Nls
 
 import javax.swing.JComponent
 
-class AppSettingsConfigurable : Configurable {
+class AppSettingsConfigurable(private val project: Project) : Configurable {
     private var mySettingsComponent: AppSettingsComponent? = null
 
     // A default constructor with no arguments is required because
@@ -25,13 +27,14 @@ class AppSettingsConfigurable : Configurable {
     }
 
     override fun isModified(): Boolean {
-        val state = AppSettings.getInstance().state
+        val state = project.service<MinimizationPluginState>().state
         return mySettingsComponent?.compilationStrategy != state.compilationStrategy ||
             mySettingsComponent?.temporaryProjectLocation != state.temporaryProjectLocation ||
             mySettingsComponent?.snapshotStrategy != state.snapshotStrategy ||
             mySettingsComponent?.exceptionComparingStrategy != state.exceptionComparingStrategy ||
             mySettingsComponent?.stages != state.stages ||
             mySettingsComponent?.transformations != state.minimizationTransformations ||
+            mySettingsComponent?.isFrozen != state.isFrozen ||
             mySettingsComponent?.isFileStageEnabled != state.isFileStageEnabled ||
             mySettingsComponent?.configMode != state.configMode ||
             mySettingsComponent?.selectedHierarchyStrategy != state.selectedHierarchyStrategy ||
@@ -41,7 +44,7 @@ class AppSettingsConfigurable : Configurable {
     }
 
     override fun apply() {
-        AppSettings.getInstance().state.apply {
+        project.service<MinimizationPluginState>().state.apply {
             compilationStrategy = mySettingsComponent?.compilationStrategy ?: CompilationStrategy.GRADLE_IDEA
             temporaryProjectLocation = mySettingsComponent?.temporaryProjectLocation ?: "minimization-project-snapshots"
             snapshotStrategy = mySettingsComponent?.snapshotStrategy ?: SnapshotStrategy.PROJECT_CLONING
@@ -55,6 +58,7 @@ class AppSettingsConfigurable : Configurable {
             minimizationTransformations = (mySettingsComponent?.transformations ?: arrayListOf(
                 TransformationDescriptors.PATH_RELATIVIZATION,
             )).toMutableList()
+            isFrozen = mySettingsComponent?.isFrozen ?: false
             isFileStageEnabled = mySettingsComponent?.isFileStageEnabled ?: false
             configMode = mySettingsComponent?.configMode ?: StageConfigMode.DEFAULT
             selectedHierarchyStrategy = mySettingsComponent?.selectedHierarchyStrategy ?: HierarchyCollectionStrategy.FILE_TREE
@@ -65,13 +69,14 @@ class AppSettingsConfigurable : Configurable {
     }
 
     override fun reset() {
-        val state = AppSettings.getInstance().state
+        val state = project.service<MinimizationPluginState>().state
         mySettingsComponent?.compilationStrategy = state.compilationStrategy
         mySettingsComponent?.temporaryProjectLocation = state.temporaryProjectLocation
         mySettingsComponent?.snapshotStrategy = state.snapshotStrategy
         mySettingsComponent?.exceptionComparingStrategy = state.exceptionComparingStrategy
         mySettingsComponent?.stages = state.stages
         mySettingsComponent?.transformations = state.minimizationTransformations
+        mySettingsComponent?.isFrozen = state.isFrozen
         mySettingsComponent?.isFileStageEnabled = state.isFileStageEnabled
         mySettingsComponent?.configMode = state.configMode
         mySettingsComponent?.selectedHierarchyStrategy = state.selectedHierarchyStrategy

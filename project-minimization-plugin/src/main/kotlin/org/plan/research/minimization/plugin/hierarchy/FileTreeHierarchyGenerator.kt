@@ -11,7 +11,7 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.ProjectFileDDItem
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
+import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 
 import arrow.core.Either
 import arrow.core.getOrElse
@@ -27,13 +27,12 @@ class FileTreeHierarchyGenerator : ProjectHierarchyProducer<ProjectFileDDItem> {
         val project = fromContext.originalProject
         ensureNotNull(project.guessProjectDir()) { NoRootFound }
 
-        val settings = project.service<MinimizationPluginSettings>()
-        val exceptionStrategy by settings.state.exceptionComparingStrategy.onChange { it.getExceptionComparator() }
+        val settings = project.service<MinimizationPluginState>()
         val compilerPropertyTester = project.service<BuildExceptionProviderService>()
         val propertyTester = SameExceptionPropertyTester
             .create<ProjectFileDDItem>(
                 compilerPropertyTester,
-                exceptionStrategy,
+                settings.state.exceptionComparingStrategy.getExceptionComparator(),
                 FileDeletingItemLens(),
                 fromContext,
             )

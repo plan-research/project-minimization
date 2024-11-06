@@ -37,6 +37,12 @@ class AppSettingsComponent {
         JBCheckBox(descriptor.name.replace("_", " ")
             .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() })
     }
+    private val isFrozenCheckBox = JBCheckBox("Is frozen")
+
+    var isFrozen: Boolean
+        get() = isFrozenCheckBox.isSelected
+        set(value) { isFrozenCheckBox.isSelected = value
+            updateUIState()}
 
     var configMode: StageConfigMode
         get() = configModeComboBox.selectedItem as StageConfigMode
@@ -117,6 +123,24 @@ class AppSettingsComponent {
             .addSeparator()
             .addComponentFillVertically(JPanel(), 0)
             .panel
+
+        isFrozenCheckBox.addActionListener {
+            updateUIState()
+        }
+
+        updateUIState()
+    }
+
+    private fun updateUIState() {
+        compilationStrategyComboBox.isEnabled = !isFrozen
+        temporaryProjectLocationField.isEnabled = !isFrozen
+        snapshotStrategyComboBox.isEnabled = !isFrozen
+        exceptionComparingStrategyComboBox.isEnabled = !isFrozen
+        configModeComboBox.isEnabled = !isFrozen
+        fileStageCheckBox.isEnabled = !isFrozen
+        hierarchyStrategyComboBox.isEnabled = !isFrozen && fileStageCheckBox.isSelected
+        ddAlgorithmComboBox.isEnabled = !isFrozen && fileStageCheckBox.isSelected
+        transformationCheckBoxes.values.forEach { it.isEnabled = !isFrozen }
     }
 
     private fun stagesPanelInit() {

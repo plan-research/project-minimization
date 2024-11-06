@@ -1,7 +1,9 @@
 package org.plan.research.minimization.plugin.snapshot
 
+import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.errors.SnapshotError.*
 import org.plan.research.minimization.plugin.logging.statLogger
+import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.model.snapshot.TransactionBody
@@ -10,6 +12,7 @@ import org.plan.research.minimization.plugin.services.ProjectCloningService
 
 import arrow.core.raise.either
 import arrow.core.raise.recover
+import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ex.ProjectManagerEx
@@ -40,21 +43,21 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
      * @param action A suspendable lambda function that takes a new transactional context and returns the updated context.
      * @return Either a `SnapshotError` encapsulating the error in case of failure, or the updated `IJDDContext` in case of success.
      */
-    override suspend fun <T> transaction(
-        context: IJDDContext,
-        action: suspend TransactionBody<T>.(newContext: IJDDContext) -> IJDDContext,
-    ): TransactionResult<T> = either {
+    override suspend fun <T, C : IJDDContext> transaction(
+        context: C,
+        action: suspend TransactionBody<T>.(newContext: C) -> C,
+    ): TransactionResult<T, C> = either {
         statLogger.info { "Snapshot manager start's transaction" }
         generalLogger.info { "Snapshot manager start's transaction" }
-        val clonedProject = projectCloning.clone(context.project)
+        val clonedContext = projectCloning.clone(context)
             ?: raise(TransactionCreationFailed("Failed to create project"))
-        val clonedContext = context.copy(project = clonedProject)
 
         try {
             recover<T, _>(
                 block = {
                     val transaction = TransactionBody(this@recover)
-                    transaction.action(clonedContext)
+                    @Suppress("UNCHECKED_CAST")
+                    transaction.action(clonedContext as C)
                 },
                 recover = { raise(Aborted(it)) },
                 catch = { raise(TransactionFailed(it)) },
@@ -67,15 +70,33 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
         generalLogger.info { "Transaction completed successfully" }
         statLogger.info { "Transaction result: success" }
         closeProject(context)
-    }.onLeft { error ->
-        generalLogger.error { "Transaction failed with error: $error" }
-        statLogger.info { "Transaction result: error" }
-    }
+    }.onLeft { it.log() }
 
     private suspend fun closeProject(context: IJDDContext) {
-        // TODO: think about deleting the project
         withContext(NonCancellable) {
-            ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(context.project)
+            if (context is HeavyIJDDContext) {
+                ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(context.project)
+            }
+            writeAction {
+                context.projectDir.run { delete(fileSystem) }
+            }
+        }
+    }
+
+    private fun <T> SnapshotError<T>.log() = when (this) {
+        is Aborted<*> -> {
+            generalLogger.info { "Transaction aborted. Reason: $reason" }
+            statLogger.info { "Transaction aborted" }
+        }
+
+        is TransactionFailed -> {
+            generalLogger.error(error) { "Transaction failed with error" }
+            statLogger.info { "Transaction failed with error" }
+        }
+
+        is TransactionCreationFailed -> {
+            generalLogger.error { "Failed to create project transaction. Reason: $reason" }
+            statLogger.info { "Failed to create project transaction" }
         }
     }
 }

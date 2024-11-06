@@ -1,23 +1,23 @@
-import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.service
-import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.utils.vfs.deleteRecursively
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.getAllNestedElements
+import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 import org.plan.research.minimization.plugin.snapshot.ProjectCloningSnapshotManager
 import kotlin.io.path.Path
 import kotlin.io.path.relativeTo
 
-class ProjectCloningSnapshotTest : ProjectCloningBaseTest() {
+@Suppress("UNCHECKED_CAST")
+abstract class ProjectCloningSnapshotTest<C : IJDDContext> : ProjectCloningBaseTest(), TestWithContext<C> {
     fun testOneFileProjectPartialCloning() {
         val file = myFixture.configureByFile("oneFileProject.txt")
         doPartialCloningTest(
@@ -63,18 +63,21 @@ class ProjectCloningSnapshotTest : ProjectCloningBaseTest() {
         selectedFiles: List<VirtualFile>
     ) {
         val project = myFixture.project
+        val projectDir = project.guessProjectDir()!!
         val snapshotManager = ProjectCloningSnapshotManager(project)
         val projectCloning = project.service<ProjectCloningService>()
+        val context = createContext(project)
 
         val originalFiles =
-            selectedFiles.getAllFiles(project) + project.guessProjectDir()!!.getPathContentPair(project)
+            selectedFiles.getAllFiles(projectDir) + project.guessProjectDir()!!
+                .getPathContentPair(projectDir.toNioPath())
 
         val clonedProject = runBlocking {
-            val context = IJDDContext(projectCloning.clone(project)!!, project)
-            snapshotManager.transaction<Unit>(context) { newContext ->
+            val clonedContext = projectCloning.clone(context)!!
+            snapshotManager.transaction<Unit, _>(clonedContext) { newContext ->
                 writeAction {
-                    VfsUtil.iterateChildrenRecursively(newContext.project.guessProjectDir()!!, null) {
-                        if (it.getPathContentPair(newContext.project) !in originalFiles) {
+                    VfsUtil.iterateChildrenRecursively(newContext.projectDir, null) {
+                        if (it.getPathContentPair(newContext.projectDir.toNioPath()) !in originalFiles) {
                             if (it.exists()) {
                                 it.deleteRecursively()
                             }
@@ -84,13 +87,11 @@ class ProjectCloningSnapshotTest : ProjectCloningBaseTest() {
                 }
                 newContext
             }
-        }.getOrNull()?.project
+        }.getOrNull()
         assertNotNull(clonedProject)
-        val clonedFiles = clonedProject!!.getAllFiles()
+        val clonedFiles = clonedProject!!.projectDir.getAllFiles(clonedProject.projectDir.toNioPath())
         assertEquals(originalFiles, clonedFiles)
-        runBlocking(Dispatchers.EDT) {
-            ProjectManager.getInstance().closeAndDispose(clonedProject)
-        }
+        deleteContext(clonedProject as C)
     }
 
     fun testAbortedTransaction() {
@@ -98,10 +99,11 @@ class ProjectCloningSnapshotTest : ProjectCloningBaseTest() {
         val project = myFixture.project
 
         val snapshotManager = ProjectCloningSnapshotManager(project)
+        val context = createContext(project)
         val result = runBlocking {
-            snapshotManager.transaction(IJDDContext(project)) { newProject ->
+            snapshotManager.transaction(context) { newContext ->
                 writeAction {
-                    newProject.project.guessProjectDir()!!.findChild(".config")!!.deleteRecursively()
+                    newContext.projectDir.findChild(".config")!!.deleteRecursively()
                 }
                 raise("Abort")
             }
@@ -115,13 +117,13 @@ class ProjectCloningSnapshotTest : ProjectCloningBaseTest() {
     fun testExceptionInTransaction() {
         myFixture.copyDirectoryToProject("flatProject", "")
         val project = myFixture.project
+        val context = createContext(project)
 
         val snapshotManager = ProjectCloningSnapshotManager(project)
         val result = runBlocking {
-            val context = IJDDContext(project)
-            snapshotManager.transaction<String>(context) { newProject ->
+            snapshotManager.transaction<String, _>(context) { newContext ->
                 writeAction {
-                    newProject.project.guessProjectDir()!!.findChild(".config")!!.deleteRecursively()
+                    newContext.projectDir.findChild(".config")!!.deleteRecursively()
                 }
                 throw Exception("Abort")
             }
@@ -132,3 +134,12 @@ class ProjectCloningSnapshotTest : ProjectCloningBaseTest() {
         assert(project.isOpen)
     }
 }
+
+class ProjectCloningSnapshotHeavyTest :
+    ProjectCloningSnapshotTest<HeavyIJDDContext>(),
+    TestWithContext<HeavyIJDDContext> by TestWithHeavyContext()
+
+
+class ProjectCloningSnapshotLightTest :
+    ProjectCloningSnapshotTest<LightIJDDContext>(),
+    TestWithContext<LightIJDDContext> by TestWithLightContext()

@@ -8,11 +8,9 @@ import org.plan.research.minimization.plugin.execution.comparable.SimpleExceptio
 import org.plan.research.minimization.plugin.execution.gradle.GradleBuildExceptionProvider
 import org.plan.research.minimization.plugin.execution.transformer.PathRelativizationTransformation
 import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchyGenerator
-import org.plan.research.minimization.plugin.lenses.FileDeletingItemLens
 import org.plan.research.minimization.plugin.logging.withLog
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
 import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.ProjectFileDDItem
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
 import org.plan.research.minimization.plugin.model.exception.CompilationException
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
@@ -24,9 +22,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
-import mu.KotlinLogging
-
-private val logger = KotlinLogging.logger {}
 
 fun SnapshotStrategy.getSnapshotManager(project: Project): SnapshotManager =
     when (this) {
@@ -72,19 +67,12 @@ fun List<VirtualFile>.getAllParents(root: VirtualFile): List<VirtualFile> = buil
     this@getAllParents.forEach(::traverseParents)
 }.toList()
 
-fun List<ProjectFileDDItem>.toVirtualFiles(context: IJDDContext): List<VirtualFile> =
-    mapNotNull { it.getVirtualFile(context) }
-
 fun ExceptionComparingStrategy.getExceptionComparator() = when (this) {
     ExceptionComparingStrategy.SIMPLE -> SimpleExceptionComparator()
 }
 
 fun TransformationDescriptors.getExceptionTransformations() = when (this) {
     TransformationDescriptors.PATH_RELATIVIZATION -> PathRelativizationTransformation()
-}
-
-fun ProjectItemLensDescriptor.getLens() = when (this) {
-    ProjectItemLensDescriptor.FILE_DELETING -> FileDeletingItemLens()
 }
 
 suspend fun CompilationException.apply(transformations: List<ExceptionTransformation>, context: IJDDContext) =

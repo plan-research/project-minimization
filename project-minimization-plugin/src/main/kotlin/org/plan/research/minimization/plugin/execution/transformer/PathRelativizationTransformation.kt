@@ -6,7 +6,6 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
 import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 
-import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.toNioPathOrNull
 
 import java.nio.file.Path
@@ -32,8 +31,11 @@ class PathRelativizationTransformation : ExceptionTransformation {
         })
 
     override suspend fun transform(exception: GeneralKotlincException, context: IJDDContext): GeneralKotlincException {
-        val transformedPath = transformPath(exception.position.filePath, context)
-        val copiedCursorPosition = exception.position.copy(filePath = transformedPath)
+        val copiedCursorPosition = exception.position.let { position ->
+            val transformedPath = transformPath(position.filePath, context)
+            position.copy(filePath = transformedPath)
+        }
+
         return exception.copy(position = copiedCursorPosition, message = exception.message.replaceRootDir(context))
     }
 
@@ -58,7 +60,7 @@ class PathRelativizationTransformation : ExceptionTransformation {
         exception.copy(message = exception.message.replaceRootDir(context))
 
     private fun transformPath(path: Path, context: IJDDContext): Path {
-        val projectBase = context.project.guessProjectDir()?.toNioPathOrNull() ?: return path
+        val projectBase = context.projectDir.toNioPathOrNull() ?: return path
         return path.relativeTo(projectBase)
     }
 

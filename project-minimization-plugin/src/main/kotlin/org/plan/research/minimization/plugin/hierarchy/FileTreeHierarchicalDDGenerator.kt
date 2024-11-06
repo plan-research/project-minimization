@@ -16,6 +16,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.util.progress.SequentialProgressReporter
 
 import java.nio.file.Path
+import kotlin.io.path.pathString
 
 import kotlin.io.path.relativeTo
 
@@ -26,15 +27,15 @@ class FileTreeHierarchicalDDGenerator(
 
     override suspend fun generateFirstLevel(context: IJDDContext) =
         option {
-            val level = smartReadAction(context.project) {
+            val level = smartReadAction(context.indexProject) {
                 val rootManager = service<RootsManagerService>()
-                val roots = rootManager.findPossibleRoots(context).takeIf { it.isNotEmpty() } ?: listOf(context.projectDir)
+                val roots = rootManager.findPossibleRoots(context)
 
                 context.progressReporter?.let {
-                    reporter = ProgressReporter(it, context.projectDir.toNioPath(), roots)
+                    reporter = ProgressReporter(it, context, roots)
                 }
 
-                roots.map { ProjectFileDDItem.create(context, it) }
+                roots.map { ProjectFileDDItem(it) }
             }
 
             reporter?.updateProgress(level)
@@ -62,34 +63,37 @@ class FileTreeHierarchicalDDGenerator(
      * keep track of the current progress and update it during the process. This class computes levels
      * of directories and files to provide meaningful progress reporting.
      *
-     * @param root The root path from which relative paths are computed and stored.
+     * @param context The context of the project.
      * @param roots An array of VirtualFile representing the starting points to compute levels.
      * @property reporter An instance of [SequentialProgressReporter] used for updating the progress.
      * @constructor Creates a new instance of [ProgressReporter] based on the given root path and the array of root files.
      */
-    private class ProgressReporter(val reporter: SequentialProgressReporter, root: Path, roots: List<VirtualFile>) {
+    private class ProgressReporter(val reporter: SequentialProgressReporter, context: IJDDContext, roots: List<Path>) {
         @Volatile
         private var currentLevel = 0
         private val levelMaxDepths = HashMap<Path, Int>()
 
         init {
             reporter.nextStep(1)
-            computeLevels(root, roots)
+            computeLevels(context, roots)
         }
 
         /**
          * Computes the maximum depth levels for the given root paths and their descendants.
          * This method implements DFS traversal via call-stack simulation.
          *
-         * @param root The root path from which relative paths are computed and stored.
+         * @param context The context of the project.
          * @param roots An array of VirtualFile representing the starting points to compute levels.
          */
-        private fun computeLevels(root: Path, roots: List<VirtualFile>) {
+        private fun computeLevels(context: IJDDContext, roots: List<Path>) {
             val stack = mutableListOf<StackEntry>()
-            roots.forEach {
-                stack.add(StackEntry(it, 1))
+            roots.forEach { root ->
+                context.projectDir.findFileByRelativePath(root.pathString)?.let {
+                    stack.add(StackEntry(it, 1))
+                }
             }
 
+            val root = context.projectDir.toNioPath()
             while (stack.isNotEmpty()) {
                 val entry = stack.last()
 

@@ -1,9 +1,5 @@
 package org.plan.research.minimization.plugin.hierarchy
 
-import arrow.core.Either
-import arrow.core.getOrElse
-import arrow.core.raise.either
-import com.intellij.openapi.components.service
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoExceptionFound
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
@@ -14,6 +10,11 @@ import org.plan.research.minimization.plugin.model.ProjectFileDDItem
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
 import org.plan.research.minimization.plugin.settings.MinimizationPluginState
+
+import arrow.core.Either
+import arrow.core.getOrElse
+import arrow.core.raise.either
+import com.intellij.openapi.components.service
 
 class FileTreeHierarchyGenerator : ProjectHierarchyProducer<ProjectFileDDItem> {
     override suspend fun produce(

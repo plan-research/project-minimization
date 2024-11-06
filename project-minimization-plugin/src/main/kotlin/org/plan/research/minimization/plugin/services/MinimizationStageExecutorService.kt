@@ -86,7 +86,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         val propertyChecker = SameExceptionPropertyTester.create<PsiWithBodyDDItem>(
             project.service<BuildExceptionProviderService>(),
             project.service<MinimizationPluginState>().state.exceptionComparingStrategy
-                .getExceptionComparator(),,
+                .getExceptionComparator(),
             lens,
             lightContext,
         ).getOrElse {

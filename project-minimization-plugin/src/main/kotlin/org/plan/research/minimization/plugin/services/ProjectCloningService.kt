@@ -112,15 +112,6 @@ class ProjectCloningService(private val rootProject: Project) {
             }
             clonedProjectPath
         }
-
-        LocalFileSystem.getInstance().refreshAndFindFileByNioFile(clonedProjectPath)
-            ?.refresh(false, true)
-
-        return ProjectUtil.openOrImportAsync(clonedProjectPath, OpenProjectTask {
-            forceOpenInNewFrame = true
-            runConversionBeforeOpen = false
-            isRefreshVfsNeeded = !isTest
-        })
     }
 
     private fun isImportant(file: VirtualFile, root: VirtualFile): Boolean {

@@ -3,8 +3,8 @@ package org.plan.research.minimization.plugin.services
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 import org.plan.research.minimization.plugin.model.LightIJDDContext
+import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 
 import arrow.core.raise.either
 import com.intellij.openapi.components.Service

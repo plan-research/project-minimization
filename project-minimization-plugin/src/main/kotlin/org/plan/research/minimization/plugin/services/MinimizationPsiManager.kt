@@ -1,5 +1,9 @@
 package org.plan.research.minimization.plugin.services
 
+import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.plan.research.minimization.plugin.psi.PsiUtils
+
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -16,9 +20,7 @@ import org.jetbrains.jps.model.java.JavaSourceRootType
 import org.jetbrains.kotlin.config.SourceKotlinRootType
 import org.jetbrains.kotlin.config.TestSourceKotlinRootType
 import org.jetbrains.kotlin.idea.KotlinFileType
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
-import org.plan.research.minimization.plugin.psi.PsiUtils
+
 import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
 
@@ -28,19 +30,6 @@ import kotlin.io.path.relativeTo
 @Service(Service.Level.APP)
 class MinimizationPsiManager {
     private val logger = KotlinLogging.logger {}
-
-    private class SourcesScope(project: Project) : GlobalSearchScope(project) {
-        private val index = ProjectFileIndex.getInstance(project)
-
-        override fun contains(file: VirtualFile): Boolean =
-            index.isUnderSourceRootOfType(file, setOf(
-                SourceKotlinRootType, TestSourceKotlinRootType,
-                JavaSourceRootType.SOURCE, JavaSourceRootType.TEST_SOURCE,
-            ))
-
-        override fun isSearchInModuleContent(aModule: Module): Boolean = true
-        override fun isSearchInLibraries(): Boolean = false
-    }
 
     suspend fun findAllPsiWithBodyItems(context: IJDDContext): List<PsiWithBodyDDItem> {
         val rootManager = service<RootsManagerService>()
@@ -85,4 +74,17 @@ class MinimizationPsiManager {
                 }
             }
         }
+
+    private class SourcesScope(project: Project) : GlobalSearchScope(project) {
+        private val index = ProjectFileIndex.getInstance(project)
+
+        override fun contains(file: VirtualFile): Boolean =
+            index.isUnderSourceRootOfType(file, setOf(
+                SourceKotlinRootType, TestSourceKotlinRootType,
+                JavaSourceRootType.SOURCE, JavaSourceRootType.TEST_SOURCE,
+            ))
+
+        override fun isSearchInModuleContent(aModule: Module): Boolean = true
+        override fun isSearchInLibraries(): Boolean = false
+    }
 }

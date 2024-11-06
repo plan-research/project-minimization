@@ -22,20 +22,20 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
     private val stages = project.service<MinimizationPluginSettings>().state.stages
     private val executor = project.service<MinimizationStageExecutorService>()
     private val projectCloning = project.service<ProjectCloningService>()
-    private val generalLogger = KotlinLogging.logger {}
+    private val logger = KotlinLogging.logger {}
 
     fun minimizeProject(project: Project, onComplete: suspend (IJDDContext) -> Unit = { }) =
         coroutineScope.async {
             withBackgroundProgress(project, "Minimizing project") {
                 either {
-                    generalLogger.info { "Start Project minimization" }
+                    logger.info { "Start Project minimization" }
                     var context: IJDDContext = LightIJDDContext(project)
 
-                    generalLogger.info { "Clonning project..." }
+                    logger.info { "Clonning project..." }
                     context = projectCloning.clone(context)
                         ?: raise(MinimizationError.CloningFailed)
                     importIfNeeded(context)
-                    generalLogger.info { "Project clone end" }
+                    logger.info { "Project clone end" }
 
                     reportSequentialProgress(stages.size) { reporter ->
                         for (stage in stages) {
@@ -48,10 +48,10 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
 
                     context.also { onComplete(it) }
                 }.onRight {
-                    generalLogger.info { "End Project minimization" }
+                    logger.info { "End Project minimization" }
                 }.onLeft { error ->
-                    generalLogger.info { "End Project minimization" }
-                    generalLogger.error { "End minimizeProject with error: $error" }
+                    logger.info { "End Project minimization" }
+                    logger.error { "End minimizeProject with error: $error" }
                 }
             }
         }

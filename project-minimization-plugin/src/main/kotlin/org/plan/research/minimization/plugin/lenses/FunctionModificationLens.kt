@@ -7,21 +7,14 @@ import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
 import org.plan.research.minimization.plugin.psi.PsiBodyReplacer
 import org.plan.research.minimization.plugin.psi.PsiItemStorage
 import org.plan.research.minimization.plugin.psi.PsiUtils
+import org.plan.research.minimization.plugin.psi.PsiUtils.performPsiChangesAndSave
 
-import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
-import com.intellij.openapi.application.writeAction
-import com.intellij.openapi.command.writeCommandAction
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.vfs.findFile
-import com.intellij.psi.PsiDocumentManager
 import mu.KotlinLogging
 
 import java.nio.file.Path
-
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 /**
  * A lens that focuses on functions within a project.
@@ -85,11 +78,10 @@ class FunctionModificationLens : ProjectItemLens {
             logger.error { "The desired path for focused path $relativePath is not a Kotlin file in the project (name=${currentContext.projectDir.name})" }
             return
         }
-        val psiBodyReplacer = PsiBodyReplacer(currentContext)
         logger.debug { "Processing all focused elements in $relativePath" }
-        writeCommandAction(currentContext.indexProject, "Replace bodies inside ${psiFile.name}") {
+        val psiBodyReplacer = PsiBodyReplacer(currentContext)
+        performPsiChangesAndSave(currentContext, psiFile, "Replace bodies inside ${psiFile.name}") {
             trie.processMarkedElements(psiFile, psiBodyReplacer::replaceBody)
-            PsiUtils.commitChanges(currentContext, psiFile)
         }
     }
 }

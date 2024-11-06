@@ -1,9 +1,10 @@
 package org.plan.research.minimization.plugin.psi
 
+import org.plan.research.minimization.plugin.model.IJDDContext
+
 import com.intellij.psi.PsiElement
 import mu.KotlinLogging
 import org.jetbrains.kotlin.psi.*
-import org.plan.research.minimization.plugin.model.IJDDContext
 
 /**
  * A class that provides functionality to replace with `TODO()`
@@ -60,14 +61,14 @@ class PsiBodyReplacer(private val context: IJDDContext) {
         when {
             accessor.bodyBlockExpression != null -> accessor.bodyBlockExpression!!.replace(
                 psiFactory.createBlock(
-                    BLOCKLESS_TEXT
-                )
+                    BLOCKLESS_TEXT,
+                ),
             )
 
             accessor.bodyExpression != null -> accessor.bodyExpression!!.replace(
                 psiFactory.createExpression(
-                    BLOCKLESS_TEXT
-                )
+                    BLOCKLESS_TEXT,
+                ),
             )
         }
     }

@@ -57,7 +57,7 @@ data class PsiWithBodyDDItem(
         fun hasBodyIfAvailable(psiElement: PsiElement): Boolean? = WITH_BODY_JAVA_CLASSES
             .find { it.isInstance(psiElement) }
             ?.let { (psiElement as KtDeclarationWithBody) }
-            ?.hasBlockBody()
+            ?.hasBody()
 
         @RequiresReadLock
         fun create(element: PsiElement, parentPath: List<Int>, localPath: Path): PsiWithBodyDDItem =

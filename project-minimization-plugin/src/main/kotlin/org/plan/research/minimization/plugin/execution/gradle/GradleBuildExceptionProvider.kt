@@ -179,7 +179,7 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
                 .setStandardOutput(std)
                 .setStandardError(err)
                 .setJavaHome(javaHome?.let { File(it) })
-                .withArguments("--no-configuration-cache", "--quiet")
+                .withArguments("--no-configuration-cache", "--no-build-cache", "--quiet")
                 .run(object : ResultHandler<Void> {
                     override fun onComplete(result: Void?) {
                         cont.resume(EXIT_CODE_OK)

@@ -1,20 +1,23 @@
 package org.plan.research.minimization.plugin.psi
 
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
 
+import com.intellij.openapi.command.writeCommandAction
+import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.impl.PsiManagerEx
 import com.intellij.util.concurrency.annotations.RequiresReadLock
-import com.intellij.util.concurrency.annotations.RequiresWriteLock
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtFile
 
 import kotlin.io.path.relativeTo
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * The PsiProcessor class provides utilities for fetching PSI elements within a given project.
@@ -65,13 +68,26 @@ object PsiUtils {
     fun getKtFile(context: IJDDContext, file: VirtualFile): KtFile? =
         PsiManagerEx.getInstance(context.indexProject).findFile(file) as? KtFile
 
-    @RequiresWriteLock
-    fun commitChanges(context: IJDDContext, psiFile: PsiFile) {
-        val documentManager = PsiDocumentManager.getInstance(context.indexProject)
-        documentManager.getDocument(psiFile)?.let { document ->
-            documentManager.doPostponedOperationsAndUnblockDocument(document)
-            documentManager.commitDocument(document)
-            FileDocumentManager.getInstance().saveDocument(document)
+    suspend inline fun <T> performPsiChangesAndSave(
+        context: IJDDContext,
+        psiFile: PsiFile,
+        commandName: String = "",
+        crossinline block: () -> T,
+    ): T? = withContext(Dispatchers.IO) {
+        writeCommandAction(context.indexProject, commandName) {
+            val documentManager = PsiDocumentManager.getInstance(context.indexProject)
+            val document = documentManager.getDocument(psiFile) ?: return@writeCommandAction null
+
+            val editor = EditorFactory.getInstance().createEditor(document, context.indexProject)
+            try {
+                block()
+            } finally {
+                documentManager.doPostponedOperationsAndUnblockDocument(document)
+                documentManager.commitDocument(document)
+                FileDocumentManager.getInstance().saveDocument(document)
+
+                EditorFactory.getInstance().releaseEditor(editor)
+            }
         }
     }
 }

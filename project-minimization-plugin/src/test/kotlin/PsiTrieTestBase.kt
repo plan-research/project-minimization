@@ -1,7 +1,5 @@
 import com.intellij.openapi.application.EDT
-import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
-import com.intellij.openapi.command.writeCommandAction
 import com.intellij.openapi.components.service
 import com.intellij.psi.PsiElement
 import com.intellij.testFramework.PlatformTestUtil
@@ -10,7 +8,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
-import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtFile
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
@@ -46,9 +43,8 @@ abstract class PsiTrieTestBase : JavaCodeInsightFixtureTestCase() {
         val context = LightIJDDContext(project)
         val allPsi = getAllElements(context)
         val psiTrie = PsiItemStorage.create(allPsi, selectedPsi.toSet(), context)
-        writeCommandAction(project, "") {
+        PsiUtils.performPsiChangesAndSave(context, psiFile) {
             psiTrie.processMarkedElements(psiFile, psiProcessor)
-            PsiUtils.commitChanges(context, psiFile)
         }
         withContext(Dispatchers.EDT) {
             PlatformTestUtil.dispatchAllEventsInIdeEventQueue()

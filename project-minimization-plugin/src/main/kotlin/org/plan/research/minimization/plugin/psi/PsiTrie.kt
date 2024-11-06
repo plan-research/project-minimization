@@ -1,9 +1,10 @@
 package org.plan.research.minimization.plugin.psi
 
+import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+
 import com.intellij.psi.PsiElement
 import mu.KotlinLogging
 import org.jetbrains.kotlin.utils.addToStdlib.same
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
 
 /**
  * The PsiTrie class represents a trie structure designed to store and process
@@ -21,7 +22,7 @@ class PsiTrie private constructor() {
             if (logger.isTraceEnabled) {
                 // to preserve suspended context
                 logger.trace(
-                    "Processing marked element: ${element.textOffset} in ${element.containingFile.virtualFile.path}"
+                    "Processing marked element: ${element.textOffset} in ${element.containingFile.virtualFile.path}",
                 )
             }
             processor(element)

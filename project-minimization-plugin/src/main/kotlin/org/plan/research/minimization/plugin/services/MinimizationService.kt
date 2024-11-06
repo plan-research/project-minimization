@@ -1,8 +1,10 @@
 package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.plugin.errors.MinimizationError
+import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.settings.MinimizationPluginState
+import org.plan.research.minimization.plugin.model.LightIJDDContext
 
 import arrow.core.raise.either
 import com.intellij.openapi.components.Service
@@ -23,41 +25,45 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
         .observe { it }
     private val executor = project.service<MinimizationStageExecutorService>()
     private val projectCloning = project.service<ProjectCloningService>()
-    private val generalLogger = KotlinLogging.logger {}
+    private val logger = KotlinLogging.logger {}
 
-    fun minimizeProject(project: Project) =
+    fun minimizeProject(project: Project, onComplete: suspend (IJDDContext) -> Unit = { }) =
         coroutineScope.async {
             withBackgroundProgress(project, "Minimizing project") {
                 either {
                     project.service<MinimizationPluginState>().freezeSettings(true)
-                    generalLogger.info { "Start Project minimization" }
+                    logger.info { "Start Project minimization" }
+                    var context: IJDDContext = LightIJDDContext(project)
 
-                    generalLogger.info { "Clonning project..." }
-                    val clonedProject = projectCloning.clone(project)
+                    logger.info { "Clonning project..." }
+                    context = projectCloning.clone(context)
                         ?: raise(MinimizationError.CloningFailed)
-                    projectCloning.forceImportGradleProject(clonedProject)
-                    generalLogger.info { "Project clone end" }
-
-                    var currentProject = IJDDContext(clonedProject, project)
+                    importIfNeeded(context)
+                    logger.info { "Project clone end" }
 
                     reportSequentialProgress(stages.size) { reporter ->
                         for (stage in stages) {
                             reporter.itemStep("Minimization step: ${stage.name}") {
-                                currentProject = stage.apply(currentProject, executor).bind()
+                                context = stage.apply(context, executor).bind()
                             }
-                            projectCloning.forceImportGradleProject(currentProject.project)
+                            importIfNeeded(context)
                         }
                     }
 
-                    currentProject.project
-
+                    context.also { onComplete(it) }
                     project.service<MinimizationPluginState>().freezeSettings(false)
                 }.onRight {
-                    generalLogger.info { "End Project minimization" }
+                    logger.info { "End Project minimization" }
                 }.onLeft { error ->
-                    generalLogger.info { "End Project minimization" }
-                    generalLogger.error { "End minimizeProject with error: $error" }
+                    logger.info { "End Project minimization" }
+                    logger.error { "End minimizeProject with error: $error" }
                 }
             }
         }
+
+    private suspend fun importIfNeeded(context: IJDDContext) {
+        if (context is HeavyIJDDContext) {
+            projectCloning.forceImportGradleProject(context.project)
+        }
+    }
 }

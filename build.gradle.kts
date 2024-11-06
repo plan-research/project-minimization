@@ -1,3 +1,4 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.research.code.submissions.clustering.buildutils.configureDiktat
 import org.jetbrains.research.code.submissions.clustering.buildutils.createDiktatTask
@@ -43,7 +44,14 @@ allprojects {
         }
 
         test {
-            useJUnitPlatform()
+            useJUnitPlatform {
+                // Capture standard and error output from failed tests
+                testLogging {
+                    exceptionFormat = TestExceptionFormat.FULL
+                    events("failed")
+                    showStandardStreams = true
+                }
+            }
         }
     }
 

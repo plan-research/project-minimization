@@ -8,11 +8,8 @@ import org.plan.research.minimization.plugin.getExceptionComparator
 import org.plan.research.minimization.plugin.getHierarchyCollectionStrategy
 import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
 import org.plan.research.minimization.plugin.logging.statLogger
-import org.plan.research.minimization.plugin.model.FileLevelStage
-import org.plan.research.minimization.plugin.model.FunctionLevelStage
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.MinimizationStageExecutor
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.plan.research.minimization.plugin.model.*
+import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 
 import arrow.core.Either
@@ -22,31 +19,51 @@ import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ex.ProjectManagerEx
 import mu.KotlinLogging
 
 @Service(Service.Level.PROJECT)
 class MinimizationStageExecutorService(private val project: Project) : MinimizationStageExecutor {
-    private val generalLogger = KotlinLogging.logger {}
+    private val logger = KotlinLogging.logger {}
+
+    private suspend fun makeLight(context: IJDDContext): LightIJDDContext = when (context) {
+        is HeavyIJDDContext -> {
+            val projectDir = context.projectDir
+            val result = LightIJDDContext(
+                projectDir, context.originalProject,
+                context.currentLevel, context.progressReporter,
+            )
+
+            ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(context.project)
+
+            result
+        }
+
+        is LightIJDDContext -> context
+    }
+
     override suspend fun executeFileLevelStage(context: IJDDContext, fileLevelStage: FileLevelStage) = either {
-        generalLogger.info { "Start File level stage" }
+        logger.info { "Start File level stage" }
         statLogger.info {
             "File level stage settings, " +
                 "Hierarchy strategy: ${fileLevelStage.hierarchyCollectionStrategy::class.simpleName}, " +
                 "DDAlgorithm: ${fileLevelStage.ddAlgorithm::class.simpleName}"
         }
 
+        val lightContext = makeLight(context)
+
         val baseAlgorithm = fileLevelStage.ddAlgorithm.getDDAlgorithm()
         val hierarchicalDD = HierarchicalDD(baseAlgorithm)
 
-        generalLogger.info { "Initialise file hierarchy" }
+        logger.info { "Initialise file hierarchy" }
         val hierarchy = fileLevelStage
             .hierarchyCollectionStrategy
             .getHierarchyCollectionStrategy()
-            .produce(context)
+            .produce(lightContext)
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
 
-        generalLogger.info { "Minimize" }
-        context.withProgress {
+        logger.info { "Minimize" }
+        lightContext.withProgress {
             hierarchicalDD.minimize(it, hierarchy)
         }
     }.logResult("File")
@@ -55,28 +72,30 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         context: IJDDContext,
         functionLevelStage: FunctionLevelStage,
     ) = either {
-        generalLogger.info { "Start Function level stage" }
+        logger.info { "Start Function level stage" }
         statLogger.info {
             "Function level stage settings. DDAlgorithm: ${functionLevelStage.ddAlgorithm::class.simpleName}"
         }
+
+        val lightContext = makeLight(context)
+
         val ddAlgorithm = functionLevelStage.ddAlgorithm.getDDAlgorithm()
         val lens = FunctionModificationLens()
-        val firstLevel = project
-            .service<MinimizationPsiManager>()
-            .findAllPsiWithBodyItems()
+        val firstLevel = service<MinimizationPsiManager>()
+            .findAllPsiWithBodyItems(lightContext)
         val propertyChecker = SameExceptionPropertyTester.create<PsiWithBodyDDItem>(
-            this@MinimizationStageExecutorService.project.service<BuildExceptionProviderService>(),
+            project.service<BuildExceptionProviderService>(),
             project.service<MinimizationPluginState>().state.exceptionComparingStrategy
-                .getExceptionComparator(),
+                .getExceptionComparator(),,
             lens,
-            context,
+            lightContext,
         ).getOrElse {
-            generalLogger.error { "Property checker creation failed. Aborted" }
+            logger.error { "Property checker creation failed. Aborted" }
             raise(MinimizationError.PropertyCheckerFailed)
         }
 
-        firstLevel.logPsiElements()
-        context
+        firstLevel.logPsiElements(lightContext)
+        lightContext
             .copy(currentLevel = firstLevel)
             .withProgress {
                 ddAlgorithm.minimize(
@@ -87,26 +106,25 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
             }
     }.logResult("Function")
 
-    private suspend fun List<PsiWithBodyDDItem>.logPsiElements() {
-        if (!generalLogger.isTraceEnabled) {
+    private suspend fun List<PsiWithBodyDDItem>.logPsiElements(context: IJDDContext) {
+        if (!logger.isTraceEnabled) {
             return
         }
-        val psiManagingService = project.service<MinimizationPsiManager>()
         val text = mapNotNull {
-            psiManagingService.getPsiElementFromItem(it)?.let { readAction { it.text } }
+            readAction { PsiUtils.getPsiElementFromItem(context, it)?.text }
         }
-        generalLogger.trace {
+        logger.trace {
             "Starting DD Algorithm with following elements:\n" +
                 text.joinToString("\n") { "\t- $it" }
         }
     }
 
     private fun <A, B> Either<A, B>.logResult(stageName: String) = onRight {
-        generalLogger.info { "End $stageName level stage" }
+        logger.info { "End $stageName level stage" }
         statLogger.info { "$stageName level stage result: success" }
     }.onLeft { error ->
-        generalLogger.info { "End $stageName level stage" }
+        logger.info { "End $stageName level stage" }
         statLogger.info { "$stageName level stage result: $error" }
-        generalLogger.error { "$stageName level stage failed with error: $error" }
+        logger.error { "$stageName level stage failed with error: $error" }
     }
 }

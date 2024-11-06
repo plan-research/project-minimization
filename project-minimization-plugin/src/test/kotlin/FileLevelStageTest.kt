@@ -1,13 +1,10 @@
-import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.service
-import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.execution.DumbCompiler
 import org.plan.research.minimization.plugin.model.FileLevelStage
-import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.model.state.DDStrategy
 import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
@@ -64,27 +61,23 @@ class FileLevelStageTest : JavaCodeInsightFixtureTestCase() {
             HierarchyCollectionStrategy.FILE_TREE,
             DDStrategy.PROBABILISTIC_DD
         )
+        val context = LightIJDDContext(project)
 
         val targetFiles = if (targetPaths == null) {
             project.getAllFiles()
         } else {
             targetPaths.map { root.findFileByRelativePath(it)!! }
-                .getAllFiles(project) + root.getPathContentPair(project)
+                .getAllFiles(context.projectDir) + root.getPathContentPair(context.projectDir.toNioPath())
         }
 
         val minimizedProject = runBlocking {
-            val clonedProject = project.service<ProjectCloningService>().clone(project)!!
-            val context = IJDDContext(clonedProject, project)
-            stage.apply(context, executor)
-        }.getOrNull()?.project
+            val clonedContext = project.service<ProjectCloningService>().clone(context)!!
+            stage.apply(clonedContext, executor)
+        }.getOrNull()?.projectDir
         assertNotNull(minimizedProject)
 
-        val minimizedFiles = minimizedProject!!.getAllFiles()
+        val minimizedFiles = minimizedProject!!.getAllFiles(minimizedProject.toNioPath())
         assertEquals(targetFiles, minimizedFiles)
-
-        runBlocking(Dispatchers.EDT) {
-            ProjectManager.getInstance().closeAndDispose(minimizedProject)
-        }
 
         DumbCompiler.targetPaths = null // it's important
     }

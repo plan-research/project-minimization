@@ -18,7 +18,7 @@ class PsiItemStorage private constructor(private val map: Map<Path, PsiTrie>, co
         get() = map.keys
     private val rootPath = context.projectDir.toNioPath()
 
-    suspend fun processMarkedElements(rootElement: PsiFile, processor: suspend (PsiElement) -> Unit) {
+    fun processMarkedElements(rootElement: PsiFile, processor: (PsiElement) -> Unit) {
         val relativePath = rootElement.virtualFile.toNioPath().relativeTo(rootPath)
         val trie = map[relativePath] ?: return
         trie.processMarkedElements(rootElement, processor)

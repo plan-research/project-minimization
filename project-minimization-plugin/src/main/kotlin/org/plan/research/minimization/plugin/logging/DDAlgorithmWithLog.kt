@@ -30,6 +30,7 @@ class DDAlgorithmWithLog(
                 "items - $items \n" +
                 "propertyTester - $propertyTester"
         }
+        statLogger.info { "DDAlgorithm started with size: ${items.size}" }
 
         try {
             result = innerDDAlgorithm.minimize(context, items, propertyTester)
@@ -38,11 +39,7 @@ class DDAlgorithmWithLog(
             throw e
         }
 
-        statLogger.info {
-            "Start: ${items.size}, " +
-                "End: ${result.items.size}, " +
-                "Ratio: ${result.items.size.toDouble() / items.size}"
-        }
+        statLogger.info { "DDAlgorithm ended with size and ratio: ${result.items.size}, ${result.items.size.toDouble() / items.size}" }
         generalLogger.info { "End minimization algorithm" }
 
         return result

@@ -1,5 +1,4 @@
 import com.intellij.openapi.application.readAction
-import com.intellij.openapi.components.service
 import com.intellij.psi.PsiElement
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.psi.KtClassInitializer
@@ -7,7 +6,9 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
-import org.plan.research.minimization.plugin.services.MinimizationPsiManager
+import org.plan.research.minimization.plugin.model.LightIJDDContext
+import org.plan.research.minimization.plugin.psi.PsiBodyReplacer
+import org.plan.research.minimization.plugin.psi.PsiUtils
 import kotlin.test.assertIs
 
 class PsiTrieModificationTest : PsiTrieTestBase() {
@@ -72,9 +73,10 @@ class PsiTrieModificationTest : PsiTrieTestBase() {
         expectedFile: String,
         filter: (PsiElement) -> Boolean,
     ) = runBlocking {
-        val selectedPsi = selectElements { filter(it.psi!!) }
-        val psiModificationManager = project.service<MinimizationPsiManager>()
-        super.doTest(psiFile, selectedPsi, psiModificationManager::replaceBody)
+        val context = LightIJDDContext(project)
+        val selectedPsi = selectElements(context) { readAction { filter(PsiUtils.getPsiElementFromItem(context, it)!!) } }
+        val psiBodyReplacer = PsiBodyReplacer(context)
+        super.doTest(psiFile, selectedPsi, psiBodyReplacer::replaceBody)
         val expectedFile = myFixture.configureByFile("modification-results/$expectedFile")
         assertIs<KtFile>(expectedFile)
         readAction {

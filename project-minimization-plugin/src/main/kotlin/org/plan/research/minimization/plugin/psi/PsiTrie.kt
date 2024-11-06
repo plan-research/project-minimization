@@ -1,11 +1,9 @@
 package org.plan.research.minimization.plugin.psi
 
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
-
-import com.intellij.openapi.application.readAction
 import com.intellij.psi.PsiElement
 import mu.KotlinLogging
 import org.jetbrains.kotlin.utils.addToStdlib.same
+import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
 
 /**
  * The PsiTrie class represents a trie structure designed to store and process
@@ -18,14 +16,12 @@ class PsiTrie private constructor() {
     var hasMarkedElements: Boolean = false
         private set
 
-    suspend fun processMarkedElements(element: PsiElement, processor: suspend (PsiElement) -> Unit) {
+    fun processMarkedElements(element: PsiElement, processor: (PsiElement) -> Unit) {
         if (isMarked) {
             if (logger.isTraceEnabled) {
                 // to preserve suspended context
                 logger.trace(
-                    readAction {
-                        "Processing marked element: ${element.textOffset} in ${element.containingFile.virtualFile.path}"
-                    },
+                    "Processing marked element: ${element.textOffset} in ${element.containingFile.virtualFile.path}"
                 )
             }
             processor(element)
@@ -35,7 +31,7 @@ class PsiTrie private constructor() {
             if (!childTrie.hasMarkedElements) {
                 continue
             }
-            val childElement = readAction { element.children[index] }
+            val childElement = element.children[index]
             childTrie.processMarkedElements(childElement, processor)
         }
     }

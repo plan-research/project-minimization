@@ -1,13 +1,16 @@
 package org.plan.research.minimization.plugin.psi
 
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
 
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.impl.PsiManagerEx
 import com.intellij.util.concurrency.annotations.RequiresReadLock
+import com.intellij.util.concurrency.annotations.RequiresWriteLock
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtFile
 
@@ -61,4 +64,14 @@ object PsiUtils {
     @RequiresReadLock
     fun getKtFile(context: IJDDContext, file: VirtualFile): KtFile? =
         PsiManagerEx.getInstance(context.indexProject).findFile(file) as? KtFile
+
+    @RequiresWriteLock
+    fun commitChanges(context: IJDDContext, psiFile: PsiFile) {
+        val documentManager = PsiDocumentManager.getInstance(context.indexProject)
+        documentManager.getDocument(psiFile)?.let { document ->
+            documentManager.doPostponedOperationsAndUnblockDocument(document)
+            documentManager.commitDocument(document)
+            FileDocumentManager.getInstance().saveDocument(document)
+        }
+    }
 }

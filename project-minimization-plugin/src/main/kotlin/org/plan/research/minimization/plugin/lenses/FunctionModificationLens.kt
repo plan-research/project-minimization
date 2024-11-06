@@ -12,6 +12,8 @@ import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.application.writeAction
+import com.intellij.openapi.command.writeCommandAction
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.vfs.findFile
 import com.intellij.psi.PsiDocumentManager
 import mu.KotlinLogging
@@ -85,11 +87,9 @@ class FunctionModificationLens : ProjectItemLens {
         }
         val psiBodyReplacer = PsiBodyReplacer(currentContext)
         logger.debug { "Processing all focused elements in $relativePath" }
-        trie.processMarkedElements(psiFile, psiBodyReplacer::replaceBody)
-        withContext(Dispatchers.EDT) {
-            writeAction {
-                PsiDocumentManager.getInstance(currentContext.indexProject).commitAllDocuments()
-            }
+        writeCommandAction(currentContext.indexProject, "Replace bodies inside ${psiFile.name}") {
+            trie.processMarkedElements(psiFile, psiBodyReplacer::replaceBody)
+            PsiUtils.commitChanges(currentContext, psiFile)
         }
     }
 }

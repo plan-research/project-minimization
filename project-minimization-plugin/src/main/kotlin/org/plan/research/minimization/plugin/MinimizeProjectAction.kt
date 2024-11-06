@@ -1,7 +1,6 @@
 package org.plan.research.minimization.plugin
 
 import org.plan.research.minimization.plugin.services.MinimizationService
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
@@ -29,7 +28,6 @@ class MinimizeProjectAction : AnAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        project.service<MinimizationPluginSettings>().state.updateSettingsState()
         val minimizationService = project.service<MinimizationService>()
         minimizationService.minimizeProject(project)
     }

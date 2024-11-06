@@ -1,6 +1,6 @@
 package org.plan.research.minimization.plugin.services
 
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
+import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 
 import com.intellij.ide.impl.OpenProjectTask
 import com.intellij.ide.impl.ProjectUtil
@@ -38,10 +38,10 @@ import kotlinx.coroutines.withContext
 @Service(Service.Level.PROJECT)
 class ProjectCloningService(private val rootProject: Project) {
     private val tempProjectsDirectoryName by rootProject
-        .service<MinimizationPluginSettings>()
-        .state
+        .service<MinimizationPluginState>()
+        .stateObservable
         .temporaryProjectLocation
-        .onChange { it }
+        .observe { it }
     private val importantFiles = setOf("modules.xml", "misc.xml", "libraries")
 
     // TODO: JBRes-1977

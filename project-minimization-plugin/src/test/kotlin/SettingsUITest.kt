@@ -1,7 +1,8 @@
+import com.intellij.openapi.components.service
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.state.*
-import org.plan.research.minimization.plugin.settings.AppSettings
+import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 import org.plan.research.minimization.plugin.settings.AppSettingsComponent
 
 class SettingsUITest : BasePlatformTestCase() {
@@ -14,19 +15,23 @@ class SettingsUITest : BasePlatformTestCase() {
     }
 
     fun testUpdateSettings() {
-        val settings = AppSettings.getInstance().state
+        val settings = project.service<MinimizationPluginState>().stateObservable
+        var compilationStrategy by settings.compilationStrategy.mutable()
+        var temporaryProjectLocation by settings.temporaryProjectLocation.mutable()
+        var snapshotStrategy by settings.snapshotStrategy.mutable()
+        var stages by settings.stages.mutable()
+        var minimizationTransformations by settings.minimizationTransformations.mutable()
 
-        settings.compilationStrategy = CompilationStrategy.DUMB
-        settings.temporaryProjectLocation = "new-project-location"
-        settings.snapshotStrategy = SnapshotStrategy.PROJECT_CLONING
-        settings.stages = mutableListOf(
+
+        compilationStrategy = CompilationStrategy.DUMB
+        temporaryProjectLocation = "new-project-location"
+        snapshotStrategy = SnapshotStrategy.PROJECT_CLONING
+        stages = mutableListOf(
             FileLevelStage(HierarchyCollectionStrategy.FILE_TREE, DDStrategy.DD_MIN)
         )
-        settings.minimizationTransformations = mutableListOf(TransformationDescriptors.PATH_RELATIVIZATION)
+        minimizationTransformations = mutableListOf(TransformationDescriptors.PATH_RELATIVIZATION)
 
-        AppSettings.getInstance().loadState(settings)
-
-        val updatedSettings = AppSettings.getInstance().state
+        val updatedSettings = project.service<MinimizationPluginState>().state
         assertEquals(CompilationStrategy.DUMB, updatedSettings.compilationStrategy)
         assertEquals("new-project-location", updatedSettings.temporaryProjectLocation)
         assertEquals(SnapshotStrategy.PROJECT_CLONING, updatedSettings.snapshotStrategy)

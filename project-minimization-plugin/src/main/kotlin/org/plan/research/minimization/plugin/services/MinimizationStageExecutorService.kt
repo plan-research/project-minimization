@@ -13,7 +13,7 @@ import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.MinimizationStageExecutor
 import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
+import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 
 import arrow.core.Either
 import arrow.core.getOrElse
@@ -60,17 +60,14 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
             "Function level stage settings. DDAlgorithm: ${functionLevelStage.ddAlgorithm::class.simpleName}"
         }
         val ddAlgorithm = functionLevelStage.ddAlgorithm.getDDAlgorithm()
-        val exceptionComparator by project
-            .service<MinimizationPluginSettings>()
-            .state
-            .exceptionComparingStrategy.onChange { it.getExceptionComparator() }
         val lens = FunctionModificationLens()
         val firstLevel = project
             .service<MinimizationPsiManager>()
             .findAllPsiWithBodyItems()
         val propertyChecker = SameExceptionPropertyTester.create<PsiWithBodyDDItem>(
             this@MinimizationStageExecutorService.project.service<BuildExceptionProviderService>(),
-            exceptionComparator,
+            project.service<MinimizationPluginState>().state.exceptionComparingStrategy
+                .getExceptionComparator(),
             lens,
             context,
         ).getOrElse {

@@ -221,7 +221,7 @@ class AppSettingsComponent {
                     ),
                     )
                 }
-            }
+            }.toList()
         }
     }
 

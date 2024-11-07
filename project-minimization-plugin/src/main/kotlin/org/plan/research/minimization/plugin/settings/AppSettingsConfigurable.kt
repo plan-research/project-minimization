@@ -2,6 +2,7 @@ package org.plan.research.minimization.plugin.settings
 
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.state.*
+import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.options.Configurable
@@ -27,7 +28,7 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
     }
 
     override fun isModified(): Boolean {
-        val state = project.service<MinimizationPluginState>().state
+        val state = project.service<MinimizationPluginSettings>().state.state
         return mySettingsComponent?.compilationStrategy != state.compilationStrategy ||
             mySettingsComponent?.temporaryProjectLocation != state.temporaryProjectLocation ||
             mySettingsComponent?.snapshotStrategy != state.snapshotStrategy ||
@@ -44,32 +45,35 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
     }
 
     override fun apply() {
-        project.service<MinimizationPluginState>().state.apply {
-            compilationStrategy = mySettingsComponent?.compilationStrategy ?: CompilationStrategy.GRADLE_IDEA
-            temporaryProjectLocation = mySettingsComponent?.temporaryProjectLocation ?: "minimization-project-snapshots"
-            snapshotStrategy = mySettingsComponent?.snapshotStrategy ?: SnapshotStrategy.PROJECT_CLONING
-            exceptionComparingStrategy = mySettingsComponent?.exceptionComparingStrategy ?: ExceptionComparingStrategy.SIMPLE
-            stages = (mySettingsComponent?.stages ?: arrayListOf(
-                FileLevelStage(
-                    hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
-                    ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
-                ),
-            )).toMutableList()
-            minimizationTransformations = (mySettingsComponent?.transformations ?: arrayListOf(
-                TransformationDescriptors.PATH_RELATIVIZATION,
-            )).toMutableList()
-            isFrozen = mySettingsComponent?.isFrozen ?: false
-            isFileStageEnabled = mySettingsComponent?.isFileStageEnabled ?: false
-            configMode = mySettingsComponent?.configMode ?: StageConfigMode.DEFAULT
-            selectedHierarchyStrategy = mySettingsComponent?.selectedHierarchyStrategy ?: HierarchyCollectionStrategy.FILE_TREE
-            selectedDDStrategy = mySettingsComponent?.selectedDDStrategy ?: DDStrategy.PROBABILISTIC_DD
-            isHierarchyStrategyEnabled = mySettingsComponent?.isHierarchyStrategyEnabled ?: false
-            isDDAlgorithmEnabled = mySettingsComponent?.isDDAlgorithmEnabled ?: false
-        }
+        project.service<MinimizationPluginSettings>()
+            .state
+            .state
+            .apply {
+                compilationStrategy = mySettingsComponent?.compilationStrategy ?: CompilationStrategy.GRADLE_IDEA
+                temporaryProjectLocation = mySettingsComponent?.temporaryProjectLocation ?: "minimization-project-snapshots"
+                snapshotStrategy = mySettingsComponent?.snapshotStrategy ?: SnapshotStrategy.PROJECT_CLONING
+                exceptionComparingStrategy = mySettingsComponent?.exceptionComparingStrategy ?: ExceptionComparingStrategy.SIMPLE
+                stages = (mySettingsComponent?.stages ?: listOf(
+                    FileLevelStage(
+                        hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
+                        ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
+                    ),
+                ))
+                minimizationTransformations = (mySettingsComponent?.transformations ?: listOf(
+                    TransformationDescriptors.PATH_RELATIVIZATION,
+                ))
+                isFrozen = mySettingsComponent?.isFrozen ?: false
+                isFileStageEnabled = mySettingsComponent?.isFileStageEnabled ?: false
+                configMode = mySettingsComponent?.configMode ?: StageConfigMode.DEFAULT
+                selectedHierarchyStrategy = mySettingsComponent?.selectedHierarchyStrategy ?: HierarchyCollectionStrategy.FILE_TREE
+                selectedDDStrategy = mySettingsComponent?.selectedDDStrategy ?: DDStrategy.PROBABILISTIC_DD
+                isHierarchyStrategyEnabled = mySettingsComponent?.isHierarchyStrategyEnabled ?: false
+                isDDAlgorithmEnabled = mySettingsComponent?.isDDAlgorithmEnabled ?: false
+            }
     }
 
     override fun reset() {
-        val state = project.service<MinimizationPluginState>().state
+        val state = project.service<MinimizationPluginSettings>().state.state
         mySettingsComponent?.compilationStrategy = state.compilationStrategy
         mySettingsComponent?.temporaryProjectLocation = state.temporaryProjectLocation
         mySettingsComponent?.snapshotStrategy = state.snapshotStrategy

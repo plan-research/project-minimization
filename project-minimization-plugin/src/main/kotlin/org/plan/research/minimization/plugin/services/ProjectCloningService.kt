@@ -3,7 +3,6 @@ package org.plan.research.minimization.plugin.services
 import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
-import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 
 import com.intellij.ide.impl.OpenProjectTask
 import com.intellij.ide.impl.ProjectUtil
@@ -41,7 +40,8 @@ import kotlinx.coroutines.withContext
 @Service(Service.Level.PROJECT)
 class ProjectCloningService(private val rootProject: Project) {
     private val tempProjectsDirectoryName by rootProject
-        .service<MinimizationPluginState>()
+        .service<MinimizationPluginSettings>()
+        .state
         .stateObservable
         .temporaryProjectLocation
         .observe { it }

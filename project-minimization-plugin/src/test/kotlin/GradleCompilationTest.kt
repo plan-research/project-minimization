@@ -12,8 +12,8 @@ import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.exception.CompilationResult
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
+import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.services.ProjectCloningService
-import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 import kotlin.io.path.name
 import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
@@ -22,7 +22,7 @@ import kotlin.test.assertNotEquals
 abstract class GradleCompilationTest<C : IJDDContext> : GradleProjectBaseTest(), TestWithContext<C> {
     override fun setUp() {
         super.setUp()
-        var compilationStrategy by project.service<MinimizationPluginState>().stateObservable.compilationStrategy.mutable()
+        var compilationStrategy by project.service<MinimizationPluginSettings>().state.stateObservable.compilationStrategy.mutable()
         compilationStrategy = CompilationStrategy.GRADLE_IDEA
         project.service<ProjectCloningService>().isTest = true
     }

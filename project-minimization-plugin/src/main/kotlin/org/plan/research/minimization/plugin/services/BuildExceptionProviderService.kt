@@ -7,7 +7,6 @@ import org.plan.research.minimization.plugin.model.BuildExceptionProvider
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.CompilationResult
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
-import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -18,12 +17,14 @@ class BuildExceptionProviderService(
     private val initialProject: Project,
 ) : BuildExceptionProvider {
     private val transformations: List<ExceptionTransformation> by initialProject
-        .service<MinimizationPluginState>()
+        .service<MinimizationPluginSettings>()
+        .state
         .stateObservable
         .minimizationTransformations
         .observe { transList -> transList.map { it.getExceptionTransformations() } }
     private val underlyingObject: BuildExceptionProvider by initialProject
-        .service<MinimizationPluginState>()
+        .service<MinimizationPluginSettings>()
+        .state
         .stateObservable
         .compilationStrategy
         .observe { it.getCompilationStrategy().withTransformations(transformations) }

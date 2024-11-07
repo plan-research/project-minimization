@@ -2,7 +2,7 @@ import com.intellij.openapi.components.service
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.state.*
-import org.plan.research.minimization.plugin.settings.MinimizationPluginState
+import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.settings.AppSettingsComponent
 
 class SettingsUITest : BasePlatformTestCase() {
@@ -15,7 +15,7 @@ class SettingsUITest : BasePlatformTestCase() {
     }
 
     fun testUpdateSettings() {
-        val settings = project.service<MinimizationPluginState>().stateObservable
+        val settings = project.service<MinimizationPluginSettings>().state.stateObservable
         var compilationStrategy by settings.compilationStrategy.mutable()
         var temporaryProjectLocation by settings.temporaryProjectLocation.mutable()
         var snapshotStrategy by settings.snapshotStrategy.mutable()
@@ -31,7 +31,7 @@ class SettingsUITest : BasePlatformTestCase() {
         )
         minimizationTransformations = mutableListOf(TransformationDescriptors.PATH_RELATIVIZATION)
 
-        val updatedSettings = project.service<MinimizationPluginState>().state
+        val updatedSettings = project.service<MinimizationPluginSettings>().state.state
         assertEquals(CompilationStrategy.DUMB, updatedSettings.compilationStrategy)
         assertEquals("new-project-location", updatedSettings.temporaryProjectLocation)
         assertEquals(SnapshotStrategy.PROJECT_CLONING, updatedSettings.snapshotStrategy)

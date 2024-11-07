@@ -1,24 +1,19 @@
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
-import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.ProjectManager
-import com.intellij.openapi.project.guessProjectDir
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.plan.research.minimization.plugin.model.FileLevelStage
-import org.plan.research.minimization.plugin.model.FunctionLevelStage
-import org.plan.research.minimization.plugin.model.MinimizationStage
 import org.plan.research.minimization.plugin.model.HeavyIJDDContext
-import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.model.state.DDStrategy
 import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
 import org.plan.research.minimization.plugin.model.state.TransformationDescriptors
+import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.services.MinimizationService
 import org.plan.research.minimization.plugin.services.ProjectCloningService
-import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 import kotlin.io.path.Path
 import kotlin.io.path.name
 import kotlin.test.assertEquals
@@ -26,25 +21,24 @@ import kotlin.test.assertEquals
 class MinimizationServiceTest : GradleProjectBaseTest() {
     override fun setUp() {
         super.setUp()
-        val stateObservable = service<MinimizationPluginState>().stateObservable
+        val stateObservable = service<MinimizationPluginSettings>().state.stateObservable
 
         var currentCompilationStrategy by stateObservable.compilationStrategy.mutable()
         currentCompilationStrategy = CompilationStrategy.GRADLE_IDEA
 
-        val minimizationTransformations by stateObservable.minimizationTransformations.mutable()
-        minimizationTransformations.clear()
-        minimizationTransformations.add(TransformationDescriptors.PATH_RELATIVIZATION)
+        var minimizationTransformations by stateObservable.minimizationTransformations.mutable()
+        minimizationTransformations = listOf(TransformationDescriptors.PATH_RELATIVIZATION)
 
-        val stages by stateObservable.stages.mutable()
-        stages.clear()
-        stages.add(FileLevelStage(
-            hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
-            ddAlgorithm = DDStrategy.DD_MIN
-        ))
+        var stages by stateObservable.stages.mutable()
+        stages = listOf(FileLevelStage(
+                hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
+                ddAlgorithm = DDStrategy.DD_MIN
+            ),
 //        TODO: JBRes-1977
-//        stages.add(FunctionLevelStage(
+//        FunctionLevelStage(
 //            ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
-//        ))
+//        )
+            )
 
         project.service<ProjectCloningService>().isTest = true
     }

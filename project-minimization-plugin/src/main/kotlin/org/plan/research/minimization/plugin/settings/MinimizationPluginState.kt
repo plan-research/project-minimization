@@ -10,7 +10,6 @@ import com.intellij.util.xmlb.annotations.Property
 import com.intellij.util.xmlb.annotations.XCollection
 import org.jetbrains.annotations.NonNls
 
-@Service(Service.Level.PROJECT)
 @State(
     name = "org.intellij.sdk.settings.AppSettings",
     storages = [Storage("ProjectMinimizationSettings.xml")],
@@ -38,7 +37,7 @@ class MinimizationPluginState : PersistentStateComponent<MinimizationPluginState
 
         @Property(surroundWithTag = false)
         @XCollection(style = XCollection.Style.v1, elementName = "stage")
-        var stages: MutableList<MinimizationStage> = mutableListOf(
+        var stages: List<MinimizationStage> = listOf(
             FunctionLevelStage(
                 ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
             ),
@@ -50,7 +49,7 @@ class MinimizationPluginState : PersistentStateComponent<MinimizationPluginState
 
         @Property(surroundWithTag = false)
         @XCollection(style = XCollection.Style.v1, elementName = "minimizationTransformations")
-        var minimizationTransformations: MutableList<TransformationDescriptors> = mutableListOf(
+        var minimizationTransformations: List<TransformationDescriptors> = listOf(
             TransformationDescriptors.PATH_RELATIVIZATION,
         ),
 

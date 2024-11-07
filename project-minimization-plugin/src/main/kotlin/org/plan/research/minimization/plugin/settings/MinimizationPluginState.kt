@@ -21,9 +21,6 @@ class MinimizationPluginState : BaseState() {
     @Property(surroundWithTag = false)
     @XCollection(style = XCollection.Style.v1, elementName = "stage")
     var stages: MutableList<MinimizationStage> = mutableListOf(
-        FunctionLevelStage(
-            ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
-        ),
         FileLevelStage(
             hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
             ddAlgorithm = DDStrategy.PROBABILISTIC_DD,

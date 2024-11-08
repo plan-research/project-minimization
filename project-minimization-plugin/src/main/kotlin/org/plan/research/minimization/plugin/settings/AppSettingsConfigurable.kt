@@ -1,6 +1,7 @@
 package org.plan.research.minimization.plugin.settings
 
 import org.plan.research.minimization.plugin.model.FileLevelStage
+import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.state.*
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 
@@ -35,13 +36,7 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
             mySettingsComponent?.exceptionComparingStrategy != state.exceptionComparingStrategy ||
             mySettingsComponent?.stages != state.stages ||
             mySettingsComponent?.transformations != state.minimizationTransformations ||
-            mySettingsComponent?.isFrozen != state.isFrozen ||
-            mySettingsComponent?.isFileStageEnabled != state.isFileStageEnabled ||
-            mySettingsComponent?.configMode != state.configMode ||
-            mySettingsComponent?.selectedHierarchyStrategy != state.selectedHierarchyStrategy ||
-            mySettingsComponent?.selectedDDStrategy != state.selectedDDStrategy ||
-            mySettingsComponent?.isHierarchyStrategyEnabled != state.isHierarchyStrategyEnabled ||
-            mySettingsComponent?.isDDAlgorithmEnabled != state.isDDAlgorithmEnabled
+            mySettingsComponent?.isFrozen != project.service<MinimizationPluginSettings>().freezeSettings
     }
 
     override fun apply() {
@@ -53,6 +48,9 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
                 snapshotStrategy = mySettingsComponent?.snapshotStrategy ?: SnapshotStrategy.PROJECT_CLONING
                 exceptionComparingStrategy = mySettingsComponent?.exceptionComparingStrategy ?: ExceptionComparingStrategy.SIMPLE
                 stages = (mySettingsComponent?.stages ?: listOf(
+                    FunctionLevelStage(
+                        ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
+                    ),
                     FileLevelStage(
                         hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
                         ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
@@ -61,13 +59,6 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
                 minimizationTransformations = (mySettingsComponent?.transformations ?: listOf(
                     TransformationDescriptors.PATH_RELATIVIZATION,
                 ))
-                isFrozen = mySettingsComponent?.isFrozen ?: false
-                isFileStageEnabled = mySettingsComponent?.isFileStageEnabled ?: false
-                configMode = mySettingsComponent?.configMode ?: StageConfigMode.DEFAULT
-                selectedHierarchyStrategy = mySettingsComponent?.selectedHierarchyStrategy ?: HierarchyCollectionStrategy.FILE_TREE
-                selectedDDStrategy = mySettingsComponent?.selectedDDStrategy ?: DDStrategy.PROBABILISTIC_DD
-                isHierarchyStrategyEnabled = mySettingsComponent?.isHierarchyStrategyEnabled ?: false
-                isDDAlgorithmEnabled = mySettingsComponent?.isDDAlgorithmEnabled ?: false
             }
     }
 
@@ -79,13 +70,7 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
         mySettingsComponent?.exceptionComparingStrategy = state.exceptionComparingStrategy
         mySettingsComponent?.stages = state.stages
         mySettingsComponent?.transformations = state.minimizationTransformations
-        mySettingsComponent?.isFrozen = state.isFrozen
-        mySettingsComponent?.isFileStageEnabled = state.isFileStageEnabled
-        mySettingsComponent?.configMode = state.configMode
-        mySettingsComponent?.selectedHierarchyStrategy = state.selectedHierarchyStrategy
-        mySettingsComponent?.selectedDDStrategy = state.selectedDDStrategy
-        mySettingsComponent?.isHierarchyStrategyEnabled = state.isHierarchyStrategyEnabled
-        mySettingsComponent?.isDDAlgorithmEnabled = state.isDDAlgorithmEnabled
+        mySettingsComponent?.isFrozen = project.service<MinimizationPluginSettings>().freezeSettings
     }
 
     override fun disposeUIResources() {

@@ -11,8 +11,5 @@ import com.intellij.openapi.components.State
 @State(name = "MinimizationPluginSettings")
 class MinimizationPluginSettings : SimplePersistentStateComponent<MinimizationPluginState>(MinimizationPluginState()) {
     var stateObservable: MinimizationPluginStateObservable = MinimizationPluginStateObservable(state)
-
-    fun freezeSettings(isFrozen: Boolean) {
-        state.isFrozen = isFrozen
-    }
+    var freezeSettings: Boolean = false
 }

@@ -34,13 +34,4 @@ class MinimizationPluginState : BaseState() {
     var minimizationTransformations: List<TransformationDescriptors> = listOf(
         TransformationDescriptors.PATH_RELATIVIZATION,
     )
-
-    // service settings fields
-    var isFrozen: Boolean = false
-    var configMode: StageConfigMode = StageConfigMode.DEFAULT
-    var isFileStageEnabled: Boolean = false
-    var selectedHierarchyStrategy: HierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE
-    var selectedDDStrategy: DDStrategy = DDStrategy.PROBABILISTIC_DD
-    var isHierarchyStrategyEnabled: Boolean = false
-    var isDDAlgorithmEnabled: Boolean = false
 }

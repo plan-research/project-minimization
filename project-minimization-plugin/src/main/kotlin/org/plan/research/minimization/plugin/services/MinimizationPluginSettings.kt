@@ -10,6 +10,6 @@ import com.intellij.openapi.components.State
 @Service(Service.Level.PROJECT)
 @State(name = "MinimizationPluginSettings")
 class MinimizationPluginSettings : SimplePersistentStateComponent<MinimizationPluginState>(MinimizationPluginState()) {
-    var stateObservable: MinimizationPluginStateObservable = MinimizationPluginStateObservable(state)
+    var stateObservable: MinimizationPluginStateObservable = MinimizationPluginStateObservable({ state })
     var freezeSettings: Boolean = false
 }

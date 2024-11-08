@@ -27,7 +27,7 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
 
     override fun setUp() {
         super.setUp()
-        var compilationStrategy by project.service<MinimizationPluginSettings>().state.stateObservable.compilationStrategy.mutable()
+        var compilationStrategy by project.service<MinimizationPluginSettings>().stateObservable.compilationStrategy.mutable()
         compilationStrategy = CompilationStrategy.DUMB
     }
 

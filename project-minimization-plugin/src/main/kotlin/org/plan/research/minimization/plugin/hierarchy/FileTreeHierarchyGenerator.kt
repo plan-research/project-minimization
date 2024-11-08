@@ -25,7 +25,7 @@ class FileTreeHierarchyGenerator : ProjectHierarchyProducer<ProjectFileDDItem> {
         val propertyTester = SameExceptionPropertyTester
             .create<ProjectFileDDItem>(
                 compilerPropertyTester,
-                project.service<MinimizationPluginSettings>().state.state
+                project.service<MinimizationPluginSettings>().state
                     .exceptionComparingStrategy.getExceptionComparator(),
                 FileDeletingItemLens(),
                 fromContext,

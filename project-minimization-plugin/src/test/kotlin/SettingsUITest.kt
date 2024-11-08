@@ -15,7 +15,7 @@ class SettingsUITest : BasePlatformTestCase() {
     }
 
     fun testUpdateSettings() {
-        val settings = project.service<MinimizationPluginSettings>().state.stateObservable
+        val settings = project.service<MinimizationPluginSettings>().stateObservable
         var compilationStrategy by settings.compilationStrategy.mutable()
         var temporaryProjectLocation by settings.temporaryProjectLocation.mutable()
         var snapshotStrategy by settings.snapshotStrategy.mutable()
@@ -31,7 +31,7 @@ class SettingsUITest : BasePlatformTestCase() {
         )
         minimizationTransformations = mutableListOf(TransformationDescriptors.PATH_RELATIVIZATION)
 
-        val updatedSettings = project.service<MinimizationPluginSettings>().state.state
+        val updatedSettings = project.service<MinimizationPluginSettings>().state
         assertEquals(CompilationStrategy.DUMB, updatedSettings.compilationStrategy)
         assertEquals("new-project-location", updatedSettings.temporaryProjectLocation)
         assertEquals(SnapshotStrategy.PROJECT_CLONING, updatedSettings.snapshotStrategy)

@@ -21,7 +21,7 @@ import kotlin.test.assertEquals
 class MinimizationServiceTest : GradleProjectBaseTest() {
     override fun setUp() {
         super.setUp()
-        val stateObservable = service<MinimizationPluginSettings>().state.stateObservable
+        val stateObservable = service<MinimizationPluginSettings>().stateObservable
 
         var currentCompilationStrategy by stateObservable.compilationStrategy.mutable()
         currentCompilationStrategy = CompilationStrategy.GRADLE_IDEA

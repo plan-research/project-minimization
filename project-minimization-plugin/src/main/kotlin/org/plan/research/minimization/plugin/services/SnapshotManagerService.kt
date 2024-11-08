@@ -14,7 +14,6 @@ import com.intellij.openapi.project.Project
 class SnapshotManagerService(private val rootProject: Project) : SnapshotManager {
     private val underlyingObject: SnapshotManager by rootProject
         .service<MinimizationPluginSettings>()
-        .state
         .stateObservable
         .snapshotStrategy
         .observe { it.getSnapshotManager(rootProject) }

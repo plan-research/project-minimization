@@ -18,13 +18,11 @@ class BuildExceptionProviderService(
 ) : BuildExceptionProvider {
     private val transformations: List<ExceptionTransformation> by initialProject
         .service<MinimizationPluginSettings>()
-        .state
         .stateObservable
         .minimizationTransformations
         .observe { transList -> transList.map { it.getExceptionTransformations() } }
     private val underlyingObject: BuildExceptionProvider by initialProject
         .service<MinimizationPluginSettings>()
-        .state
         .stateObservable
         .compilationStrategy
         .observe { it.getCompilationStrategy().withTransformations(transformations) }

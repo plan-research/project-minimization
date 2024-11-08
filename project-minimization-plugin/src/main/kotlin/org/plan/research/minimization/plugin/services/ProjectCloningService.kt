@@ -41,7 +41,6 @@ import kotlinx.coroutines.withContext
 class ProjectCloningService(private val rootProject: Project) {
     private val tempProjectsDirectoryName by rootProject
         .service<MinimizationPluginSettings>()
-        .state
         .stateObservable
         .temporaryProjectLocation
         .observe { it }

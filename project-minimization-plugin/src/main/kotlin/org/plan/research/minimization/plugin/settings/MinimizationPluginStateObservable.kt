@@ -2,28 +2,28 @@ package org.plan.research.minimization.plugin.settings
 
 data class MinimizationPluginStateObservable(private val state: MinimizationPluginState) {
     var compilationStrategy = StateDelegate(
-        getter = { state.state.compilationStrategy },
-        setter = { state.state.compilationStrategy = it },
+        getter = { state.compilationStrategy },
+        setter = { state.compilationStrategy = it },
     )
     var temporaryProjectLocation = StateDelegate(
-        getter = { state.state.temporaryProjectLocation },
-        setter = { state.state.temporaryProjectLocation = it },
+        getter = { state.temporaryProjectLocation },
+        setter = { state.temporaryProjectLocation = it },
     )
     var snapshotStrategy = StateDelegate(
-        getter = { state.state.snapshotStrategy },
-        setter = { state.state.snapshotStrategy = it },
+        getter = { state.snapshotStrategy },
+        setter = { state.snapshotStrategy = it },
     )
     var exceptionComparingStrategy = StateDelegate(
-        getter = { state.state.exceptionComparingStrategy },
-        setter = { state.state.exceptionComparingStrategy = it },
+        getter = { state.exceptionComparingStrategy },
+        setter = { state.exceptionComparingStrategy = it },
     )
     var stages = StateDelegate(
-        getter = { state.state.stages },
-        setter = { state.state.stages = it },
+        getter = { state.stages },
+        setter = { state.stages = it },
     )
     var minimizationTransformations = StateDelegate(
-        getter = { state.state.minimizationTransformations },
-        setter = { state.state.minimizationTransformations = it },
+        getter = { state.minimizationTransformations },
+        setter = { state.minimizationTransformations = it },
     )
 }
 

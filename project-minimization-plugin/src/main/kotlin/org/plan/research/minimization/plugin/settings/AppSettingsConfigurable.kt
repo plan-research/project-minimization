@@ -28,7 +28,7 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
     }
 
     override fun isModified(): Boolean {
-        val state = project.service<MinimizationPluginSettings>().state.state
+        val state = project.service<MinimizationPluginSettings>().state
         return mySettingsComponent?.compilationStrategy != state.compilationStrategy ||
             mySettingsComponent?.temporaryProjectLocation != state.temporaryProjectLocation ||
             mySettingsComponent?.snapshotStrategy != state.snapshotStrategy ||
@@ -46,7 +46,6 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
 
     override fun apply() {
         project.service<MinimizationPluginSettings>()
-            .state
             .state
             .apply {
                 compilationStrategy = mySettingsComponent?.compilationStrategy ?: CompilationStrategy.GRADLE_IDEA
@@ -73,7 +72,7 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
     }
 
     override fun reset() {
-        val state = project.service<MinimizationPluginSettings>().state.state
+        val state = project.service<MinimizationPluginSettings>().state
         mySettingsComponent?.compilationStrategy = state.compilationStrategy
         mySettingsComponent?.temporaryProjectLocation = state.temporaryProjectLocation
         mySettingsComponent?.snapshotStrategy = state.snapshotStrategy

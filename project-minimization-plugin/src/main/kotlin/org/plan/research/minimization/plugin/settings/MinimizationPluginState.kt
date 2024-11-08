@@ -10,55 +10,37 @@ import com.intellij.util.xmlb.annotations.Property
 import com.intellij.util.xmlb.annotations.XCollection
 import org.jetbrains.annotations.NonNls
 
-@State(
-    name = "org.intellij.sdk.settings.AppSettings",
-    storages = [Storage("ProjectMinimizationSettings.xml")],
-)
-class MinimizationPluginState : PersistentStateComponent<MinimizationPluginState.State>, BaseState() {
-    private var myState = State()
-    var stateObservable: MinimizationPluginStateObservable = MinimizationPluginStateObservable(this)
+class MinimizationPluginState : BaseState() {
+    @NonNls
+    var compilationStrategy: CompilationStrategy = CompilationStrategy.GRADLE_IDEA
+    var temporaryProjectLocation: String = "minimization-project-snapshots"
+    var snapshotStrategy: SnapshotStrategy = SnapshotStrategy.PROJECT_CLONING
+    var exceptionComparingStrategy: ExceptionComparingStrategy = ExceptionComparingStrategy.SIMPLE
 
-    override fun getState(): State = myState
-
-    override fun loadState(state: State) {
-        myState = state
-    }
-
-    fun freezeSettings(isFrozen: Boolean) {
-        state.isFrozen = isFrozen
-    }
-
-    data class State(
-        @NonNls
-        var compilationStrategy: CompilationStrategy = CompilationStrategy.GRADLE_IDEA,
-        var temporaryProjectLocation: String = "minimization-project-snapshots",
-        var snapshotStrategy: SnapshotStrategy = SnapshotStrategy.PROJECT_CLONING,
-        var exceptionComparingStrategy: ExceptionComparingStrategy = ExceptionComparingStrategy.SIMPLE,
-
-        @Property(surroundWithTag = false)
-        @XCollection(style = XCollection.Style.v1, elementName = "stage")
-        var stages: List<MinimizationStage> = listOf(
-            FunctionLevelStage(
-                ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
-            ),
-            FileLevelStage(
-                hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
-                ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
-            ),
+    @Property(surroundWithTag = false)
+    @XCollection(style = XCollection.Style.v1, elementName = "stage")
+    var stages: List<MinimizationStage> = listOf(
+        FunctionLevelStage(
+            ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
         ),
-
-        @Property(surroundWithTag = false)
-        @XCollection(style = XCollection.Style.v1, elementName = "minimizationTransformations")
-        var minimizationTransformations: List<TransformationDescriptors> = listOf(
-            TransformationDescriptors.PATH_RELATIVIZATION,
+        FileLevelStage(
+            hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
+            ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
         ),
-
-        var isFrozen: Boolean = false,
-        var configMode: StageConfigMode = StageConfigMode.DEFAULT,
-        var isFileStageEnabled: Boolean = false,
-        var selectedHierarchyStrategy: HierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
-        var selectedDDStrategy: DDStrategy = DDStrategy.PROBABILISTIC_DD,
-        var isHierarchyStrategyEnabled: Boolean = false,
-        var isDDAlgorithmEnabled: Boolean = false,
     )
+
+    @Property(surroundWithTag = false)
+    @XCollection(style = XCollection.Style.v1, elementName = "minimizationTransformations")
+    var minimizationTransformations: List<TransformationDescriptors> = listOf(
+        TransformationDescriptors.PATH_RELATIVIZATION,
+    )
+
+    // service settings fields
+    var isFrozen: Boolean = false
+    var configMode: StageConfigMode = StageConfigMode.DEFAULT
+    var isFileStageEnabled: Boolean = false
+    var selectedHierarchyStrategy: HierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE
+    var selectedDDStrategy: DDStrategy = DDStrategy.PROBABILISTIC_DD
+    var isHierarchyStrategyEnabled: Boolean = false
+    var isDDAlgorithmEnabled: Boolean = false
 }

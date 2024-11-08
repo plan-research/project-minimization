@@ -158,24 +158,6 @@ class AppSettingsComponent {
         transformationCheckBoxes.values.forEach { it.isEnabled = !isFrozen }
     }
 
-    // private fun updateStagesUI() {
-    // functionStageCheckBox.isSelected = stages.any { it is FunctionLevelStage }
-    // functionDDStrategy = stages
-    // .find { it is FunctionLevelStage }
-    // ?.let { (it as FunctionLevelStage).ddAlgorithm }
-    // ?: DDStrategy.PROBABILISTIC_DD
-    // 
-    // fileStageCheckBox.isSelected = stages.any { it is FileLevelStage }
-    // fileHierarchyStrategy = stages
-    // .find { it is FileLevelStage }
-    // ?.let { (it as FileLevelStage).hierarchyCollectionStrategy }
-    // ?: HierarchyCollectionStrategy.FILE_TREE
-    // fileDDStrategy = stages
-    // .find { it is FileLevelStage }
-    // ?.let { (it as FileLevelStage).ddAlgorithm }
-    // ?: DDStrategy.PROBABILISTIC_DD
-    // }
-
     private fun stagesPanelInit() {
         functionStagePanelInit()
         fileStagePanelInit()

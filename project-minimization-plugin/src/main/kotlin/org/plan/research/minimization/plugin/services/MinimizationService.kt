@@ -4,7 +4,6 @@ import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 import arrow.core.raise.either
 import com.intellij.openapi.components.Service
@@ -19,7 +18,10 @@ import kotlinx.coroutines.async
 
 @Service(Service.Level.PROJECT)
 class MinimizationService(project: Project, private val coroutineScope: CoroutineScope) {
-    private val stages = project.service<MinimizationPluginSettings>().state.stages
+    private val stages by project.service<MinimizationPluginSettings>()
+        .stateObservable
+        .stages
+        .observe { it }
     private val executor = project.service<MinimizationStageExecutorService>()
     private val projectCloning = project.service<ProjectCloningService>()
     private val logger = KotlinLogging.logger {}
@@ -28,6 +30,7 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
         coroutineScope.async {
             withBackgroundProgress(project, "Minimizing project") {
                 either {
+                    project.service<MinimizationPluginSettings>().freezeSettings = true
                     logger.info { "Start Project minimization" }
                     var context: IJDDContext = LightIJDDContext(project)
 
@@ -48,8 +51,10 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
 
                     context.also { onComplete(it) }
                 }.onRight {
+                    project.service<MinimizationPluginSettings>().freezeSettings = false
                     logger.info { "End Project minimization" }
                 }.onLeft { error ->
+                    project.service<MinimizationPluginSettings>().freezeSettings = false
                     logger.info { "End Project minimization" }
                     logger.error { "End minimizeProject with error: $error" }
                 }

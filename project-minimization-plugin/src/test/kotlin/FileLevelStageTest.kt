@@ -8,9 +8,9 @@ import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.model.state.DDStrategy
 import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
+import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.services.MinimizationStageExecutorService
 import org.plan.research.minimization.plugin.services.ProjectCloningService
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 class FileLevelStageTest : JavaCodeInsightFixtureTestCase() {
     override fun getTestDataPath(): String {
@@ -21,8 +21,10 @@ class FileLevelStageTest : JavaCodeInsightFixtureTestCase() {
 
     override fun setUp() {
         super.setUp()
-        project.service<MinimizationPluginSettings>().state.currentCompilationStrategy = CompilationStrategy.DUMB
-        project.service<MinimizationPluginSettings>().state.minimizationTransformations.clear()
+        var compilationStrategy by project.service<MinimizationPluginSettings>().stateObservable.compilationStrategy.mutable()
+        compilationStrategy = CompilationStrategy.DUMB
+        var transformations by project.service<MinimizationPluginSettings>().stateObservable.minimizationTransformations.mutable()
+        transformations = emptyList()
         project.service<ProjectCloningService>().isTest = true
     }
 

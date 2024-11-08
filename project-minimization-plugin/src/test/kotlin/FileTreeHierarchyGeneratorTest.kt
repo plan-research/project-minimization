@@ -1,6 +1,5 @@
 import arrow.core.Either
 import com.intellij.openapi.components.service
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.findPsiFile
 import com.intellij.openapi.vfs.isFile
@@ -17,7 +16,7 @@ import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchyGenerato
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
+import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import kotlin.io.path.name
 import kotlin.test.assertIs
 
@@ -28,7 +27,8 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
 
     override fun setUp() {
         super.setUp()
-        project.service<MinimizationPluginSettings>().state.currentCompilationStrategy = CompilationStrategy.DUMB
+        var compilationStrategy by project.service<MinimizationPluginSettings>().stateObservable.compilationStrategy.mutable()
+        compilationStrategy = CompilationStrategy.DUMB
     }
 
     private val fileTreeHierarchyGenerator = FileTreeHierarchyGenerator()

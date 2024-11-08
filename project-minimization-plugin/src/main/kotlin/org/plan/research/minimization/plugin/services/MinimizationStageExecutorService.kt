@@ -10,7 +10,6 @@ import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
 import org.plan.research.minimization.plugin.logging.statLogger
 import org.plan.research.minimization.plugin.model.*
 import org.plan.research.minimization.plugin.psi.PsiUtils
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 import arrow.core.Either
 import arrow.core.getOrElse
@@ -80,17 +79,14 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         val lightContext = makeLight(context)
 
         val ddAlgorithm = functionLevelStage.ddAlgorithm.getDDAlgorithm()
-        val exceptionComparator = project
-            .service<MinimizationPluginSettings>()
-            .state
-            .exceptionComparingStrategy
-            .getExceptionComparator()
         val lens = FunctionModificationLens()
         val firstLevel = service<MinimizationPsiManager>()
             .findAllPsiWithBodyItems(lightContext)
         val propertyChecker = SameExceptionPropertyTester.create<PsiWithBodyDDItem>(
             project.service<BuildExceptionProviderService>(),
-            exceptionComparator,
+            project.service<MinimizationPluginSettings>().state
+                .exceptionComparingStrategy
+                .getExceptionComparator(),
             lens,
             lightContext,
         ).getOrElse {

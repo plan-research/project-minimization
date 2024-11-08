@@ -4,7 +4,7 @@ import org.plan.research.minimization.plugin.execution.IdeaCompilationException
 import org.plan.research.minimization.plugin.execution.exception.KotlincException.*
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
-import org.plan.research.minimization.plugin.settings.MinimizationPluginState
+import org.plan.research.minimization.plugin.settings.MinimizationPluginStateObservable
 
 import com.intellij.openapi.vfs.toNioPathOrNull
 
@@ -15,7 +15,7 @@ import kotlin.io.path.relativeTo
 
 /**
  * Transforms file paths in compiler exceptions to be relative to a project root.
- * This module uses the fact that [MinimizationPluginState.temporaryProjectLocation][MinimizationPluginState.temporaryProjectLocation]
+ * This module uses the fact that [MinimizationPluginState.temporaryProjectLocation][MinimizationPluginStateObservable.temporaryProjectLocation]
  * is used for storing temporary projects.
  */
 class PathRelativizationTransformation : ExceptionTransformation {

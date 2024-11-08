@@ -35,8 +35,15 @@ class StateDelegate<T>(private val getter: () -> T, private val setter: (T) -> U
 
     inner class ChangeDelegate<V>(private val transform: (T) -> V) {
         private var value: V = transform(getter())
+        private var rawValue: T = getter()
 
-        operator fun getValue(thisRef: Any?, property: Any?): V = value
+        operator fun getValue(thisRef: Any?, property: Any?): V {
+            if (rawValue != getter()) {
+                onValueChanged(getter())
+            }
+
+            return value
+        }
 
         fun onValueChanged(newValue: T) {
             value = transform(newValue)

@@ -41,13 +41,22 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
 
     override fun apply() {
         project.service<MinimizationPluginSettings>()
-            .state
+            .stateObservable
             .apply {
+                var compilationStrategy by compilationStrategy.mutable()
                 compilationStrategy = mySettingsComponent?.compilationStrategy ?: CompilationStrategy.GRADLE_IDEA
+
+                var temporaryProjectLocation by temporaryProjectLocation.mutable()
                 temporaryProjectLocation = mySettingsComponent?.temporaryProjectLocation ?: "minimization-project-snapshots"
+
+                var snapshotStrategy by snapshotStrategy.mutable()
                 snapshotStrategy = mySettingsComponent?.snapshotStrategy ?: SnapshotStrategy.PROJECT_CLONING
+
+                var exceptionComparingStrategy by exceptionComparingStrategy.mutable()
                 exceptionComparingStrategy = mySettingsComponent?.exceptionComparingStrategy ?: ExceptionComparingStrategy.SIMPLE
-                stages = (mySettingsComponent?.stages ?: listOf(
+
+                var stages by stages.mutable()
+                stages = mySettingsComponent?.stages ?: listOf(
                     FunctionLevelStage(
                         ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
                     ),
@@ -55,10 +64,12 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
                         hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
                         ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
                     ),
-                ))
-                minimizationTransformations = (mySettingsComponent?.transformations ?: listOf(
+                )
+
+                var minimizationTransformations by minimizationTransformations.mutable()
+                minimizationTransformations = mySettingsComponent?.transformations ?: listOf(
                     TransformationDescriptors.PATH_RELATIVIZATION,
-                ))
+                )
             }
     }
 

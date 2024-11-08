@@ -35,11 +35,9 @@ class AppSettingsComponent {
         JBCheckBox(descriptor.name.replace("_", " ")
             .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() })
     }
-    private val isFrozenCheckBox = JBCheckBox("Is frozen")
 
-    var isFrozen: Boolean
-        get() = isFrozenCheckBox.isSelected
-        set(value) { isFrozenCheckBox.isSelected = value
+    var isFrozen: Boolean = false
+        set(value) { field = value
             updateUIState()}
 
     var compilationStrategy: CompilationStrategy
@@ -138,9 +136,9 @@ class AppSettingsComponent {
             .addComponentFillVertically(JPanel(), 0)
             .panel
 
-        isFrozenCheckBox.addActionListener {
-            updateUIState()
-        }
+        // isFrozenCheckBox.addActionListener {
+        // updateUIState()
+        // }
 
         updateUIState()
     }

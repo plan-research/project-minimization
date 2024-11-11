@@ -11,9 +11,9 @@ import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.model.state.DDStrategy
 import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
 import org.plan.research.minimization.plugin.model.state.TransformationDescriptors
-import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.services.MinimizationService
-import org.plan.research.minimization.plugin.services.ProjectCloningService
+import org.plan.research.minimization.plugin.services.ProjectOpeningService
+import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import kotlin.io.path.Path
 import kotlin.io.path.name
 import kotlin.test.assertEquals
@@ -40,7 +40,7 @@ class MinimizationServiceTest : GradleProjectBaseTest() {
 //        )
             )
 
-        project.service<ProjectCloningService>().isTest = true
+        service<ProjectOpeningService>().isTest = true
     }
 
     fun testKt71260() {

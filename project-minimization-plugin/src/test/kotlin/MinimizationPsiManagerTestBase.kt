@@ -1,9 +1,7 @@
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
-import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.PsiDDItem
 import org.plan.research.minimization.plugin.psi.PsiUtils
-import org.plan.research.minimization.plugin.services.MinimizationPsiManager
 
 abstract class MinimizationPsiManagerTestBase : JavaCodeInsightFixtureTestCase() {
     override fun getTestDataPath(): String {

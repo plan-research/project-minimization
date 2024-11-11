@@ -18,7 +18,40 @@ class AppSettingsComponent {
 
     // Fields from MinimizationPluginState
     private val compilationStrategyComboBox = ComboBox(DefaultComboBoxModel(CompilationStrategy.entries.toTypedArray()))
-    private val temporaryProjectLocationField = JBTextField()
+    private val gradleTaskField = JBTextField().apply {
+        emptyText.text = "build"
+    }
+    private val gradleOptionsField = JBTextField().apply {
+        emptyText.text = "--offline --refresh-dependencies etc..."
+
+        inputVerifier = object : InputVerifier() {
+            override fun verify(input: JComponent): Boolean {
+                val text = (input as JBTextField).text
+                val invalidOptions = text.trim().replace("\\s+".toRegex(), " ").split(" ")
+                    .map { it.trim() }
+                    .filter { !isValidGradleOption(it) }
+
+                if (invalidOptions.isNotEmpty()) {
+                    JOptionPane.showMessageDialog(
+                        input,
+                        "Options: ${invalidOptions.joinToString(", ")} are invalid",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE,
+                    )
+                    return false
+                }
+                return true
+            }
+
+            fun isValidGradleOption(option: String): Boolean {
+                val optionRegex = Regex("^\$|^--[a-zA-Z\\-]+(?:=[a-zA-Z0-9]+)?$")
+                return optionRegex.matches(option)
+            }
+        }
+    }
+    private val temporaryProjectLocationField = JBTextField().apply {
+        emptyText.text = "minimization-project-snapshots"
+    }
     private val snapshotStrategyComboBox = ComboBox(DefaultComboBoxModel(SnapshotStrategy.entries.toTypedArray()))
     private val exceptionComparingStrategyComboBox = ComboBox(DefaultComboBoxModel(ExceptionComparingStrategy.entries.toTypedArray()))
 
@@ -44,6 +77,20 @@ class AppSettingsComponent {
         get() = compilationStrategyComboBox.selectedItem as CompilationStrategy
         set(value) {
             compilationStrategyComboBox.selectedItem = value}
+
+    var gradleTask: String
+        get() = gradleTaskField.text
+        set(value) {
+            gradleTaskField.text = value
+        }
+
+    var gradleOptions: List<String>
+        get() = gradleOptionsField.text.trim()
+            .replace("\\s+".toRegex(), " ")
+            .split(" ")
+        set(value) {
+            gradleOptionsField.text = value.joinToString(" ")
+        }
 
     var temporaryProjectLocation: String
         get() = temporaryProjectLocationField.text
@@ -125,6 +172,8 @@ class AppSettingsComponent {
 
         myMainPanel = FormBuilder.createFormBuilder()
             .addLabeledComponent(JBLabel("Compilation strategy:"), compilationStrategyComboBox, 1, false)
+            .addLabeledComponent(JBLabel("Gradle task:"), gradleTaskField, 1, false)
+            .addLabeledComponent(JBLabel("Gradle options:"), gradleOptionsField, 1, false)
             .addLabeledComponent(JBLabel("Temporary project location:"), temporaryProjectLocationField, 1, false)
             .addLabeledComponent(JBLabel("Snapshot strategy:"), snapshotStrategyComboBox, 1, false)
             .addLabeledComponent(JBLabel("Exception comparing strategy:"), exceptionComparingStrategyComboBox, 1, false)
@@ -136,15 +185,13 @@ class AppSettingsComponent {
             .addComponentFillVertically(JPanel(), 0)
             .panel
 
-        // isFrozenCheckBox.addActionListener {
-        // updateUIState()
-        // }
-
         updateUIState()
     }
 
     private fun updateUIState() {
         compilationStrategyComboBox.isEnabled = !isFrozen
+        gradleTaskField.isEnabled = !isFrozen
+        gradleOptionsField.isEnabled = !isFrozen
         temporaryProjectLocationField.isEnabled = !isFrozen
         snapshotStrategyComboBox.isEnabled = !isFrozen
         exceptionComparingStrategyComboBox.isEnabled = !isFrozen

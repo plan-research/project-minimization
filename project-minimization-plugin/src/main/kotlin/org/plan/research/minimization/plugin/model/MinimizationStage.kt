@@ -12,17 +12,17 @@ import com.intellij.util.xmlb.annotations.Tag
  */
 interface MinimizationStageExecutor {
     suspend fun executeFileLevelStage(
-        context: IJDDContext,
+        context: HeavyIJDDContext,
         fileLevelStage: FileLevelStage,
     ): Either<MinimizationError, IJDDContext>
 
     suspend fun executeFunctionLevelStage(
-        context: IJDDContext,
+        context: HeavyIJDDContext,
         functionLevelBodyReplacementStage: FunctionLevelBodyReplacementStage,
     ): Either<MinimizationError, IJDDContext>
 
     suspend fun executeFunctionDeletingStage(
-        context: IJDDContext,
+        context: HeavyIJDDContext,
         functionDeletingStage: FunctionDeletingStage,
     ): Either<MinimizationError, IJDDContext>
 }
@@ -37,7 +37,7 @@ sealed interface MinimizationStage {
     val name: String
 
     suspend fun apply(
-        context: IJDDContext,
+        context: HeavyIJDDContext,
         executor: MinimizationStageExecutor,
     ): Either<MinimizationError, IJDDContext>
 }
@@ -57,7 +57,7 @@ data class FileLevelStage(
 ) : MinimizationStage {
     override val name: String = "File-Level Minimization"
 
-    override suspend fun apply(context: IJDDContext, executor: MinimizationStageExecutor) =
+    override suspend fun apply(context: HeavyIJDDContext, executor: MinimizationStageExecutor) =
         executor.executeFileLevelStage(context, this)
 }
 
@@ -68,7 +68,7 @@ data class FunctionLevelBodyReplacementStage(
     override val name: String = "Body Replacement Algorithm"
 
     override suspend fun apply(
-        context: IJDDContext,
+        context: HeavyIJDDContext,
         executor: MinimizationStageExecutor,
     ): Either<MinimizationError, IJDDContext> = executor.executeFunctionLevelStage(context, this)
 }
@@ -80,7 +80,7 @@ data class FunctionDeletingStage(
     override val name: String = "Function Deleting Algorithm"
 
     override suspend fun apply(
-        context: IJDDContext,
+        context: HeavyIJDDContext,
         executor: MinimizationStageExecutor,
     ): Either<MinimizationError, IJDDContext> = executor.executeFunctionDeletingStage(context, this)
 }

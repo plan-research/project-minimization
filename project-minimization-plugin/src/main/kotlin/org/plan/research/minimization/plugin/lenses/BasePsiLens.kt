@@ -6,7 +6,7 @@ import org.plan.research.minimization.plugin.model.ProjectItemLens
 import org.plan.research.minimization.plugin.model.PsiDDItem
 import org.plan.research.minimization.plugin.psi.PsiItemStorage
 import org.plan.research.minimization.plugin.psi.PsiUtils
-import org.plan.research.minimization.plugin.services.MinimizationPsiManager
+import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
@@ -54,8 +54,8 @@ abstract class BasePsiLens : ProjectItemLens {
         if (!logger.isTraceEnabled) {
             return
         }
-        val psiManager = service<MinimizationPsiManager>()
-        val psiElements = items.map { psiManager.getPsiElementFromItem(context, it) }
+        val psiManager = service<MinimizationPsiManagerService>()
+        val psiElements = items.map { PsiUtils.getPsiElementFromItem(context, it) }
         readAction {
             logger.trace {
                 "Focusing on items: \n" +

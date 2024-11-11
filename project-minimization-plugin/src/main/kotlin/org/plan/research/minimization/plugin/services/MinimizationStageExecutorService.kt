@@ -19,37 +19,21 @@ import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ex.ProjectManagerEx
 import mu.KotlinLogging
 
 @Service(Service.Level.PROJECT)
 class MinimizationStageExecutorService(private val project: Project) : MinimizationStageExecutor {
     private val logger = KotlinLogging.logger {}
 
-    private suspend fun makeLight(context: IJDDContext): LightIJDDContext = when (context) {
-        is HeavyIJDDContext -> {
-            val projectDir = context.projectDir
-            val result = LightIJDDContext(
-                projectDir, context.originalProject,
-                context.currentLevel, context.progressReporter,
-            )
-
-            ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(context.project)
-
-            result
-        }
-
-        is LightIJDDContext -> context
-    }
-    override suspend fun executeFileLevelStage(context: IJDDContext, fileLevelStage: FileLevelStage) = either {
+    override suspend fun executeFileLevelStage(context: HeavyIJDDContext, fileLevelStage: FileLevelStage) = either {
         logger.info { "Start File level stage" }
         statLogger.info {
             "File level stage settings, " +
-                "Hierarchy strategy: ${fileLevelStage.hierarchyCollectionStrategy::class.simpleName}, " +
-                "DDAlgorithm: ${fileLevelStage.ddAlgorithm::class.simpleName}"
+                "Hierarchy strategy: ${fileLevelStage.hierarchyCollectionStrategy}, " +
+                "DDAlgorithm: ${fileLevelStage.ddAlgorithm}"
         }
 
-        val lightContext = makeLight(context)
+        val lightContext = context.asLightContext()
 
         val baseAlgorithm = fileLevelStage.ddAlgorithm.getDDAlgorithm()
         val hierarchicalDD = HierarchicalDD(baseAlgorithm)
@@ -68,19 +52,19 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
     }.logResult("File")
 
     override suspend fun executeFunctionLevelStage(
-        context: IJDDContext,
+        context: HeavyIJDDContext,
         functionLevelBodyReplacementStage: FunctionLevelBodyReplacementStage,
     ) = either {
         logger.info { "Start Function level stage" }
         statLogger.info {
-            "Function level stage settings. DDAlgorithm: ${functionLevelBodyReplacementStage.ddAlgorithm::class.simpleName}"
+            "Function level stage settings. DDAlgorithm: ${functionLevelBodyReplacementStage.ddAlgorithm}"
         }
 
-        val lightContext = makeLight(context)
+        val lightContext = context.asLightContext()
 
         val ddAlgorithm = functionLevelBodyReplacementStage.ddAlgorithm.getDDAlgorithm()
         val lens = FunctionModificationLens()
-        val firstLevel = service<MinimizationPsiManager>()
+        val firstLevel = service<MinimizationPsiManagerService>()
             .findAllPsiWithBodyItems(lightContext)
         val propertyChecker = SameExceptionPropertyTester.create<PsiDDItem>(
             project.service<BuildExceptionProviderService>(),
@@ -120,7 +104,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
     }
 
     override suspend fun executeFunctionDeletingStage(
-        context: IJDDContext,
+        context: HeavyIJDDContext,
         functionDeletingStage: FunctionDeletingStage,
     ) = either {
         logger.info { "Start Function deleting stage" }
@@ -128,13 +112,16 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
             "Function deleting stage settings, " +
                 "DDAlgorithm: ${functionDeletingStage.ddAlgorithm}"
         }
+
+        val lightContext = context.asLightContext()
+
         val ddAlgorithm = functionDeletingStage.ddAlgorithm.getDDAlgorithm()
         val hierarchicalDD = HierarchicalDD(ddAlgorithm)
         val hierarchy = DeletablePsiElementHierarchyGenerator()
             .produce(context)
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
 
-        context.withProgress {
+        lightContext.withProgress {
             hierarchicalDD.minimize(it, hierarchy)
         }
     }.logResult("Function Deleting")

@@ -1,10 +1,6 @@
 import com.intellij.openapi.application.readAction
-import com.intellij.openapi.application.writeAction
-import com.intellij.openapi.command.writeCommandAction
 import com.intellij.openapi.components.service
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFile
-import com.intellij.psi.codeStyle.CodeStyleManager
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtFile
@@ -14,7 +10,7 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.PsiDDItem
 import org.plan.research.minimization.plugin.psi.PsiUtils
-import org.plan.research.minimization.plugin.services.MinimizationPsiManager
+import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import kotlin.test.assertIs
 
 class PsiTrieDeletionTest : PsiTrieTestBase() {
@@ -113,7 +109,7 @@ class PsiTrieDeletionTest : PsiTrieTestBase() {
         PsiUtils.getPsiElementFromItem(context, this)
 
      override suspend fun getAllElements(context: IJDDContext): List<PsiDDItem> {
-        val service = service<MinimizationPsiManager>()
+        val service = service<MinimizationPsiManagerService>()
         return service.findDeletablePsiItems(context)
     }
 }

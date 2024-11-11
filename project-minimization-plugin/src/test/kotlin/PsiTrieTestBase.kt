@@ -14,7 +14,7 @@ import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.PsiDDItem
 import org.plan.research.minimization.plugin.psi.PsiItemStorage
 import org.plan.research.minimization.plugin.psi.PsiUtils
-import org.plan.research.minimization.plugin.services.MinimizationPsiManager
+import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import kotlin.test.assertIs
 
 abstract class PsiTrieTestBase : JavaCodeInsightFixtureTestCase() {
@@ -26,7 +26,7 @@ abstract class PsiTrieTestBase : JavaCodeInsightFixtureTestCase() {
 
 
     protected open suspend fun getAllElements(context: IJDDContext): List<PsiDDItem> {
-        val service = service<MinimizationPsiManager>()
+        val service = service<MinimizationPsiManagerService>()
         return service.findAllPsiWithBodyItems(context)
     }
 

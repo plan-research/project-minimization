@@ -14,6 +14,7 @@ import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.services.ProjectCloningService
+import org.plan.research.minimization.plugin.services.ProjectOpeningService
 import kotlin.io.path.name
 import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
@@ -24,7 +25,7 @@ abstract class GradleCompilationTest<C : IJDDContext> : GradleProjectBaseTest(),
         super.setUp()
         var compilationStrategy by project.service<MinimizationPluginSettings>().stateObservable.compilationStrategy.mutable()
         compilationStrategy = CompilationStrategy.GRADLE_IDEA
-        project.service<ProjectCloningService>().isTest = true
+        service<ProjectOpeningService>().isTest = true
     }
 
     fun testWithFreshlyInitializedProject() {

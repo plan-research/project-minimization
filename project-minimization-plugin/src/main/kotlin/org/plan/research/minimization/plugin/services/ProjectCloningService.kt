@@ -4,23 +4,16 @@ import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
 
-import com.intellij.ide.impl.OpenProjectTask
-import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.openapi.externalSystem.importing.ImportSpecBuilder
-import com.intellij.openapi.externalSystem.service.execution.ProgressExecutionMode
-import com.intellij.openapi.externalSystem.util.ExternalSystemUtil
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ex.ProjectManagerEx
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.project.isProjectOrWorkspaceFile
 import com.intellij.openapi.util.io.findOrCreateDirectory
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.toNioPathOrNull
-import org.jetbrains.kotlin.idea.configuration.GRADLE_SYSTEM_ID
 
 import java.nio.file.Path
 import java.util.*
@@ -29,7 +22,6 @@ import kotlin.io.path.copyTo
 import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 
 /**
@@ -39,47 +31,13 @@ import kotlinx.coroutines.withContext
  */
 @Service(Service.Level.PROJECT)
 class ProjectCloningService(private val rootProject: Project) {
+    private val openingService = service<ProjectOpeningService>()
     private val tempProjectsDirectoryName by rootProject
         .service<MinimizationPluginSettings>()
         .stateObservable
         .temporaryProjectLocation
         .observe { it }
     private val importantFiles = setOf("modules.xml", "misc.xml", "libraries")
-
-    // TODO: JBRes-1977
-    var isTest: Boolean = false
-
-    suspend fun openProject(projectPath: Path, forceImport: Boolean): Project? {
-        val project = ProjectUtil.openOrImportAsync(projectPath, OpenProjectTask {
-            forceOpenInNewFrame = true
-            runConversionBeforeOpen = false
-            isRefreshVfsNeeded = !isTest
-        }) ?: return null
-
-        if (forceImport) {
-            forceImportGradleProject(project)
-        }
-
-        return project
-    }
-
-    suspend fun forceImportGradleProject(project: Project) {
-        if (!isTest) {
-            try {
-                ExternalSystemUtil.refreshProject(
-                    project.guessProjectDir()!!.path,
-                    ImportSpecBuilder(project, GRADLE_SYSTEM_ID)
-                        .use(ProgressExecutionMode.MODAL_SYNC)
-                        .build(),
-                )
-            } catch (e: Throwable) {
-                withContext(NonCancellable) {
-                    ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(project)
-                }
-                throw e
-            }
-        }
-    }
 
     suspend fun clone(context: IJDDContext): IJDDContext? =
         when (context) {
@@ -96,7 +54,7 @@ class ProjectCloningService(private val rootProject: Project) {
 
     suspend fun clone(context: HeavyIJDDContext): HeavyIJDDContext? {
         val clonedPath = cloneProjectImpl(context.projectDir)
-        val clonedProject = openProject(clonedPath, false) ?: return null
+        val clonedProject = openingService.openProject(clonedPath) ?: return null
         LocalFileSystem.getInstance().refreshAndFindFileByNioFile(clonedPath)?.refresh(false, true)
         return context.copy(project = clonedProject)
     }

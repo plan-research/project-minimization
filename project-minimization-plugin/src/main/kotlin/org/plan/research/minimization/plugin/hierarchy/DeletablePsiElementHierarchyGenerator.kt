@@ -12,7 +12,7 @@ import org.plan.research.minimization.plugin.model.PsiDDItem
 import org.plan.research.minimization.plugin.psi.CompressingPsiItemTrie
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
-import org.plan.research.minimization.plugin.services.MinimizationPsiManager
+import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 
 import arrow.core.getOrElse
 import arrow.core.raise.either
@@ -40,7 +40,7 @@ class DeletablePsiElementHierarchyGenerator : ProjectHierarchyProducer<PsiDDItem
     }
 
     private suspend fun buildTries(context: IJDDContext): Map<Path, CompressingPsiItemTrie> {
-        val items = service<MinimizationPsiManager>().findDeletablePsiItems(context)
+        val items = service<MinimizationPsiManagerService>().findDeletablePsiItems(context)
         return items.groupBy(PsiDDItem::localPath)
             .mapValues { (_, items) -> CompressingPsiItemTrie.create(items) }
     }

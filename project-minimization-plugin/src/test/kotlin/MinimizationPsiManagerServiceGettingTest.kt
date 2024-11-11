@@ -2,11 +2,9 @@ import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.service
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.psi.*
-import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
-import org.plan.research.minimization.plugin.model.PsiDDItem
 import org.plan.research.minimization.plugin.psi.PsiUtils
-import org.plan.research.minimization.plugin.services.MinimizationPsiManager
+import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import kotlin.test.assertIs
 
 class MinimizationPsiManagerGettingTest : MinimizationPsiManagerTestBase() {
@@ -16,7 +14,7 @@ class MinimizationPsiManagerGettingTest : MinimizationPsiManagerTestBase() {
 
     override fun runInDispatchThread(): Boolean = false
     fun testFunctions() {
-        val service = service<MinimizationPsiManager>()
+        val service = service<MinimizationPsiManagerService>()
         val psiFile = myFixture.configureByFile("functions.kt")
         assertIs<KtFile>(psiFile)
         val context = LightIJDDContext(project)
@@ -46,7 +44,7 @@ class MinimizationPsiManagerGettingTest : MinimizationPsiManagerTestBase() {
     }
 
     fun testLambdas() {
-        val service = service<MinimizationPsiManager>()
+        val service = service<MinimizationPsiManagerService>()
         val psiFile = myFixture.configureByFile("lambda.kt")
         assertIs<KtFile>(psiFile)
         val context = LightIJDDContext(project)
@@ -67,7 +65,7 @@ class MinimizationPsiManagerGettingTest : MinimizationPsiManagerTestBase() {
     }
 
     fun testLambdaAsDefaultParameterIsNotReplaceable() {
-        val service = service<MinimizationPsiManager>()
+        val service = service<MinimizationPsiManagerService>()
         val psiFile = myFixture.configureByFile("lambda-as-default.kt")
         assertIs<KtFile>(psiFile)
         val context = LightIJDDContext(project)
@@ -86,7 +84,7 @@ class MinimizationPsiManagerGettingTest : MinimizationPsiManagerTestBase() {
     }
 
     fun testSimpleClass() {
-        val service = service<MinimizationPsiManager>()
+        val service = service<MinimizationPsiManagerService>()
         val psiFile = myFixture.configureByFile("simple-class.kt")
         assertIs<KtFile>(psiFile)
         val context = LightIJDDContext(project)
@@ -128,7 +126,7 @@ class MinimizationPsiManagerGettingTest : MinimizationPsiManagerTestBase() {
     }
 
     fun testComplexClass() {
-        val service = service<MinimizationPsiManager>()
+        val service = service<MinimizationPsiManagerService>()
         val psiFile = myFixture.configureByFile("complex-class.kt")
         assertIs<KtFile>(psiFile)
         val context = LightIJDDContext(project)

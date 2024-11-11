@@ -18,7 +18,7 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.PsiDDItem
 import org.plan.research.minimization.plugin.psi.PsiUtils
-import org.plan.research.minimization.plugin.services.MinimizationPsiManager
+import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 import kotlin.io.path.relativeTo
 
@@ -85,7 +85,7 @@ class FunctionModificationLensTest : JavaCodeInsightFixtureTestCase() {
 
     private suspend fun doTest(context: LightIJDDContext, elements: List<PsiDDItem>, expectedFolder: String) {
         val projectCloningService = project.service<ProjectCloningService>()
-        val psiGetterService = service<MinimizationPsiManager>()
+        val psiGetterService = service<MinimizationPsiManagerService>()
         var cloned = projectCloningService.clone(context)
         kotlin.test.assertNotNull(cloned)
         val lens = FunctionModificationLens()
@@ -123,7 +123,7 @@ class FunctionModificationLensTest : JavaCodeInsightFixtureTestCase() {
         filter { filter(PsiUtils.getPsiElementFromItem(context, it)!!) }
 
     private suspend fun getAllElements(context: IJDDContext, vfs: VirtualFile): List<PsiDDItem> {
-        val service = service<MinimizationPsiManager>()
+        val service = service<MinimizationPsiManagerService>()
         val elements = service.findAllPsiWithBodyItems(context)
         val vfsRelativePath = context.projectDir.toNioPath().relativize(vfs.toNioPath())
         return elements.filter { it.localPath == vfsRelativePath }

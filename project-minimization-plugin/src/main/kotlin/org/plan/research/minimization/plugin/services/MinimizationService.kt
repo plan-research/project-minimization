@@ -6,7 +6,6 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.MinimizationStage
 import org.plan.research.minimization.plugin.psi.PsiImportCleaner
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 import arrow.core.raise.Raise
 import arrow.core.raise.either

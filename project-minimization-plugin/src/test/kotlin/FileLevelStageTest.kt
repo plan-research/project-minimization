@@ -11,10 +11,10 @@ import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.model.state.DDStrategy
 import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
+import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.services.MinimizationStageExecutorService
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 import org.plan.research.minimization.plugin.services.ProjectOpeningService
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 class FileLevelStageTest : JavaCodeInsightFixtureTestCase() {
     override fun getTestDataPath(): String {

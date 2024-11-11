@@ -12,9 +12,9 @@ import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.exception.CompilationResult
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
+import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 import org.plan.research.minimization.plugin.services.ProjectOpeningService
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 import kotlin.io.path.name
 import kotlin.test.assertIs
 import kotlin.test.assertNotEquals

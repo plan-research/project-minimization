@@ -13,7 +13,7 @@ import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStra
 import org.plan.research.minimization.plugin.model.state.TransformationDescriptors
 import org.plan.research.minimization.plugin.services.MinimizationService
 import org.plan.research.minimization.plugin.services.ProjectOpeningService
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
+import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import kotlin.io.path.Path
 import kotlin.io.path.name
 import kotlin.test.assertEquals

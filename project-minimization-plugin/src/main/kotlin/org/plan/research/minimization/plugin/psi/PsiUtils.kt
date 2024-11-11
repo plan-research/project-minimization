@@ -3,6 +3,7 @@ package org.plan.research.minimization.plugin.psi
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
 
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.command.writeCommandAction
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -73,7 +74,7 @@ object PsiUtils {
         psiFile: PsiFile,
         commandName: String = "",
         crossinline block: () -> T,
-    ): T? = withContext(Dispatchers.IO) {
+    ): T? = withContext(Dispatchers.EDT) {
         writeCommandAction(context.indexProject, commandName) {
             val documentManager = PsiDocumentManager.getInstance(context.indexProject)
             val document = documentManager.getDocument(psiFile) ?: return@writeCommandAction null

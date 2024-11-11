@@ -51,6 +51,12 @@ class HeavyIJDDContext(
     override val projectDir: VirtualFile by lazy { project.guessProjectDir()!! }
     override val indexProject: Project = project
 
+    fun asLightContext(): LightIJDDContext = LightIJDDContext(
+        projectDir, indexProject = project,
+        originalProject = originalProject,
+        currentLevel, progressReporter,
+    )
+
     fun copy(
         project: Project,
         currentLevel: List<IJDDItem>? = this.currentLevel,
@@ -73,12 +79,11 @@ class HeavyIJDDContext(
  */
 class LightIJDDContext(
     override val projectDir: VirtualFile,
-    originalProject: Project,
+    override val indexProject: Project,
+    originalProject: Project = indexProject,
     currentLevel: List<IJDDItem>? = null,
     progressReporter: SequentialProgressReporter? = null,
 ) : IJDDContext(originalProject, currentLevel, progressReporter) {
-    override val indexProject: Project = originalProject
-
     constructor(project: Project) : this(project.guessProjectDir()!!, project)
 
     fun copy(
@@ -87,6 +92,7 @@ class LightIJDDContext(
         progressReporter: SequentialProgressReporter? = this.progressReporter,
     ): LightIJDDContext = LightIJDDContext(
         projectDir,
+        indexProject,
         originalProject,
         currentLevel,
         progressReporter,

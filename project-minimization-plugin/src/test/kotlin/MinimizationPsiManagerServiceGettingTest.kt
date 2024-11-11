@@ -7,17 +7,17 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
 import org.plan.research.minimization.plugin.psi.PsiUtils
-import org.plan.research.minimization.plugin.services.MinimizationPsiManager
+import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import kotlin.test.assertIs
 
-class MinimizationPsiManagerGettingTest : JavaCodeInsightFixtureTestCase() {
+class MinimizationPsiManagerServiceGettingTest : JavaCodeInsightFixtureTestCase() {
     override fun getTestDataPath(): String {
         return "src/test/resources/testData/kotlin-psi"
     }
 
     override fun runInDispatchThread(): Boolean = false
     fun testFunctions() {
-        val service = service<MinimizationPsiManager>()
+        val service = service<MinimizationPsiManagerService>()
         val psiFile = myFixture.configureByFile("functions.kt")
         assertIs<KtFile>(psiFile)
         val context = LightIJDDContext(project)
@@ -47,7 +47,7 @@ class MinimizationPsiManagerGettingTest : JavaCodeInsightFixtureTestCase() {
     }
 
     fun testLambdas() {
-        val service = service<MinimizationPsiManager>()
+        val service = service<MinimizationPsiManagerService>()
         val psiFile = myFixture.configureByFile("lambda.kt")
         assertIs<KtFile>(psiFile)
         val context = LightIJDDContext(project)
@@ -68,7 +68,7 @@ class MinimizationPsiManagerGettingTest : JavaCodeInsightFixtureTestCase() {
     }
 
     fun testLambdaAsDefaultParameterIsNotReplaceable() {
-        val service = service<MinimizationPsiManager>()
+        val service = service<MinimizationPsiManagerService>()
         val psiFile = myFixture.configureByFile("lambda-as-default.kt")
         assertIs<KtFile>(psiFile)
         val context = LightIJDDContext(project)
@@ -87,7 +87,7 @@ class MinimizationPsiManagerGettingTest : JavaCodeInsightFixtureTestCase() {
     }
 
     fun testSimpleClass() {
-        val service = service<MinimizationPsiManager>()
+        val service = service<MinimizationPsiManagerService>()
         val psiFile = myFixture.configureByFile("simple-class.kt")
         assertIs<KtFile>(psiFile)
         val context = LightIJDDContext(project)
@@ -129,7 +129,7 @@ class MinimizationPsiManagerGettingTest : JavaCodeInsightFixtureTestCase() {
     }
 
     fun testComplexClass() {
-        val service = service<MinimizationPsiManager>()
+        val service = service<MinimizationPsiManagerService>()
         val psiFile = myFixture.configureByFile("complex-class.kt")
         assertIs<KtFile>(psiFile)
         val context = LightIJDDContext(project)

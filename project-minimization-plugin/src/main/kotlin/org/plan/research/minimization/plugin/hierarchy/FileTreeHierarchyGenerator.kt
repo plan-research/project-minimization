@@ -9,7 +9,7 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.ProjectFileDDItem
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
+import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 
 import arrow.core.Either
 import arrow.core.getOrElse
@@ -21,12 +21,12 @@ class FileTreeHierarchyGenerator : ProjectHierarchyProducer<ProjectFileDDItem> {
         fromContext: IJDDContext,
     ): Either<HierarchyBuildError, FileTreeHierarchicalDDGenerator> = either {
         val project = fromContext.originalProject
-        val settings = project.service<MinimizationPluginSettings>()
         val compilerPropertyTester = project.service<BuildExceptionProviderService>()
         val propertyTester = SameExceptionPropertyTester
             .create<ProjectFileDDItem>(
                 compilerPropertyTester,
-                settings.state.exceptionComparingStrategy.getExceptionComparator(),
+                project.service<MinimizationPluginSettings>().state
+                    .exceptionComparingStrategy.getExceptionComparator(),
                 FileDeletingItemLens(),
                 fromContext,
             )

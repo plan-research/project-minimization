@@ -25,7 +25,10 @@ import kotlinx.coroutines.async
 
 @Service(Service.Level.PROJECT)
 class MinimizationService(project: Project, private val coroutineScope: CoroutineScope) {
-    private val stages = project.service<MinimizationPluginSettings>().state.stages
+    private val stages by project.service<MinimizationPluginSettings>()
+        .stateObservable
+        .stages
+        .observe { it }
     private val executor = project.service<MinimizationStageExecutorService>()
     private val projectCloning = project.service<ProjectCloningService>()
     private val openingService = service<ProjectOpeningService>()
@@ -35,6 +38,7 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
         coroutineScope.async {
             withBackgroundProgress(project, "Minimizing project") {
                 either {
+                    project.service<MinimizationPluginSettings>().freezeSettings = true
                     logger.info { "Start Project minimization" }
                     var context = HeavyIJDDContext(project)
 
@@ -48,8 +52,10 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
 
                     context.also { onComplete(it) }
                 }.onRight {
+                    project.service<MinimizationPluginSettings>().freezeSettings = false
                     logger.info { "End Project minimization" }
                 }.onLeft { error ->
+                    project.service<MinimizationPluginSettings>().freezeSettings = false
                     logger.info { "End Project minimization" }
                     logger.error { "End minimizeProject with error: $error" }
                 }

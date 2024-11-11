@@ -8,7 +8,6 @@ import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.execution.DumbCompiler
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.HeavyIJDDContext
-import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.model.state.DDStrategy
 import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
@@ -26,8 +25,10 @@ class FileLevelStageTest : JavaCodeInsightFixtureTestCase() {
 
     override fun setUp() {
         super.setUp()
-        project.service<MinimizationPluginSettings>().state.currentCompilationStrategy = CompilationStrategy.DUMB
-        project.service<MinimizationPluginSettings>().state.minimizationTransformations.clear()
+        var compilationStrategy by project.service<MinimizationPluginSettings>().stateObservable.compilationStrategy.mutable()
+        compilationStrategy = CompilationStrategy.DUMB
+        var transformations by project.service<MinimizationPluginSettings>().stateObservable.minimizationTransformations.mutable()
+        transformations = emptyList()
         service<ProjectOpeningService>().isTest = true
     }
 

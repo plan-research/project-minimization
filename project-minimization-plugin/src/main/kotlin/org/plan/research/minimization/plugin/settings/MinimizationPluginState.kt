@@ -5,22 +5,21 @@ import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.MinimizationStage
 import org.plan.research.minimization.plugin.model.state.*
 
-import com.intellij.openapi.components.BaseState
+import com.intellij.openapi.components.*
 import com.intellij.util.xmlb.annotations.Property
 import com.intellij.util.xmlb.annotations.XCollection
+import org.jetbrains.annotations.NonNls
 
 class MinimizationPluginState : BaseState() {
-    var currentCompilationStrategy by enum<CompilationStrategy>(CompilationStrategy.GRADLE_IDEA)
-
-    /**
-     * A location for cloned projects
-     */
-    var temporaryProjectLocation by string("minimization-project-snapshots")
-    var snapshotStrategy by enum<SnapshotStrategy>(SnapshotStrategy.PROJECT_CLONING)
+    @NonNls
+    var compilationStrategy: CompilationStrategy = CompilationStrategy.GRADLE_IDEA
+    var temporaryProjectLocation: String = "minimization-project-snapshots"
+    var snapshotStrategy: SnapshotStrategy = SnapshotStrategy.PROJECT_CLONING
+    var exceptionComparingStrategy: ExceptionComparingStrategy = ExceptionComparingStrategy.SIMPLE
 
     @Property(surroundWithTag = false)
     @XCollection(style = XCollection.Style.v1, elementName = "stage")
-    var stages: MutableList<MinimizationStage> = mutableListOf(
+    var stages: List<MinimizationStage> = listOf(
         FunctionLevelStage(
             ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
         ),
@@ -32,8 +31,7 @@ class MinimizationPluginState : BaseState() {
 
     @Property(surroundWithTag = false)
     @XCollection(style = XCollection.Style.v1, elementName = "minimizationTransformations")
-    var minimizationTransformations: MutableList<TransformationDescriptors> = mutableListOf(
+    var minimizationTransformations: List<TransformationDescriptors> = listOf(
         TransformationDescriptors.PATH_RELATIVIZATION,
     )
-    var exceptionComparingStrategy by enum<ExceptionComparingStrategy>(ExceptionComparingStrategy.SIMPLE)
 }

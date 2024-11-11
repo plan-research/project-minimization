@@ -1,14 +1,18 @@
 package org.plan.research.minimization.plugin.settings
 
 import org.plan.research.minimization.plugin.model.FileLevelStage
+import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.state.*
+import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 
+import com.intellij.openapi.components.service
 import com.intellij.openapi.options.Configurable
+import com.intellij.openapi.project.Project
 import org.jetbrains.annotations.Nls
 
 import javax.swing.JComponent
 
-class AppSettingsConfigurable : Configurable {
+class AppSettingsConfigurable(private val project: Project) : Configurable {
     private var mySettingsComponent: AppSettingsComponent? = null
 
     // A default constructor with no arguments is required because
@@ -25,59 +29,59 @@ class AppSettingsConfigurable : Configurable {
     }
 
     override fun isModified(): Boolean {
-        val state = AppSettings.getInstance().state
+        val state = project.service<MinimizationPluginSettings>().state
         return mySettingsComponent?.compilationStrategy != state.compilationStrategy ||
             mySettingsComponent?.temporaryProjectLocation != state.temporaryProjectLocation ||
             mySettingsComponent?.snapshotStrategy != state.snapshotStrategy ||
             mySettingsComponent?.exceptionComparingStrategy != state.exceptionComparingStrategy ||
             mySettingsComponent?.stages != state.stages ||
-            mySettingsComponent?.transformations != state.transformations ||
-            mySettingsComponent?.isFileStageEnabled != state.isFileStageEnabled ||
-            mySettingsComponent?.configMode != state.configMode ||
-            mySettingsComponent?.selectedHierarchyStrategy != state.selectedHierarchyStrategy ||
-            mySettingsComponent?.selectedDDStrategy != state.selectedDDStrategy ||
-            mySettingsComponent?.isHierarchyStrategyEnabled != state.isHierarchyStrategyEnabled ||
-            mySettingsComponent?.isDDAlgorithmEnabled != state.isDDAlgorithmEnabled
+            mySettingsComponent?.transformations != state.minimizationTransformations ||
+            mySettingsComponent?.isFrozen != project.service<MinimizationPluginSettings>().freezeSettings
     }
 
     override fun apply() {
-        AppSettings.getInstance().state.apply {
-            compilationStrategy = mySettingsComponent?.compilationStrategy ?: CompilationStrategy.GRADLE_IDEA
-            temporaryProjectLocation = mySettingsComponent?.temporaryProjectLocation ?: "minimization-project-snapshots"
-            snapshotStrategy = mySettingsComponent?.snapshotStrategy ?: SnapshotStrategy.PROJECT_CLONING
-            exceptionComparingStrategy = mySettingsComponent?.exceptionComparingStrategy ?: ExceptionComparingStrategy.SIMPLE
-            stages = mySettingsComponent?.stages ?: arrayListOf(
-                FileLevelStage(
-                    hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
-                    ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
-                ),
-            )
-            transformations = mySettingsComponent?.transformations ?: arrayListOf(
-                TransformationDescriptors.PATH_RELATIVIZATION,
-            )
-            isFileStageEnabled = mySettingsComponent?.isFileStageEnabled ?: false
-            configMode = mySettingsComponent?.configMode ?: StageConfigMode.DEFAULT
-            selectedHierarchyStrategy = mySettingsComponent?.selectedHierarchyStrategy ?: HierarchyCollectionStrategy.FILE_TREE
-            selectedDDStrategy = mySettingsComponent?.selectedDDStrategy ?: DDStrategy.PROBABILISTIC_DD
-            isHierarchyStrategyEnabled = mySettingsComponent?.isHierarchyStrategyEnabled ?: false
-            isDDAlgorithmEnabled = mySettingsComponent?.isDDAlgorithmEnabled ?: false
-        }
+        project.service<MinimizationPluginSettings>()
+            .stateObservable
+            .apply {
+                var compilationStrategy by compilationStrategy.mutable()
+                compilationStrategy = mySettingsComponent?.compilationStrategy ?: CompilationStrategy.GRADLE_IDEA
+
+                var temporaryProjectLocation by temporaryProjectLocation.mutable()
+                temporaryProjectLocation = mySettingsComponent?.temporaryProjectLocation ?: "minimization-project-snapshots"
+
+                var snapshotStrategy by snapshotStrategy.mutable()
+                snapshotStrategy = mySettingsComponent?.snapshotStrategy ?: SnapshotStrategy.PROJECT_CLONING
+
+                var exceptionComparingStrategy by exceptionComparingStrategy.mutable()
+                exceptionComparingStrategy = mySettingsComponent?.exceptionComparingStrategy ?: ExceptionComparingStrategy.SIMPLE
+
+                var stages by stages.mutable()
+                stages = mySettingsComponent?.stages ?: listOf(
+                    FunctionLevelStage(
+                        ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
+                    ),
+                    FileLevelStage(
+                        hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
+                        ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
+                    ),
+                )
+
+                var minimizationTransformations by minimizationTransformations.mutable()
+                minimizationTransformations = mySettingsComponent?.transformations ?: listOf(
+                    TransformationDescriptors.PATH_RELATIVIZATION,
+                )
+            }
     }
 
     override fun reset() {
-        val state = AppSettings.getInstance().state
+        val state = project.service<MinimizationPluginSettings>().state
         mySettingsComponent?.compilationStrategy = state.compilationStrategy
         mySettingsComponent?.temporaryProjectLocation = state.temporaryProjectLocation
         mySettingsComponent?.snapshotStrategy = state.snapshotStrategy
         mySettingsComponent?.exceptionComparingStrategy = state.exceptionComparingStrategy
         mySettingsComponent?.stages = state.stages
-        mySettingsComponent?.transformations = state.transformations
-        mySettingsComponent?.isFileStageEnabled = state.isFileStageEnabled
-        mySettingsComponent?.configMode = state.configMode
-        mySettingsComponent?.selectedHierarchyStrategy = state.selectedHierarchyStrategy
-        mySettingsComponent?.selectedDDStrategy = state.selectedDDStrategy
-        mySettingsComponent?.isHierarchyStrategyEnabled = state.isHierarchyStrategyEnabled
-        mySettingsComponent?.isDDAlgorithmEnabled = state.isDDAlgorithmEnabled
+        mySettingsComponent?.transformations = state.minimizationTransformations
+        mySettingsComponent?.isFrozen = project.service<MinimizationPluginSettings>().freezeSettings
     }
 
     override fun disposeUIResources() {

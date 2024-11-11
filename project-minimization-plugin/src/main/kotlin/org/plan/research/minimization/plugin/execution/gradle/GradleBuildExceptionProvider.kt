@@ -9,12 +9,14 @@ import org.plan.research.minimization.plugin.execution.gradle.GradleConsoleRunRe
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.CompilationResult
+import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 
 import arrow.core.Either
 import arrow.core.raise.catch
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import com.intellij.build.output.KotlincOutputParser
+import com.intellij.openapi.components.service
 import com.intellij.openapi.externalSystem.model.task.ExternalSystemTaskId
 import com.intellij.openapi.externalSystem.model.task.ExternalSystemTaskType
 import com.intellij.openapi.externalSystem.service.execution.ExternalSystemJdkUtil
@@ -68,7 +70,9 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
                 val gradleTasks = reporter.itemStep("Extracting gradle tasks") { extractGradleTasks(context).bind() }
                 // If not gradle tasks were found ⇒ this is not a Gradle project
                 ensure(gradleTasks.isNotEmpty()) { CompilationPropertyCheckerError.InvalidBuildSystem }
-                val buildTask = gradleTasks.findOrFail("build").bind()
+                val settings = context.originalProject.service<MinimizationPluginSettings>()
+                val buildTask = gradleTasks.findOrFail(settings.state.gradleTask).bind()
+                val buildOptions = settings.state.gradleOptions
                 val cleanTask = gradleTasks.findOrFail("clean").bind()
 
                 val cleanResult = reporter.itemStep("Running clean task") { runTask(context, cleanTask).bind() }
@@ -80,7 +84,7 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
                     )
                 }
 
-                val buildResult = reporter.itemStep("Running build task") { runTask(context, buildTask).bind() }
+                val buildResult = reporter.itemStep("Running build task") { runTask(context, buildTask, buildOptions).bind() }
                 ensure(buildResult.exitCode != EXIT_CODE_OK) { CompilationPropertyCheckerError.CompilationSuccess }
                 reporter.itemStep("Parsing results") {
                     parseResults("test-build-${context.indexProject.name}", buildResult)
@@ -167,8 +171,10 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
     private suspend fun runTask(
         context: IJDDContext,
         task: ExecutableGradleTask,
+        options: List<String> = emptyList(),
     ): Either<CompilationPropertyCheckerError, GradleConsoleRunResult> = either {
         logger.info { "Run gradle task: ${task.executableName}" }
+        logger.info { "Additional gradle task options: ${options.joinToString(",")}" }
 
         val std = ByteArrayOutputStream()
         val err = ByteArrayOutputStream()
@@ -179,7 +185,7 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
                 .setStandardOutput(std)
                 .setStandardError(err)
                 .setJavaHome(javaHome?.let { File(it) })
-                .withArguments("--no-configuration-cache", "--no-build-cache", "--quiet")
+                .withArguments("--no-configuration-cache", "--no-build-cache", "--quiet", *options.toTypedArray())
                 .run(object : ResultHandler<Void> {
                     override fun onComplete(result: Void?) {
                         cont.resume(EXIT_CODE_OK)

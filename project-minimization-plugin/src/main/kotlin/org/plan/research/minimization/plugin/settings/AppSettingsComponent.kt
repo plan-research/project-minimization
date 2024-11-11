@@ -22,18 +22,19 @@ class AppSettingsComponent {
         emptyText.text = "build"
     }
     private val gradleOptionsField = JBTextField().apply {
-        emptyText.text = "--offline, --refresh-dependencies, etc..."
+        emptyText.text = "--offline --refresh-dependencies etc..."
 
         inputVerifier = object : InputVerifier() {
             override fun verify(input: JComponent): Boolean {
                 val text = (input as JBTextField).text
-                val invalidOptions = text.split(",").map { it.trim() }
+                val invalidOptions = text.trim().replace("\\s+".toRegex(), " ").split(" ")
+                    .map { it.trim() }
                     .filter { !isValidGradleOption(it) }
 
                 if (invalidOptions.isNotEmpty()) {
                     JOptionPane.showMessageDialog(
                         input,
-                        "Options: ${invalidOptions.joinToString(", ")} are not supported of invalid",
+                        "Options: ${invalidOptions.joinToString(", ")} are invalid",
                         "Error",
                         JOptionPane.ERROR_MESSAGE,
                     )
@@ -43,11 +44,8 @@ class AppSettingsComponent {
             }
 
             fun isValidGradleOption(option: String): Boolean {
-                val validOptions = setOf("",
-                    "--offline", "--refresh-dependencies", "--scan", "--console=plain", "--console=auto", "--console=rich",
-                    "--parallel", "--daemon", "--no-daemon", "--configure-on-demand",
-                )  // TODO(add all possible gradle options)
-                return option in validOptions
+                val optionRegex = Regex("^\$|^--[a-zA-Z\\-]+(?:=[a-zA-Z0-9]+)?$")
+                return optionRegex.matches(option)
             }
         }
     }
@@ -87,9 +85,11 @@ class AppSettingsComponent {
         }
 
     var gradleOptions: List<String>
-        get() = gradleOptionsField.text.split(",").map { it.trim() }
+        get() = gradleOptionsField.text.trim()
+            .replace("\\s+".toRegex(), " ")
+            .split(" ")
         set(value) {
-            gradleOptionsField.text = value.joinToString(",")
+            gradleOptionsField.text = value.joinToString(" ")
         }
 
     var temporaryProjectLocation: String
@@ -172,7 +172,7 @@ class AppSettingsComponent {
 
         myMainPanel = FormBuilder.createFormBuilder()
             .addLabeledComponent(JBLabel("Compilation strategy:"), compilationStrategyComboBox, 1, false)
-            .addLabeledComponent(JBLabel("Gradle task"), gradleTaskField, 1, false)
+            .addLabeledComponent(JBLabel("Gradle task:"), gradleTaskField, 1, false)
             .addLabeledComponent(JBLabel("Gradle options:"), gradleOptionsField, 1, false)
             .addLabeledComponent(JBLabel("Temporary project location:"), temporaryProjectLocationField, 1, false)
             .addLabeledComponent(JBLabel("Snapshot strategy:"), snapshotStrategyComboBox, 1, false)

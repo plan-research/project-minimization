@@ -174,7 +174,7 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
         options: List<String> = emptyList(),
     ): Either<CompilationPropertyCheckerError, GradleConsoleRunResult> = either {
         logger.info { "Run gradle task: ${task.executableName}" }
-        logger.info { "Additional gradle task options: ${options.joinToString(",")}" }
+        logger.info { "Additional gradle task options: ${options.joinToString(" ")}" }
 
         val std = ByteArrayOutputStream()
         val err = ByteArrayOutputStream()

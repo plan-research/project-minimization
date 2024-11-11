@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NonNls
 class MinimizationPluginState : BaseState() {
     @NonNls
     var compilationStrategy: CompilationStrategy = CompilationStrategy.GRADLE_IDEA
+    var gradleTask: String = "build"
+    var gradleOptions: List<String> = emptyList()
     var temporaryProjectLocation: String = "minimization-project-snapshots"
     var snapshotStrategy: SnapshotStrategy = SnapshotStrategy.PROJECT_CLONING
     var exceptionComparingStrategy: ExceptionComparingStrategy = ExceptionComparingStrategy.SIMPLE

@@ -5,6 +5,14 @@ data class MinimizationPluginStateObservable(private val stateGetter: () -> Mini
         getter = { stateGetter().compilationStrategy },
         setter = { stateGetter().compilationStrategy = it },
     )
+    var gradleTask = StateDelegate(
+        getter = { stateGetter().gradleTask },
+        setter = { stateGetter().gradleTask = it },
+    )
+    var gradleOptions = StateDelegate(
+        getter = { stateGetter().gradleOptions },
+        setter = { stateGetter().gradleOptions = it },
+    )
     var temporaryProjectLocation = StateDelegate(
         getter = { stateGetter().temporaryProjectLocation },
         setter = { stateGetter().temporaryProjectLocation = it },

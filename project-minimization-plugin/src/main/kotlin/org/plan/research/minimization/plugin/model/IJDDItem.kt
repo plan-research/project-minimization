@@ -61,18 +61,19 @@ data class PsiWithBodyDDItem(
 
         @RequiresReadLock
         fun create(element: PsiElement, parentPath: List<Int>, localPath: Path): PsiWithBodyDDItem =
-            if (isCompatible(element)) {
+            // FIXME WITH MERGE
+//            if (isCompatible(element)) {
                 PsiWithBodyDDItem(
                     localPath,
                     parentPath,
                 )
-            } else {
-                error(
-                    "Invalid Psi Element. " +
-                        "Supported types: " +
-                        "KtNamedFunction, KtClassInitializer, KtPropertyAccessor, KtLambdaExpression, " +
-                        "but got ${element.javaClass.simpleName}",
-                )
-            }
+//            } else {
+//                error(
+//                    "Invalid Psi Element. " +
+//                        "Supported types: " +
+//                        "KtNamedFunction, KtClassInitializer, KtPropertyAccessor, KtLambdaExpression, " +
+//                        "but got ${element.javaClass.simpleName}",
+//                )
+//            }
     }
 }

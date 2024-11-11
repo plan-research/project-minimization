@@ -8,6 +8,7 @@ import org.plan.research.minimization.plugin.model.state.*
 import com.intellij.openapi.components.BaseState
 import com.intellij.util.xmlb.annotations.Property
 import com.intellij.util.xmlb.annotations.XCollection
+import org.plan.research.minimization.plugin.model.FileLevelSlicing
 
 class MinimizationPluginState : BaseState() {
     var currentCompilationStrategy by enum<CompilationStrategy>(CompilationStrategy.GRADLE_IDEA)
@@ -21,13 +22,14 @@ class MinimizationPluginState : BaseState() {
     @Property(surroundWithTag = false)
     @XCollection(style = XCollection.Style.v1, elementName = "stage")
     var stages: MutableList<MinimizationStage> = mutableListOf(
-        FunctionLevelStage(
-            ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
-        ),
-        FileLevelStage(
-            hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
-            ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
-        ),
+        FileLevelSlicing,
+//        FunctionLevelStage(
+//            ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
+//        ),
+//        FileLevelStage(
+//            hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
+//            ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
+//        ),
     )
 
     @Property(surroundWithTag = false)

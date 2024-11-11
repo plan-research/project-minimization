@@ -38,10 +38,16 @@
         <applicationService
                 serviceImplementation="org.plan.research.minimization.plugin.settings.AppSettings"/>
     </extensions>
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <supportsKotlinPluginMode supportsK2="true" />
+    </extensions>
     <actions>
         <action id="org.plan.research.minimization.plugin.MinimizeProjectAction"
                 class="org.plan.research.minimization.plugin.MinimizeProjectAction" text="Minimize Project">
             <add-to-group group-id="CodeMenu" anchor="first"/>
         </action>
+        <action id="org.plan.research.minimization.plugin.prototype.slicing.TestSlicingAction"
+                class="org.plan.research.minimization.plugin.prototype.slicing.TestSlicingAction"
+                text="Test Slicing on the current file"/>
     </actions>
 </idea-plugin>

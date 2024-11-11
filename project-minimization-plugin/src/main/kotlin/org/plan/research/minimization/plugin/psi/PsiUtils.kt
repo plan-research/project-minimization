@@ -25,15 +25,43 @@ import kotlinx.coroutines.withContext
 object PsiUtils {
     @RequiresReadLock
     fun getPsiElementFromItem(context: IJDDContext, item: PsiWithBodyDDItem): KtExpression? {
-        val file = context.projectDir.findFileByRelativePath(item.localPath.toString())!!
-        val ktFile = getKtFile(context, file)!!
+        return getPsiElementOrFileFromItem(context, item) as? KtExpression
+    }
+    @RequiresReadLock
+    fun getPsiElementOrFileFromItem(context: IJDDContext, item: PsiWithBodyDDItem): PsiElement? {
+        val file = context.projectDir.findFileByRelativePath(item.localPath.toString()) ?: return null
+        val ktFile = getKtFile(context, file) ?: return null
         var currentDepth = 0
         var element: PsiElement = ktFile
         while (currentDepth < item.childrenPath.size) {
             element = element.children[item.childrenPath[currentDepth++]]
         }
-        val psiElement = element as? KtExpression
-        return psiElement
+        return element
+    }
+
+    // DELETE THIS AND MERGE khbminus/unused-object-deletion INTO HERE
+    @RequiresReadLock
+    fun buildPsiItem(context: IJDDContext, element: PsiElement): PsiWithBodyDDItem {
+        val (file, path) = buildParentPath(element)!!
+        return PsiWithBodyDDItem(file.virtualFile.toNioPath().relativeTo(context.projectDir.toNioPath()), path)
+    }
+
+    // DELETE THIS AND MERGE khbminus/unused-object-deletion INTO HERE
+    @RequiresReadLock
+    private fun buildParentPath(
+        element: PsiElement,
+    ): Pair<PsiFile, List<Int>>? {
+        var currentElement: PsiElement = element
+        val path = buildList {
+            while (currentElement.parent != null && currentElement !is PsiFile) {
+                val parent = currentElement.parent
+                val position = getChildPosition(parent, currentElement)
+                add(position)
+                currentElement = parent
+            }
+        }
+        require(currentElement is PsiFile)
+        return (currentElement as PsiFile) to path.reversed()
     }
 
     @RequiresReadLock

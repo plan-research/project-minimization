@@ -1,5 +1,6 @@
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.models.Coordinates
+import org.jetbrains.intellij.platform.gradle.tasks.RunIdeTask
 
 plugins {
     alias(libs.plugins.intellij)
@@ -66,5 +67,11 @@ tasks {
         // Only run tests from classes that end with "Test"
         include("**/*Test.class")
         systemProperty("idea.is.internal", true)
+    }
+}
+
+tasks.named<RunIdeTask>("runIde") {
+    jvmArgumentProviders += CommandLineArgumentProvider {
+        listOf("-Didea.kotlin.plugin.use.k2=true")
     }
 }

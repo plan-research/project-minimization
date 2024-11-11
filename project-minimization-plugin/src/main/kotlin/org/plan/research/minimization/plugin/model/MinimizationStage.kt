@@ -20,6 +20,11 @@ interface MinimizationStageExecutor {
         context: IJDDContext,
         functionLevelStage: FunctionLevelStage,
     ): Either<MinimizationError, IJDDContext>
+
+    suspend fun executeFileLevelSlicing(
+        context: IJDDContext,
+        fileLevelStage: FileLevelSlicing,
+    ): Either<MinimizationError, IJDDContext>
 }
 
 /**
@@ -66,4 +71,16 @@ data class FunctionLevelStage(
         context: IJDDContext,
         executor: MinimizationStageExecutor,
     ): Either<MinimizationError, IJDDContext> = executor.executeFunctionLevelStage(context, this)
+}
+
+@Tag("fileLevelSlicing")
+data object FileLevelSlicing : MinimizationStage {
+    override val name: String
+        get() = "File Level Slicing"
+
+    override suspend fun apply(
+        context: IJDDContext,
+        executor: MinimizationStageExecutor
+    ): Either<MinimizationError, IJDDContext> = executor.executeFileLevelSlicing(context, this)
+
 }

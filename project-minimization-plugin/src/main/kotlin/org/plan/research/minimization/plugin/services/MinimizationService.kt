@@ -29,7 +29,7 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
             withBackgroundProgress(project, "Minimizing project") {
                 either {
                     logger.info { "Start Project minimization" }
-                    var context: IJDDContext = LightIJDDContext(project)
+                    var context: IJDDContext = HeavyIJDDContext(project)
 
                     logger.info { "Clonning project..." }
                     context = projectCloning.clone(context)

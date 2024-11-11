@@ -21,6 +21,9 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ex.ProjectManagerEx
 import mu.KotlinLogging
+import org.jetbrains.kotlin.idea.gradleTooling.get
+import org.plan.research.minimization.plugin.errors.MinimizationError.SlicingFailed
+import org.plan.research.minimization.plugin.prototype.slicing.SlicingService
 
 @Service(Service.Level.PROJECT)
 class MinimizationStageExecutorService(private val project: Project) : MinimizationStageExecutor {
@@ -46,8 +49,8 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         logger.info { "Start File level stage" }
         statLogger.info {
             "File level stage settings, " +
-                "Hierarchy strategy: ${fileLevelStage.hierarchyCollectionStrategy::class.simpleName}, " +
-                "DDAlgorithm: ${fileLevelStage.ddAlgorithm::class.simpleName}"
+                    "Hierarchy strategy: ${fileLevelStage.hierarchyCollectionStrategy::class.simpleName}, " +
+                    "DDAlgorithm: ${fileLevelStage.ddAlgorithm::class.simpleName}"
         }
 
         val lightContext = makeLight(context)
@@ -110,6 +113,13 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
             }
     }.logResult("Function")
 
+
+    override suspend fun executeFileLevelSlicing(
+        context: IJDDContext,
+        fileLevelStage: FileLevelSlicing
+    ) = service<SlicingService>().sliceProject(context)
+        .mapLeft { SlicingFailed(it) }
+
     private suspend fun List<PsiWithBodyDDItem>.logPsiElements(context: IJDDContext) {
         if (!logger.isTraceEnabled) {
             return
@@ -119,7 +129,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         }
         logger.trace {
             "Starting DD Algorithm with following elements:\n" +
-                text.joinToString("\n") { "\t- $it" }
+                    text.joinToString("\n") { "\t- $it" }
         }
     }
 
@@ -131,4 +141,5 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         statLogger.info { "$stageName level stage result: $error" }
         logger.error { "$stageName level stage failed with error: $error" }
     }
+
 }

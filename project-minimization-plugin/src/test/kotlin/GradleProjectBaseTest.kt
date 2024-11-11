@@ -8,9 +8,9 @@ import com.intellij.openapi.externalSystem.service.execution.ProgressExecutionMo
 import com.intellij.openapi.externalSystem.service.project.ProjectDataManager
 import com.intellij.openapi.externalSystem.util.ExternalSystemUtil
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.projectRoots.Sdk
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -18,7 +18,7 @@ import org.jetbrains.plugins.gradle.settings.GradleProjectSettings
 import org.jetbrains.plugins.gradle.settings.GradleSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
 import org.plan.research.minimization.plugin.model.state.TransformationDescriptors
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
+import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import kotlin.test.assertNotEquals
 
 
@@ -40,15 +40,18 @@ abstract class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
         }
     }
 
-    protected suspend fun importGradleProject(root: VirtualFile, project: Project = this.project) {
-        val projectPath = root.path
-        val gradleSettings = GradleSettings.getInstance(project)
-        val projectSettings = GradleProjectSettings().apply {
-            externalProjectPath = projectPath
-            gradleJvm = sdk.name
+    protected suspend fun importGradleProject(project: Project) {
+        val projectPath = smartReadAction(project) {
+            val projectPath = project.guessProjectDir()!!.path
+            val gradleSettings = GradleSettings.getInstance(project)
+            val projectSettings = GradleProjectSettings().apply {
+                externalProjectPath = projectPath
+                gradleJvm = sdk.name
+            }
+            gradleSettings.unlinkExternalProject(projectPath)
+            gradleSettings.linkProject(projectSettings)
+            projectPath
         }
-        gradleSettings.unlinkExternalProject(projectPath)
-        gradleSettings.linkProject(projectSettings)
 
         withContext(Dispatchers.EDT) {
             ExternalSystemUtil.refreshProject(
@@ -60,7 +63,7 @@ abstract class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
         }
     }
 
-    protected suspend fun assertGradleLoaded(project: Project = this.project) {
+    protected suspend fun assertGradleLoaded(project: Project) {
         val data = smartReadAction(project) {
             ProjectDataManager
                 .getInstance()
@@ -89,16 +92,14 @@ abstract class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
     }
 
     protected fun enableDeduplication() {
-        val settings = project.service<MinimizationPluginSettings>().state
-        if (!settings.minimizationTransformations.contains(TransformationDescriptors.PATH_RELATIVIZATION)) {
-            settings.minimizationTransformations.add(
-                TransformationDescriptors.PATH_RELATIVIZATION
-            )
+        var minimizationTransformations by project.service<MinimizationPluginSettings>().stateObservable.minimizationTransformations.mutable()
+        if (!minimizationTransformations.contains(TransformationDescriptors.PATH_RELATIVIZATION)) {
+            minimizationTransformations = minimizationTransformations + TransformationDescriptors.PATH_RELATIVIZATION
         }
     }
 
     protected fun disableDeduplication() {
-        val settings = project.service<MinimizationPluginSettings>().state
-        settings.minimizationTransformations.remove(TransformationDescriptors.PATH_RELATIVIZATION)
+        var minimizationTransformations by project.service<MinimizationPluginSettings>().stateObservable.minimizationTransformations.mutable()
+        minimizationTransformations = minimizationTransformations - TransformationDescriptors.PATH_RELATIVIZATION
     }
 }

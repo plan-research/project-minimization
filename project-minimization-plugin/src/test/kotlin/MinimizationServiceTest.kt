@@ -2,18 +2,18 @@ import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.ProjectManager
-import com.intellij.openapi.project.guessProjectDir
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.plan.research.minimization.plugin.model.FileLevelStage
+import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.model.state.DDStrategy
 import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
 import org.plan.research.minimization.plugin.model.state.TransformationDescriptors
+import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.services.MinimizationService
 import org.plan.research.minimization.plugin.services.ProjectCloningService
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 import kotlin.io.path.Path
 import kotlin.io.path.name
 import kotlin.test.assertEquals
@@ -21,20 +21,25 @@ import kotlin.test.assertEquals
 class MinimizationServiceTest : GradleProjectBaseTest() {
     override fun setUp() {
         super.setUp()
-        project.service<MinimizationPluginSettings>().state.apply {
-            currentCompilationStrategy = CompilationStrategy.GRADLE_IDEA
-            minimizationTransformations = mutableListOf(TransformationDescriptors.PATH_RELATIVIZATION)
-            stages = mutableListOf(
-                FileLevelStage(
-                    hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
-                    ddAlgorithm = DDStrategy.DD_MIN
-                ),
-                // TODO: JBRes-1977
-//                FunctionLevelStage(
-//                    ddAlgorithm = DDStrategy.DD_MIN
-//                )
+        val stateObservable = service<MinimizationPluginSettings>().stateObservable
+
+        var currentCompilationStrategy by stateObservable.compilationStrategy.mutable()
+        currentCompilationStrategy = CompilationStrategy.GRADLE_IDEA
+
+        var minimizationTransformations by stateObservable.minimizationTransformations.mutable()
+        minimizationTransformations = listOf(TransformationDescriptors.PATH_RELATIVIZATION)
+
+        var stages by stateObservable.stages.mutable()
+        stages = listOf(FileLevelStage(
+                hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
+                ddAlgorithm = DDStrategy.DD_MIN
+            ),
+//        TODO: JBRes-1977
+//        FunctionLevelStage(
+//            ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
+//        )
             )
-        }
+
         project.service<ProjectCloningService>().isTest = true
     }
 
@@ -45,10 +50,10 @@ class MinimizationServiceTest : GradleProjectBaseTest() {
         copyGradle(useBuildKts = false, copyProperties = false)
 
         runBlocking {
-            importGradleProject(root)
-            assertGradleLoaded()
+            importGradleProject(project)
+            assertGradleLoaded(project)
 
-            val expectedFiles = readAction { root.getAllFiles(project).filterGradleAndBuildFiles() }
+            val expectedFiles = readAction { root.getAllFiles(root.toNioPath()).filterGradleAndBuildFiles() }
 
             val service = project.service<MinimizationService>()
             val minimizedProject = service.minimizeProject(project).await().getOrNull()
@@ -56,11 +61,13 @@ class MinimizationServiceTest : GradleProjectBaseTest() {
             minimizedProject!!
 
             val actualFiles = readAction {
-                minimizedProject.guessProjectDir()!!.getAllFiles(minimizedProject).filterGradleAndBuildFiles()
+                minimizedProject.projectDir.getAllFiles(minimizedProject.projectDir.toNioPath()).filterGradleAndBuildFiles()
             }
 
-            withContext(Dispatchers.EDT) {
-                ProjectManager.getInstance().closeAndDispose(minimizedProject)
+            if (minimizedProject is HeavyIJDDContext) {
+                withContext(Dispatchers.EDT) {
+                    ProjectManager.getInstance().closeAndDispose(minimizedProject.project)
+                }
             }
             val filterFileName = setOf(
                 Path("src/jsMain"),

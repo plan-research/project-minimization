@@ -5,6 +5,7 @@ import org.plan.research.minimization.plugin.model.IJDDItem
 import org.plan.research.minimization.plugin.model.ProjectItemLens
 import org.plan.research.minimization.plugin.model.PsiDDItem
 import org.plan.research.minimization.plugin.psi.PsiItemStorage
+import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.services.MinimizationPsiManager
 
 import com.intellij.openapi.application.readAction
@@ -13,7 +14,6 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.vfs.findFile
 import com.intellij.psi.PsiElement
 import mu.KotlinLogging
-import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.psi.KtFile
 
 import java.nio.file.Path
@@ -34,7 +34,7 @@ abstract class BasePsiLens : ProjectItemLens {
         val currentLevel = currentContext.currentLevel as List<PsiDDItem>
         logger.info { "Built a trie for the current context" }
         if (items.any { it !is PsiDDItem }) {
-            logger.warn { "Some items from $items are not PsiWithBodyDDItem. The wrong lens is used. " }
+            logger.warn { "Some items from $items are not PsiDDItem. The wrong lens is used. " }
             return
         }
 
@@ -54,8 +54,8 @@ abstract class BasePsiLens : ProjectItemLens {
         if (!logger.isTraceEnabled) {
             return
         }
-        val psiManager = context.project.service<MinimizationPsiManager>()
-        val psiElements = items.map { psiManager.getPsiElementFromItem(it) }
+        val psiManager = service<MinimizationPsiManager>()
+        val psiElements = items.map { psiManager.getPsiElementFromItem(context, it) }
         readAction {
             logger.trace {
                 "Focusing on items: \n" +
@@ -64,22 +64,27 @@ abstract class BasePsiLens : ProjectItemLens {
         }
     }
 
-    abstract suspend fun focusOnPsiElement(psiElement: PsiElement, context: IJDDContext)
+    abstract fun focusOnPsiElement(psiElement: PsiElement, context: IJDDContext)
+    abstract fun getWriteCommandActionName(psiFile: KtFile, context: IJDDContext): String
 
     private suspend fun focusOnInsideFile(currentContext: IJDDContext, trie: PsiItemStorage, relativePath: Path) {
-        val virtualFile = smartReadAction(currentContext.project) {
+        val virtualFile = readAction {
             currentContext.projectDir.findFile(relativePath.toString())
         }
         virtualFile ?: run {
-            logger.error { "The desired path for focused path $relativePath is not found in the project (name=${currentContext.project.name})" }
+            logger.error { "The desired path for focused path $relativePath is not found in the project (name=${currentContext.indexProject.name})" }
             return
         }
-        val psiFile = readAction { virtualFile.toPsiFile(currentContext.project) as? KtFile }
+        val psiFile = smartReadAction(currentContext.indexProject) {
+            PsiUtils.getKtFile(currentContext, virtualFile)
+        }
         psiFile ?: run {
-            logger.error { "The desired path for focused path $relativePath is not a Kotlin file in the project (name=${currentContext.project.name})" }
+            logger.error { "The desired path for focused path $relativePath is not a Kotlin file in the project (name=${currentContext.indexProject.name})" }
             return
         }
-        logger.info { "Processing all focused elements in $relativePath" }
-        trie.processMarkedElements(psiFile) { focusOnPsiElement(it, currentContext) }
+        logger.debug { "Processing all focused elements in $relativePath" }
+        PsiUtils.performPsiChangesAndSave(currentContext, psiFile) {
+            trie.processMarkedElements(psiFile) { focusOnPsiElement(it, currentContext) }
+        }
     }
 }

@@ -1,6 +1,5 @@
 import arrow.core.Either
 import com.intellij.openapi.components.service
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.findPsiFile
 import com.intellij.openapi.vfs.isFile
@@ -15,8 +14,9 @@ import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchicalDDGenerator
 import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchyGenerator
 import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
+import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import kotlin.io.path.name
 import kotlin.test.assertIs
 
@@ -27,15 +27,16 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
 
     override fun setUp() {
         super.setUp()
-        project.service<MinimizationPluginSettings>().state.currentCompilationStrategy = CompilationStrategy.DUMB
+        var compilationStrategy by project.service<MinimizationPluginSettings>().stateObservable.compilationStrategy.mutable()
+        compilationStrategy = CompilationStrategy.DUMB
     }
 
     private val fileTreeHierarchyGenerator = FileTreeHierarchyGenerator()
 
     fun testWithEmptyProject() {
         val project = myFixture.project
-        val generator = generateHierarchicalDDGenerator(project)
-        val context = IJDDContext(project, project)
+        val context = LightIJDDContext(project)
+        val generator = generateHierarchicalDDGenerator(context)
 
         val firstLevel = runWithModalProgressBlocking(project, "") {
             generator.generateFirstLevel(context).getOrNull()
@@ -61,8 +62,8 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
         val psiManager = PsiManager.getInstance(project)
         val projectRootPsi = psiManager.findDirectory(projectRoot)!!
         assertEquals(1, getPsiDepth(psiFile) - getPsiDepth(projectRootPsi))
-        val generator = generateHierarchicalDDGenerator(project)
-        val context = IJDDContext(project)
+        val context = LightIJDDContext(project)
+        val generator = generateHierarchicalDDGenerator(context)
 
         val firstLevel = runWithModalProgressBlocking(project, "") {
             generator.generateFirstLevel(context).getOrNull()
@@ -102,11 +103,11 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
         val projectRoot = project.guessProjectDir()!!
         val psiManager = PsiManager.getInstance(project)
         val projectRootPsi = psiManager.findDirectory(projectRoot)!!
-        val context = IJDDContext(project)
+        val context = LightIJDDContext(project)
 
         assertEquals(12, getPsiDepth(psiFile) - getPsiDepth(projectRootPsi))
 
-        val generator = generateHierarchicalDDGenerator(project)
+        val generator = generateHierarchicalDDGenerator(context)
         var currentLevel =
             runWithModalProgressBlocking(project, "") { generator.generateFirstLevel(context).getOrNull() }!!
         assertSize(1, currentLevel.items)
@@ -168,8 +169,8 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
 
     private fun getPsiDepth(element: PsiElement?): Int = if (element == null) 0 else getPsiDepth(element.parent) + 1
 
-    private fun generateHierarchicalDDGenerator(project: Project): FileTreeHierarchicalDDGenerator {
-        val ddGenerator = runWithModalProgressBlocking(project, "") { fileTreeHierarchyGenerator.produce(IJDDContext(project)) }
+    private fun generateHierarchicalDDGenerator(context: IJDDContext): FileTreeHierarchicalDDGenerator {
+        val ddGenerator = runWithModalProgressBlocking(project, "") { fileTreeHierarchyGenerator.produce(context) }
         assertIs<Either.Right<FileTreeHierarchicalDDGenerator>>(ddGenerator)
         val generator = ddGenerator.value
         return generator

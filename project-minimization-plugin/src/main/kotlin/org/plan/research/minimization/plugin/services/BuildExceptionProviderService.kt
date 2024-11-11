@@ -7,7 +7,6 @@ import org.plan.research.minimization.plugin.model.BuildExceptionProvider
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.CompilationResult
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -17,20 +16,16 @@ import com.intellij.openapi.project.Project
 class BuildExceptionProviderService(
     private val initialProject: Project,
 ) : BuildExceptionProvider {
-    private val transformations: List<ExceptionTransformation>
-        get() = initialProject
-            .service<MinimizationPluginSettings>()
-            .state
-            .minimizationTransformations
-            .map { it.getExceptionTransformations() }
-
-    private val underlyingObject: BuildExceptionProvider
-        get() = initialProject
-            .service<MinimizationPluginSettings>()
-            .state
-            .currentCompilationStrategy
-            .getCompilationStrategy()
-            .withTransformations(transformations)
+    private val transformations: List<ExceptionTransformation> by initialProject
+        .service<MinimizationPluginSettings>()
+        .stateObservable
+        .minimizationTransformations
+        .observe { transList -> transList.map { it.getExceptionTransformations() } }
+    private val underlyingObject: BuildExceptionProvider by initialProject
+        .service<MinimizationPluginSettings>()
+        .stateObservable
+        .compilationStrategy
+        .observe { it.getCompilationStrategy().withTransformations(transformations) }
 
     override suspend fun checkCompilation(context: IJDDContext): CompilationResult =
         underlyingObject

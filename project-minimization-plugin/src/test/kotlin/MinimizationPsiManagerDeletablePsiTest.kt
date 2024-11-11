@@ -5,18 +5,20 @@ import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.hasBody
 import org.jetbrains.kotlin.psi.psiUtil.isPrivate
+import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.services.MinimizationPsiManager
 import kotlin.test.assertIs
 
 class MinimizationPsiManagerDeletablePsiTest : MinimizationPsiManagerTestBase() {
     fun testFunctionFunction() {
-        val service = project.service<MinimizationPsiManager>()
+        val service = service<MinimizationPsiManager>()
+        val context = LightIJDDContext(project)
         val psiFile = myFixture.configureByFile("function-function.kt")
         assertIs<KtFile>(psiFile)
         val elements = runBlocking {
-            service.findDeletablePsiItems()
+            service.findDeletablePsiItems(context)
         }
-        val psi = elements.getPsi(service)
+        val psi = runBlocking { readAction { elements.getPsi(context) } }
         assertIs<List<KtNamedFunction>>(psi)
         assertSize(6, psi)
         val doesNotHaveBlockBody = setOf(2, 4, 5)
@@ -31,13 +33,14 @@ class MinimizationPsiManagerDeletablePsiTest : MinimizationPsiManagerTestBase() 
     }
 
     fun testFunctionVariable() {
-        val service = project.service<MinimizationPsiManager>()
+        val service = service<MinimizationPsiManager>()
+        val context = LightIJDDContext(project)
         val psiFile = myFixture.configureByFile("function-variable.kt")
         assertIs<KtFile>(psiFile)
         val elements = runBlocking {
-            service.findDeletablePsiItems()
+            service.findDeletablePsiItems(context)
         }
-        val psi = elements.getPsi(service)
+        val psi = runBlocking { readAction { elements.getPsi(context) } }
         assertSize(4, psi)
         val (fn, clazz, var1, var2) = psi
         runBlocking {
@@ -56,13 +59,14 @@ class MinimizationPsiManagerDeletablePsiTest : MinimizationPsiManagerTestBase() 
         }
     }
     fun testClassClass() {
-        val service = project.service<MinimizationPsiManager>()
+        val service = service<MinimizationPsiManager>()
+        val context = LightIJDDContext(project)
         val psiFile = myFixture.configureByFile("class-class.kt")
         assertIs<KtFile>(psiFile)
         val elements = runBlocking {
-            service.findDeletablePsiItems()
+            service.findDeletablePsiItems(context)
         }
-        val psi = elements.getPsi(service)
+        val psi = runBlocking { readAction { elements.getPsi(context) } }
         assertSize(11, psi)
         val (clazz, fn, clazz2, var1, var2) = psi.subList(0, 5)
         val (object1, object2, var3, var4, fn2) = psi.subList(5, 10)

@@ -38,14 +38,12 @@
     </logger>
 
     <!-- Logger for your package (write in logs.log and Console) -->
-    <logger name="org.plan.research.minimization" level="DEBUG" additivity="false">
-        <appender-ref ref="CONSOLE" />
-        <appender-ref ref="DEBUG_FILE" />
-    </logger>
+    <logger name="org.plan.research.minimization" level="DEBUG" />
 
     <!-- Root logger limited to ERROR level to avoid logs from external libraries -->
     <root level="ERROR">
         <appender-ref ref="CONSOLE" />
+        <appender-ref ref="DEBUG_FILE" />
     </root>
 
 </configuration>

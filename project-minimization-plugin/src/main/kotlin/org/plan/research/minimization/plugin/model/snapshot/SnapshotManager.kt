@@ -5,7 +5,7 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 
 import arrow.core.Either
 
-typealias TransactionResult<T> = Either<SnapshotError<T>, IJDDContext>
+typealias TransactionResult<T, C> = Either<SnapshotError<T>, C>
 
 /**
  * The `SnapshotManager` interface provides a mechanism to handle transactions within a given context.
@@ -18,8 +18,8 @@ interface SnapshotManager {
      * @param action A suspendable lambda function representing the transaction action to be performed.
      * @return Either a `SnapshotError` if the transaction fails, or the updated `IJDDContext` if the transaction succeeds.
      */
-    suspend fun <T> transaction(
-        context: IJDDContext,
-        action: suspend TransactionBody<T>.(newContext: IJDDContext) -> IJDDContext,
-    ): TransactionResult<T>
+    suspend fun <T, C : IJDDContext> transaction(
+        context: C,
+        action: suspend TransactionBody<T>.(newContext: C) -> C,
+    ): TransactionResult<T, C>
 }

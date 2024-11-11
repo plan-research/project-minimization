@@ -4,9 +4,8 @@ import org.plan.research.minimization.plugin.execution.IdeaCompilationException
 import org.plan.research.minimization.plugin.execution.exception.KotlincException.*
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
-import org.plan.research.minimization.plugin.settings.MinimizationPluginState
+import org.plan.research.minimization.plugin.settings.MinimizationPluginStateObservable
 
-import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.toNioPathOrNull
 
 import java.nio.file.Path
@@ -16,7 +15,7 @@ import kotlin.io.path.relativeTo
 
 /**
  * Transforms file paths in compiler exceptions to be relative to a project root.
- * This module uses the fact that [MinimizationPluginState.temporaryProjectLocation][MinimizationPluginState.temporaryProjectLocation]
+ * This module uses the fact that [MinimizationPluginState.temporaryProjectLocation][MinimizationPluginStateObservable.temporaryProjectLocation]
  * is used for storing temporary projects.
  */
 class PathRelativizationTransformation : ExceptionTransformation {
@@ -32,8 +31,11 @@ class PathRelativizationTransformation : ExceptionTransformation {
         })
 
     override suspend fun transform(exception: GeneralKotlincException, context: IJDDContext): GeneralKotlincException {
-        val transformedPath = transformPath(exception.position.filePath, context)
-        val copiedCursorPosition = exception.position.copy(filePath = transformedPath)
+        val copiedCursorPosition = exception.position.let { position ->
+            val transformedPath = transformPath(position.filePath, context)
+            position.copy(filePath = transformedPath)
+        }
+
         return exception.copy(position = copiedCursorPosition, message = exception.message.replaceRootDir(context))
     }
 
@@ -58,7 +60,7 @@ class PathRelativizationTransformation : ExceptionTransformation {
         exception.copy(message = exception.message.replaceRootDir(context))
 
     private fun transformPath(path: Path, context: IJDDContext): Path {
-        val projectBase = context.project.guessProjectDir()?.toNioPathOrNull() ?: return path
+        val projectBase = context.projectDir.toNioPathOrNull() ?: return path
         return path.relativeTo(projectBase)
     }
 

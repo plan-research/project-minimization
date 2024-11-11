@@ -5,7 +5,6 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.model.snapshot.TransactionBody
 import org.plan.research.minimization.plugin.model.snapshot.TransactionResult
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -13,15 +12,14 @@ import com.intellij.openapi.project.Project
 
 @Service(Service.Level.PROJECT)
 class SnapshotManagerService(private val rootProject: Project) : SnapshotManager {
-    private val underlyingObject: SnapshotManager
-        get() = rootProject
-            .service<MinimizationPluginSettings>()
-            .state
-            .snapshotStrategy
-            .getSnapshotManager(rootProject)
+    private val underlyingObject: SnapshotManager by rootProject
+        .service<MinimizationPluginSettings>()
+        .stateObservable
+        .snapshotStrategy
+        .observe { it.getSnapshotManager(rootProject) }
 
-    override suspend fun <T> transaction(
-        context: IJDDContext,
-        action: suspend TransactionBody<T>.(newContext: IJDDContext) -> IJDDContext,
-    ): TransactionResult<T> = underlyingObject.transaction(context, action)
+    override suspend fun <T, C : IJDDContext> transaction(
+        context: C,
+        action: suspend TransactionBody<T>.(newContext: C) -> C,
+    ): TransactionResult<T, C> = underlyingObject.transaction(context, action)
 }

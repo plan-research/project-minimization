@@ -1,10 +1,10 @@
 package org.plan.research.minimization.plugin.lenses
 
 import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.services.MinimizationPsiManager
+import org.plan.research.minimization.plugin.psi.PsiBodyReplacer
 
-import com.intellij.openapi.components.service
 import com.intellij.psi.PsiElement
+import org.jetbrains.kotlin.psi.KtFile
 
 /**
  * A lens that focuses on functions within a project.
@@ -12,8 +12,11 @@ import com.intellij.psi.PsiElement
  * are marked, processed, and reset appropriately within the given context.
  */
 class FunctionModificationLens : BasePsiLens() {
-    override suspend fun focusOnPsiElement(psiElement: PsiElement, currentContext: IJDDContext) {
-        val psiManager = currentContext.project.service<MinimizationPsiManager>()
-        psiManager.replaceBody(psiElement)
-    }
+    override fun focusOnPsiElement(psiElement: PsiElement, currentContext: IJDDContext) =
+        PsiBodyReplacer(currentContext).replaceBody(psiElement)
+
+    override fun getWriteCommandActionName(
+        psiFile: KtFile,
+        context: IJDDContext,
+    ): String = "Replacing bodies of PSI elements from ${psiFile.name}"
 }

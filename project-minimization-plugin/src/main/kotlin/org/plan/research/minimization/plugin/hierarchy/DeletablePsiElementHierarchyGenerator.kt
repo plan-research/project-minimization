@@ -4,14 +4,15 @@ import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoExcept
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoRootFound
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.getExceptionComparator
+import org.plan.research.minimization.plugin.lenses.FileDeletingItemLens
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducerResult
 import org.plan.research.minimization.plugin.model.PsiDDItem
 import org.plan.research.minimization.plugin.psi.CompressingPsiItemTrie
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
+import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.services.MinimizationPsiManager
-import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 
 import arrow.core.getOrElse
 import arrow.core.raise.either
@@ -31,7 +32,7 @@ class DeletablePsiElementHierarchyGenerator : ProjectHierarchyProducer<PsiDDItem
             .create<PsiDDItem>(
                 project.service<BuildExceptionProviderService>(),
                 settings.state.exceptionComparingStrategy.getExceptionComparator(),
-                TODO(),
+                FileDeletingItemLens(),
                 fromContext,
             )
             .getOrElse { raise(NoExceptionFound) }
@@ -39,7 +40,7 @@ class DeletablePsiElementHierarchyGenerator : ProjectHierarchyProducer<PsiDDItem
     }
 
     private suspend fun buildTries(context: IJDDContext): Map<Path, CompressingPsiItemTrie> {
-        val items = context.project.service<MinimizationPsiManager>().findDeletablePsiItems()
+        val items = service<MinimizationPsiManager>().findDeletablePsiItems(context)
         return items.groupBy(PsiDDItem::localPath)
             .mapValues { (_, items) -> CompressingPsiItemTrie.create(items) }
     }

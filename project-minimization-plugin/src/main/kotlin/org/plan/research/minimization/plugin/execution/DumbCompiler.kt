@@ -10,7 +10,6 @@ import org.plan.research.minimization.plugin.model.exception.ExceptionTransforma
 
 import arrow.core.raise.either
 import arrow.core.raise.ensureNotNull
-import com.intellij.openapi.project.guessProjectDir
 
 /**
  * A dumb compiler that checks containing of [targetPaths].
@@ -23,10 +22,9 @@ object DumbCompiler : BuildExceptionProvider {
 
     override suspend fun checkCompilation(context: IJDDContext): CompilationResult =
         either {
-            val project = context.project
             val paths = targetPaths ?: return@either DumbException(Throwable())
 
-            val baseDir = project.guessProjectDir() ?: raise(CompilationPropertyCheckerError.CompilationSuccess)
+            val baseDir = context.projectDir
 
             for (path in paths) {
                 ensureNotNull(baseDir.findFileByRelativePath(path)) { CompilationPropertyCheckerError.CompilationSuccess }

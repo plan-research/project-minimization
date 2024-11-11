@@ -1,6 +1,8 @@
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import kotlinx.coroutines.runBlocking
+import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.PsiDDItem
+import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.services.MinimizationPsiManager
 
 abstract class MinimizationPsiManagerTestBase : JavaCodeInsightFixtureTestCase() {
@@ -21,8 +23,8 @@ abstract class MinimizationPsiManagerTestBase : JavaCodeInsightFixtureTestCase()
         }
         return 0
     }
-    protected fun List<PsiDDItem>.getPsi(service: MinimizationPsiManager) = runBlocking {
+
+    protected fun List<PsiDDItem>.getPsi(context: IJDDContext) =
         sortedWith { a, b -> compare(a.childrenPath, b.childrenPath) }
-            .map { service.getPsiElementFromItem(it) }
-    }
+            .map { PsiUtils.getPsiElementFromItem(context, it) }
 }

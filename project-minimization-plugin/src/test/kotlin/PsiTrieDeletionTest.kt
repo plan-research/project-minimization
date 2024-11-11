@@ -10,7 +10,10 @@ import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtProperty
+import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.PsiDDItem
+import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.services.MinimizationPsiManager
 import kotlin.test.assertIs
 
@@ -93,8 +96,9 @@ class PsiTrieDeletionTest : PsiTrieTestBase() {
         expectedFile: String,
         filter: (PsiElement) -> Boolean,
     ) = runBlocking {
-        val selectedPsi = selectElements { filter(it.psi!!) }
-        super.doTest(psiFile, selectedPsi) { writeCommandAction(project, "Deleting PSI") { it.delete() } }
+        val context = LightIJDDContext(project)
+        val selectedPsi = readAction { runBlocking { selectElements(context) { filter(it.psi(context)!!) } } }
+        super.doTest(psiFile, selectedPsi) { it.delete() }
         val expectedFile = myFixture.configureByFile("deletion-results/$expectedFile")
         assertIs<KtFile>(expectedFile)
         readAction {
@@ -105,8 +109,11 @@ class PsiTrieDeletionTest : PsiTrieTestBase() {
         }
     }
 
-     override suspend fun getAllElements(): List<PsiDDItem> {
-        val service = project.service<MinimizationPsiManager>()
-        return service.findDeletablePsiItems()
+    private fun PsiDDItem.psi(context: IJDDContext) =
+        PsiUtils.getPsiElementFromItem(context, this)
+
+     override suspend fun getAllElements(context: IJDDContext): List<PsiDDItem> {
+        val service = service<MinimizationPsiManager>()
+        return service.findDeletablePsiItems(context)
     }
 }

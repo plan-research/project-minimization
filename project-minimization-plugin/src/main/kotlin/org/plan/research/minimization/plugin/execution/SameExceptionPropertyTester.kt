@@ -27,7 +27,6 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
     private val lens: ProjectItemLens,
     private val initialException: CompilationException,
 ) : PropertyTester<IJDDContext, T> {
-    private val logger = KotlinLogging.logger {}
     private val snapshotManager = rootProject.service<SnapshotManagerService>()
 
     /**
@@ -59,14 +58,15 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
         }
 
     companion object {
+        private val logger = KotlinLogging.logger {}
+
         suspend fun <T : IJDDItem> create(
             compilerPropertyChecker: BuildExceptionProvider,
             exceptionComparator: ExceptionComparator,
             lens: ProjectItemLens,
             context: IJDDContext,
         ) = option {
-            val copiedContext = context.copy(project = context.originalProject)
-            val initialException = compilerPropertyChecker.checkCompilation(copiedContext).getOrNone().bind()
+            val initialException = compilerPropertyChecker.checkCompilation(context).getOrNone().bind()
             SameExceptionPropertyTester<T>(
                 context.originalProject,
                 compilerPropertyChecker,
@@ -74,7 +74,7 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
                 lens,
                 initialException,
             )
-                .also { it.logger.debug { "Initial exception is $initialException" } }
+                .also { logger.debug { "Initial exception is $initialException" } }
                 .withLog()
         }
     }

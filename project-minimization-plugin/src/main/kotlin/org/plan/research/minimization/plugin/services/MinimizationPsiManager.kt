@@ -2,86 +2,85 @@ package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.PsiDDItem
-import org.plan.research.minimization.plugin.psi.PsiProcessor
+import org.plan.research.minimization.plugin.psi.PsiUtils
 
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.search.FileTypeIndex
+import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.GlobalSearchScopes
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.indexing.FileBasedIndex
 import mu.KotlinLogging
+import org.jetbrains.jps.model.java.JavaSourceRootType
+import org.jetbrains.kotlin.config.SourceKotlinRootType
+import org.jetbrains.kotlin.config.TestSourceKotlinRootType
 import org.jetbrains.kotlin.idea.KotlinFileType
-import org.jetbrains.kotlin.psi.*
+import org.jetbrains.kotlin.psi.KtExpression
 
+import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
 
 /**
- * Service that provides functions to
- *  * Obtain a list of all the psi elements that could be modified
- *  * Modify the body of that object to replace it with `TODO()`
- *
+ * Service that provides functions to get a list of all the psi elements that could be modified
  */
-@Service(Service.Level.PROJECT)
-class MinimizationPsiManager(private val rootProject: Project) {
+@Service(Service.Level.APP)
+class MinimizationPsiManager {
     private val logger = KotlinLogging.logger {}
-    private val psiProcessor = PsiProcessor(rootProject)
 
-    suspend fun replaceBody(element: PsiElement): Unit = when (element) {
-        is KtClassInitializer -> psiProcessor.replaceBody(element)
-        is KtNamedFunction -> psiProcessor.replaceBody(element)
-        is KtLambdaExpression -> psiProcessor.replaceBody(element)
-        is KtPropertyAccessor -> psiProcessor.replaceBody(element)
-        else -> error("Invalid PSI element type: ${element::class.simpleName}. Expected one of: KtClassInitializer, KtNamedFunction, KtLambdaExpression, KtPropertyAccessor")
-    }
-
-    suspend fun findAllPsiWithBodyItems(): List<PsiDDItem> =
-        findPsiInKotlinFiles(PsiDDItem.BODY_REPLACEABLE_PSI_JAVA_CLASSES)
+    suspend fun findAllPsiWithBodyItems(context: IJDDContext): List<PsiDDItem> =
+        findPsiInKotlinFiles(context, PsiDDItem.BODY_REPLACEABLE_PSI_JAVA_CLASSES)
             .filter { PsiDDItem.hasBodyIfAvailable(it) != false }
-            .mapNotNull { readAction { psiProcessor.buildReplaceablePsiItem(it) } }
+            .mapNotNull { readAction { PsiUtils.buildReplaceablePsiItem(context, it) } }
 
-    suspend fun findDeletablePsiItems(): List<PsiDDItem> =
-        findPsiInKotlinFiles(PsiDDItem.DELETABLE_PSI_JAVA_CLASSES)
-            .map { readAction { psiProcessor.buildDeletablePsiItem(it) } }
+    suspend fun findDeletablePsiItems(context: IJDDContext): List<PsiDDItem> =
+        findPsiInKotlinFiles(context, PsiDDItem.DELETABLE_PSI_JAVA_CLASSES)
+            .map { readAction { PsiUtils.buildDeletablePsiItem(context, it) } }
 
-    private suspend fun <T : PsiElement> findPsiInKotlinFiles(classes: List<Class<out T>>): List<T> {
+    private suspend fun <T : PsiElement> findPsiInKotlinFiles(context: IJDDContext, classes: List<Class<out T>>): List<T> {
         val rootManager = service<RootsManagerService>()
-        val roots = smartReadAction(rootProject) {
-            rootManager
-                .findPossibleRoots(IJDDContext(rootProject))
-                .takeIf { it.isNotEmpty() }
-                ?: listOf(rootProject.guessProjectDir()!!)
+        val roots = smartReadAction(context.indexProject) {
+            rootManager.findPossibleRoots(context)
         }
         logger.debug {
-            val root = rootProject.guessProjectDir()!!.toNioPath()
-            "Found ${roots.size} roots: ${roots.map { it.toNioPath().relativeTo(root) }}"
+            "Found ${roots.size} roots: $roots"
         }
-        val kotlinFiles = smartReadAction(rootProject) {
-            FileTypeIndex.getFiles(
-                KotlinFileType.INSTANCE,
-                GlobalSearchScopes.directoriesScope(rootProject, true, *roots.toTypedArray()),
-            ).toList()
+        val rootFiles = smartReadAction(context.indexProject) {
+            roots.mapNotNull {
+                context.indexProjectDir.findFileByRelativePath(it.pathString)
+            }
         }
-        logFoundKotlinFiles(kotlinFiles)
-        return extractAllPsi(kotlinFiles, classes)
+        val kotlinFiles = smartReadAction(context.indexProject) {
+            val scope = GlobalSearchScopes.directoriesScope(context.indexProject, true, *rootFiles.toTypedArray())
+                .intersectWith(SourcesScope(context.indexProject))
+
+            FileTypeIndex.getFiles(KotlinFileType.INSTANCE, scope)
+                .toList()
+        }
+        logFoundKotlinFiles(context, kotlinFiles)
+        return extractAllPsi(context, kotlinFiles, classes)
     }
 
     /**
      * Transforms a PsiDDItem to a corresponding PsiElement
      *
      * @param item
+     * @param context
      */
-    suspend fun getPsiElementFromItem(item: PsiDDItem): KtExpression? {
-        val file = smartReadAction(rootProject) {
-            rootProject.guessProjectDir()!!.findFileByRelativePath(item.localPath.toString())!!
-        }
-        val ktFile = readAction { psiProcessor.getKtFile(file)!! }
+    suspend fun getPsiElementFromItem(context: IJDDContext, item: PsiDDItem): KtExpression? {
+        val relativeFile = item.localPath.toString()
+        val file = smartReadAction(context.indexProject) {
+            context.projectDir.findFileByRelativePath(relativeFile)
+        } ?: return null
+        val ktFile = readAction { PsiUtils.getKtFile(context, file) }
+            ?: return null
         val psiElement = readAction {
             var currentDepth = 0
             var element: PsiElement = ktFile
@@ -93,21 +92,25 @@ class MinimizationPsiManager(private val rootProject: Project) {
         return psiElement
     }
 
-    private suspend fun <T : PsiElement> extractAllPsi(
+    private suspend fun<T : PsiElement> extractAllPsi(
+        context: IJDDContext,
         files: Collection<VirtualFile>,
         classes: List<Class<out T>>,
     ): List<T> =
         files.flatMap { kotlinFile ->
-            val ktFile = readAction { psiProcessor.getKtFile(kotlinFile) } ?: return@flatMap emptyList()
-            smartReadAction(rootProject) {
+            smartReadAction(context.indexProject) {
+                val relativePath = kotlinFile.toNioPath().relativeTo(context.indexProjectDir.toNioPath())
+                val fileInCurrentProject = context.projectDir.findFileByRelativePath(relativePath.pathString)
+                    ?: return@smartReadAction emptyList()
+
+                val ktFileInCurrentProject = PsiUtils.getKtFile(context, fileInCurrentProject)
+                    ?: return@smartReadAction emptyList()
+
                 classes.flatMap { clazz ->
-                    PsiTreeUtil.collectElementsOfType(ktFile, clazz)
+                    PsiTreeUtil.collectElementsOfType(ktFileInCurrentProject, clazz)
                         .also {
-                            logger.debug {
-                                val projectRoot = rootProject.guessProjectDir()!!.toNioPath()
-                                "Found ${it.size} ${clazz.simpleName} elements in ${
-                                    kotlinFile.toNioPath().relativeTo(projectRoot)
-                                }"
+                            logger.trace {
+                                "Found ${it.size} ${clazz.simpleName} elements in $relativePath"
                             }
                         }
                 }
@@ -121,41 +124,52 @@ class MinimizationPsiManager(private val rootProject: Project) {
      * @param files a list of project source root to fetch files from
      * @return a map from file type to files of that type
      */
-    private fun getAllFileTypesInProject(files: List<VirtualFile>) = buildMap {
+    private fun getAllFileTypesInProject(context: IJDDContext, files: List<VirtualFile>) = buildMap {
         FileBasedIndex.getInstance().processAllKeys(
             FileTypeIndex.NAME,
             { fileType ->
                 val filesOfType = FileBasedIndex.getInstance().getContainingFiles(
                     FileTypeIndex.NAME,
                     fileType,
-                    GlobalSearchScopes.directoriesScope(rootProject, true, *files.toTypedArray()),
+                    GlobalSearchScopes.directoriesScope(context.indexProject, true, *files.toTypedArray()),
                 )
                 if (filesOfType.isNotEmpty()) {
                     put(fileType, filesOfType.toList())
                 }
                 true
             },
-            rootProject,
+            context.indexProject,
         )
     }
-
-    private fun logFoundKotlinFiles(files: List<VirtualFile>) {
+    private fun logFoundKotlinFiles(context: IJDDContext, files: List<VirtualFile>) {
         logger.debug { "Found ${files.size} kotlin files" }
         if (files.isEmpty()) {
             logger.warn { "Found 0 kotlin files!" }
             logger.trace {
-                val fileTypes = getAllFileTypesInProject(files)
+                val fileTypes = getAllFileTypesInProject(context, files)
                 val asString = fileTypes
                     .toList()
                     .map { (type, files) ->
                         "${type.name}: ${
                             files.map {
-                                    it.toNioPath().relativeTo(rootProject.guessProjectDir()!!.toNioPath())
+                                    it.toNioPath().relativeTo(context.projectDir.toNioPath())
                                 }
                         }"
                     }
                 "However, there are fileTypes and its files:\n$asString"
             }
         }
+    }
+    private class SourcesScope(project: Project) : GlobalSearchScope(project) {
+        private val index = ProjectFileIndex.getInstance(project)
+
+        override fun contains(file: VirtualFile): Boolean =
+            index.isUnderSourceRootOfType(file, setOf(
+                SourceKotlinRootType, TestSourceKotlinRootType,
+                JavaSourceRootType.SOURCE, JavaSourceRootType.TEST_SOURCE,
+            ))
+
+        override fun isSearchInModuleContent(aModule: Module): Boolean = true
+        override fun isSearchInLibraries(): Boolean = false
     }
 }

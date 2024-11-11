@@ -12,33 +12,31 @@ data class PathContent(val path: Path, val content: String?)
 
 infix fun Path.to(content: String?) = PathContent(this, content)
 
-fun VirtualFile.getPathContentPair(project: Project): PathContent =
-    toNioPath().relativeTo(project.guessProjectDir()!!.toNioPath()) to
+fun VirtualFile.getPathContentPair(projectPath: Path): PathContent =
+    toNioPath().relativeTo(projectPath) to
             this.takeIf { it.isFile }?.contentsToByteArray()?.toString(Charsets.UTF_8)
 
 fun Project.getAllFiles(): Set<PathContent> {
     return buildSet {
         val index = ProjectRootManager.getInstance(this@getAllFiles).fileIndex
         index.iterateContent {
-            add(it.getPathContentPair(this@getAllFiles))
+            add(it.getPathContentPair(guessProjectDir()!!.toNioPath()))
         }
     }
 }
 
-fun VirtualFile.getAllFiles(project: Project): Set<PathContent> = buildSet {
-    add(getPathContentPair(project))
+fun VirtualFile.getAllFiles(projectPath: Path): Set<PathContent> = buildSet {
+    add(getPathContentPair(projectPath))
     if (isFile)
         return@buildSet
     children.forEach {
-        addAll(it.getAllFiles(project))
+        addAll(it.getAllFiles(projectPath))
     }
 }
 
-fun List<VirtualFile>.getAllFiles(project: Project): Set<PathContent> =
-    flatMap { it.getAllFiles(project) }.toSet() + getAllParents(project.guessProjectDir()!!).map {
-        it.getPathContentPair(
-            project
-        )
+fun List<VirtualFile>.getAllFiles(projectDir: VirtualFile): Set<PathContent> =
+    flatMap { it.getAllFiles(projectDir.toNioPath()) }.toSet() + getAllParents(projectDir).map {
+        it.getPathContentPair(projectDir.toNioPath())
     }.toSet()
 
 private val gradleFolders = listOf("build", "gradle", ".gradle", ".kotlin", "gradlew", "gradlew.bat")

@@ -13,6 +13,7 @@ import org.plan.research.minimization.plugin.model.exception.CompilationResult
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
 import org.plan.research.minimization.plugin.services.ProjectCloningService
+import org.plan.research.minimization.plugin.services.ProjectOpeningService
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 import kotlin.io.path.name
 import kotlin.test.assertIs
@@ -23,7 +24,7 @@ abstract class GradleCompilationTest<C : IJDDContext> : GradleProjectBaseTest(),
     override fun setUp() {
         super.setUp()
         project.service<MinimizationPluginSettings>().state.currentCompilationStrategy = CompilationStrategy.GRADLE_IDEA
-        project.service<ProjectCloningService>().isTest = true
+        service<ProjectOpeningService>().isTest = true
     }
 
     fun testWithFreshlyInitializedProject() {

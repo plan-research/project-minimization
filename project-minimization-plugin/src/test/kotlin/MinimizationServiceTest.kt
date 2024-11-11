@@ -18,6 +18,7 @@ import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStra
 import org.plan.research.minimization.plugin.model.state.TransformationDescriptors
 import org.plan.research.minimization.plugin.services.MinimizationService
 import org.plan.research.minimization.plugin.services.ProjectCloningService
+import org.plan.research.minimization.plugin.services.ProjectOpeningService
 import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
 import kotlin.io.path.Path
 import kotlin.io.path.name
@@ -40,7 +41,7 @@ class MinimizationServiceTest : GradleProjectBaseTest() {
 //                )
             )
         }
-        project.service<ProjectCloningService>().isTest = true
+        service<ProjectOpeningService>().isTest = true
     }
 
     fun testKt71260() {

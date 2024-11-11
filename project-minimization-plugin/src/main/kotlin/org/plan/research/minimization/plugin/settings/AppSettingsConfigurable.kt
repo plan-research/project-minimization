@@ -31,6 +31,8 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
     override fun isModified(): Boolean {
         val state = project.service<MinimizationPluginSettings>().state
         return mySettingsComponent?.compilationStrategy != state.compilationStrategy ||
+            mySettingsComponent?.gradleTask != state.gradleTask ||
+            mySettingsComponent?.gradleOptions != state.gradleOptions ||
             mySettingsComponent?.temporaryProjectLocation != state.temporaryProjectLocation ||
             mySettingsComponent?.snapshotStrategy != state.snapshotStrategy ||
             mySettingsComponent?.exceptionComparingStrategy != state.exceptionComparingStrategy ||
@@ -45,6 +47,12 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
             .apply {
                 var compilationStrategy by compilationStrategy.mutable()
                 compilationStrategy = mySettingsComponent?.compilationStrategy ?: CompilationStrategy.GRADLE_IDEA
+
+                var gradleTask by gradleTask.mutable()
+                gradleTask = mySettingsComponent?.gradleTask ?: "build"
+
+                var gradleOptions by gradleOptions.mutable()
+                gradleOptions = mySettingsComponent?.gradleOptions ?: emptyList()
 
                 var temporaryProjectLocation by temporaryProjectLocation.mutable()
                 temporaryProjectLocation = mySettingsComponent?.temporaryProjectLocation ?: "minimization-project-snapshots"
@@ -76,6 +84,8 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
     override fun reset() {
         val state = project.service<MinimizationPluginSettings>().state
         mySettingsComponent?.compilationStrategy = state.compilationStrategy
+        mySettingsComponent?.gradleTask = state.gradleTask
+        mySettingsComponent?.gradleOptions = state.gradleOptions
         mySettingsComponent?.temporaryProjectLocation = state.temporaryProjectLocation
         mySettingsComponent?.snapshotStrategy = state.snapshotStrategy
         mySettingsComponent?.exceptionComparingStrategy = state.exceptionComparingStrategy

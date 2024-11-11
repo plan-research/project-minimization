@@ -13,12 +13,13 @@ import org.plan.research.minimization.plugin.model.CaretPosition
 import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.services.ProjectCloningService
+import org.plan.research.minimization.plugin.services.ProjectOpeningService
 
 class PathRelativizationTransformationTest : JavaCodeInsightFixtureTestCase() {
 
     override fun setUp() {
         super.setUp()
-        project.service<ProjectCloningService>().isTest = true
+        service<ProjectOpeningService>().isTest = true
     }
 
     override fun runInDispatchThread(): Boolean = false

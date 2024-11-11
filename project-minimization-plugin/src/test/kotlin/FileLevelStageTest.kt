@@ -1,16 +1,20 @@
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.service
+import com.intellij.openapi.project.ex.ProjectManagerEx
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.execution.DumbCompiler
 import org.plan.research.minimization.plugin.model.FileLevelStage
-import org.plan.research.minimization.plugin.model.LightIJDDContext
+import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.model.state.DDStrategy
 import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.services.MinimizationStageExecutorService
 import org.plan.research.minimization.plugin.services.ProjectCloningService
+import org.plan.research.minimization.plugin.services.ProjectOpeningService
 
 class FileLevelStageTest : JavaCodeInsightFixtureTestCase() {
     override fun getTestDataPath(): String {
@@ -25,7 +29,7 @@ class FileLevelStageTest : JavaCodeInsightFixtureTestCase() {
         compilationStrategy = CompilationStrategy.DUMB
         var transformations by project.service<MinimizationPluginSettings>().stateObservable.minimizationTransformations.mutable()
         transformations = emptyList()
-        project.service<ProjectCloningService>().isTest = true
+        service<ProjectOpeningService>().isTest = true
     }
 
     fun testFullProject() {
@@ -61,7 +65,7 @@ class FileLevelStageTest : JavaCodeInsightFixtureTestCase() {
             HierarchyCollectionStrategy.FILE_TREE,
             DDStrategy.PROBABILISTIC_DD
         )
-        val context = LightIJDDContext(project)
+        val context = HeavyIJDDContext(project)
 
         val targetFiles = if (targetPaths == null) {
             project.getAllFiles()
@@ -70,14 +74,20 @@ class FileLevelStageTest : JavaCodeInsightFixtureTestCase() {
                 .getAllFiles(context.projectDir) + root.getPathContentPair(context.projectDir.toNioPath())
         }
 
+        val clonedContext = runBlocking {
+            project.service<ProjectCloningService>().clone(context)!!
+        }
         val minimizedProject = runBlocking {
-            val clonedContext = project.service<ProjectCloningService>().clone(context)!!
             stage.apply(clonedContext, executor)
         }.getOrNull()?.projectDir
         assertNotNull(minimizedProject)
 
         val minimizedFiles = minimizedProject!!.getAllFiles(minimizedProject.toNioPath())
         assertEquals(targetFiles, minimizedFiles)
+
+        runBlocking(Dispatchers.EDT) {
+            ProjectManagerEx.getInstanceEx().forceCloseProject(clonedContext.project)
+        }
 
         DumbCompiler.targetPaths = null // it's important
     }

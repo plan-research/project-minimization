@@ -28,19 +28,21 @@ import kotlin.io.path.relativeTo
  * Service that provides functions to get a list of all the psi elements that could be modified
  */
 @Service(Service.Level.APP)
-class MinimizationPsiManager {
+class MinimizationPsiManagerService {
     private val logger = KotlinLogging.logger {}
 
-    suspend fun findAllPsiWithBodyItems(context: IJDDContext): List<PsiWithBodyDDItem> {
-        val rootManager = service<RootsManagerService>()
-        val kotlinFiles = smartReadAction(context.indexProject) {
-            val roots = rootManager.findPossibleRoots(context).mapNotNull {
+    suspend fun findAllKotlinFilesInIndexProject(context: IJDDContext): List<VirtualFile> =
+        smartReadAction(context.indexProject) {
+            val roots = service<RootsManagerService>().findPossibleRoots(context).mapNotNull {
                 context.indexProjectDir.findFileByRelativePath(it.pathString)
             }
             val scope = GlobalSearchScopes.directoriesScope(context.indexProject, true, *roots.toTypedArray())
                 .intersectWith(SourcesScope(context.indexProject))
-            FileTypeIndex.getFiles(KotlinFileType.INSTANCE, scope)
+            FileTypeIndex.getFiles(KotlinFileType.INSTANCE, scope).toList()
         }
+
+    suspend fun findAllPsiWithBodyItems(context: IJDDContext): List<PsiWithBodyDDItem> {
+        val kotlinFiles = findAllKotlinFilesInIndexProject(context)
         logger.debug {
             "Found ${kotlinFiles.size} kotlin files"
         }

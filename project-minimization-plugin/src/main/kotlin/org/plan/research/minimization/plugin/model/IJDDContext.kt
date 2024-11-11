@@ -72,6 +72,8 @@ class HeavyIJDDContext(
         currentLevel: List<IJDDItem>?,
         progressReporter: SequentialProgressReporter?,
     ): HeavyIJDDContext = copy(project, currentLevel, progressReporter)
+
+    override fun toString(): String = "HeavyIJDDContext(project=$projectDir)"
 }
 
 /**
@@ -102,4 +104,6 @@ class LightIJDDContext(
         currentLevel: List<IJDDItem>?,
         progressReporter: SequentialProgressReporter?,
     ): LightIJDDContext = copy(projectDir, currentLevel, progressReporter)
+
+    override fun toString(): String = "LightIJDDContext(project=$projectDir, indexProject=$indexProjectDir)"
 }

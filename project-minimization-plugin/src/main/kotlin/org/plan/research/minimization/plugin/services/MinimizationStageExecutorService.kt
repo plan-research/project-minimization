@@ -29,8 +29,8 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         logger.info { "Start File level stage" }
         statLogger.info {
             "File level stage settings, " +
-                "Hierarchy strategy: ${fileLevelStage.hierarchyCollectionStrategy::class.simpleName}, " +
-                "DDAlgorithm: ${fileLevelStage.ddAlgorithm::class.simpleName}"
+                "Hierarchy strategy: ${fileLevelStage.hierarchyCollectionStrategy}, " +
+                "DDAlgorithm: ${fileLevelStage.ddAlgorithm}"
         }
 
         val lightContext = context.asLightContext()
@@ -57,7 +57,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
     ) = either {
         logger.info { "Start Function level stage" }
         statLogger.info {
-            "Function level stage settings. DDAlgorithm: ${functionLevelStage.ddAlgorithm::class.simpleName}"
+            "Function level stage settings. DDAlgorithm: ${functionLevelStage.ddAlgorithm}"
         }
 
         val lightContext = context.asLightContext()

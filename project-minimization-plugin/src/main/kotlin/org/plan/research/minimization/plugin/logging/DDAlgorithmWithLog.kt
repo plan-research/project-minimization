@@ -11,7 +11,7 @@ import mu.KotlinLogging
 class DDAlgorithmWithLog(
     private val innerDDAlgorithm: DDAlgorithm,
 ) : DDAlgorithm {
-    private val generalLogger = KotlinLogging.logger {}
+    private val logger = KotlinLogging.logger {}
 
     override suspend fun <C : DDContext, T : DDItem> minimize(
         context: C, items: List<T>,
@@ -19,31 +19,36 @@ class DDAlgorithmWithLog(
     ): DDAlgorithmResult<C, T> {
         val result: DDAlgorithmResult<C, T>
 
-        generalLogger.info {
+        logger.info {
             "Start minimization algorithm \n" +
-                "Context - ${context::class.simpleName}, \n" +
-                "items - ${(items.firstOrNull() ?: NoSuchElementException())::class.simpleName} \n" +
-                "propertyTester - ${propertyTester::class.simpleName}"
-        }
-        generalLogger.trace {
-            "Context - $context \n" +
-                "items - $items \n" +
+                "Context - $context, \n" +
                 "propertyTester - $propertyTester"
+        }
+        if (logger.isTraceEnabled) {
+            logger.trace {
+                "items - $items"
+            }
+        } else {
+            logger.info {
+                "items - ${(items.firstOrNull() ?: NoSuchElementException())::class.simpleName} \n"
+            }
         }
         statLogger.info { "DDAlgorithm started with size: ${items.size}" }
 
         try {
             result = innerDDAlgorithm.minimize(context, items, propertyTester)
         } catch (e: Throwable) {
-            generalLogger.error { "DDAlgorithm ended up with error: ${e.message}" }
+            logger.error { "DDAlgorithm ended up with error: ${e.message}" }
             throw e
         }
 
         statLogger.info { "DDAlgorithm ended with size and ratio: ${result.items.size}, ${result.items.size.toDouble() / items.size}" }
-        generalLogger.info { "End minimization algorithm" }
+        logger.info { "End minimization algorithm" }
 
         return result
     }
+
+    override fun toString(): String = innerDDAlgorithm.toString()
 }
 
 fun DDAlgorithm.withLog(): DDAlgorithm = DDAlgorithmWithLog(this)

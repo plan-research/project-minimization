@@ -23,7 +23,7 @@ import java.nio.file.Path
  */
 abstract class BasePsiLens : ProjectItemLens {
     private val logger = KotlinLogging.logger {}
-    override suspend fun focusOn(
+    final override suspend fun focusOn(
         items: List<IJDDItem>,
         currentContext: IJDDContext,
     ) {
@@ -64,8 +64,9 @@ abstract class BasePsiLens : ProjectItemLens {
         }
     }
 
-    abstract fun focusOnPsiElement(psiElement: PsiElement, context: IJDDContext)
-    abstract fun getWriteCommandActionName(psiFile: KtFile, context: IJDDContext): String
+    protected abstract fun focusOnPsiElement(psiElement: PsiElement, context: IJDDContext)
+    protected abstract fun getWriteCommandActionName(psiFile: KtFile, context: IJDDContext): String
+    protected open suspend fun postProcessPsiFile(psiFile: KtFile, context: IJDDContext) = Unit
 
     private suspend fun focusOnInsideFile(currentContext: IJDDContext, trie: PsiItemStorage, relativePath: Path) {
         val virtualFile = readAction {
@@ -86,5 +87,6 @@ abstract class BasePsiLens : ProjectItemLens {
         PsiUtils.performPsiChangesAndSave(currentContext, psiFile) {
             trie.processMarkedElements(psiFile) { focusOnPsiElement(it, currentContext) }
         }
+        postProcessPsiFile(psiFile, currentContext)
     }
 }

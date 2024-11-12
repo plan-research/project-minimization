@@ -1,9 +1,8 @@
 package org.plan.research.minimization.plugin.lenses
 
-import org.plan.research.minimization.plugin.model.IJDDContext
-
 import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.KtFile
+import org.plan.research.minimization.plugin.model.IJDDContext
 
 class FunctionDeletingLens : BasePsiLens() {
     override fun focusOnPsiElement(

@@ -15,10 +15,9 @@ import java.nio.file.Paths
 fun saveStateToFile(project: Project, filePath: String) {
     val state = project.service<MinimizationPluginSettings>().state
     val element = serializeState(state)
-    val xmlString = JDOMUtil.writeElement(element, System.lineSeparator())
 
     Files.newBufferedWriter(Paths.get(filePath)).use { writer ->
-        writer.write(xmlString)
+        JDOMUtil.writeElement(element, writer, System.lineSeparator())
     }
 }
 

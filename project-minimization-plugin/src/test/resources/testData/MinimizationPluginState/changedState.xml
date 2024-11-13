@@ -1,0 +1,15 @@
+<MinimizationPluginState>
+  <option name="compilationStrategy" value="DUMB" />
+  <gradleOptions>
+    <option value="--info" />
+  </gradleOptions>
+  <option name="gradleTask" value="user_build" />
+  <minimizationTransformations />
+  <stages>
+    <fileLevelStage>
+      <option name="hierarchyCollectionStrategy" value="FILE_TREE" />
+      <option name="ddAlgorithm" value="DD_MIN" />
+    </fileLevelStage>
+  </stages>
+  <option name="temporaryProjectLocation" value="new-project-location" />
+</MinimizationPluginState>

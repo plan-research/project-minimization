@@ -1,8 +1,5 @@
 package org.plan.research.minimization.plugin.settings
 
-import org.plan.research.minimization.plugin.model.FileLevelStage
-import org.plan.research.minimization.plugin.model.FunctionLevelStage
-import org.plan.research.minimization.plugin.model.state.*
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 
 import com.intellij.openapi.components.service
@@ -42,21 +39,18 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
     }
 
     override fun apply() {
-        val newState = MinimizationPluginState().apply {
-            compilationStrategy = mySettingsComponent?.compilationStrategy ?: CompilationStrategy.GRADLE_IDEA
-            gradleTask = mySettingsComponent?.gradleTask ?: "build"
-            gradleOptions = mySettingsComponent?.gradleOptions ?: emptyList()
-            temporaryProjectLocation = mySettingsComponent?.temporaryProjectLocation ?: "minimization-project-snapshots"
-            snapshotStrategy = mySettingsComponent?.snapshotStrategy ?: SnapshotStrategy.PROJECT_CLONING
-            exceptionComparingStrategy = mySettingsComponent?.exceptionComparingStrategy ?: ExceptionComparingStrategy.SIMPLE
-            stages = mySettingsComponent?.stages ?: listOf(
-                FunctionLevelStage(),
-                FileLevelStage(),
-            )
-            minimizationTransformations = mySettingsComponent?.transformations ?: listOf(
-                TransformationDescriptors.PATH_RELATIVIZATION,
-            )
-        }
+        val newState = mySettingsComponent?.let {
+            MinimizationPluginState().apply {
+                compilationStrategy = mySettingsComponent!!.compilationStrategy
+                gradleTask = mySettingsComponent!!.gradleTask
+                gradleOptions = mySettingsComponent!!.gradleOptions
+                temporaryProjectLocation = mySettingsComponent!!.temporaryProjectLocation
+                snapshotStrategy = mySettingsComponent!!.snapshotStrategy
+                exceptionComparingStrategy = mySettingsComponent!!.exceptionComparingStrategy
+                stages = mySettingsComponent!!.stages
+                minimizationTransformations = mySettingsComponent!!.transformations
+            }
+        } ?: MinimizationPluginState()
 
         project.service<MinimizationPluginSettings>().updateState(newState)
     }

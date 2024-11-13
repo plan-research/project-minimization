@@ -4,44 +4,20 @@ import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.state.*
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
-import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 import org.plan.research.minimization.plugin.settings.loadStateFromFile
 import org.plan.research.minimization.plugin.settings.saveStateToFile
 import org.w3c.dom.Document
 import java.io.File
+import java.nio.file.Paths
 import javax.xml.parsers.DocumentBuilderFactory
 import kotlin.test.assertEquals
 
 class MinimizationPluginStateTest : BasePlatformTestCase() {
 
-    override fun setUp() {
-        super.setUp()
-        project.service<MinimizationPluginSettings>().updateState(MinimizationPluginState())
-
-        saveStateToFile(project, "baseState.xml")
-
-        val newState = MinimizationPluginState()
-        newState.compilationStrategy = CompilationStrategy.DUMB
-        newState.gradleTask = "user_build"
-        newState.gradleOptions = listOf("--info")
-        newState.temporaryProjectLocation = "new-project-location"
-        newState.snapshotStrategy = SnapshotStrategy.PROJECT_CLONING
-        newState.exceptionComparingStrategy = ExceptionComparingStrategy.SIMPLE
-        newState.stages = listOf(
-            FileLevelStage(
-                hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
-                ddAlgorithm = DDStrategy.DD_MIN,
-            )
-        )
-        newState.minimizationTransformations = emptyList()
-
-        project.service<MinimizationPluginSettings>().updateState(newState)
-
-        saveStateToFile(project, "changedState.xml")
-    }
-
     fun testSerialization() {
-        loadStateFromFile(project, "baseState.xml")
+        val resourcePath = getFilePathFromResources("testData/MinimizationPluginState/baseState.xml")
+
+        loadStateFromFile(project, resourcePath)
         val baseState = project.service<MinimizationPluginSettings>().state
         assertEquals(CompilationStrategy.GRADLE_IDEA, baseState.compilationStrategy)
         assertEquals("build", baseState.gradleTask)
@@ -68,13 +44,15 @@ class MinimizationPluginStateTest : BasePlatformTestCase() {
         )
 
         saveStateToFile(project, "baseState1.xml")
-        val file1 = File("baseState.xml")
+        val file1 = File(getFilePathFromResources("testData/MinimizationPluginState/baseState.xml"))
         val file2 = File("baseState1.xml")
         assertEquals(true, areXmlFilesEqual(file1, file2), "XML files are not identical")
+        file2.delete()
     }
 
     fun testSerialization2() {
-        loadStateFromFile(project, "changedState.xml")
+        val resourcePath = getFilePathFromResources("testData/MinimizationPluginState/changedState.xml")
+        loadStateFromFile(project, resourcePath)
         val changedState = project.service<MinimizationPluginSettings>().state
         assertEquals(CompilationStrategy.DUMB, changedState.compilationStrategy)
         assertEquals("user_build", changedState.gradleTask)
@@ -89,9 +67,10 @@ class MinimizationPluginStateTest : BasePlatformTestCase() {
         )
 
         saveStateToFile(project, "changedState1.xml")
-        val file1 = File("changedState.xml")
+        val file1 = File(getFilePathFromResources("testData/MinimizationPluginState/changedState.xml"))
         val file2 = File("changedState1.xml")
         assertEquals(true, areXmlFilesEqual(file1, file2), "XML files are not identical")
+        file2.delete()
     }
 
     private fun areXmlFilesEqual(file1: File, file2: File): Boolean {
@@ -106,5 +85,11 @@ class MinimizationPluginStateTest : BasePlatformTestCase() {
         val factory = DocumentBuilderFactory.newInstance()
         factory.isIgnoringElementContentWhitespace = true  // Игнорируем пробелы
         return factory.newDocumentBuilder().parse(file)
+    }
+
+    private fun getFilePathFromResources(resourcePath: String): String {
+        val resourceUrl = this::class.java.classLoader.getResource(resourcePath)
+            ?: throw IllegalArgumentException("Resource not found: $resourcePath")
+        return Paths.get(resourceUrl.toURI()).toString()
     }
 }

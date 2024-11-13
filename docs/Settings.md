@@ -21,7 +21,7 @@ To interact with the settings in `MinimizationPluginState`, use the following me
   project.service<MinimizationPluginSettings>().state.exceptionComparingStrategy
   ```
 
-- **Creating aт Observable Field**: Create an observable to watch for changes in a setting field.
+- **Creating an Observable Field**: Create an observable to watch for changes in a setting field.
   ```kotlin
   private val stages by project.service<MinimizationPluginSettings>()
       .stateObservable

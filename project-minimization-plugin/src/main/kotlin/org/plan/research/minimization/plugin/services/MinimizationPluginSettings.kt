@@ -16,4 +16,33 @@ import com.intellij.openapi.components.Storage
 class MinimizationPluginSettings : SimplePersistentStateComponent<MinimizationPluginState>(MinimizationPluginState()) {
     var stateObservable: MinimizationPluginStateObservable = MinimizationPluginStateObservable { state }
     var freezeSettings: Boolean = false
+
+    fun updateState(newState: MinimizationPluginState) {
+        stateObservable
+            .apply {
+                var compilationStrategy by compilationStrategy.mutable()
+                compilationStrategy = newState.compilationStrategy
+
+                var gradleTask by gradleTask.mutable()
+                gradleTask = newState.gradleTask
+
+                var gradleOptions by gradleOptions.mutable()
+                gradleOptions = newState.gradleOptions
+
+                var temporaryProjectLocation by temporaryProjectLocation.mutable()
+                temporaryProjectLocation = newState.temporaryProjectLocation
+
+                var snapshotStrategy by snapshotStrategy.mutable()
+                snapshotStrategy = newState.snapshotStrategy
+
+                var exceptionComparingStrategy by exceptionComparingStrategy.mutable()
+                exceptionComparingStrategy = newState.exceptionComparingStrategy
+
+                var stages by stages.mutable()
+                stages = newState.stages
+
+                var minimizationTransformations by minimizationTransformations.mutable()
+                minimizationTransformations = newState.minimizationTransformations
+            }
+    }
 }

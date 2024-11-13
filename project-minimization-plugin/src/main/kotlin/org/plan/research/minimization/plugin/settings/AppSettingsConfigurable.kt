@@ -42,38 +42,23 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
     }
 
     override fun apply() {
-        project.service<MinimizationPluginSettings>()
-            .stateObservable
-            .apply {
-                var compilationStrategy by compilationStrategy.mutable()
-                compilationStrategy = mySettingsComponent?.compilationStrategy ?: CompilationStrategy.GRADLE_IDEA
+        val newState = MinimizationPluginState().apply {
+            compilationStrategy = mySettingsComponent?.compilationStrategy ?: CompilationStrategy.GRADLE_IDEA
+            gradleTask = mySettingsComponent?.gradleTask ?: "build"
+            gradleOptions = mySettingsComponent?.gradleOptions ?: emptyList()
+            temporaryProjectLocation = mySettingsComponent?.temporaryProjectLocation ?: "minimization-project-snapshots"
+            snapshotStrategy = mySettingsComponent?.snapshotStrategy ?: SnapshotStrategy.PROJECT_CLONING
+            exceptionComparingStrategy = mySettingsComponent?.exceptionComparingStrategy ?: ExceptionComparingStrategy.SIMPLE
+            stages = mySettingsComponent?.stages ?: listOf(
+                FunctionLevelStage(),
+                FileLevelStage(),
+            )
+            minimizationTransformations = mySettingsComponent?.transformations ?: listOf(
+                TransformationDescriptors.PATH_RELATIVIZATION,
+            )
+        }
 
-                var gradleTask by gradleTask.mutable()
-                gradleTask = mySettingsComponent?.gradleTask ?: "build"
-
-                var gradleOptions by gradleOptions.mutable()
-                gradleOptions = mySettingsComponent?.gradleOptions ?: emptyList()
-
-                var temporaryProjectLocation by temporaryProjectLocation.mutable()
-                temporaryProjectLocation = mySettingsComponent?.temporaryProjectLocation ?: "minimization-project-snapshots"
-
-                var snapshotStrategy by snapshotStrategy.mutable()
-                snapshotStrategy = mySettingsComponent?.snapshotStrategy ?: SnapshotStrategy.PROJECT_CLONING
-
-                var exceptionComparingStrategy by exceptionComparingStrategy.mutable()
-                exceptionComparingStrategy = mySettingsComponent?.exceptionComparingStrategy ?: ExceptionComparingStrategy.SIMPLE
-
-                var stages by stages.mutable()
-                stages = mySettingsComponent?.stages ?: listOf(
-                    FunctionLevelStage(),
-                    FileLevelStage(),
-                )
-
-                var minimizationTransformations by minimizationTransformations.mutable()
-                minimizationTransformations = mySettingsComponent?.transformations ?: listOf(
-                    TransformationDescriptors.PATH_RELATIVIZATION,
-                )
-            }
+        project.service<MinimizationPluginSettings>().updateState(newState)
     }
 
     override fun reset() {

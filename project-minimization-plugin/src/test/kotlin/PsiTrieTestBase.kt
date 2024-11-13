@@ -1,6 +1,5 @@
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.smartReadAction
-import com.intellij.openapi.components.service
 import com.intellij.psi.PsiElement
 import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
@@ -11,13 +10,13 @@ import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.psi.KtFile
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
+import org.plan.research.minimization.plugin.model.PsiDDItem
 import org.plan.research.minimization.plugin.psi.PsiItemStorage
 import org.plan.research.minimization.plugin.psi.PsiUtils
-import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import kotlin.test.assertIs
 
-abstract class PsiTrieTestBase : JavaCodeInsightFixtureTestCase() {
+abstract class PsiTrieTestBase<ITEM, T> : JavaCodeInsightFixtureTestCase() where ITEM : PsiDDItem<T>, T : PsiChildrenPathIndex, T : Comparable<T>{
     override fun getTestDataPath(): String {
         return "src/test/resources/testData/kotlin-psi"
     }
@@ -25,33 +24,26 @@ abstract class PsiTrieTestBase : JavaCodeInsightFixtureTestCase() {
     override fun runInDispatchThread(): Boolean = false
 
 
-    protected suspend fun getAllElements(context: IJDDContext): List<PsiWithBodyDDItem> {
-        val service = service<MinimizationPsiManagerService>()
-        return service.findAllPsiWithBodyItems(context)
-    }
+    protected abstract suspend fun getAllElements(context: IJDDContext): List<ITEM>
 
     protected suspend inline fun selectElements(
         context: IJDDContext,
-        filter: (PsiWithBodyDDItem) -> Boolean
+        filter: (ITEM) -> Boolean
     ) = getAllElements(context).filter { filter(it) }
 
     protected open suspend fun doTest(
         psiFile: KtFile,
-        selectedPsi: List<PsiWithBodyDDItem>,
-        psiProcessor: (PsiWithBodyDDItem, PsiElement) -> Unit
+        selectedPsi: List<ITEM>,
+        psiProcessor: (ITEM, PsiElement) -> Unit
     ) {
         val context = LightIJDDContext(project)
-        val psiTrie = PsiItemStorage.create(selectedPsi, context)
+        val psiTrie = PsiItemStorage.create(selectedPsi.toSet(), context)
         PsiUtils.performPsiChangesAndSave(context, psiFile) {
             psiTrie.processMarkedElements(psiFile, psiProcessor)
         }
         withContext(Dispatchers.EDT) {
             PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
         }
-//        val expectedPsi = myFixture.configureByFile(expectedFile)
-//        readAction {
-//            kotlin.test.assertEquals(expectedPsi.text, psiFile.text)
-//        }
     }
 
     protected fun loadPsiFile(sourcePath: String, targetPath: String): KtFile {

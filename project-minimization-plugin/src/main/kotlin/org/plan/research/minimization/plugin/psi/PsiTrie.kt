@@ -1,23 +1,28 @@
 package org.plan.research.minimization.plugin.psi
 
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
+import org.plan.research.minimization.plugin.model.PsiDDItem
+
+import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
+import org.plan.research.minimization.plugin.model.PsiDDItem
 
 import com.intellij.psi.PsiElement
 import mu.KotlinLogging
 import org.jetbrains.kotlin.utils.addToStdlib.same
 
-typealias PsiProcessor = (PsiWithBodyDDItem, PsiElement) -> Unit
+typealias PsiProcessor<ITEM> = (ITEM, PsiElement) -> Unit
+private typealias AdjacentNodes<I, T> = MutableMap<T, PsiTrie<I, T>>
 
 /**
  * The PsiTrie class represents a trie structure designed to store and process
  * PSI elements associated with specific PSI elements in the root project.
  */
-class PsiTrie private constructor() {
-    private val children: MutableMap<Int, PsiTrie> = mutableMapOf()
-    private var containingItem: PsiWithBodyDDItem? = null
+class PsiTrie<I, T> private constructor() where I : PsiDDItem<T>, T : Comparable<T>, T : PsiChildrenPathIndex {
+    private val children: AdjacentNodes<I, T> = mutableMapOf()
+    private var containingItem: I? = null
     private val logger = KotlinLogging.logger {}
 
-    fun processMarkedElements(element: PsiElement, processor: PsiProcessor) {
+    fun processMarkedElements(element: PsiElement, processor: PsiProcessor<I>) {
         containingItem?.let {
             if (logger.isTraceEnabled) {
                 // to preserve suspended context
@@ -28,13 +33,17 @@ class PsiTrie private constructor() {
             processor(it, element)
             return
         }
-        for ((index, childTrie) in children) {
-            val childElement = element.children[index]
+        children.entries.sortedByDescending { it.key }.forEach { (index, childTrie) ->
+            val childElement = index.getNext(element)
+            childElement ?: run {
+                logger.debug { "Can't find children element for $index in $element" }
+                return@forEach
+            }
             childTrie.processMarkedElements(childElement, processor)
         }
     }
 
-    private fun add(item: PsiWithBodyDDItem, depth: Int = 0) {
+    private fun add(item: I, depth: Int = 0) {
         if (depth == item.childrenPath.size) {
             containingItem = item
             return
@@ -45,9 +54,9 @@ class PsiTrie private constructor() {
     }
 
     companion object {
-        fun create(items: List<PsiWithBodyDDItem>): PsiTrie {
-            require(items.same(PsiWithBodyDDItem::localPath))
-            val rootNode = PsiTrie()
+        fun <ITEM, T> create(items: List<ITEM>): PsiTrie<ITEM, T> where ITEM : PsiDDItem<T>, T : Comparable<T>, T : PsiChildrenPathIndex {
+            require(items.same(PsiDDItem<T>::localPath))
+            val rootNode = PsiTrie<ITEM, T>()
             items.forEach { rootNode.add(it) }
             return rootNode
         }

@@ -65,13 +65,8 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
 
                 var stages by stages.mutable()
                 stages = mySettingsComponent?.stages ?: listOf(
-                    FunctionLevelStage(
-                        ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
-                    ),
-                    FileLevelStage(
-                        hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
-                        ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
-                    ),
+                    FunctionLevelStage(),
+                    FileLevelStage(),
                 )
 
                 var minimizationTransformations by minimizationTransformations.mutable()

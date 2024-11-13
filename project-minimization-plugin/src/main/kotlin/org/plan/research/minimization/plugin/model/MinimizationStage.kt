@@ -5,6 +5,7 @@ import org.plan.research.minimization.plugin.model.state.DDStrategy
 import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
 
 import arrow.core.Either
+import com.intellij.util.xmlb.annotations.Property
 import com.intellij.util.xmlb.annotations.Tag
 
 /**
@@ -47,8 +48,8 @@ sealed interface MinimizationStage {
  */
 @Tag("fileLevelStage")
 data class FileLevelStage(
-    var hierarchyCollectionStrategy: HierarchyCollectionStrategy,
-    var ddAlgorithm: DDStrategy,
+    @Property val hierarchyCollectionStrategy: HierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
+    @Property val ddAlgorithm: DDStrategy = DDStrategy.PROBABILISTIC_DD,
 ) : MinimizationStage {
     override val name: String = "File-Level Minimization"
 
@@ -58,7 +59,7 @@ data class FileLevelStage(
 
 @Tag("functionLevelStage")
 data class FunctionLevelStage(
-    var ddAlgorithm: DDStrategy,
+    @Property val ddAlgorithm: DDStrategy = DDStrategy.PROBABILISTIC_DD,
 ) : MinimizationStage {
     override val name: String = "Body Replacement Algorithm"
 

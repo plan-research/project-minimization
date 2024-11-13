@@ -3,37 +3,45 @@ package org.plan.research.minimization.plugin.settings
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.MinimizationStage
-import org.plan.research.minimization.plugin.model.state.*
+import org.plan.research.minimization.plugin.model.state.CompilationStrategy
+import org.plan.research.minimization.plugin.model.state.ExceptionComparingStrategy
+import org.plan.research.minimization.plugin.model.state.SnapshotStrategy
+import org.plan.research.minimization.plugin.model.state.TransformationDescriptors
 
-import com.intellij.openapi.components.*
-import com.intellij.util.xmlb.annotations.Property
+import com.intellij.openapi.components.BaseState
+import com.intellij.util.xmlb.annotations.Tag
 import com.intellij.util.xmlb.annotations.XCollection
-import org.jetbrains.annotations.NonNls
 
 class MinimizationPluginState : BaseState() {
-    @NonNls
-    var compilationStrategy: CompilationStrategy = CompilationStrategy.GRADLE_IDEA
-    var gradleTask: String = "build"
-    var gradleOptions: List<String> = emptyList()
-    var temporaryProjectLocation: String = "minimization-project-snapshots"
-    var snapshotStrategy: SnapshotStrategy = SnapshotStrategy.PROJECT_CLONING
-    var exceptionComparingStrategy: ExceptionComparingStrategy = ExceptionComparingStrategy.SIMPLE
+    var compilationStrategy by enum(CompilationStrategy.GRADLE_IDEA)
+    var gradleTask by property("build") { it == "build" }
+    var temporaryProjectLocation by property("minimization-project-snapshots") { it == "minimization-project-snapshots" }
+    var snapshotStrategy by enum(SnapshotStrategy.PROJECT_CLONING)
+    var exceptionComparingStrategy by enum(ExceptionComparingStrategy.SIMPLE)
 
-    @Property(surroundWithTag = false)
-    @XCollection(style = XCollection.Style.v1, elementName = "stage")
-    var stages: List<MinimizationStage> = listOf(
-        FunctionLevelStage(
-            ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
-        ),
-        FileLevelStage(
-            hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
-            ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
-        ),
-    )
+    @get:Tag
+    @get:XCollection(style = XCollection.Style.v1, elementName = "option")
+    var gradleOptions by property(emptyList<String>()) { it.isEmpty() }
 
-    @Property(surroundWithTag = false)
-    @XCollection(style = XCollection.Style.v1, elementName = "minimizationTransformations")
-    var minimizationTransformations: List<TransformationDescriptors> = listOf(
-        TransformationDescriptors.PATH_RELATIVIZATION,
+    @get:Tag
+    @get:XCollection(
+        style = XCollection.Style.v1,
+        elementName = "stage",
+        elementTypes = [FunctionLevelStage::class, FileLevelStage::class],
     )
+    var stages by property(defaultStages) { it == defaultStages }
+
+    @get:Tag
+    @get:XCollection(style = XCollection.Style.v1, elementName = "transformation")
+    var minimizationTransformations by property(defaultTransformations) { it == defaultTransformations }
+
+    companion object {
+        private val defaultStages: List<MinimizationStage> = listOf(
+            FunctionLevelStage(),
+            FileLevelStage(),
+        )
+        private val defaultTransformations: List<TransformationDescriptors> = listOf(
+            TransformationDescriptors.PATH_RELATIVIZATION,
+        )
+    }
 }

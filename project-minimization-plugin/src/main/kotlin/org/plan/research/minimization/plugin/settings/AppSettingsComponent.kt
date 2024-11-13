@@ -53,14 +53,15 @@ class AppSettingsComponent {
         emptyText.text = "minimization-project-snapshots"
     }
     private val snapshotStrategyComboBox = ComboBox(DefaultComboBoxModel(SnapshotStrategy.entries.toTypedArray()))
-    private val exceptionComparingStrategyComboBox = ComboBox(DefaultComboBoxModel(ExceptionComparingStrategy.entries.toTypedArray()))
+    private val exceptionComparingStrategyComboBox =
+        ComboBox(DefaultComboBoxModel(ExceptionComparingStrategy.entries.toTypedArray()))
 
     // Stage List
-    private val stageListModel = DefaultListModel<MinimizationStage>()
     private val functionStageCheckBox = JBCheckBox("Enable function level stage")
     private val functionDDAlgorithmComboBox = ComboBox(DefaultComboBoxModel(DDStrategy.entries.toTypedArray()))
     private val fileStageCheckBox = JBCheckBox("Enable file level stage")
-    private val fileHierarchyStrategyComboBox = ComboBox(DefaultComboBoxModel(HierarchyCollectionStrategy.entries.toTypedArray()))
+    private val fileHierarchyStrategyComboBox =
+        ComboBox(DefaultComboBoxModel(HierarchyCollectionStrategy.entries.toTypedArray()))
     private val fileDDAlgorithmComboBox = ComboBox(DefaultComboBoxModel(DDStrategy.entries.toTypedArray()))
 
     // Transformation List
@@ -70,13 +71,16 @@ class AppSettingsComponent {
     }
 
     var isFrozen: Boolean = false
-        set(value) { field = value
-            updateUIState()}
+        set(value) {
+            field = value
+            updateUIState()
+        }
 
     var compilationStrategy: CompilationStrategy
         get() = compilationStrategyComboBox.selectedItem as CompilationStrategy
         set(value) {
-            compilationStrategyComboBox.selectedItem = value}
+            compilationStrategyComboBox.selectedItem = value
+        }
 
     var gradleTask: String
         get() = gradleTaskField.text
@@ -88,6 +92,7 @@ class AppSettingsComponent {
         get() = gradleOptionsField.text.trim()
             .replace("\\s+".toRegex(), " ")
             .split(" ")
+            .filter { it.isNotBlank() }
         set(value) {
             gradleOptionsField.text = value.joinToString(" ")
         }
@@ -106,27 +111,37 @@ class AppSettingsComponent {
 
     var exceptionComparingStrategy: ExceptionComparingStrategy
         get() = exceptionComparingStrategyComboBox.selectedItem as ExceptionComparingStrategy
-        set(value) {exceptionComparingStrategyComboBox.selectedItem = value}
+        set(value) {
+            exceptionComparingStrategyComboBox.selectedItem = value
+        }
 
     var stages: List<MinimizationStage>
-        get() = stageListModel.elements().toList()
+        get() = buildList {
+            if (functionStageCheckBox.isSelected) {
+                add(FunctionLevelStage(functionDDStrategy))
+            }
+            if (fileStageCheckBox.isSelected) {
+                add(
+                    FileLevelStage(
+                        fileHierarchyStrategy,
+                        fileDDStrategy,
+                    ),
+                )
+            }
+        }
         set(value) {
-            stageListModel.clear()
-            value.forEach { stageListModel.addElement(it) }
-
-            val localStages = stageListModel.elements().toList()
-            functionStageCheckBox.isSelected = localStages.any { it is FunctionLevelStage }
-            functionDDStrategy = localStages
+            functionStageCheckBox.isSelected = value.any { it is FunctionLevelStage }
+            functionDDStrategy = value
                 .find { it is FunctionLevelStage }
                 ?.let { (it as FunctionLevelStage).ddAlgorithm }
                 ?: DDStrategy.PROBABILISTIC_DD
 
-            fileStageCheckBox.isSelected = localStages.any { it is FileLevelStage }
-            fileHierarchyStrategy = localStages
+            fileStageCheckBox.isSelected = value.any { it is FileLevelStage }
+            fileHierarchyStrategy = value
                 .find { it is FileLevelStage }
                 ?.let { (it as FileLevelStage).hierarchyCollectionStrategy }
                 ?: HierarchyCollectionStrategy.FILE_TREE
-            fileDDStrategy = localStages
+            fileDDStrategy = value
                 .find { it is FileLevelStage }
                 ?.let { (it as FileLevelStage).ddAlgorithm }
                 ?: DDStrategy.PROBABILISTIC_DD
@@ -143,23 +158,33 @@ class AppSettingsComponent {
 
     private var isFunctionStageEnabled: Boolean
         get() = functionStageCheckBox.isSelected
-        set(value) { functionStageCheckBox.isSelected = value }
+        set(value) {
+            functionStageCheckBox.isSelected = value
+        }
 
     private var functionDDStrategy: DDStrategy
         get() = functionDDAlgorithmComboBox.selectedItem as DDStrategy
-        set(value) { functionDDAlgorithmComboBox.selectedItem = value }
+        set(value) {
+            functionDDAlgorithmComboBox.selectedItem = value
+        }
 
     private var isFileStageEnabled: Boolean
         get() = fileStageCheckBox.isSelected
-        set(value) { fileStageCheckBox.isSelected = value }
+        set(value) {
+            fileStageCheckBox.isSelected = value
+        }
 
     private var fileHierarchyStrategy: HierarchyCollectionStrategy
         get() = fileHierarchyStrategyComboBox.selectedItem as HierarchyCollectionStrategy
-        set(value) { fileHierarchyStrategyComboBox.selectedItem = value }
+        set(value) {
+            fileHierarchyStrategyComboBox.selectedItem = value
+        }
 
     private var fileDDStrategy: DDStrategy
         get() = fileDDAlgorithmComboBox.selectedItem as DDStrategy
-        set(value) { fileDDAlgorithmComboBox.selectedItem = value }
+        set(value) {
+            fileDDAlgorithmComboBox.selectedItem = value
+        }
 
     private lateinit var stagesPanel: JPanel
     private lateinit var functionStagePanel: JPanel
@@ -220,9 +245,10 @@ class AppSettingsComponent {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             border = BorderFactory.createEmptyBorder(0, 20, 0, 0)
 
-            add(FormBuilder.createFormBuilder()
-                .addLabeledComponent(JBLabel("DD algorithm:"), functionDDAlgorithmComboBox, 1, false)
-                .panel,
+            add(
+                FormBuilder.createFormBuilder()
+                    .addLabeledComponent(JBLabel("DD algorithm:"), functionDDAlgorithmComboBox, 1, false)
+                    .panel,
             )
         }
 
@@ -233,11 +259,6 @@ class AppSettingsComponent {
 
         functionStageCheckBox.addActionListener {
             updateFunctionStageSettingsEnabled()
-            updateStages()
-        }
-
-        functionDDAlgorithmComboBox.addActionListener {
-            updateStages()
         }
 
         updateFunctionStageSettingsEnabled()
@@ -248,10 +269,11 @@ class AppSettingsComponent {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             border = BorderFactory.createEmptyBorder(0, 20, 0, 0)
 
-            add(FormBuilder.createFormBuilder()
-                .addLabeledComponent(JBLabel("Hierarchy strategy:"), fileHierarchyStrategyComboBox, 1, false)
-                .addLabeledComponent(JBLabel("DD algorithm:"), fileDDAlgorithmComboBox, 1, false)
-                .panel,
+            add(
+                FormBuilder.createFormBuilder()
+                    .addLabeledComponent(JBLabel("Hierarchy strategy:"), fileHierarchyStrategyComboBox, 1, false)
+                    .addLabeledComponent(JBLabel("DD algorithm:"), fileDDAlgorithmComboBox, 1, false)
+                    .panel,
             )
         }
 
@@ -262,13 +284,6 @@ class AppSettingsComponent {
 
         fileStageCheckBox.addActionListener {
             updateFileStageSettingsEnabled()
-            updateStages()
-        }
-        fileHierarchyStrategyComboBox.addActionListener {
-            updateStages()
-        }
-        fileDDAlgorithmComboBox.addActionListener {
-            updateStages()
         }
 
         updateFileStageSettingsEnabled()
@@ -283,24 +298,6 @@ class AppSettingsComponent {
     private fun updateFunctionStageSettingsEnabled() {
         val isEnabled = functionStageCheckBox.isSelected
         functionDDAlgorithmComboBox.isEnabled = isEnabled
-    }
-
-    private fun updateStages() {
-        stages = mutableListOf<MinimizationStage>().apply {
-            if (functionStageCheckBox.isSelected) {
-                add(FunctionLevelStage(
-                    functionDDAlgorithmComboBox.selectedItem as DDStrategy,
-                ),
-                )
-            }
-            if (fileStageCheckBox.isSelected) {
-                add(FileLevelStage(
-                    fileHierarchyStrategyComboBox.selectedItem as HierarchyCollectionStrategy,
-                    fileDDAlgorithmComboBox.selectedItem as DDStrategy,
-                ),
-                )
-            }
-        }.toList()
     }
 
     private fun createTransformationPanel(): JPanel = JPanel().apply {

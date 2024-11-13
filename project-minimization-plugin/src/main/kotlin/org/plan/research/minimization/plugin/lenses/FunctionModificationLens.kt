@@ -5,13 +5,15 @@ import org.plan.research.minimization.plugin.psi.PsiBodyReplacer
 
 import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.KtFile
+import org.plan.research.minimization.plugin.model.PsiChildrenPathDDItem
+import org.plan.research.minimization.plugin.model.IntWrapper
 
 /**
  * A lens that focuses on functions within a project.
  * It ensures that relevant function elements
  * are marked, processed, and reset appropriately within the given context.
  */
-class FunctionModificationLens : BasePsiLens() {
+class FunctionModificationLens : BasePsiLens<PsiChildrenPathDDItem, IntWrapper>() {
     override fun focusOnPsiElement(psiElement: PsiElement, currentContext: IJDDContext) =
         PsiBodyReplacer(currentContext).replaceBody(psiElement)
 

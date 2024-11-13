@@ -8,8 +8,9 @@ import org.plan.research.minimization.plugin.lenses.FileDeletingItemLens
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducerResult
-import org.plan.research.minimization.plugin.model.PsiDDItem
+import org.plan.research.minimization.plugin.model.PsiStubDDItem
 import org.plan.research.minimization.plugin.psi.CompressingPsiItemTrie
+import org.plan.research.minimization.plugin.psi.StubCompressingPsiTrie
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
@@ -22,14 +23,14 @@ import com.intellij.openapi.project.guessProjectDir
 
 import java.nio.file.Path
 
-class DeletablePsiElementHierarchyGenerator : ProjectHierarchyProducer<PsiDDItem> {
-    override suspend fun produce(fromContext: IJDDContext): ProjectHierarchyProducerResult<PsiDDItem> = either {
+class DeletablePsiElementHierarchyGenerator : ProjectHierarchyProducer<PsiStubDDItem> {
+    override suspend fun produce(fromContext: IJDDContext): ProjectHierarchyProducerResult<PsiStubDDItem> = either {
         val project = fromContext.originalProject
         ensureNotNull(project.guessProjectDir()) { NoRootFound }
 
         val settings = project.service<MinimizationPluginSettings>()
         val propertyTester = SameExceptionPropertyTester
-            .create<PsiDDItem>(
+            .create<PsiStubDDItem>(
                 project.service<BuildExceptionProviderService>(),
                 settings.state.exceptionComparingStrategy.getExceptionComparator(),
                 FileDeletingItemLens(),
@@ -39,9 +40,9 @@ class DeletablePsiElementHierarchyGenerator : ProjectHierarchyProducer<PsiDDItem
         DeletablePsiElementHierarchyDDGenerator(propertyTester, buildTries(fromContext))
     }
 
-    private suspend fun buildTries(context: IJDDContext): Map<Path, CompressingPsiItemTrie> {
+    private suspend fun buildTries(context: IJDDContext): Map<Path, StubCompressingPsiTrie> {
         val items = service<MinimizationPsiManagerService>().findDeletablePsiItems(context)
-        return items.groupBy(PsiDDItem::localPath)
+        return items.groupBy(PsiStubDDItem::localPath)
             .mapValues { (_, items) -> CompressingPsiItemTrie.create(items) }
     }
 }

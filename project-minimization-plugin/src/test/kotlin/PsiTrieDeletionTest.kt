@@ -8,12 +8,14 @@ import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtProperty
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
-import org.plan.research.minimization.plugin.model.PsiDDItem
+import org.plan.research.minimization.plugin.model.PsiChildrenPathDDItem
+import org.plan.research.minimization.plugin.model.PsiStubDDItem
+import org.plan.research.minimization.plugin.model.psi.KtStub
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import kotlin.test.assertIs
 
-class PsiTrieDeletionTest : PsiTrieTestBase() {
+class PsiTrieDeletionTest : PsiTrieTestBase<PsiStubDDItem, KtStub>() {
     fun testFunctions() {
         val psiFile = loadPsiFile("functions.kt", "functions-del-1.kt")
         doTest(
@@ -105,10 +107,10 @@ class PsiTrieDeletionTest : PsiTrieTestBase() {
         }
     }
 
-    private fun PsiDDItem.psi(context: IJDDContext) =
+    private fun PsiStubDDItem.psi(context: IJDDContext) =
         PsiUtils.getPsiElementFromItem(context, this)
 
-     override suspend fun getAllElements(context: IJDDContext): List<PsiDDItem> {
+     override suspend fun getAllElements(context: IJDDContext): List<PsiStubDDItem> {
         val service = service<MinimizationPsiManagerService>()
         return service.findDeletablePsiItems(context)
     }

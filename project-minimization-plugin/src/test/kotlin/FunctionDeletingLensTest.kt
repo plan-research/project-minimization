@@ -2,14 +2,14 @@ import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.service
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.psi.KtClass
-import org.jetbrains.kotlin.psi.KtDeclaration
-import org.jetbrains.kotlin.psi.KtNamedDeclaration
 import org.plan.research.minimization.plugin.lenses.FunctionDeletingLens
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
+import org.plan.research.minimization.plugin.model.PsiStubDDItem
+import org.plan.research.minimization.plugin.model.psi.KtStub
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 
-class FunctionDeletingLensTest : PsiLensTestBase() {
+class FunctionDeletingLensTest : PsiLensTestBase<PsiStubDDItem, KtStub>() {
     override fun getLens() = FunctionDeletingLens()
     override suspend fun getAllItems(context: IJDDContext) =
         service<MinimizationPsiManagerService>().findDeletablePsiItems(context)

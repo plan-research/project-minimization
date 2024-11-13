@@ -13,6 +13,7 @@ import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtObjectDeclaration
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
+import org.plan.research.minimization.plugin.model.psi.KtStub
 
 import java.nio.file.Path
 
@@ -39,10 +40,42 @@ data class ProjectFileDDItem(val localPath: Path) : IJDDItem {
     }
 }
 
-data class PsiDDItem(
-    val localPath: Path,
-    val childrenPath: List<Int>,
-) : IJDDItem {
+interface PsiChildrenPathIndex {
+    fun getNext(element: PsiElement): PsiElement?
+}
+
+sealed interface PsiDDItem<T: PsiChildrenPathIndex> : IJDDItem {
+    val localPath: Path
+    val childrenPath: List<T>
+}
+
+
+data class PsiStubDDItem(
+    override val localPath: Path,
+    override val childrenPath: List<KtStub>,
+): PsiDDItem<KtStub> {
+    companion object {
+        val DELETABLE_PSI_INSIDE_FUNCTION_CLASSES: List<ClassKtExpression> = listOf(
+            KtNamedFunction::class.java,
+            KtClass::class.java,
+            KtObjectDeclaration::class.java,
+        )
+        val DELETABLE_PSI_JAVA_CLASSES: List<ClassKtExpression> =
+            DELETABLE_PSI_INSIDE_FUNCTION_CLASSES + listOf(
+                KtProperty::class.java,
+            )
+    }
+}
+
+data class IntWrapper(val childrenIndex: Int): PsiChildrenPathIndex, Comparable<IntWrapper> {
+    override fun getNext(element: PsiElement): PsiElement? = element.children[childrenIndex]
+    override fun compareTo(other: IntWrapper): Int = childrenIndex.compareTo(other.childrenIndex)
+}
+
+data class PsiChildrenPathDDItem(
+    override val localPath: Path,
+    override val childrenPath: List<IntWrapper>,
+) : PsiDDItem<IntWrapper> {
     companion object {
         val DECLARATIONS_WITH_BODY_JAVA_CLASSES: List<ClassDeclarationWithBody> = listOf(
             KtNamedFunction::class.java,
@@ -52,12 +85,7 @@ data class PsiDDItem(
             KtLambdaExpression::class.java,
             KtClassInitializer::class.java,
         )
-        val DELETABLE_PSI_JAVA_CLASSES: List<ClassKtExpression> = listOf(
-            KtNamedFunction::class.java,
-            KtClass::class.java,
-            KtObjectDeclaration::class.java,
-            KtProperty::class.java,
-        )
+
         val BODY_REPLACEABLE_PSI_JAVA_CLASSES: List<ClassKtExpression> =
             DECLARATIONS_WITH_BODY_JAVA_CLASSES + EXPRESSIONS_WITH_BODY_JAVA_CLASSES
 
@@ -69,7 +97,7 @@ data class PsiDDItem(
             ?.let { (psiElement as KtDeclarationWithBody) }
             ?.hasBody()
 
-        fun create(parentPath: List<Int>, localPath: Path): PsiDDItem = PsiDDItem(
+        fun create(parentPath: List<IntWrapper>, localPath: Path): PsiChildrenPathDDItem = PsiChildrenPathDDItem(
             localPath,
             parentPath,
         )

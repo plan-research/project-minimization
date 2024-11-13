@@ -1,7 +1,9 @@
 package org.plan.research.minimization.plugin.psi
 
+import arrow.core.Option
+import arrow.core.raise.option
 import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.PsiDDItem
+import org.plan.research.minimization.plugin.model.PsiChildrenPathDDItem
 
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.command.writeCommandAction
@@ -19,19 +21,24 @@ import org.jetbrains.kotlin.psi.KtFile
 import kotlin.io.path.relativeTo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
+import org.plan.research.minimization.plugin.model.PsiDDItem
+import org.plan.research.minimization.plugin.model.IntWrapper
+import org.plan.research.minimization.plugin.model.PsiStubDDItem
+import org.plan.research.minimization.plugin.model.psi.KtStub
 
 /**
  * The PsiProcessor class provides utilities for fetching PSI elements within a given project.
  */
 object PsiUtils {
     @RequiresReadLock
-    fun getPsiElementFromItem(context: IJDDContext, item: PsiDDItem): KtExpression? {
+    fun<T: PsiChildrenPathIndex> getPsiElementFromItem(context: IJDDContext, item: PsiDDItem<T>): KtExpression? {
         val file = context.projectDir.findFileByRelativePath(item.localPath.toString())!!
         val ktFile = getKtFile(context, file)!!
         var currentDepth = 0
         var element: PsiElement = ktFile
         while (currentDepth < item.childrenPath.size) {
-            element = element.children[item.childrenPath[currentDepth++]]
+            element = item.childrenPath[currentDepth++].getNext(element) ?: return null
         }
         val psiElement = element as? KtExpression
         return psiElement
@@ -48,11 +55,15 @@ object PsiUtils {
     fun buildReplaceablePsiItem(
         context: IJDDContext,
         element: PsiElement,
-    ): PsiDDItem? {
-        val (currentFile, parentPath) = buildParentPath(element) { !PsiDDItem.isCompatible(it) } ?: return null
+    ): PsiChildrenPathDDItem? {
+        val (currentFile, parentPath) = buildParentPath(
+            element,
+            ::getChildPosition
+        ) { !PsiChildrenPathDDItem.isCompatible(it) } ?: return null
         val localPath = currentFile.virtualFile.toNioPath().relativeTo(context.projectDir.toNioPath())
-        return PsiDDItem.create(parentPath, localPath)
+        return PsiChildrenPathDDItem.create(parentPath, localPath)
     }
+
 
     /**
      * Transforms PsiElement into **deletable** PsiDDItem by traversing the parents and collecting file information
@@ -65,17 +76,18 @@ object PsiUtils {
     fun buildDeletablePsiItem(
         context: IJDDContext,
         element: PsiElement,
-    ): PsiDDItem {
-        val (currentFile, parentPath) = buildParentPath(element) { true }!!
+    ): Option<PsiStubDDItem> = option {
+        val (currentFile, parentPath) = buildParentPath(element, { _, element -> KtStub.create(element) }) { true }!!
         val localPath = currentFile.virtualFile.toNioPath().relativeTo(context.projectDir.toNioPath())
-        return PsiDDItem.create(parentPath, localPath)
+        PsiStubDDItem(localPath, parentPath.map { it.bind() })
     }
 
     @RequiresReadLock
-    private fun buildParentPath(
+    private fun <T> buildParentPath(
         element: PsiElement,
+        pathElementProducer: (PsiElement, PsiElement) -> T,
         isElementAllowed: (PsiElement) -> Boolean,
-    ): Pair<PsiFile, List<Int>>? {
+    ): Pair<PsiFile, List<T>>? {
         var currentElement: PsiElement = element
         val path = buildList {
             while (currentElement.parent != null && currentElement !is PsiFile) {
@@ -83,7 +95,7 @@ object PsiUtils {
                 if (!isElementAllowed(parent)) {
                     return null
                 }
-                val position = getChildPosition(parent, currentElement)
+                val position = pathElementProducer(parent, currentElement)
                 add(position)
                 currentElement = parent
             }
@@ -93,8 +105,8 @@ object PsiUtils {
     }
 
     @RequiresReadLock
-    private fun getChildPosition(parent: PsiElement, element: PsiElement): Int =
-        parent.children.indexOf(element)
+    private fun getChildPosition(parent: PsiElement, element: PsiElement): IntWrapper =
+        IntWrapper(parent.children.indexOf(element))
 
     @RequiresReadLock
     fun getKtFile(context: IJDDContext, file: VirtualFile): KtFile? =

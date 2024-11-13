@@ -9,9 +9,10 @@ import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.plan.research.minimization.plugin.lenses.BasePsiLens
-import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
+import org.plan.research.minimization.plugin.model.PsiChildrenPathDDItem
+import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
 import org.plan.research.minimization.plugin.model.PsiDDItem
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
@@ -19,13 +20,18 @@ import org.plan.research.minimization.plugin.services.ProjectCloningService
 import kotlin.collections.filter
 import kotlin.io.path.relativeTo
 
-abstract class PsiLensTestBase : JavaCodeInsightFixtureTestCase() {
+abstract class PsiLensTestBase<ITEM, T> :
+    JavaCodeInsightFixtureTestCase() where ITEM : PsiDDItem<T>, T : PsiChildrenPathIndex, T : Comparable<T> {
     override fun runInDispatchThread(): Boolean = false
 
-    protected abstract fun getLens(): BasePsiLens
-    protected abstract suspend fun getAllItems(context: IJDDContext): List<PsiDDItem>
+    protected abstract fun getLens(): BasePsiLens<ITEM, T>
+    protected abstract suspend fun getAllItems(context: IJDDContext): List<ITEM>
 
-    protected suspend fun doTest(context: LightIJDDContext, elements: List<PsiDDItem>, expectedFolder: String): LightIJDDContext {
+    protected suspend fun doTest(
+        context: LightIJDDContext,
+        elements: List<ITEM>,
+        expectedFolder: String
+    ): LightIJDDContext {
         val projectCloningService = project.service<ProjectCloningService>()
         var cloned = projectCloningService.clone(context)
         kotlin.test.assertNotNull(cloned)
@@ -56,20 +62,19 @@ abstract class PsiLensTestBase : JavaCodeInsightFixtureTestCase() {
     }
 
     @RequiresReadLock
-    protected fun List<PsiDDItem>.findByPsi(context: IJDDContext, filter: (PsiElement) -> Boolean) =
+    protected fun List<ITEM>.findByPsi(context: IJDDContext, filter: (PsiElement) -> Boolean) =
         find { filter(PsiUtils.getPsiElementFromItem(context, it)!!) }
 
     @RequiresReadLock
-    protected fun List<PsiDDItem>.findLastByPsi(context: IJDDContext, filter: (PsiElement) -> Boolean) =
+    protected fun List<ITEM>.findLastByPsi(context: IJDDContext, filter: (PsiElement) -> Boolean) =
         findLast { filter(PsiUtils.getPsiElementFromItem(context, it)!!) }
 
     @RequiresReadLock
-    protected fun List<PsiDDItem>.filterByPsi(context: IJDDContext, filter: (PsiElement) -> Boolean) =
+    protected fun List<ITEM>.filterByPsi(context: IJDDContext, filter: (PsiElement) -> Boolean) =
         filter { filter(PsiUtils.getPsiElementFromItem(context, it)!!) }
 
-    protected suspend fun getAllElements(context: IJDDContext, vfs: VirtualFile): List<PsiDDItem> {
-        val service = service<MinimizationPsiManagerService>()
-        val elements = service.findAllPsiWithBodyItems(context)
+    protected suspend fun getAllElements(context: IJDDContext, vfs: VirtualFile): List<ITEM> {
+        val elements = getAllItems(context)
         val vfsRelativePath = context.projectDir.toNioPath().relativize(vfs.toNioPath())
         return elements.filter { it.localPath == vfsRelativePath }
     }

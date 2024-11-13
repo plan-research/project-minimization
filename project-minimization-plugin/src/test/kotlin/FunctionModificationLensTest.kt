@@ -10,10 +10,11 @@ import org.jetbrains.kotlin.psi.KtPropertyAccessor
 import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
-import org.plan.research.minimization.plugin.model.PsiDDItem
+import org.plan.research.minimization.plugin.model.PsiChildrenPathDDItem
+import org.plan.research.minimization.plugin.model.IntWrapper
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 
-class FunctionModificationLensTest : PsiLensTestBase() {
+class FunctionModificationLensTest : PsiLensTestBase<PsiChildrenPathDDItem, IntWrapper>() {
     override fun getTestDataPath(): String {
         return "src/test/resources/testData/function-modification"
     }

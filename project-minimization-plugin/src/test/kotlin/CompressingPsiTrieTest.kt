@@ -1,6 +1,7 @@
 import org.junit.Test
 import org.junit.jupiter.api.assertThrows
-import org.plan.research.minimization.plugin.model.PsiDDItem
+import org.plan.research.minimization.plugin.model.PsiChildrenPathDDItem
+import org.plan.research.minimization.plugin.model.IntWrapper
 import org.plan.research.minimization.plugin.psi.CompressingPsiItemTrie
 import kotlin.io.path.Path
 import kotlin.test.assertEquals
@@ -9,9 +10,9 @@ import kotlin.test.assertTrue
 class CompressingPsiTrieTest {
     @Test
     fun `test one item`() {
-        val item = PsiDDItem(
+        val item = PsiChildrenPathDDItem(
             localPath = Path("."),
-            childrenPath = listOf(1)
+            childrenPath = listOf(IntWrapper(1))
         )
         val trie = CompressingPsiItemTrie.create(listOf(item))
         val items = trie.getNextItems()
@@ -25,8 +26,8 @@ class CompressingPsiTrieTest {
     @Test
     fun `different files do not allowed`() {
         val items = listOf(
-            PsiDDItem(localPath = Path("a"), childrenPath = listOf(1)),
-            PsiDDItem(localPath = Path("b"), childrenPath = listOf(1))
+            PsiChildrenPathDDItem(localPath = Path("a"), childrenPath = listOf(IntWrapper(1))),
+            PsiChildrenPathDDItem(localPath = Path("b"), childrenPath = listOf(IntWrapper(1)))
         )
         assertThrows<IllegalArgumentException> { CompressingPsiItemTrie.create(items) }
     }
@@ -42,9 +43,9 @@ class CompressingPsiTrieTest {
             listOf(2, 0),
         )
         val items = paths.map {
-            PsiDDItem(
+            PsiChildrenPathDDItem(
                 localPath = Path("."),
-                childrenPath = it
+                childrenPath = it.map { IntWrapper(it) }
             )
         }
         val trie = CompressingPsiItemTrie.create(items)
@@ -68,29 +69,29 @@ class CompressingPsiTrieTest {
 
     @Test
     fun `test compression`() {
-        fun doTest(permutation: List<PsiDDItem>) {
+        fun doTest(permutation: List<PsiChildrenPathDDItem>) {
             val trie = CompressingPsiItemTrie.create(permutation)
             val compressed = trie.getNextItems()
             assertEquals(2, compressed.size)
             val depth3 = compressed.filter { it.depth == 3 }
             assertEquals(1, depth3.size)
             val (firstLevelDepth3) = depth3
-            assertEquals(listOf(1, 0, 0), firstLevelDepth3.item.childrenPath)
+            assertEquals(listOf(1, 0, 0).map { IntWrapper(it) }, firstLevelDepth3.item.childrenPath)
             assertTrue(firstLevelDepth3.node.getNextItems().isEmpty())
             val depth1 = compressed.first { it.depth == 1 }
             val moreCompressed = depth1.node.getNextItems()
             assertEquals(2, moreCompressed.size)
             val item3 = moreCompressed.first { it.depth == 3 }
-            assertEquals(listOf(0, 0, 0), item3.item.childrenPath)
+            assertEquals(listOf(0, 0, 0).map { IntWrapper(it) }, item3.item.childrenPath)
             val item4 = moreCompressed.first { it.depth == 2 }
-            assertEquals(listOf(0, 1), item4.item.childrenPath)
+            assertEquals(listOf(0, 1).map { IntWrapper(it) }, item4.item.childrenPath)
             val moreMoreCompressed = item4.node.getNextItems()
             assertEquals(1, moreMoreCompressed.size)
             val item5 = moreMoreCompressed.first()
-            assertEquals(listOf(0, 1, 0), item5.item.childrenPath)
+            assertEquals(listOf(0, 1, 0).map { IntWrapper(it) }, item5.item.childrenPath)
             val moreMoreMoreCompressed = item5.node.getNextItems()
             val item6 = moreMoreMoreCompressed.first()
-            assertEquals(listOf(0, 1, 0, 0), item6.item.childrenPath)
+            assertEquals(listOf(0, 1, 0, 0).map { IntWrapper(it) }, item6.item.childrenPath)
             assertTrue(item6.node.getNextItems().isEmpty())
         }
 
@@ -103,9 +104,9 @@ class CompressingPsiTrieTest {
             listOf(1, 0, 0)
         )
         val items = paths.map {
-            PsiDDItem(
+            PsiChildrenPathDDItem(
                 localPath = Path("."),
-                childrenPath = it
+                childrenPath = it.map { IntWrapper(it) }
             )
         }
         val possibleIndexes = items.indices.toSet()

@@ -25,47 +25,11 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtImportDirective
 import org.jetbrains.kotlin.resolve.ImportPath
 
+/**
+ * The object is responsible for type rendering considering imports inside the file
+ */
 @OptIn(KaExperimentalApi::class)
 object KotlinTypeRenderer {
-    private object SimpleKaDefinitelyNotNullTypeRenderer : KaDefinitelyNotNullTypeRenderer {
-        override fun renderType(
-            analysisSession: KaSession,
-            type: KaDefinitelyNotNullType,
-            typeRenderer: KaTypeRenderer,
-            printer: PrettyPrinter,
-        ) {
-            printer {
-                typeRenderer.renderType(analysisSession, type.original, printer)
-            }
-        }
-    }
-
-    private object SimpleKaFlexibleTypeRenderer : KaFlexibleTypeRenderer {
-        override fun renderType(
-            analysisSession: KaSession,
-            type: KaFlexibleType,
-            typeRenderer: KaTypeRenderer,
-            printer: PrettyPrinter,
-        ) {
-            typeRenderer.renderType(analysisSession, type.lowerBound, printer)
-        }
-    }
-
-    private object SimpleKaErrorTypeRenderer : KaErrorTypeRenderer {
-        @OptIn(KaNonPublicApi::class)
-        override fun renderType(
-            analysisSession: KaSession,
-            type: KaErrorType,
-            typeRenderer: KaTypeRenderer,
-            printer: PrettyPrinter,
-        ) {
-            type.presentableText?.let {
-                printer.append(it)
-                return
-            }
-            printer.append("Nothing")  // FIXME
-        }
-    }
     fun KaSession.renderType(ktFile: KtFile, returnType: KaType): String {
         val importChecker = ImportChecker(
             ktFile.packageFqName,
@@ -74,9 +38,9 @@ object KotlinTypeRenderer {
         )
 
         val renderer = KaTypeRendererForSource.WITH_QUALIFIED_NAMES.with {
-            errorTypeRenderer = SimpleKaErrorTypeRenderer
-            flexibleTypeRenderer = SimpleKaFlexibleTypeRenderer
-            definitelyNotNullTypeRenderer = SimpleKaDefinitelyNotNullTypeRenderer
+            errorTypeRenderer = SimpleKaErrorTypeRenderer()
+            flexibleTypeRenderer = SimpleKaFlexibleTypeRenderer()
+            definitelyNotNullTypeRenderer = SimpleKaDefinitelyNotNullTypeRenderer()
             classIdRenderer = ImportSensitiveKaClassRenderer(importChecker)
             annotationsRenderer = KaAnnotationRendererForSource.WITH_QUALIFIED_NAMES.with {
                 annotationsQualifiedNameRenderer = ImportSensitiveKaAnnotationRenderer(importChecker)
@@ -92,6 +56,45 @@ object KotlinTypeRenderer {
         val languageVersionSettings = file.languageVersionSettings
         val analyzerServices = file.platform.findAnalyzerServices(file.project)
         return analyzerServices.getDefaultImports(languageVersionSettings, includeLowPriorityImports = true)
+    }
+    private class SimpleKaDefinitelyNotNullTypeRenderer : KaDefinitelyNotNullTypeRenderer {
+        override fun renderType(
+            analysisSession: KaSession,
+            type: KaDefinitelyNotNullType,
+            typeRenderer: KaTypeRenderer,
+            printer: PrettyPrinter,
+        ) {
+            printer {
+                typeRenderer.renderType(analysisSession, type.original, printer)
+            }
+        }
+    }
+
+    private class SimpleKaFlexibleTypeRenderer : KaFlexibleTypeRenderer {
+        override fun renderType(
+            analysisSession: KaSession,
+            type: KaFlexibleType,
+            typeRenderer: KaTypeRenderer,
+            printer: PrettyPrinter,
+        ) {
+            typeRenderer.renderType(analysisSession, type.lowerBound, printer)
+        }
+    }
+
+    private class SimpleKaErrorTypeRenderer : KaErrorTypeRenderer {
+        @OptIn(KaNonPublicApi::class)
+        override fun renderType(
+            analysisSession: KaSession,
+            type: KaErrorType,
+            typeRenderer: KaTypeRenderer,
+            printer: PrettyPrinter,
+        ) {
+            type.presentableText?.let {
+                printer.append(it)
+                return
+            }
+            printer.append("Nothing")  // FIXME
+        }
     }
 
     private class ImportChecker(

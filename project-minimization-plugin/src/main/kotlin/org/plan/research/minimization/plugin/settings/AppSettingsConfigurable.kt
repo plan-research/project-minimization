@@ -41,14 +41,14 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
     override fun apply() {
         val newState = mySettingsComponent?.let {
             MinimizationPluginState().apply {
-                compilationStrategy = mySettingsComponent!!.compilationStrategy
-                gradleTask = mySettingsComponent!!.gradleTask
-                gradleOptions = mySettingsComponent!!.gradleOptions
-                temporaryProjectLocation = mySettingsComponent!!.temporaryProjectLocation
-                snapshotStrategy = mySettingsComponent!!.snapshotStrategy
-                exceptionComparingStrategy = mySettingsComponent!!.exceptionComparingStrategy
-                stages = mySettingsComponent!!.stages
-                minimizationTransformations = mySettingsComponent!!.transformations
+                compilationStrategy = it.compilationStrategy
+                gradleTask = it.gradleTask
+                gradleOptions = it.gradleOptions
+                temporaryProjectLocation = it.temporaryProjectLocation
+                snapshotStrategy = it.snapshotStrategy
+                exceptionComparingStrategy = it.exceptionComparingStrategy
+                stages = it.stages
+                minimizationTransformations = it.transformations
             }
         } ?: MinimizationPluginState()
 

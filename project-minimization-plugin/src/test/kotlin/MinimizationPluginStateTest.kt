@@ -1,53 +1,95 @@
-import com.intellij.openapi.util.JDOMUtil
-import com.intellij.util.xmlb.XmlSerializer
-import junit.framework.TestCase
-import mu.KotlinLogging
+import com.intellij.openapi.components.service
+import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import org.plan.research.minimization.plugin.model.FileLevelStage
-import org.plan.research.minimization.plugin.model.state.CompilationStrategy
-import org.plan.research.minimization.plugin.model.state.DDStrategy
-import org.plan.research.minimization.plugin.settings.MinimizationPluginState
+import org.plan.research.minimization.plugin.model.FunctionLevelStage
+import org.plan.research.minimization.plugin.model.state.*
+import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
+import org.plan.research.minimization.plugin.settings.loadStateFromFile
+import org.plan.research.minimization.plugin.settings.saveStateToFile
+import org.w3c.dom.Document
+import java.io.File
+import java.nio.file.Paths
+import javax.xml.parsers.DocumentBuilderFactory
+import kotlin.test.assertEquals
 
-class MinimizationPluginStateTest : TestCase() {
+class MinimizationPluginStateTest : BasePlatformTestCase() {
 
-    fun testDefault() {
-        val state = MinimizationPluginState()
-        doTest(state)
-    }
-    
-    fun testModified() {
-        val state = MinimizationPluginState()
-        state.compilationStrategy = CompilationStrategy.DUMB
-        state.gradleTask = "compileKotlin"
-        state.temporaryProjectLocation = "custom-location"
-        state.gradleOptions = listOf("--option1", "--option2")
-        state.stages = listOf(FileLevelStage())
-        state.minimizationTransformations = listOf()
-        doTest(state)
-    }
+    fun testSerialization() {
+        val resourcePath = getFilePathFromResources("testData/MinimizationPluginState/baseState.xml")
 
-    fun testStages() {
-        val state = MinimizationPluginState()
-        state.stages = listOf(
-            FileLevelStage(
-                ddAlgorithm = DDStrategy.DD_MIN
-            )
+        loadStateFromFile(project, resourcePath)
+        val baseState = project.service<MinimizationPluginSettings>().state
+        assertEquals(CompilationStrategy.GRADLE_IDEA, baseState.compilationStrategy)
+        assertEquals("build", baseState.gradleTask)
+        assertEquals(emptyList<String>(), baseState.gradleOptions)
+        assertEquals("minimization-project-snapshots", baseState.temporaryProjectLocation)
+        assertEquals(SnapshotStrategy.PROJECT_CLONING, baseState.snapshotStrategy)
+        assertEquals(ExceptionComparingStrategy.SIMPLE, baseState.exceptionComparingStrategy)
+        assertEquals(listOf(
+            TransformationDescriptors.PATH_RELATIVIZATION,
+        ),
+            baseState.minimizationTransformations
         )
-        doTest(state)
+        assertEquals(
+            listOf(
+                FunctionLevelStage(
+                    ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
+                ),
+                FileLevelStage(
+                    hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
+                    ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
+                ),
+            ),
+            baseState.stages
+        )
+
+        saveStateToFile(project, "baseState1.xml")
+        val file1 = File(getFilePathFromResources("testData/MinimizationPluginState/baseState.xml"))
+        val file2 = File("baseState1.xml")
+        assertEquals(true, areXmlFilesEqual(file1, file2), "XML files are not identical")
+        file2.delete()
     }
 
-    private fun doTest(state: MinimizationPluginState) {
-        val serialized = XmlSerializer.serialize(state)
-        logger.info { JDOMUtil.write(serialized) }
-        val deserialized = XmlSerializer.deserialize(serialized, MinimizationPluginState::class.java)
-        assertEquals(state.minimizationTransformations, deserialized.minimizationTransformations)
-        assertEquals(state.stages, deserialized.stages)
-        assertEquals(state.gradleTask, deserialized.gradleTask)
-        assertEquals(state.compilationStrategy, deserialized.compilationStrategy)
-        assertEquals(state.temporaryProjectLocation, deserialized.temporaryProjectLocation)
-        assertEquals(state.snapshotStrategy, deserialized.snapshotStrategy)
-        assertEquals(state.exceptionComparingStrategy, deserialized.exceptionComparingStrategy)
-        assertEquals(state.gradleOptions, deserialized.gradleOptions)
+    fun testSerialization2() {
+        val resourcePath = getFilePathFromResources("testData/MinimizationPluginState/changedState.xml")
+        loadStateFromFile(project, resourcePath)
+        val changedState = project.service<MinimizationPluginSettings>().state
+        assertEquals(CompilationStrategy.DUMB, changedState.compilationStrategy)
+        assertEquals("user_build", changedState.gradleTask)
+        assertEquals(listOf("--info"), changedState.gradleOptions)
+        assertEquals("new-project-location", changedState.temporaryProjectLocation)
+        assertEquals(SnapshotStrategy.PROJECT_CLONING, changedState.snapshotStrategy)
+        assertEquals(ExceptionComparingStrategy.SIMPLE, changedState.exceptionComparingStrategy)
+        assertEquals(emptyList<TransformationDescriptors>(), changedState.minimizationTransformations)
+        assertEquals(
+            listOf(FileLevelStage(HierarchyCollectionStrategy.FILE_TREE, DDStrategy.DD_MIN)),
+            changedState.stages
+        )
+
+        saveStateToFile(project, "changedState1.xml")
+        val file1 = File(getFilePathFromResources("testData/MinimizationPluginState/changedState.xml"))
+        val file2 = File("changedState1.xml")
+        assertEquals(true, areXmlFilesEqual(file1, file2), "XML files are not identical")
+        file2.delete()
     }
 
-    private val logger = KotlinLogging.logger("org.plan.research.minimization.plugin.MinimizationPluginStateTest")
+    private fun areXmlFilesEqual(file1: File, file2: File): Boolean {
+        val doc1 = parseXml(file1)
+        val doc2 = parseXml(file2)
+        doc1.documentElement.normalize()
+        doc2.documentElement.normalize()
+        return doc1.isEqualNode(doc2)
+    }
+
+    private fun parseXml(file: File): Document {
+        val factory = DocumentBuilderFactory.newInstance()
+        factory.isIgnoringElementContentWhitespace = true  // Игнорируем пробелы
+        return factory.newDocumentBuilder().parse(file)
+    }
+
+    private fun getFilePathFromResources(resourcePath: String): String {
+        val resourceUrl = this::class.java.classLoader.getResource(resourcePath)
+            ?: throw IllegalArgumentException("Resource not found: $resourcePath")
+        return Paths.get(resourceUrl.toURI()).toString()
+    }
 }

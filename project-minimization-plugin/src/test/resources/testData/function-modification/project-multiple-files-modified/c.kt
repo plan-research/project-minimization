@@ -1,9 +1,9 @@
 class C {
     fun method() {
-        TODO("Removed by DD")
+        TODO("Removed by DD") as Unit
     }
 
-    fun method2() = TODO("Removed by DD")
+    fun method2() = TODO("Removed by DD") as Nothing
 
     val field: Int
         get() {

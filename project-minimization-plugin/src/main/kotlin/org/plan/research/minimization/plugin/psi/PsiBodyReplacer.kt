@@ -1,6 +1,7 @@
 package org.plan.research.minimization.plugin.psi
 
 import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
 
 import com.intellij.psi.PsiElement
 import mu.KotlinLogging
@@ -12,33 +13,33 @@ import org.jetbrains.kotlin.psi.*
  *
  * @property context The context for the minimization process, containing the current project and related properties.
  */
-class PsiBodyReplacer(private val context: IJDDContext) {
+class PsiBodyReplacer(private val context: IJDDContext) : PsiWithBodyDDItem.PsiWithBodyTransformer<Unit> {
     private val logger = KotlinLogging.logger {}
     private val psiFactory = KtPsiFactory(context.indexProject)
+    private lateinit var item: PsiWithBodyDDItem
 
-    fun replaceBody(classInitializer: KtClassInitializer) {
+    override fun transform(classInitializer: KtClassInitializer) {
         logger.debug { "Replacing class initializer body: ${classInitializer.name}" }
         classInitializer.body?.replace(psiFactory.createBlock(BLOCKLESS_TEXT))
     }
 
-    fun replaceBody(function: KtNamedFunction) {
+    override fun transform(function: KtNamedFunction) {
+        val explicitType = function.typeReference != null
+        val replacementText = getReplacementText(item, explicitType)
+
         val (hasBlockBody, hasBody) = function.hasBlockBody() to function.hasBody()
         when {
             hasBlockBody -> {
                 logger.debug { "Replacing function body block: ${function.name} in ${function.containingFile.virtualFile.path}" }
                 function.bodyBlockExpression?.replace(
-                    psiFactory.createBlock(
-                        BLOCKLESS_TEXT,
-                    ),
+                    psiFactory.createBlock(replacementText),
                 )
             }
 
             hasBody -> {
                 logger.debug { "Replacing function body without block: ${function.name} in ${function.containingFile.virtualFile.path}" }
                 function.bodyExpression!!.replace(
-                    psiFactory.createExpression(
-                        BLOCKLESS_TEXT,
-                    ),
+                    psiFactory.createExpression(replacementText),
                 )
             }
 
@@ -46,40 +47,56 @@ class PsiBodyReplacer(private val context: IJDDContext) {
         }
     }
 
-    fun replaceBody(lambdaExpression: KtLambdaExpression) {
+    override fun transform(lambdaExpression: KtLambdaExpression) {
+        val replacementText = getReplacementText(item, hasExplicitReturnType = false)
+
         logger.debug { "Replacing lambda expression in ${lambdaExpression.containingFile.virtualFile.path}" }
         lambdaExpression.bodyExpression!!.replace(
             psiFactory.createLambdaExpression(
                 "",
-                BLOCKLESS_TEXT,
+                replacementText,
             ).bodyExpression!!,
         )
     }
 
-    fun replaceBody(accessor: KtPropertyAccessor) {
+    override fun transform(accessor: KtPropertyAccessor) {
+        val explicitType = accessor.returnTypeReference != null
+        val replacementText = getReplacementText(item, explicitType)
+
         logger.debug { "Replacing accessor body: ${accessor.name} in ${accessor.containingFile.virtualFile.path}" }
         when {
             accessor.bodyBlockExpression != null -> accessor.bodyBlockExpression!!.replace(
-                psiFactory.createBlock(
-                    BLOCKLESS_TEXT,
-                ),
+                psiFactory.createBlock(replacementText),
             )
 
             accessor.bodyExpression != null -> accessor.bodyExpression!!.replace(
-                psiFactory.createExpression(
-                    BLOCKLESS_TEXT,
-                ),
+                psiFactory.createExpression(replacementText),
             )
         }
     }
 
-    fun replaceBody(element: PsiElement): Unit = when (element) {
-        is KtClassInitializer -> replaceBody(element)
-        is KtNamedFunction -> replaceBody(element)
-        is KtLambdaExpression -> replaceBody(element)
-        is KtPropertyAccessor -> replaceBody(element)
-        else -> error("Invalid PSI element type: ${element::class.simpleName}. Expected one of: KtClassInitializer, KtNamedFunction, KtLambdaExpression, KtPropertyAccessor")
+    fun transform(item: PsiWithBodyDDItem, element: PsiElement) {
+        this.item = item
+        try {
+            transform(element)
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to transform element: ${element.text}" }
+        }
     }
+
+    private fun getReplacementText(
+        item: PsiWithBodyDDItem,
+        hasExplicitReturnType: Boolean,
+    ): String =
+        when {
+            hasExplicitReturnType || item.renderedType == null ->
+                BLOCKLESS_TEXT
+
+            else -> {
+                val returnTypeText = item.renderedType
+                "$BLOCKLESS_TEXT as $returnTypeText"
+            }
+        }
 
     companion object {
         private const val BLOCKLESS_TEXT = "TODO(\"Removed by DD\")"

@@ -38,11 +38,10 @@ abstract class PsiTrieTestBase : JavaCodeInsightFixtureTestCase() {
     protected open suspend fun doTest(
         psiFile: KtFile,
         selectedPsi: List<PsiWithBodyDDItem>,
-        psiProcessor: (PsiElement) -> Unit
+        psiProcessor: (PsiWithBodyDDItem, PsiElement) -> Unit
     ) {
         val context = LightIJDDContext(project)
-        val allPsi = getAllElements(context)
-        val psiTrie = PsiItemStorage.create(allPsi, selectedPsi.toSet(), context)
+        val psiTrie = PsiItemStorage.create(selectedPsi, context)
         PsiUtils.performPsiChangesAndSave(context, psiFile) {
             psiTrie.processMarkedElements(psiFile, psiProcessor)
         }

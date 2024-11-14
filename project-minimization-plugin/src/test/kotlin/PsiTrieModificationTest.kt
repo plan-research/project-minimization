@@ -76,7 +76,7 @@ class PsiTrieModificationTest : PsiTrieTestBase() {
         val context = LightIJDDContext(project)
         val selectedPsi = selectElements(context) { readAction { filter(PsiUtils.getPsiElementFromItem(context, it)!!) } }
         val psiBodyReplacer = PsiBodyReplacer(context)
-        super.doTest(psiFile, selectedPsi, psiBodyReplacer::replaceBody)
+        super.doTest(psiFile, selectedPsi, psiBodyReplacer::transform)
         val expectedFile = myFixture.configureByFile("modification-results/$expectedFile")
         assertIs<KtFile>(expectedFile)
         readAction {

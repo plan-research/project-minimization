@@ -2,7 +2,7 @@ interface I {
     fun overridden(): Unit
 }
 class A: I {
-    fun overridden() = TODO("Removed by DD")
+    fun overridden() = TODO("Removed by DD") as Unit
 }
 class C(): I {
     fun simpleMethod() {

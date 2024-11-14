@@ -75,7 +75,7 @@ class PsiTrieTest : PsiTrieTestBase() {
     ) = runBlocking {
         val context = LightIJDDContext(project)
         val selectedPsi = selectElements(context) { readAction { filter(PsiUtils.getPsiElementFromItem(context, it)!!) } }
-        super.doTest(psiFile, selectedPsi) {
+        super.doTest(psiFile, selectedPsi) { _, it ->
             assertTrue(filter(it))
         }
     }

@@ -1,13 +1,12 @@
 package org.plan.research.minimization.plugin.psi
 
+import mu.KotlinLogging
+import org.jetbrains.kotlin.utils.addToStdlib.same
 import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
 import org.plan.research.minimization.plugin.model.PsiDDItem
 import org.plan.research.minimization.plugin.model.PsiStubDDItem
 import org.plan.research.minimization.plugin.psi.CompressingPsiItemTrie.NextPsiDDItemInfo
 import org.plan.research.minimization.plugin.psi.stub.KtStub
-
-import mu.KotlinLogging
-import org.jetbrains.kotlin.utils.addToStdlib.same
 
 typealias StubCompressingPsiTrie = CompressingPsiItemTrie<PsiStubDDItem, KtStub>
 private typealias AdjacentNodes<I, T> = MutableMap<T, CompressingPsiItemTrie<I, T>>

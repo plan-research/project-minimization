@@ -5,6 +5,7 @@ import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.model.PsiStubDDItem
 import org.plan.research.minimization.plugin.psi.PsiUtils
 
+import arrow.core.compareTo
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.Service
@@ -52,6 +53,7 @@ class MinimizationPsiManagerService {
     suspend fun findDeletablePsiItems(context: IJDDContext): List<PsiStubDDItem> =
         findPsiInKotlinFiles(context, PsiStubDDItem.DELETABLE_PSI_JAVA_CLASSES)
             .mapNotNull { readAction { PsiUtils.buildDeletablePsiItem(context, it) }.getOrNull() }
+            .sortedWith { a, b -> a.childrenPath.compareTo(b.childrenPath) }
 
     suspend fun findAllKotlinFilesInIndexProject(context: IJDDContext): List<VirtualFile> =
         smartReadAction(context.indexProject) {

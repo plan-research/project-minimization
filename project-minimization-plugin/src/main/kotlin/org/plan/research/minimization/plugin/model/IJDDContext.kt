@@ -1,6 +1,7 @@
 package org.plan.research.minimization.plugin.model
 
 import org.plan.research.minimization.core.model.DDContext
+import org.plan.research.minimization.plugin.psi.KtSourceImportRefCounter
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
@@ -22,6 +23,7 @@ sealed class IJDDContext(
     val originalProject: Project,
     val currentLevel: List<IJDDItem>?,
     val progressReporter: SequentialProgressReporter?,
+    val importRefCounter: KtSourceImportRefCounter?,
 ) : DDContext {
     abstract val projectDir: VirtualFile
     abstract val indexProject: Project
@@ -30,6 +32,7 @@ sealed class IJDDContext(
     abstract fun copy(
         currentLevel: List<IJDDItem>? = this.currentLevel,
         progressReporter: SequentialProgressReporter? = this.progressReporter,
+        importRefCounter: KtSourceImportRefCounter? = this.importRefCounter,
     ): IJDDContext
 
     suspend fun withProgress(action: suspend (IJDDContext) -> IJDDContext): IJDDContext =
@@ -47,7 +50,13 @@ class HeavyIJDDContext(
     originalProject: Project = project,
     currentLevel: List<IJDDItem>? = null,
     progressReporter: SequentialProgressReporter? = null,
-) : IJDDContext(originalProject, currentLevel, progressReporter) {
+    importRefCounter: KtSourceImportRefCounter? = null,
+) : IJDDContext(
+    originalProject,
+    currentLevel,
+    progressReporter,
+    importRefCounter,
+) {
     override val projectDir: VirtualFile by lazy { project.guessProjectDir()!! }
     override val indexProject: Project = project
 
@@ -61,17 +70,20 @@ class HeavyIJDDContext(
         project: Project,
         currentLevel: List<IJDDItem>? = this.currentLevel,
         progressReporter: SequentialProgressReporter? = this.progressReporter,
+        importRefCounter: KtSourceImportRefCounter? = this.importRefCounter,
     ): HeavyIJDDContext = HeavyIJDDContext(
         project,
         originalProject,
         currentLevel,
         progressReporter,
+        importRefCounter,
     )
 
     override fun copy(
         currentLevel: List<IJDDItem>?,
         progressReporter: SequentialProgressReporter?,
-    ): HeavyIJDDContext = copy(project, currentLevel, progressReporter)
+        importRefCounter: KtSourceImportRefCounter?,
+    ): HeavyIJDDContext = copy(project, currentLevel, progressReporter, importRefCounter)
 
     override fun toString(): String = "HeavyIJDDContext(project=$projectDir)"
 }
@@ -85,25 +97,34 @@ class LightIJDDContext(
     originalProject: Project = indexProject,
     currentLevel: List<IJDDItem>? = null,
     progressReporter: SequentialProgressReporter? = null,
-) : IJDDContext(originalProject, currentLevel, progressReporter) {
+    importRefCounter: KtSourceImportRefCounter? = null,
+) : IJDDContext(
+    originalProject,
+    currentLevel,
+    progressReporter,
+    importRefCounter,
+) {
     constructor(project: Project) : this(project.guessProjectDir()!!, project)
 
     fun copy(
         projectDir: VirtualFile,
         currentLevel: List<IJDDItem>? = this.currentLevel,
         progressReporter: SequentialProgressReporter? = this.progressReporter,
+        importRefCounter: KtSourceImportRefCounter? = this.importRefCounter,
     ): LightIJDDContext = LightIJDDContext(
         projectDir,
         indexProject,
         originalProject,
         currentLevel,
         progressReporter,
+        importRefCounter,
     )
 
     override fun copy(
         currentLevel: List<IJDDItem>?,
         progressReporter: SequentialProgressReporter?,
-    ): LightIJDDContext = copy(projectDir, currentLevel, progressReporter)
+        importRefCounter: KtSourceImportRefCounter?,
+    ): LightIJDDContext = copy(projectDir, currentLevel, progressReporter, importRefCounter)
 
     override fun toString(): String = "LightIJDDContext(project=$projectDir, indexProject=$indexProjectDir)"
 }

@@ -14,8 +14,8 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
 import org.plan.research.minimization.plugin.model.PsiDDItem
-import org.plan.research.minimization.plugin.psi.trie.PsiItemStorage
 import org.plan.research.minimization.plugin.psi.PsiUtils
+import org.plan.research.minimization.plugin.psi.trie.PsiTrie
 import kotlin.test.assertIs
 
 abstract class PsiTrieTestBase<ITEM, T> : JavaCodeInsightFixtureTestCase() where ITEM : PsiDDItem<T>, T : PsiChildrenPathIndex, T : Comparable<T>{
@@ -39,9 +39,12 @@ abstract class PsiTrieTestBase<ITEM, T> : JavaCodeInsightFixtureTestCase() where
         psiProcessor: (ITEM, PsiElement) -> Unit
     ) {
         val context = LightIJDDContext(project)
-        val psiTrie = PsiItemStorage.create(selectedPsi.toSet(), context)
-        PsiUtils.performPsiChangesAndSave(context, psiFile) {
-            psiTrie.processMarkedElements(psiFile, psiProcessor)
+        val diffPsi = selectedPsi.groupBy { it.localPath }
+        for ((_, elements) in diffPsi) {
+            val trie = PsiTrie.create(elements)
+            PsiUtils.performPsiChangesAndSave(context, psiFile) {
+                trie.processMarkedElements(psiFile, psiProcessor)
+            }
         }
         withContext(Dispatchers.EDT) {
             PlatformTestUtil.dispatchAllEventsInIdeEventQueue()

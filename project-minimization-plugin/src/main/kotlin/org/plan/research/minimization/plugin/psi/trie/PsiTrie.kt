@@ -7,6 +7,7 @@ import com.intellij.psi.PsiElement
 import mu.KotlinLogging
 import org.jetbrains.kotlin.utils.addToStdlib.same
 
+
 typealias PsiProcessor<ITEM> = (ITEM, PsiElement) -> Unit
 private typealias AdjacentNodes<I, T> = MutableMap<T, PsiTrie<I, T>>
 

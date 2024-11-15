@@ -1,3 +1,8 @@
+package gradle
+
+import TestWithContext
+import TestWithHeavyContext
+import TestWithLightContext
 import arrow.core.Either
 import com.intellij.openapi.components.service
 import kotlinx.coroutines.runBlocking

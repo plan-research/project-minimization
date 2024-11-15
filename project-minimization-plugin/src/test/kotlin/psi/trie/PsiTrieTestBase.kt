@@ -1,3 +1,5 @@
+package psi.trie
+
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.psi.PsiElement
@@ -12,7 +14,7 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
 import org.plan.research.minimization.plugin.model.PsiDDItem
-import org.plan.research.minimization.plugin.psi.PsiItemStorage
+import org.plan.research.minimization.plugin.psi.trie.PsiItemStorage
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import kotlin.test.assertIs
 

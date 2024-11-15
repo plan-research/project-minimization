@@ -1,8 +1,12 @@
+package hierarchy.file
+
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.ex.ProjectManagerEx
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
+import getAllFiles
+import getPathContentPair
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.execution.DumbCompiler

@@ -1,3 +1,5 @@
+package psi.trie
+
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.service
 import com.intellij.psi.PsiElement
@@ -8,9 +10,9 @@ import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
 import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.IntWrapper
 import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.PsiChildrenPathDDItem
-import org.plan.research.minimization.plugin.model.IntWrapper
 import org.plan.research.minimization.plugin.psi.PsiBodyReplacer
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
@@ -79,7 +81,8 @@ class PsiTrieModificationTest : PsiTrieTestBase<PsiChildrenPathDDItem, IntWrappe
         filter: (PsiElement) -> Boolean,
     ) = runBlocking {
         val context = LightIJDDContext(project)
-        val selectedPsi = selectElements(context) { readAction { filter(PsiUtils.getPsiElementFromItem(context, it)!!) } }
+        val selectedPsi =
+            selectElements(context) { readAction { filter(PsiUtils.getPsiElementFromItem(context, it)!!) } }
         val psiBodyReplacer = PsiBodyReplacer(context)
         super.doTest(psiFile, selectedPsi, psiBodyReplacer::transform)
         val expectedFile = myFixture.configureByFile("modification-results/$expectedFile")

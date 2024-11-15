@@ -1,3 +1,5 @@
+package lens
+
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.application.writeAction
@@ -22,6 +24,7 @@ import org.plan.research.minimization.plugin.model.PsiDDItem
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import org.plan.research.minimization.plugin.services.ProjectCloningService
+import kotlin.collections.toTypedArray
 import kotlin.io.path.relativeTo
 
 class FunctionModificationLensTest : JavaCodeInsightFixtureTestCase() {

@@ -1,4 +1,4 @@
-package org.plan.research.minimization.plugin.model.psi
+package org.plan.research.minimization.plugin.psi.stub
 
 import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
 

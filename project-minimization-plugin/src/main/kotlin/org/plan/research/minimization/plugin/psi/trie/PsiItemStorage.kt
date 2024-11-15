@@ -1,4 +1,4 @@
-package org.plan.research.minimization.plugin.psi
+package org.plan.research.minimization.plugin.psi.trie
 
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex

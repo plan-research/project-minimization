@@ -1,3 +1,5 @@
+package psi.trie
+
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.service
 import com.intellij.psi.PsiElement

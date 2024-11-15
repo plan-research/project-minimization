@@ -1,4 +1,4 @@
-package org.plan.research.minimization.plugin.model.psi
+package org.plan.research.minimization.plugin.psi.stub
 
 import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.KtProperty

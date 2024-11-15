@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.model
 
 import org.plan.research.minimization.core.model.DDItem
-import org.plan.research.minimization.plugin.model.psi.KtStub
+import org.plan.research.minimization.plugin.psi.stub.KtStub
 
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement

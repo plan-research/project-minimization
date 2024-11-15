@@ -1,7 +1,4 @@
-package org.plan.research.minimization.plugin.psi
-
-import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
-import org.plan.research.minimization.plugin.model.PsiDDItem
+package org.plan.research.minimization.plugin.psi.trie
 
 import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
 import org.plan.research.minimization.plugin.model.PsiDDItem

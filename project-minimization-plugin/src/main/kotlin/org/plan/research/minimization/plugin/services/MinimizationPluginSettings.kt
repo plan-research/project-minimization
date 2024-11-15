@@ -43,6 +43,9 @@ class MinimizationPluginSettings : SimplePersistentStateComponent<MinimizationPl
 
                 var minimizationTransformations by minimizationTransformations.mutable()
                 minimizationTransformations = newState.minimizationTransformations
+
+                var ignorePaths by ignorePaths.mutable()
+                ignorePaths = newState.ignorePaths
             }
     }
 }

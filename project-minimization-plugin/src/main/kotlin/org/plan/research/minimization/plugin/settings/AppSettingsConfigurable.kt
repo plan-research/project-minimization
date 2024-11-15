@@ -21,7 +21,7 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
     override fun getPreferredFocusedComponent(): JComponent? = mySettingsComponent?.getPreferredFocusedComponent()
 
     override fun createComponent(): JComponent? {
-        mySettingsComponent = AppSettingsComponent()
+        mySettingsComponent = AppSettingsComponent(project)
         return mySettingsComponent?.getPanel()
     }
 
@@ -35,6 +35,7 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
             mySettingsComponent?.exceptionComparingStrategy != state.exceptionComparingStrategy ||
             mySettingsComponent?.stages != state.stages ||
             mySettingsComponent?.transformations != state.minimizationTransformations ||
+            mySettingsComponent?.ignorePaths != state.ignorePaths ||
             mySettingsComponent?.isFrozen != project.service<MinimizationPluginSettings>().freezeSettings
     }
 
@@ -49,6 +50,7 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
                 exceptionComparingStrategy = it.exceptionComparingStrategy
                 stages = it.stages
                 minimizationTransformations = it.transformations
+                ignorePaths = it.ignorePaths
             }
         } ?: MinimizationPluginState()
 
@@ -65,7 +67,9 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
         mySettingsComponent?.exceptionComparingStrategy = state.exceptionComparingStrategy
         mySettingsComponent?.stages = state.stages
         mySettingsComponent?.transformations = state.minimizationTransformations
+        mySettingsComponent?.ignorePaths = state.ignorePaths
         mySettingsComponent?.isFrozen = project.service<MinimizationPluginSettings>().freezeSettings
+
     }
 
     override fun disposeUIResources() {

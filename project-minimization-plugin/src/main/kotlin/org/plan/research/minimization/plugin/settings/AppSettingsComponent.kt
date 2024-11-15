@@ -1,19 +1,28 @@
 package org.plan.research.minimization.plugin.settings
 
+import com.intellij.openapi.fileChooser.FileChooser
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.MinimizationStage
 import org.plan.research.minimization.plugin.model.state.*
+import com.intellij.openapi.fileChooser.FileChooserDescriptor
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.guessProjectDir
 
 import com.intellij.openapi.ui.ComboBox
+import com.intellij.ui.ToolbarDecorator
 import com.intellij.ui.components.*
+import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.FormBuilder
+import com.intellij.util.ui.JBUI
+import java.awt.BorderLayout
 
 import java.util.*
 import javax.swing.*
+import javax.swing.table.DefaultTableModel
 
 @Suppress("NO_CORRESPONDING_PROPERTY")
-class AppSettingsComponent {
+class AppSettingsComponent(project: Project) {
     private val myMainPanel: JPanel
 
     // Fields from MinimizationPluginState
@@ -69,6 +78,20 @@ class AppSettingsComponent {
         JBCheckBox(descriptor.name.replace("_", " ")
             .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() })
     }
+
+    // ignore files
+    private val pathTableModel = DefaultTableModel(arrayOf<Array<Any>>(), arrayOf("Ignore files for minimization plugin"))
+    private val pathTable = JBTable(pathTableModel).apply {
+        setShowGrid(false)
+        setEnableAntialiasing(true)
+        emptyText.text = "ignored files" // text for empty table
+        preferredScrollableViewportSize = JBUI.size(700, -1) // size of the scrollable window
+        selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION // allow single selection
+    }
+
+    private val fileChooserDescriptor = FileChooserDescriptor(
+        true, true, false, true, false, true
+    ).withRoots(project.guessProjectDir()!!)/*.withRoots(project.guessProjectDir()!!)*/
 
     var isFrozen: Boolean = false
         set(value) {
@@ -156,6 +179,13 @@ class AppSettingsComponent {
             }
         }
 
+    var ignorePaths: List<String>
+        get() = (0 until pathTableModel.rowCount).map { pathTableModel.getValueAt(it, 0).toString() }
+        set(value) {
+            pathTableModel.rowCount = 0 // clean table
+            value.forEach { pathTableModel.addRow(arrayOf(it)) } // add paths
+        }
+
     private var isFunctionStageEnabled: Boolean
         get() = functionStageCheckBox.isSelected
         set(value) {
@@ -194,6 +224,7 @@ class AppSettingsComponent {
 
     init {
         stagesPanelInit()
+        val pathsPanel = createPathPanel()
 
         myMainPanel = FormBuilder.createFormBuilder()
             .addLabeledComponent(JBLabel("Compilation strategy:"), compilationStrategyComboBox, 1, false)
@@ -207,11 +238,48 @@ class AppSettingsComponent {
             .addSeparator()
             .addLabeledComponent(JBLabel("Transformations:"), createTransformationPanel(), 1, false)
             .addSeparator()
+            .addComponent(pathsPanel) // add ignore file panel
+            .addSeparator()
             .addComponentFillVertically(JPanel(), 0)
             .panel
 
         updateUIState()
     }
+
+    private fun createPathPanel(): JPanel {
+        pathTable.columnModel.getColumn(0).apply {
+            preferredWidth = 350 // Width of first column
+        }
+
+        val toolbarDecoratorPanel = ToolbarDecorator.createDecorator(pathTable)
+            .disableUpAction()
+            .disableDownAction()
+            .setAddAction {
+                val chosenFiles = FileChooser.chooseFiles(fileChooserDescriptor, null, null)
+                for (file in chosenFiles) {
+                    val path = file.path
+                    if ((0 until pathTableModel.rowCount).none { pathTableModel.getValueAt(it, 0) == path }) {
+                        pathTableModel.addRow(arrayOf(path))
+                    }
+                }
+            }
+            .setRemoveAction {
+                val selectedRows = pathTable.selectedRows.sortedDescending() // Удаляем в обратном порядке
+                for (row in selectedRows) {
+                    pathTableModel.removeRow(row)
+                }
+            }
+            .createPanel()
+
+        return JPanel(BorderLayout()).apply {
+//            add(JBLabel("Paths:").apply {
+//                horizontalAlignment = SwingConstants.LEFT
+//                border = BorderFactory.createEmptyBorder(5, 0, 5, 0)
+//            }, BorderLayout.NORTH)
+            add(toolbarDecoratorPanel, BorderLayout.CENTER)
+        }
+    }
+
 
     private fun updateUIState() {
         compilationStrategyComboBox.isEnabled = !isFrozen

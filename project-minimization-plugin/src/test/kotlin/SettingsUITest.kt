@@ -11,7 +11,7 @@ class SettingsUITest : BasePlatformTestCase() {
 
     override fun setUp() {
         super.setUp()
-        component = AppSettingsComponent()
+        component = AppSettingsComponent(project)
     }
 
     fun testUpdateSettings() {
@@ -74,5 +74,11 @@ class SettingsUITest : BasePlatformTestCase() {
     fun testUpdateTemporaryProjectLocation() {
         component.temporaryProjectLocation = "new-location"
         assertEquals("new-location", component.temporaryProjectLocation)
+    }
+
+    fun testIgnoreList() {
+        component.ignorePaths = listOf("/Users/Roman.Vsemirnov/Desktop/project-minimization/project-minimization-plugin/build.gradle.kts")
+        assertEquals(1, component.ignorePaths.size)
+        assertEquals("/Users/Roman.Vsemirnov/Desktop/project-minimization/project-minimization-plugin/build.gradle.kts", component.ignorePaths[0])
     }
 }

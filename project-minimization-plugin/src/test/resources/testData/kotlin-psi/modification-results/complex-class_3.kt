@@ -13,12 +13,12 @@ class C {
 
     val field: Int
         get() {
-            TODO("Removed by DD")
+            TODO("Removed by DD") as Int
         }
     var mutableField: Int
-        get() = TODO("Removed by DD")
+        get() = TODO("Removed by DD") as Int
         set(value) {
-            TODO("Removed by DD")
+            TODO("Removed by DD") as Unit
         }
 
     var zzzz: String

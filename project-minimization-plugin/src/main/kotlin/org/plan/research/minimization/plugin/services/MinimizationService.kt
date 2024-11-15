@@ -20,7 +20,7 @@ import com.intellij.platform.util.progress.reportSequentialProgress
 import mu.KotlinLogging
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 
 @Service(Service.Level.PROJECT)
 class MinimizationService(project: Project, private val coroutineScope: CoroutineScope) {
@@ -33,33 +33,36 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
     private val openingService = service<ProjectOpeningService>()
     private val logger = KotlinLogging.logger {}
 
-    fun minimizeProject(project: Project, onComplete: suspend (HeavyIJDDContext) -> Unit = { }) =
-        coroutineScope.async {
-            withBackgroundProgress(project, "Minimizing project") {
-                either {
-                    project.service<MinimizationPluginSettings>().freezeSettings = true
-                    logger.info { "Start Project minimization" }
-                    var context = HeavyIJDDContext(project)
+    fun minimizeProject(project: Project, onComplete: suspend (HeavyIJDDContext) -> Unit = { }) {
+        coroutineScope.launch {
+            project.service<MinimizationPluginSettings>().freezeSettings = true
+            try {
+                withBackgroundProgress(project, "Minimizing project") {
+                    either {
+                        logger.info { "Start Project minimization" }
+                        var context = HeavyIJDDContext(project)
 
-                    context = cloneProject(context)
+                        reportSequentialProgress(stages.size) { reporter ->
+                            context = cloneProject(context, reporter)
 
-                    reportSequentialProgress(stages.size) { reporter ->
-                        for (stage in stages) {
-                            context = processStage(context, stage, reporter)
+                            for (stage in stages) {
+                                context = processStage(context, stage, reporter)
+                            }
                         }
-                    }
 
-                    context.also { onComplete(it) }
-                }.onRight {
-                    project.service<MinimizationPluginSettings>().freezeSettings = false
-                    logger.info { "End Project minimization" }
-                }.onLeft { error ->
-                    project.service<MinimizationPluginSettings>().freezeSettings = false
-                    logger.info { "End Project minimization" }
-                    logger.error { "End minimizeProject with error: $error" }
+                        context.also { onComplete(it) }
+                    }.onRight {
+                        logger.info { "End Project minimization" }
+                    }.onLeft { error ->
+                        logger.info { "End Project minimization" }
+                        logger.error { "End minimizeProject with error: $error" }
+                    }
                 }
+            } finally {
+                project.service<MinimizationPluginSettings>().freezeSettings = false
             }
         }
+    }
 
     private suspend fun Raise<MinimizationError>.processStage(
         context: HeavyIJDDContext,
@@ -91,13 +94,23 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
         return result
     }
 
-    private suspend fun Raise<MinimizationError>.cloneProject(context: HeavyIJDDContext): HeavyIJDDContext {
+    private suspend fun Raise<MinimizationError>.cloneProject(
+        context: HeavyIJDDContext,
+        reporter: SequentialProgressReporter,
+    ): HeavyIJDDContext {
         logger.info { "Clonning project..." }
-        val result = projectCloning.clone(context)
-            ?: raise(MinimizationError.CloningFailed)
+        val result = reporter.indeterminateStep("Clonning project") {
+            projectCloning.clone(context) ?: raise(MinimizationError.CloningFailed)
+        }
         logger.info { "Project clone end" }
+        logger.info { "Wait for indexing" }
+        reporter.indeterminateStep("Wait for indexing") {
+            result.project.waitForSmartMode()
+        }
         logger.info { "Postprocessing" }
-        postProcess(result)
+        reporter.indeterminateStep("Postprocessing") {
+            postProcess(result)
+        }
         logger.info { "Postprocessing end" }
         return result
     }

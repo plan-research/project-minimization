@@ -41,7 +41,6 @@ class FunctionModificationLens : ProjectItemLens {
         val items = items as List<PsiWithBodyDDItem>
         logFocusedItems(items, currentContext)
         val currentLevelTrie = PsiItemStorage.create(
-            currentLevel,
             currentLevel.toSet() - items.toSet(),
             currentContext,
         )
@@ -81,7 +80,7 @@ class FunctionModificationLens : ProjectItemLens {
         logger.debug { "Processing all focused elements in $relativePath" }
         val psiBodyReplacer = PsiBodyReplacer(currentContext)
         performPsiChangesAndSave(currentContext, psiFile, "Replace bodies inside ${psiFile.name}") {
-            trie.processMarkedElements(psiFile, psiBodyReplacer::replaceBody)
+            trie.processMarkedElements(psiFile, psiBodyReplacer::transform)
         }
     }
 }

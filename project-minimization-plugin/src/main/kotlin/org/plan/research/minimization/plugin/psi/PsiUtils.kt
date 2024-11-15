@@ -58,7 +58,8 @@ object PsiUtils {
         val currentFile = currentElement as PsiFile
         val localPath = currentFile.virtualFile.toNioPath().relativeTo(context.projectDir.toNioPath())
         val parentPath = path.reversed()
-        return PsiWithBodyDDItem.create(element, parentPath, localPath)
+        val renderedType = PsiBodyTypeRenderer.transform(element)
+        return PsiWithBodyDDItem.create(element, parentPath, localPath, renderedType)
     }
 
     @RequiresReadLock

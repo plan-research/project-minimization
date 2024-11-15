@@ -40,6 +40,7 @@ data class ProjectFileDDItem(val localPath: Path) : IJDDItem {
 data class PsiWithBodyDDItem(
     val localPath: Path,
     val childrenPath: List<Int>,
+    val renderedType: String?,
 ) : IJDDItem {
     companion object {
         val WITH_BODY_JAVA_CLASSES: List<ClassDeclarationWithBody> = listOf(
@@ -60,11 +61,17 @@ data class PsiWithBodyDDItem(
             ?.hasBody()
 
         @RequiresReadLock
-        fun create(element: PsiElement, parentPath: List<Int>, localPath: Path): PsiWithBodyDDItem =
+        fun create(
+            element: PsiElement,
+            parentPath: List<Int>,
+            localPath: Path,
+            renderedType: String?,
+        ): PsiWithBodyDDItem =
             if (isCompatible(element)) {
                 PsiWithBodyDDItem(
                     localPath,
                     parentPath,
+                    renderedType,
                 )
             } else {
                 error(
@@ -74,5 +81,20 @@ data class PsiWithBodyDDItem(
                         "but got ${element.javaClass.simpleName}",
                 )
             }
+    }
+
+    interface PsiWithBodyTransformer<T> {
+        fun transform(classInitializer: KtClassInitializer): T
+        fun transform(function: KtNamedFunction): T
+        fun transform(lambdaExpression: KtLambdaExpression): T
+        fun transform(accessor: KtPropertyAccessor): T
+
+        fun transform(element: PsiElement): T = when (element) {
+            is KtClassInitializer -> transform(element)
+            is KtNamedFunction -> transform(element)
+            is KtLambdaExpression -> transform(element)
+            is KtPropertyAccessor -> transform(element)
+            else -> error("Invalid PSI element type: ${element::class.simpleName}. Expected one of: KtClassInitializer, KtNamedFunction, KtLambdaExpression, KtPropertyAccessor")
+        }
     }
 }

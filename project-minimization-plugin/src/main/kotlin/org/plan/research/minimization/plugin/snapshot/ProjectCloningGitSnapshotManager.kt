@@ -6,6 +6,7 @@ import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ex.ProjectManagerEx
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import mu.KotlinLogging
@@ -32,45 +33,32 @@ class ProjectCloningGitSnapshotManager(rootProject: Project) : SnapshotManager {
     ): TransactionResult<T, C> = either {
         statLogger.info { "Snapshot manager start's transaction" }
         generalLogger.info { "Snapshot manager start's transaction" }
-        val clonedContext = projectCloning.clone(context)
-            ?: raise(TransactionCreationFailed("Failed to create project"))
 
         try {
             recover<T, _>(
                 block = {
                     val transaction = TransactionBody(this@recover)
                     @Suppress("UNCHECKED_CAST")
-                    transaction.action(clonedContext as C)
+                    transaction.action(context as C)
                 },
                 recover = { raise(Aborted(it)) },
                 catch = { raise(TransactionFailed(it)) },
             )
         } catch (e: Throwable) {
-            closeProject(clonedContext)
+            resetProject(context)
             throw e
         }
     }.onRight {
         generalLogger.info { "Transaction completed successfully" }
         statLogger.info { "Transaction result: success" }
-        closeProject(context)
+        projectCloning.commitChanges(context)
     }.onLeft { it.log() }
 
-    // TODO: JBRes-2103 Resource Management
-    private suspend fun closeProject(context: IJDDContext) {
-        withContext<Unit>(NonCancellable) {
-//            if (context is HeavyIJDDContext) {
-//                ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(context.project)
-//            } else {
-//                // avoid unnecessary project deletion, bad design (poebat' for now)
-//                if (context.projectDir != context.indexProjectDir) {
-//                    writeAction {
-//                        context.projectDir.run { delete(fileSystem) }
-//                    }
-//                }
-//            }
+    private suspend fun resetProject(context: IJDDContext) {
+        withContext(Dispatchers.IO) { // git reset --hard
             Git.open(context.projectDir.toNioPath().toFile()).apply {
                 reset().setMode(ResetCommand.ResetType.HARD).call()
-                clean().setCleanDirectories(true).call() // Do we want to remove untracked files?
+                clean().setCleanDirectories(true).call()
                 close()
             }
         }

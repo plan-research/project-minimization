@@ -44,5 +44,8 @@
                 class="org.plan.research.minimization.plugin.MinimizeProjectAction" text="Minimize Project">
             <add-to-group group-id="CodeMenu" anchor="first"/>
         </action>
+        <action id="org.plan.research.minimization.plugin.TestOverriddenDeleteAction"
+                class="org.plan.research.minimization.plugin.TestOverriddenDeleteAction" text="Test overriden elements"
+                description="Test that overriden deleteable elements found correctly"/>
     </actions>
 </idea-plugin>

@@ -23,6 +23,7 @@ import javax.swing.table.DefaultTableModel
 
 @Suppress("NO_CORRESPONDING_PROPERTY")
 class AppSettingsComponent(project: Project) {
+    private val projectBaseDir = project.basePath ?: ""
     private val myMainPanel: JPanel
 
     // Fields from MinimizationPluginState
@@ -180,10 +181,10 @@ class AppSettingsComponent(project: Project) {
         }
 
     var ignorePaths: List<String>
-        get() = (0 until pathTableModel.rowCount).map { pathTableModel.getValueAt(it, 0).toString() }
+        get() = (0 until pathTableModel.rowCount).map { toRelativePath(pathTableModel.getValueAt(it, 0).toString()) }
         set(value) {
             pathTableModel.rowCount = 0 // clean table
-            value.forEach { pathTableModel.addRow(arrayOf(it)) } // add paths
+            value.forEach { pathTableModel.addRow(arrayOf(toAbsolutePath(it))) } // add paths
         }
 
     private var isFunctionStageEnabled: Boolean
@@ -238,7 +239,7 @@ class AppSettingsComponent(project: Project) {
             .addSeparator()
             .addLabeledComponent(JBLabel("Transformations:"), createTransformationPanel(), 1, false)
             .addSeparator()
-            .addComponent(pathsPanel) // add ignore file panel
+            .addComponent(pathsPanel)
             .addSeparator()
             .addComponentFillVertically(JPanel(), 0)
             .panel
@@ -248,7 +249,7 @@ class AppSettingsComponent(project: Project) {
 
     private fun createPathPanel(): JPanel {
         pathTable.columnModel.getColumn(0).apply {
-            preferredWidth = 350 // Width of first column
+            preferredWidth = 700 // Width of first column
         }
 
         val toolbarDecoratorPanel = ToolbarDecorator.createDecorator(pathTable)
@@ -264,7 +265,7 @@ class AppSettingsComponent(project: Project) {
                 }
             }
             .setRemoveAction {
-                val selectedRows = pathTable.selectedRows.sortedDescending() // Удаляем в обратном порядке
+                val selectedRows = pathTable.selectedRows.sortedDescending()
                 for (row in selectedRows) {
                     pathTableModel.removeRow(row)
                 }
@@ -272,11 +273,23 @@ class AppSettingsComponent(project: Project) {
             .createPanel()
 
         return JPanel(BorderLayout()).apply {
-//            add(JBLabel("Paths:").apply {
-//                horizontalAlignment = SwingConstants.LEFT
-//                border = BorderFactory.createEmptyBorder(5, 0, 5, 0)
-//            }, BorderLayout.NORTH)
             add(toolbarDecoratorPanel, BorderLayout.CENTER)
+        }
+    }
+
+    private fun toRelativePath(absolutePath: String): String {
+        return if (projectBaseDir.isNotBlank() && absolutePath.startsWith(projectBaseDir)) {
+            absolutePath.removePrefix("$projectBaseDir/") // Убираем корневую директорию
+        } else {
+            absolutePath
+        }
+    }
+
+    private fun toAbsolutePath(relativePath: String): String {
+        return if (projectBaseDir.isNotBlank()) {
+            "$projectBaseDir/$relativePath"
+        } else {
+            relativePath
         }
     }
 

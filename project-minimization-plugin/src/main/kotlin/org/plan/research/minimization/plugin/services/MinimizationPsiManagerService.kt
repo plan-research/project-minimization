@@ -1,9 +1,10 @@
 package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.psi.PsiUtils
 
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -11,6 +12,7 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiElement
 import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.GlobalSearchScopes
@@ -31,6 +33,11 @@ import kotlin.io.path.relativeTo
 class MinimizationPsiManagerService {
     private val logger = KotlinLogging.logger {}
 
+    suspend fun findAllPsiWithBodyItems(context: IJDDContext): List<PsiChildrenIndexDDItem> =
+        findPsiInKotlinFiles(context, PsiChildrenIndexDDItem.BODY_REPLACEABLE_PSI_JAVA_CLASSES)
+            .filter { readAction { PsiChildrenIndexDDItem.hasBodyIfAvailable(it) != false } }
+            .mapNotNull { readAction { PsiUtils.buildReplaceablePsiItem(context, it) } }
+
     suspend fun findAllKotlinFilesInIndexProject(context: IJDDContext): List<VirtualFile> =
         smartReadAction(context.indexProject) {
             val roots = service<RootsManagerService>().findPossibleRoots(context).mapNotNull {
@@ -41,7 +48,10 @@ class MinimizationPsiManagerService {
             FileTypeIndex.getFiles(KotlinFileType.INSTANCE, scope).toList()
         }
 
-    suspend fun findAllPsiWithBodyItems(context: IJDDContext): List<PsiWithBodyDDItem> {
+    private suspend fun <T : PsiElement> findPsiInKotlinFiles(
+        context: IJDDContext,
+        classes: List<Class<out T>>,
+    ): List<T> {
         val kotlinFiles = findAllKotlinFilesInIndexProject(context)
         logger.debug {
             "Found ${kotlinFiles.size} kotlin files"
@@ -49,13 +59,14 @@ class MinimizationPsiManagerService {
         if (kotlinFiles.isEmpty()) {
             logger.warn { "Found 0 kotlin files!" }
         }
-        return extractAllPsiFromIndexProject(context, kotlinFiles)
+        return extractAllPsi(context, kotlinFiles, classes)
     }
 
-    private suspend fun extractAllPsiFromIndexProject(
+    private suspend fun <T : PsiElement> extractAllPsi(
         context: IJDDContext,
         files: Collection<VirtualFile>,
-    ): List<PsiWithBodyDDItem> =
+        classes: List<Class<out T>>,
+    ): List<T> =
         files.flatMap { kotlinFile ->
             smartReadAction(context.indexProject) {
                 val relativePath = kotlinFile.toNioPath().relativeTo(context.indexProjectDir.toNioPath())
@@ -65,14 +76,13 @@ class MinimizationPsiManagerService {
                 val ktFileInCurrentProject = PsiUtils.getKtFile(context, fileInCurrentProject)
                     ?: return@smartReadAction emptyList()
 
-                PsiWithBodyDDItem.PSI_ALL_JAVA_CLASSES.flatMap { clazz ->
+                classes.flatMap { clazz ->
                     PsiTreeUtil.collectElementsOfType(ktFileInCurrentProject, clazz)
-                        .filter { PsiWithBodyDDItem.hasBodyIfAvailable(it) != false }
                         .also {
-                            logger.debug {
+                            logger.trace {
                                 "Found ${it.size} ${clazz.simpleName} elements in $relativePath"
                             }
-                        }.mapNotNull { PsiUtils.createPsiDDItem(context, it) }
+                        }
                 }
             }
         }

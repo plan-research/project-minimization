@@ -1,3 +1,6 @@
+package psi.manager
+
+import arrow.core.compareTo
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.service
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
@@ -5,7 +8,7 @@ import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.psi.*
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import kotlin.test.assertIs
@@ -171,19 +174,8 @@ class MinimizationPsiManagerServiceGettingTest : JavaCodeInsightFixtureTestCase(
         }
     }
 
-    private fun compare(a: List<Int>, b: List<Int>): Int {
-        val maxIndex = a.size.coerceAtLeast(b.size)
-        for (i in 0 until maxIndex) {
-            val aValue = a.getOrNull(i) ?: return -1
-            val bValue = b.getOrNull(i) ?: return 1
-            if (aValue != bValue) {
-                return aValue - bValue
-            }
-        }
-        return 0
-    }
-    private fun List<PsiWithBodyDDItem>.getPsi(context: IJDDContext) = runBlocking {
-        sortedWith { a, b -> compare(a.childrenPath, b.childrenPath) }
+    private fun List<PsiChildrenIndexDDItem>.getPsi(context: IJDDContext) = runBlocking {
+        sortedWith { a, b -> a.childrenPath.compareTo(b.childrenPath) }
             .map { readAction { PsiUtils.getPsiElementFromItem(context, it) } }
     }
 }

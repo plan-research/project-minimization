@@ -1,3 +1,8 @@
+package snapshot
+
+import TestWithContext
+import TestWithHeavyContext
+import TestWithLightContext
 import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.guessProjectDir
@@ -5,6 +10,8 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.utils.vfs.deleteRecursively
+import getAllFiles
+import getPathContentPair
 import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.getAllNestedElements

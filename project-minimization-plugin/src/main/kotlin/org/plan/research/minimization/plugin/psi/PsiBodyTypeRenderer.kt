@@ -1,6 +1,6 @@
 package org.plan.research.minimization.plugin.psi
 
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.psi.KotlinTypeRenderer.renderType
 
 import org.jetbrains.kotlin.analysis.api.analyze
@@ -10,7 +10,7 @@ import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
 
-object PsiBodyTypeRenderer : PsiWithBodyDDItem.PsiWithBodyTransformer<String?> {
+object PsiBodyTypeRenderer : PsiChildrenIndexDDItem.PsiWithBodyTransformer<String?> {
     override fun transform(classInitializer: KtClassInitializer): String? = null
 
     override fun transform(function: KtNamedFunction): String =

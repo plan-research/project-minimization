@@ -1,3 +1,5 @@
+package gradle
+
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.smartReadAction

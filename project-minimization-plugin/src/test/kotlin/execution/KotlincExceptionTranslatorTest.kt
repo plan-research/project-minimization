@@ -1,3 +1,5 @@
+package execution
+
 import arrow.core.Either
 import com.intellij.build.FilePosition
 import com.intellij.build.events.FileMessageEvent

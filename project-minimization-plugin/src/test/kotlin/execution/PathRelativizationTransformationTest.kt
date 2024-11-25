@@ -1,3 +1,5 @@
+package execution
+
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.ProjectManager

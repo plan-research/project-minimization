@@ -1,3 +1,5 @@
+package snapshot
+
 import com.intellij.openapi.components.service
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import org.plan.research.minimization.plugin.services.ProjectCloningService

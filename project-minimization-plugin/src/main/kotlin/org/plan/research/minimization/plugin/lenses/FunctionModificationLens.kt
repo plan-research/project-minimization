@@ -2,12 +2,13 @@ package org.plan.research.minimization.plugin.lenses
 
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.IJDDItem
+import org.plan.research.minimization.plugin.model.IntChildrenIndex
 import org.plan.research.minimization.plugin.model.ProjectItemLens
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.psi.PsiBodyReplacer
-import org.plan.research.minimization.plugin.psi.PsiItemStorage
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.psi.PsiUtils.performPsiChangesAndSave
+import org.plan.research.minimization.plugin.psi.trie.PsiItemStorage
 
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
@@ -27,18 +28,18 @@ class FunctionModificationLens : ProjectItemLens {
         items: List<IJDDItem>,
         currentContext: IJDDContext,
     ) {
-        if (currentContext.currentLevel == null || currentContext.currentLevel.any { it !is PsiWithBodyDDItem }) {
+        if (currentContext.currentLevel == null || currentContext.currentLevel.any { it !is PsiChildrenIndexDDItem }) {
             logger.warn { "Some item from current level are not PsiWithBodyDDItem. The wrong lens is used. " }
             return
         }
-        val currentLevel = currentContext.currentLevel as List<PsiWithBodyDDItem>
+        val currentLevel = currentContext.currentLevel as List<PsiChildrenIndexDDItem>
         logger.info { "Built a trie for the current context" }
-        if (items.any { it !is PsiWithBodyDDItem }) {
+        if (items.any { it !is PsiChildrenIndexDDItem }) {
             logger.warn { "Some items from $items are not PsiWithBodyDDItem. The wrong lens is used. " }
             return
         }
 
-        val items = items as List<PsiWithBodyDDItem>
+        val items = items as List<PsiChildrenIndexDDItem>
         logFocusedItems(items, currentContext)
         val currentLevelTrie = PsiItemStorage.create(
             currentLevel.toSet() - items.toSet(),
@@ -49,7 +50,7 @@ class FunctionModificationLens : ProjectItemLens {
         logger.info { "Focusing complete" }
     }
 
-    private suspend fun logFocusedItems(items: List<PsiWithBodyDDItem>, context: IJDDContext) {
+    private suspend fun logFocusedItems(items: List<PsiChildrenIndexDDItem>, context: IJDDContext) {
         if (!logger.isTraceEnabled) {
             return
         }
@@ -62,7 +63,11 @@ class FunctionModificationLens : ProjectItemLens {
         }
     }
 
-    private suspend fun focusOnInsideFile(currentContext: IJDDContext, trie: PsiItemStorage, relativePath: Path) {
+    private suspend fun focusOnInsideFile(
+        currentContext: IJDDContext,
+        trie: PsiItemStorage<PsiChildrenIndexDDItem, IntChildrenIndex>,
+        relativePath: Path,
+    ) {
         val virtualFile = readAction {
             currentContext.projectDir.findFile(relativePath.toString())
         }

@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.psi
 
 import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.PsiWithBodyDDItem
+import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
 
 import com.intellij.psi.PsiElement
 import mu.KotlinLogging
@@ -13,10 +13,10 @@ import org.jetbrains.kotlin.psi.*
  *
  * @property context The context for the minimization process, containing the current project and related properties.
  */
-class PsiBodyReplacer(private val context: IJDDContext) : PsiWithBodyDDItem.PsiWithBodyTransformer<Unit> {
+class PsiBodyReplacer(private val context: IJDDContext) : PsiChildrenIndexDDItem.PsiWithBodyTransformer<Unit> {
     private val logger = KotlinLogging.logger {}
     private val psiFactory = KtPsiFactory(context.indexProject)
-    private lateinit var item: PsiWithBodyDDItem
+    private lateinit var item: PsiChildrenIndexDDItem
 
     override fun transform(classInitializer: KtClassInitializer) {
         logger.debug { "Replacing class initializer body: ${classInitializer.name}" }
@@ -75,7 +75,7 @@ class PsiBodyReplacer(private val context: IJDDContext) : PsiWithBodyDDItem.PsiW
         }
     }
 
-    fun transform(item: PsiWithBodyDDItem, element: PsiElement) {
+    fun transform(item: PsiChildrenIndexDDItem, element: PsiElement) {
         this.item = item
         try {
             transform(element)
@@ -85,7 +85,7 @@ class PsiBodyReplacer(private val context: IJDDContext) : PsiWithBodyDDItem.PsiW
     }
 
     private fun getReplacementText(
-        item: PsiWithBodyDDItem,
+        item: PsiChildrenIndexDDItem,
         hasExplicitReturnType: Boolean,
     ): String =
         when {

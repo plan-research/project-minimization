@@ -1,4 +1,11 @@
+package snapshot
+
+import PathContent
+import TestWithContext
+import TestWithHeavyContext
+import TestWithLightContext
 import com.intellij.openapi.components.service
+import getAllFiles
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertNotEquals
 import org.plan.research.minimization.plugin.model.HeavyIJDDContext

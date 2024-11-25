@@ -1,4 +1,7 @@
+package psi.trie
+
 import com.intellij.openapi.application.readAction
+import com.intellij.openapi.components.service
 import com.intellij.psi.PsiElement
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.psi.KtClassInitializer
@@ -6,12 +9,16 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
+import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.IntChildrenIndex
 import org.plan.research.minimization.plugin.model.LightIJDDContext
+import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.psi.PsiBodyReplacer
 import org.plan.research.minimization.plugin.psi.PsiUtils
+import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import kotlin.test.assertIs
 
-class PsiTrieModificationTest : PsiTrieTestBase() {
+class PsiTrieModificationTest : PsiTrieTestBase<PsiChildrenIndexDDItem, IntChildrenIndex>() {
     fun testFunctionsWithBody() {
         val psiFile = loadPsiFile("functions.kt", "functions-1.kt")
 
@@ -74,7 +81,8 @@ class PsiTrieModificationTest : PsiTrieTestBase() {
         filter: (PsiElement) -> Boolean,
     ) = runBlocking {
         val context = LightIJDDContext(project)
-        val selectedPsi = selectElements(context) { readAction { filter(PsiUtils.getPsiElementFromItem(context, it)!!) } }
+        val selectedPsi =
+            selectElements(context) { readAction { filter(PsiUtils.getPsiElementFromItem(context, it)!!) } }
         val psiBodyReplacer = PsiBodyReplacer(context)
         super.doTest(psiFile, selectedPsi, psiBodyReplacer::transform)
         val expectedFile = myFixture.configureByFile("modification-results/$expectedFile")
@@ -85,5 +93,10 @@ class PsiTrieModificationTest : PsiTrieTestBase() {
                 psiFile.text
             )
         }
+    }
+
+    override suspend fun getAllElements(context: IJDDContext): List<PsiChildrenIndexDDItem> {
+        val service = service<MinimizationPsiManagerService>()
+        return service.findAllPsiWithBodyItems(context)
     }
 }

@@ -81,7 +81,8 @@ object PsiUtils {
     ): Option<PsiStubDDItem> = option {
         val (currentFile, parentPath) = buildParentPath(element, { _, element -> KtStub.create(element) }) { true }!!
         val localPath = currentFile.virtualFile.toNioPath().relativeTo(context.projectDir.toNioPath())
-        PsiStubDDItem(localPath, parentPath.map { it.bind() })
+        // At that stage we have no clue about the hierarchy of the overridden elements
+        PsiStubDDItem.NonOverriddenPsiStubDDItem(localPath, parentPath.map { it.bind() })
     }
 
     @RequiresReadLock

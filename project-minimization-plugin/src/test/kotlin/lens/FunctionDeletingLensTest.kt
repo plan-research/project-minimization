@@ -95,4 +95,19 @@ class FunctionDeletingLensTest : PsiLensTestBase<PsiStubDDItem, KtStub>() {
             doTest(afterTestContext, secondStage, "project-import-optimizing-modified-h-stage-2")
         }
     }
+
+    fun testStartImportMultiStage() {
+        return // FIXME
+        myFixture.copyDirectoryToProject("project-import-star", ".")
+        val context = runBlocking { LightIJDDContext(project).withImportRefCounter() }
+        kotlin.test.assertNotNull(context.importRefCounter)
+        assertIs<LightIJDDContext>(context)
+        runBlocking {
+            val firstStage =
+                getAllItems(context).filter { (it.childrenPath.singleOrNull() as? KtFunctionStub)?.name != "f" }
+            val afterTestContext = doTest(context, firstStage, "project-import-star-stage-1")
+            val secondStage = readAction { firstStage.filterByPsi(context) { it !is KtNamedFunction } }
+            doTest(afterTestContext, secondStage, "project-import-star-stage-2")
+        }
+    }
 }

@@ -42,7 +42,8 @@ abstract class BasePsiLens<I, T> :
         }
         logFocusedItems(items, currentContext)
         val levelDiff = (currentLevel.toSet() - items.toSet()).groupBy(PsiDDItem<T>::localPath)
-        val finalContext = levelDiff.fold(currentContext) { context, (path, items) -> focusOnInsideFile(context, items, path) }
+        val finalContext =
+            levelDiff.fold(currentContext) { context, (path, items) -> focusOnInsideFile(context, items, path) }
 
         logger.info { "Focusing complete" }
         return finalContext
@@ -68,6 +69,9 @@ abstract class BasePsiLens<I, T> :
     }
 
     protected abstract fun focusOnPsiElement(item: I, psiElement: PsiElement, context: IJDDContext)
+    protected open fun createTrie(items: List<I>, context: IJDDContext): PsiTrie<I, T> =
+        PsiTrie.create(items)
+
     protected abstract fun getWriteCommandActionName(psiFile: KtFile, context: IJDDContext): String
 
     private suspend fun focusOnInsideFile(
@@ -75,7 +79,7 @@ abstract class BasePsiLens<I, T> :
         focusItems: List<I>,
         relativePath: Path,
     ): IJDDContext {
-        val trie = PsiTrie.create(focusItems)
+        val trie = createTrie(focusItems, currentContext)
         val virtualFile = readAction {
             currentContext.projectDir.findFile(relativePath.toString())
         }

@@ -79,4 +79,8 @@ class FunctionDeletingLens : BasePsiLens<PsiStubDDItem, KtStub>() {
             null
         }
     }
+
+    override fun createTrie(items: List<PsiStubDDItem>, context: IJDDContext) = PsiTrie.create(
+        items.flatMap { it.childrenElements + it }
+    )
 }

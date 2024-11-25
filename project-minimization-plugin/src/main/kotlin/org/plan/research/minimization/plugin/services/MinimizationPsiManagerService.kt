@@ -19,11 +19,17 @@ import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.GlobalSearchScopes
 import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.util.concurrency.annotations.RequiresReadLock
 import mu.KotlinLogging
 import org.jetbrains.jps.model.java.JavaSourceRootType
 import org.jetbrains.kotlin.config.SourceKotlinRootType
 import org.jetbrains.kotlin.config.TestSourceKotlinRootType
 import org.jetbrains.kotlin.idea.KotlinFileType
+import org.jetbrains.kotlin.psi.KtElement
+import org.jetbrains.kotlin.psi.KtExpression
+import org.plan.research.minimization.plugin.psi.KotlinOverriddenElementsGetter
+import org.plan.research.minimization.plugin.psi.PsiDSU
+import kotlin.collections.singleOrNull
 
 import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
@@ -36,9 +42,11 @@ class MinimizationPsiManagerService {
     private val logger = KotlinLogging.logger {}
 
     suspend fun findAllPsiWithBodyItems(context: IJDDContext): List<PsiChildrenIndexDDItem> =
-        findPsiInKotlinFiles(context, PsiChildrenIndexDDItem.BODY_REPLACEABLE_PSI_JAVA_CLASSES)
-            .filter { readAction { PsiChildrenIndexDDItem.hasBodyIfAvailable(it) != false } }
-            .mapNotNull { readAction { PsiUtils.buildReplaceablePsiItem(context, it) } }
+        smartReadAction(context.indexProject) {
+            findPsiInKotlinFiles(context, PsiChildrenIndexDDItem.BODY_REPLACEABLE_PSI_JAVA_CLASSES)
+                .filter { PsiChildrenIndexDDItem.hasBodyIfAvailable(it) != false }
+                .mapNotNull { PsiUtils.buildReplaceablePsiItem(context, it) }
+        }
 
     /**
      * Finds all deletable PSI items in Kotlin files within the given context.
@@ -51,25 +59,37 @@ class MinimizationPsiManagerService {
      * @return A list of deletable PSI items found in the Kotlin files of the project.
      */
     suspend fun findDeletablePsiItems(context: IJDDContext): List<PsiStubDDItem> =
-        findPsiInKotlinFiles(context, PsiStubDDItem.DELETABLE_PSI_JAVA_CLASSES)
-            .mapNotNull { readAction { PsiUtils.buildDeletablePsiItem(context, it) }.getOrNull() }
-            .sortedWith { a, b -> a.childrenPath.compareTo(b.childrenPath) }
-
-    suspend fun findAllKotlinFilesInIndexProject(context: IJDDContext): List<VirtualFile> =
         smartReadAction(context.indexProject) {
-            val roots = service<RootsManagerService>().findPossibleRoots(context)
-            logger.debug {
-                "Found ${roots.size} roots: $roots"
+            val nonStructuredItems = findPsiInKotlinFiles(context, PsiStubDDItem.DELETABLE_PSI_JAVA_CLASSES)
+                .mapNotNull { psiElement ->
+                    PsiUtils.buildDeletablePsiItem(context, psiElement).getOrNull()?.let { psiElement to it }
+                }
+
+            val dsu = PsiDSU<KtElement, PsiStubDDItem>(nonStructuredItems) { lhs, rhs ->
+                lhs.childrenPath.size
+                    .compareTo(rhs.childrenPath.size)
+                    .takeIf { it != 0 }
+                    ?: lhs.childrenPath.compareTo(rhs.childrenPath)
             }
-            val rootFiles = roots.mapNotNull {
-                context.indexProjectDir.findFileByRelativePath(it.pathString)
-            }
-            val scope = GlobalSearchScopes.directoriesScope(context.indexProject, true, *rootFiles.toTypedArray())
-                .intersectWith(SourcesScope(context.indexProject))
-            FileTypeIndex.getFiles(KotlinFileType.INSTANCE, scope).toList()
+            dsu.transformItems(nonStructuredItems)
         }
 
-    private suspend fun <T : PsiElement> findPsiInKotlinFiles(
+    @RequiresReadLock
+    fun findAllKotlinFilesInIndexProject(context: IJDDContext): List<VirtualFile> {
+        val roots = service<RootsManagerService>().findPossibleRoots(context)
+        logger.debug {
+            "Found ${roots.size} roots: $roots"
+        }
+        val rootFiles = roots.mapNotNull {
+            context.indexProjectDir.findFileByRelativePath(it.pathString)
+        }
+        val scope = GlobalSearchScopes.directoriesScope(context.indexProject, true, *rootFiles.toTypedArray())
+            .intersectWith(SourcesScope(context.indexProject))
+        return FileTypeIndex.getFiles(KotlinFileType.INSTANCE, scope).toList()
+    }
+
+    @RequiresReadLock
+    private fun <T : PsiElement> findPsiInKotlinFiles(
         context: IJDDContext,
         classes: List<Class<out T>>,
     ): List<T> {
@@ -83,30 +103,52 @@ class MinimizationPsiManagerService {
         return extractAllPsi(context, kotlinFiles, classes)
     }
 
-    private suspend fun <T : PsiElement> extractAllPsi(
+    @RequiresReadLock
+    private fun <T : PsiElement> extractAllPsi(
         context: IJDDContext,
         files: Collection<VirtualFile>,
         classes: List<Class<out T>>,
     ): List<T> =
         files.flatMap { kotlinFile ->
-            smartReadAction(context.indexProject) {
-                val relativePath = kotlinFile.toNioPath().relativeTo(context.indexProjectDir.toNioPath())
-                val fileInCurrentProject = context.projectDir.findFileByRelativePath(relativePath.pathString)
-                    ?: return@smartReadAction emptyList()
+            val relativePath = kotlinFile.toNioPath().relativeTo(context.indexProjectDir.toNioPath())
+            val fileInCurrentProject = context.projectDir.findFileByRelativePath(relativePath.pathString)
+                ?: return@flatMap emptyList()
 
-                val ktFileInCurrentProject = PsiUtils.getKtFile(context, fileInCurrentProject)
-                    ?: return@smartReadAction emptyList()
+            val ktFileInCurrentProject = PsiUtils.getKtFile(context, fileInCurrentProject)
+                ?: return@flatMap emptyList()
 
-                classes.flatMap { clazz ->
-                    PsiTreeUtil.collectElementsOfType(ktFileInCurrentProject, clazz)
-                        .also {
-                            logger.trace {
-                                "Found ${it.size} ${clazz.simpleName} elements in $relativePath"
-                            }
+            classes.flatMap { clazz ->
+                PsiTreeUtil.collectElementsOfType(ktFileInCurrentProject, clazz)
+                    .also {
+                        logger.trace {
+                            "Found ${it.size} ${clazz.simpleName} elements in $relativePath"
                         }
-                }
+                    }
             }
         }
+
+    private fun PsiDSU<KtElement, PsiStubDDItem>.transformItems(
+        items: List<Pair<KtElement, PsiStubDDItem>>
+    ): List<PsiStubDDItem> {
+        items.forEach { (element) ->
+            KotlinOverriddenElementsGetter
+                .getOverriddenElements(element)
+                .forEach { union(element, it) }
+        }
+        val classes = classes
+        return items
+            .asSequence()
+            .filter { (psiElement, item) -> representativeElementOf(psiElement) === item }
+            .map { (_, item) ->
+                val clazz = classes[item]!!
+                clazz.singleOrNull() ?: PsiStubDDItem.OverriddenPsiStubDDItem(
+                    item.localPath,
+                    item.childrenPath,
+                    clazz.filter { it != item }
+                )
+            }
+            .toList()
+    }
 
     private class SourcesScope(project: Project) : GlobalSearchScope(project) {
         private val index = ProjectFileIndex.getInstance(project)

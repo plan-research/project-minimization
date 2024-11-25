@@ -26,7 +26,9 @@ class PsiImportCleaner {
     }
 
     suspend fun cleanAllImports(context: HeavyIJDDContext) {
-        val files = service<MinimizationPsiManagerService>().findAllKotlinFilesInIndexProject(context)
+        val files = smartReadAction(context.indexProject) {
+            service<MinimizationPsiManagerService>().findAllKotlinFilesInIndexProject(context)
+        }
         for (file in files) {
             val ktFile = smartReadAction(context.project) {
                 PsiUtils.getKtFile(context, file)

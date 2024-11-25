@@ -5,6 +5,7 @@ import org.plan.research.minimization.plugin.services.MinimizationPsiManagerServ
 
 import arrow.core.raise.option
 import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.vfs.toNioPathOrNull
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
@@ -28,13 +29,13 @@ class KtSourceImportRefCounter private constructor(private val refs: PersistentM
 
     companion object {
         suspend fun create(context: IJDDContext) = option {
-            val vfs = service<MinimizationPsiManagerService>().findAllKotlinFilesInIndexProject(context)
-            val ktFiles = readAction {
-                vfs
+            val vfs = smartReadAction(context.indexProject) {
+                service<MinimizationPsiManagerService>().findAllKotlinFilesInIndexProject(context)
+            }
+            val ktFiles = vfs
                     .asFlow()
                     .map { readAction { it.toPsiFile(context.indexProject) } }
                     .filterIsInstance<KtFile>()
-            }
             val projectDir = context.indexProjectDir.toNioPathOrNull()
             ensureNotNull(projectDir)
             val psiRefCounters = ktFiles

@@ -7,16 +7,16 @@ import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.psi.*
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
-import org.plan.research.minimization.plugin.model.PsiChildrenPathDDItem
-import org.plan.research.minimization.plugin.model.IntWrapper
+import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
+import org.plan.research.minimization.plugin.model.IntChildrenIndex
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import kotlin.io.path.Path
 import kotlin.io.path.nameWithoutExtension
 import kotlin.io.path.relativeTo
 
-class PsiTrieTest : PsiTrieTestBase<PsiChildrenPathDDItem, IntWrapper>() {
-    override suspend fun getAllElements(context: IJDDContext): List<PsiChildrenPathDDItem> {
+class PsiTrieTest : PsiTrieTestBase<PsiChildrenIndexDDItem, IntChildrenIndex>() {
+    override suspend fun getAllElements(context: IJDDContext): List<PsiChildrenIndexDDItem> {
         val service = service<MinimizationPsiManagerService>()
         return service.findAllPsiWithBodyItems(context)
     }

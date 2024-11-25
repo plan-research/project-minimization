@@ -18,7 +18,7 @@ import org.jetbrains.kotlin.psi.KtPropertyAccessor
 import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
-import org.plan.research.minimization.plugin.model.PsiChildrenPathDDItem
+import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
 import org.plan.research.minimization.plugin.model.PsiDDItem
 import org.plan.research.minimization.plugin.psi.PsiUtils
@@ -88,7 +88,7 @@ class FunctionModificationLensTest : JavaCodeInsightFixtureTestCase() {
         }
     }
 
-    private suspend fun doTest(context: LightIJDDContext, elements: List<PsiChildrenPathDDItem>, expectedFolder: String) {
+    private suspend fun doTest(context: LightIJDDContext, elements: List<PsiChildrenIndexDDItem>, expectedFolder: String) {
         val projectCloningService = project.service<ProjectCloningService>()
         val psiGetterService = service<MinimizationPsiManagerService>()
         var cloned = projectCloningService.clone(context)
@@ -127,7 +127,7 @@ class FunctionModificationLensTest : JavaCodeInsightFixtureTestCase() {
     private fun<T: PsiChildrenPathIndex, ITEM: PsiDDItem<T>> List<ITEM>.filterByPsi(context: IJDDContext, filter: (PsiElement) -> Boolean) =
         filter { filter(PsiUtils.getPsiElementFromItem(context, it)!!) }
 
-    private suspend fun getAllElements(context: IJDDContext, vfs: VirtualFile): List<PsiChildrenPathDDItem> {
+    private suspend fun getAllElements(context: IJDDContext, vfs: VirtualFile): List<PsiChildrenIndexDDItem> {
         val service = service<MinimizationPsiManagerService>()
         val elements = service.findAllPsiWithBodyItems(context)
         val vfsRelativePath = context.projectDir.toNioPath().relativize(vfs.toNioPath())

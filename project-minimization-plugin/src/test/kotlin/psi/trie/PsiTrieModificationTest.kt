@@ -10,15 +10,15 @@ import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
 import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.IntWrapper
+import org.plan.research.minimization.plugin.model.IntChildrenIndex
 import org.plan.research.minimization.plugin.model.LightIJDDContext
-import org.plan.research.minimization.plugin.model.PsiChildrenPathDDItem
+import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.psi.PsiBodyReplacer
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import kotlin.test.assertIs
 
-class PsiTrieModificationTest : PsiTrieTestBase<PsiChildrenPathDDItem, IntWrapper>() {
+class PsiTrieModificationTest : PsiTrieTestBase<PsiChildrenIndexDDItem, IntChildrenIndex>() {
     fun testFunctionsWithBody() {
         val psiFile = loadPsiFile("functions.kt", "functions-1.kt")
 
@@ -95,7 +95,7 @@ class PsiTrieModificationTest : PsiTrieTestBase<PsiChildrenPathDDItem, IntWrappe
         }
     }
 
-    override suspend fun getAllElements(context: IJDDContext): List<PsiChildrenPathDDItem> {
+    override suspend fun getAllElements(context: IJDDContext): List<PsiChildrenIndexDDItem> {
         val service = service<MinimizationPsiManagerService>()
         return service.findAllPsiWithBodyItems(context)
     }

@@ -8,7 +8,7 @@ import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.psi.*
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
-import org.plan.research.minimization.plugin.model.PsiChildrenPathDDItem
+import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import kotlin.test.assertIs
@@ -174,7 +174,7 @@ class MinimizationPsiManagerServiceGettingTest : JavaCodeInsightFixtureTestCase(
         }
     }
 
-    private fun List<PsiChildrenPathDDItem>.getPsi(context: IJDDContext) = runBlocking {
+    private fun List<PsiChildrenIndexDDItem>.getPsi(context: IJDDContext) = runBlocking {
         sortedWith { a, b -> a.childrenPath.compareTo(b.childrenPath) }
             .map { readAction { PsiUtils.getPsiElementFromItem(context, it) } }
     }

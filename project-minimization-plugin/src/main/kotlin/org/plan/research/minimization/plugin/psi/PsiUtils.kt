@@ -1,8 +1,8 @@
 package org.plan.research.minimization.plugin.psi
 
 import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.IntWrapper
-import org.plan.research.minimization.plugin.model.PsiChildrenPathDDItem
+import org.plan.research.minimization.plugin.model.IntChildrenIndex
+import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
 import org.plan.research.minimization.plugin.model.PsiDDItem
 
@@ -53,14 +53,14 @@ object PsiUtils {
     fun buildReplaceablePsiItem(
         context: IJDDContext,
         element: PsiElement,
-    ): PsiChildrenPathDDItem? {
+    ): PsiChildrenIndexDDItem? {
         val (currentFile, parentPath) = buildParentPath(
             element,
             ::getChildPosition,
-        ) { !PsiChildrenPathDDItem.isCompatible(it) } ?: return null
+        ) { !PsiChildrenIndexDDItem.isCompatible(it) } ?: return null
         val localPath = currentFile.virtualFile.toNioPath().relativeTo(context.projectDir.toNioPath())
         val renderedType = PsiBodyTypeRenderer.transform(element)
-        return PsiChildrenPathDDItem.create(element, parentPath, localPath, renderedType)
+        return PsiChildrenIndexDDItem.create(element, parentPath, localPath, renderedType)
     }
 
     @RequiresReadLock
@@ -86,8 +86,8 @@ object PsiUtils {
     }
 
     @RequiresReadLock
-    private fun getChildPosition(parent: PsiElement, element: PsiElement): IntWrapper =
-        IntWrapper(parent.children.indexOf(element))
+    private fun getChildPosition(parent: PsiElement, element: PsiElement): IntChildrenIndex =
+        IntChildrenIndex(parent.children.indexOf(element))
 
     @RequiresReadLock
     fun getKtFile(context: IJDDContext, file: VirtualFile): KtFile? =

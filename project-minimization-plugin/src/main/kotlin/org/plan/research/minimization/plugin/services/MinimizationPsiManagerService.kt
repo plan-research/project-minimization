@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.PsiChildrenPathDDItem
+import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.psi.PsiUtils
 
 import com.intellij.openapi.application.readAction
@@ -33,9 +33,9 @@ import kotlin.io.path.relativeTo
 class MinimizationPsiManagerService {
     private val logger = KotlinLogging.logger {}
 
-    suspend fun findAllPsiWithBodyItems(context: IJDDContext): List<PsiChildrenPathDDItem> =
-        findPsiInKotlinFiles(context, PsiChildrenPathDDItem.BODY_REPLACEABLE_PSI_JAVA_CLASSES)
-            .filter { readAction { PsiChildrenPathDDItem.hasBodyIfAvailable(it) != false } }
+    suspend fun findAllPsiWithBodyItems(context: IJDDContext): List<PsiChildrenIndexDDItem> =
+        findPsiInKotlinFiles(context, PsiChildrenIndexDDItem.BODY_REPLACEABLE_PSI_JAVA_CLASSES)
+            .filter { readAction { PsiChildrenIndexDDItem.hasBodyIfAvailable(it) != false } }
             .mapNotNull { readAction { PsiUtils.buildReplaceablePsiItem(context, it) } }
 
     suspend fun findAllKotlinFilesInIndexProject(context: IJDDContext): List<VirtualFile> =

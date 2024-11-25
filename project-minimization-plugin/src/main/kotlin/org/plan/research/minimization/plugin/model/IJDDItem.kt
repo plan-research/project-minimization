@@ -67,16 +67,16 @@ data class PsiStubDDItem(
     }
 }
 
-data class IntWrapper(val childrenIndex: Int) : PsiChildrenPathIndex, Comparable<IntWrapper> {
+data class IntChildrenIndex(val childrenIndex: Int) : PsiChildrenPathIndex, Comparable<IntChildrenIndex> {
     override fun getNext(element: PsiElement): PsiElement? = element.children[childrenIndex]
-    override fun compareTo(other: IntWrapper): Int = childrenIndex.compareTo(other.childrenIndex)
+    override fun compareTo(other: IntChildrenIndex): Int = childrenIndex.compareTo(other.childrenIndex)
 }
 
-data class PsiChildrenPathDDItem(
+data class PsiChildrenIndexDDItem(
     override val localPath: Path,
-    override val childrenPath: List<IntWrapper>,
+    override val childrenPath: List<IntChildrenIndex>,
     val renderedType: String?,
-) : PsiDDItem<IntWrapper> {
+) : PsiDDItem<IntChildrenIndex> {
     companion object {
         val DECLARATIONS_WITH_BODY_JAVA_CLASSES: List<ClassDeclarationWithBody> = listOf(
             KtNamedFunction::class.java,
@@ -100,12 +100,12 @@ data class PsiChildrenPathDDItem(
         @RequiresReadLock
         fun create(
             element: PsiElement,
-            parentPath: List<IntWrapper>,
+            parentPath: List<IntChildrenIndex>,
             localPath: Path,
             renderedType: String?,
-        ): PsiChildrenPathDDItem =
+        ): PsiChildrenIndexDDItem =
             if (isCompatible(element)) {
-                PsiChildrenPathDDItem(
+                PsiChildrenIndexDDItem(
                     localPath,
                     parentPath,
                     renderedType,

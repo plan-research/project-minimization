@@ -1,6 +1,6 @@
 fun stage2() {
-    TODO("Removed by DD")
+    TODO("Removed by DD") as Unit
 }
 fun stage1() {
-    TODO("Removed by DD")
+    TODO("Removed by DD") as Unit
 }

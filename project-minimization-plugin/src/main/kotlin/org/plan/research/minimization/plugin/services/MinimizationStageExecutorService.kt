@@ -66,7 +66,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         val lens = FunctionModificationLens()
         val firstLevel = service<MinimizationPsiManagerService>()
             .findAllPsiWithBodyItems(lightContext)
-        val propertyChecker = SameExceptionPropertyTester.create<PsiChildrenPathDDItem>(
+        val propertyChecker = SameExceptionPropertyTester.create<PsiChildrenIndexDDItem>(
             project.service<BuildExceptionProviderService>(),
             project.service<MinimizationPluginSettings>().state
                 .exceptionComparingStrategy
@@ -90,7 +90,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
             }
     }.logResult("Function Body Replacement")
 
-    private suspend fun List<PsiChildrenPathDDItem>.logPsiElements(context: IJDDContext) {
+    private suspend fun<T : PsiChildrenPathIndex> List<PsiDDItem<T>>.logPsiElements(context: IJDDContext) {
         if (!logger.isTraceEnabled) {
             return
         }

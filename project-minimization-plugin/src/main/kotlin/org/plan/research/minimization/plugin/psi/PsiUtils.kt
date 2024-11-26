@@ -1,10 +1,15 @@
 package org.plan.research.minimization.plugin.psi
 
+import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.IntChildrenIndex
+import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
+import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
+import org.plan.research.minimization.plugin.model.PsiDDItem
+import org.plan.research.minimization.plugin.model.PsiStubDDItem
+import org.plan.research.minimization.plugin.psi.stub.KtStub
+
 import arrow.core.Option
 import arrow.core.raise.option
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.PsiChildrenPathDDItem
-
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.command.writeCommandAction
 import com.intellij.openapi.editor.EditorFactory
@@ -21,18 +26,15 @@ import org.jetbrains.kotlin.psi.KtFile
 import kotlin.io.path.relativeTo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
-import org.plan.research.minimization.plugin.model.PsiDDItem
-import org.plan.research.minimization.plugin.model.IntWrapper
-import org.plan.research.minimization.plugin.model.PsiStubDDItem
-import org.plan.research.minimization.plugin.model.psi.KtStub
+
+private typealias ParentChildPsiProcessor<T> = (PsiElement, PsiElement) -> T
 
 /**
  * The PsiProcessor class provides utilities for fetching PSI elements within a given project.
  */
 object PsiUtils {
     @RequiresReadLock
-    fun<T: PsiChildrenPathIndex> getPsiElementFromItem(context: IJDDContext, item: PsiDDItem<T>): KtExpression? {
+    fun<T : PsiChildrenPathIndex> getPsiElementFromItem(context: IJDDContext, item: PsiDDItem<T>): KtExpression? {
         val file = context.projectDir.findFileByRelativePath(item.localPath.toString())!!
         val ktFile = getKtFile(context, file)!!
         var currentDepth = 0
@@ -55,15 +57,15 @@ object PsiUtils {
     fun buildReplaceablePsiItem(
         context: IJDDContext,
         element: PsiElement,
-    ): PsiChildrenPathDDItem? {
+    ): PsiChildrenIndexDDItem? {
         val (currentFile, parentPath) = buildParentPath(
             element,
-            ::getChildPosition
-        ) { !PsiChildrenPathDDItem.isCompatible(it) } ?: return null
+            ::getChildPosition,
+        ) { !PsiChildrenIndexDDItem.isCompatible(it) } ?: return null
         val localPath = currentFile.virtualFile.toNioPath().relativeTo(context.projectDir.toNioPath())
-        return PsiChildrenPathDDItem.create(parentPath, localPath)
+        val renderedType = PsiBodyTypeRenderer.transform(element)
+        return PsiChildrenIndexDDItem.create(element, parentPath, localPath, renderedType)
     }
-
 
     /**
      * Transforms PsiElement into **deletable** PsiDDItem by traversing the parents and collecting file information
@@ -85,7 +87,7 @@ object PsiUtils {
     @RequiresReadLock
     private fun <T> buildParentPath(
         element: PsiElement,
-        pathElementProducer: (PsiElement, PsiElement) -> T,
+        pathElementProducer: ParentChildPsiProcessor<T>,
         isElementAllowed: (PsiElement) -> Boolean,
     ): Pair<PsiFile, List<T>>? {
         var currentElement: PsiElement = element
@@ -105,8 +107,8 @@ object PsiUtils {
     }
 
     @RequiresReadLock
-    private fun getChildPosition(parent: PsiElement, element: PsiElement): IntWrapper =
-        IntWrapper(parent.children.indexOf(element))
+    private fun getChildPosition(parent: PsiElement, element: PsiElement): IntChildrenIndex =
+        IntChildrenIndex(parent.children.indexOf(element))
 
     @RequiresReadLock
     fun getKtFile(context: IJDDContext, file: VirtualFile): KtFile? =

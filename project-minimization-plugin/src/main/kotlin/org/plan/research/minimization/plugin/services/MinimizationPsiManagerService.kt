@@ -1,7 +1,8 @@
 package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.PsiChildrenPathDDItem
+import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
+import org.plan.research.minimization.plugin.model.PsiStubDDItem
 import org.plan.research.minimization.plugin.psi.PsiUtils
 
 import com.intellij.openapi.application.readAction
@@ -17,13 +18,11 @@ import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.GlobalSearchScopes
 import com.intellij.psi.util.PsiTreeUtil
-import com.intellij.util.indexing.FileBasedIndex
 import mu.KotlinLogging
 import org.jetbrains.jps.model.java.JavaSourceRootType
 import org.jetbrains.kotlin.config.SourceKotlinRootType
 import org.jetbrains.kotlin.config.TestSourceKotlinRootType
 import org.jetbrains.kotlin.idea.KotlinFileType
-import org.plan.research.minimization.plugin.model.PsiStubDDItem
 
 import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
@@ -35,9 +34,9 @@ import kotlin.io.path.relativeTo
 class MinimizationPsiManagerService {
     private val logger = KotlinLogging.logger {}
 
-    suspend fun findAllPsiWithBodyItems(context: IJDDContext): List<PsiChildrenPathDDItem> =
-        findPsiInKotlinFiles(context, PsiChildrenPathDDItem.BODY_REPLACEABLE_PSI_JAVA_CLASSES)
-            .filter { readAction { PsiChildrenPathDDItem.hasBodyIfAvailable(it) != false } }
+    suspend fun findAllPsiWithBodyItems(context: IJDDContext): List<PsiChildrenIndexDDItem> =
+        findPsiInKotlinFiles(context, PsiChildrenIndexDDItem.BODY_REPLACEABLE_PSI_JAVA_CLASSES)
+            .filter { readAction { PsiChildrenIndexDDItem.hasBodyIfAvailable(it) != false } }
             .mapNotNull { readAction { PsiUtils.buildReplaceablePsiItem(context, it) } }
 
     suspend fun findDeletablePsiItems(context: IJDDContext): List<PsiStubDDItem> =
@@ -63,7 +62,12 @@ class MinimizationPsiManagerService {
         classes: List<Class<out T>>,
     ): List<T> {
         val kotlinFiles = findAllKotlinFilesInIndexProject(context)
-        logFoundKotlinFiles(context, kotlinFiles)
+        logger.debug {
+            "Found ${kotlinFiles.size} kotlin files"
+        }
+        if (kotlinFiles.isEmpty()) {
+            logger.warn { "Found 0 kotlin files!" }
+        }
         return extractAllPsi(context, kotlinFiles, classes)
     }
 
@@ -91,51 +95,6 @@ class MinimizationPsiManagerService {
                 }
             }
         }
-
-    /**
-     * A function that provides all available file types in the project with the files of that file type.
-     * Used only in tracing logging.
-     *
-     * @param files a list of project source root to fetch files from
-     * @return a map from file type to files of that type
-     */
-    private fun getAllFileTypesInProject(context: IJDDContext, files: List<VirtualFile>) = buildMap {
-        FileBasedIndex.getInstance().processAllKeys(
-            FileTypeIndex.NAME,
-            { fileType ->
-                val filesOfType = FileBasedIndex.getInstance().getContainingFiles(
-                    FileTypeIndex.NAME,
-                    fileType,
-                    GlobalSearchScopes.directoriesScope(context.indexProject, true, *files.toTypedArray()),
-                )
-                if (filesOfType.isNotEmpty()) {
-                    put(fileType, filesOfType.toList())
-                }
-                true
-            },
-            context.indexProject,
-        )
-    }
-
-    private fun logFoundKotlinFiles(context: IJDDContext, files: List<VirtualFile>) {
-        logger.debug { "Found ${files.size} kotlin files" }
-        if (files.isEmpty()) {
-            logger.warn { "Found 0 kotlin files!" }
-            logger.trace {
-                val fileTypes = getAllFileTypesInProject(context, files)
-                val asString = fileTypes
-                    .toList()
-                    .map { (type, files) ->
-                        "${type.name}: ${
-                            files.map {
-                                    it.toNioPath().relativeTo(context.projectDir.toNioPath())
-                                }
-                        }"
-                    }
-                "However, there are fileTypes and its files:\n$asString"
-            }
-        }
-    }
 
     private class SourcesScope(project: Project) : GlobalSearchScope(project) {
         private val index = ProjectFileIndex.getInstance(project)

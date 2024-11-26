@@ -1,22 +1,26 @@
 package org.plan.research.minimization.plugin.psi
 
-import mu.KotlinLogging
-import org.jetbrains.kotlin.utils.addToStdlib.same
 import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
 import org.plan.research.minimization.plugin.model.PsiDDItem
 import org.plan.research.minimization.plugin.model.PsiStubDDItem
-import org.plan.research.minimization.plugin.model.psi.KtStub
+import org.plan.research.minimization.plugin.psi.CompressingPsiItemTrie.NextPsiDDItemInfo
+import org.plan.research.minimization.plugin.psi.stub.KtStub
+
+import mu.KotlinLogging
+import org.jetbrains.kotlin.utils.addToStdlib.same
 
 typealias StubCompressingPsiTrie = CompressingPsiItemTrie<PsiStubDDItem, KtStub>
+private typealias AdjacentNodes<I, T> = MutableMap<T, CompressingPsiItemTrie<I, T>>
+private typealias NextAdjacentNodes<I, T> = MutableMap<T, NextPsiDDItemInfo<I, T>>
 
 /**
  * The Trie that is designed to compress the children's path of the PSI item to quickly lookup for the child PSI DD element in the PSI tree
  */
-class CompressingPsiItemTrie<ITEM, T : PsiChildrenPathIndex> private constructor() where ITEM : PsiDDItem<T> {
-    private val children: MutableMap<T, CompressingPsiItemTrie<ITEM, T>> = mutableMapOf()
+class CompressingPsiItemTrie<I, T : PsiChildrenPathIndex> private constructor() where I : PsiDDItem<T> {
+    private val children: AdjacentNodes<I, T> = mutableMapOf()
     private val logger = KotlinLogging.logger {}
-    private val nextItem: MutableMap<T, NextPsiDDItemInfo<ITEM, T>> = mutableMapOf()
-    private var correspondingItem: ITEM? = null
+    private val nextItem: NextAdjacentNodes<I, T> = mutableMapOf()
+    private var correspondingItem: I? = null
 
     /**
      * Retrieves the list of next PsiDDItems available from the current node in the trie structure.
@@ -26,7 +30,7 @@ class CompressingPsiItemTrie<ITEM, T : PsiChildrenPathIndex> private constructor
      */
     fun getNextItems() = nextItem.values.toList()
 
-    private fun add(item: ITEM, depth: Int = 0): NextPsiDDItemInfo<ITEM, T> {
+    private fun add(item: I, depth: Int = 0): NextPsiDDItemInfo<I, T> {
         if (depth == item.childrenPath.size) {
             require(correspondingItem == null)
             correspondingItem = item
@@ -45,11 +49,11 @@ class CompressingPsiItemTrie<ITEM, T : PsiChildrenPathIndex> private constructor
         return addedNode
     }
 
-    data class NextPsiDDItemInfo<ITEM, T : PsiChildrenPathIndex>(
-        val node: CompressingPsiItemTrie<ITEM, T>,
-        val item: ITEM,
-        val depth: Int
-    ) where ITEM : PsiDDItem<T>
+    data class NextPsiDDItemInfo<I, T : PsiChildrenPathIndex>(
+        val node: CompressingPsiItemTrie<I, T>,
+        val item: I,
+        val depth: Int,
+    ) where I : PsiDDItem<T>
 
     companion object {
         fun <ITEM, T : PsiChildrenPathIndex> create(items: List<ITEM>): CompressingPsiItemTrie<ITEM, T> where ITEM : PsiDDItem<T> {

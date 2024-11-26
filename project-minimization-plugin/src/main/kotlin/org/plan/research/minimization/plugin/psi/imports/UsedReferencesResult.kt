@@ -23,6 +23,13 @@ class UsedReferencesResult internal constructor(
                 .mapValues { it.value.size }
         }
 
+    private val List<KtImportDirective>.explicitImports
+        get() = this.asSequence()
+            .mapNotNull { it.importPath }
+            .filter { !it.isAllUnder && !it.hasAlias() }
+            .map { it.fqName }
+            .toSet()
+
     fun processImportDirectives(
         existingImports: List<KtImportDirective>,
         packageFqName: FqName,
@@ -42,31 +49,24 @@ class UsedReferencesResult internal constructor(
             val importPath = import.importPath ?: continue
             val unresolvedUsedTimes = unresolvedNames[importPath.importedName] ?: 0
             val starUsed = importRequiresStar[importPath.fqName]
-                ?.takeIf { unresolvedNames.isNotEmpty() && importPath.isAllUnder }
+                ?.takeIf { importPath.isAllUnder }
                 ?: 0
 
             val referenceEntitiesUsed = referencesEntities[importPath.fqName]
                 ?.get(importPath.importedName)
                 ?: 0
             val usedTimes = unresolvedUsedTimes + starUsed + referenceEntitiesUsed
-        if (usedTimes != 0) {
-            usedImportProcessor(importPath, usedTimes)
+            if (usedTimes != 0) {
+                usedImportProcessor(importPath, usedTimes)
+            }
         }
     }
-}
 
-private fun Iterable<FqName>.requiresStarImport(explicitImports: Set<FqName>) =
-    asSequence()
-        .filterNot { it in explicitImports }
-        .mapNotNull { it.parentOrNull() }
-        .filterNot { it.isRoot }
-        .groupBy({ it })
-        .mapValues { it.value.size }
-
-private val List<KtImportDirective>.explicitImports
-    get() = this.asSequence()
-        .mapNotNull { it.importPath }
-        .filter { !it.isAllUnder && !it.hasAlias() }
-        .map { it.fqName }
-        .toSet()
+    private fun Iterable<FqName>.requiresStarImport(explicitImports: Set<FqName>) =
+        asSequence()
+            .filterNot { it in explicitImports }
+            .mapNotNull { it.parentOrNull() }
+            .filterNot { it.isRoot }
+            .groupBy({ it })
+            .mapValues { it.value.size }
 }

@@ -1,21 +1,20 @@
 package org.plan.research.minimization.plugin.lenses
 
-import arrow.core.fold
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.IJDDItem
 import org.plan.research.minimization.plugin.model.ProjectItemLens
+import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
+import org.plan.research.minimization.plugin.model.PsiDDItem
 import org.plan.research.minimization.plugin.psi.PsiUtils
+import org.plan.research.minimization.plugin.psi.trie.PsiTrie
 
+import arrow.core.fold
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
-import com.intellij.openapi.components.service
 import com.intellij.openapi.vfs.findFile
 import com.intellij.psi.PsiElement
 import mu.KotlinLogging
 import org.jetbrains.kotlin.psi.KtFile
-import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
-import org.plan.research.minimization.plugin.model.PsiDDItem
-import org.plan.research.minimization.plugin.psi.trie.PsiTrie
 
 import java.nio.file.Path
 

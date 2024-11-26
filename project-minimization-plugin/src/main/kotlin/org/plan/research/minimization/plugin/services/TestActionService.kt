@@ -1,12 +1,14 @@
 package org.plan.research.minimization.plugin.services
 
+import org.plan.research.minimization.plugin.model.LightIJDDContext
+import org.plan.research.minimization.plugin.model.PsiStubDDItem
+
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import org.plan.research.minimization.plugin.model.LightIJDDContext
-import org.plan.research.minimization.plugin.model.PsiStubDDItem
 
 @Service(Service.Level.PROJECT)
 class TestActionService(project: Project, private val cs: CoroutineScope) {

@@ -3,7 +3,7 @@ class C {
         TODO("Removed by DD") as Unit
     }
 
-    fun method2() = TODO("Removed by DD") as Nothing
+    fun method2() = TODO("Removed by DD") as Unit
 
     val field: Int
         get() {

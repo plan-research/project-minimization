@@ -3,10 +3,11 @@ package org.plan.research.minimization.plugin.services
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.model.PsiStubDDItem
+import org.plan.research.minimization.plugin.psi.KotlinOverriddenElementsGetter
+import org.plan.research.minimization.plugin.psi.PsiDSU
 import org.plan.research.minimization.plugin.psi.PsiUtils
 
 import arrow.core.compareTo
-import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -26,13 +27,12 @@ import org.jetbrains.kotlin.config.SourceKotlinRootType
 import org.jetbrains.kotlin.config.TestSourceKotlinRootType
 import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.psi.KtElement
-import org.jetbrains.kotlin.psi.KtExpression
-import org.plan.research.minimization.plugin.psi.KotlinOverriddenElementsGetter
-import org.plan.research.minimization.plugin.psi.PsiDSU
-import kotlin.collections.singleOrNull
 
+import kotlin.collections.singleOrNull
 import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
+
+private typealias CoreDsuElement = Pair<KtElement, PsiStubDDItem>
 
 /**
  * Service that provides functions to get a list of all the psi elements that could be modified
@@ -128,7 +128,7 @@ class MinimizationPsiManagerService {
         }
 
     private fun PsiDSU<KtElement, PsiStubDDItem>.transformItems(
-        items: List<Pair<KtElement, PsiStubDDItem>>
+        items: List<CoreDsuElement>,
     ): List<PsiStubDDItem> {
         items.forEach { (element) ->
             KotlinOverriddenElementsGetter
@@ -144,7 +144,7 @@ class MinimizationPsiManagerService {
                 clazz.singleOrNull() ?: PsiStubDDItem.OverriddenPsiStubDDItem(
                     item.localPath,
                     item.childrenPath,
-                    clazz.filter { it != item }
+                    clazz.filter { it != item },
                 )
             }
             .toList()

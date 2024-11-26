@@ -1,10 +1,11 @@
 package org.plan.research.minimization.plugin
 
+import org.plan.research.minimization.plugin.services.TestActionService
+
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.components.service
 import mu.KotlinLogging
-import org.plan.research.minimization.plugin.services.TestActionService
 
 class TestOverriddenDeleteAction : AnAction() {
     private val logger = KotlinLogging.logger {}
@@ -12,7 +13,7 @@ class TestOverriddenDeleteAction : AnAction() {
         val project = e.project ?: return
         val testService = project.service<TestActionService>()
         testService.dumpDeletableElements { items ->
-            logger.debug { "Found deletable items: $items"}
+            logger.debug { "Found deletable items: $items" }
         }
     }
 }

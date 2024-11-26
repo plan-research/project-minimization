@@ -39,14 +39,14 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
         snapshotManager.transaction(context) { newContext ->
             context.currentLevel ?: return@transaction newContext
 
-            lens.focusOn(items, newContext)  // Assume that `newContext` has the same `.currentLevel` as `context`
+            val focusedContext = lens.focusOn(items, newContext)  // Assume that `newContext` has the same `.currentLevel` as `context`
 
             val compilationResult = buildExceptionProvider
                 .checkCompilation(newContext)
                 .getOrElse { raise(PropertyTesterError.NoProperty) }
 
             if (comparator.areEquals(initialException, compilationResult)) {
-                newContext
+                focusedContext
             } else {
                 raise(PropertyTesterError.UnknownProperty)
             }

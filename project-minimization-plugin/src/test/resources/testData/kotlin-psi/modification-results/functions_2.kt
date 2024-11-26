@@ -11,4 +11,4 @@ fun b(x: Int, y: Int, z: Int) {
 
 fun c(): Int = TODO("Removed by DD")
 
-fun d() = TODO("Removed by DD") as Nothing
+fun d() = TODO("Removed by DD") as Unit

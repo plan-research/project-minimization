@@ -2,8 +2,9 @@ package org.plan.research.minimization.plugin.lenses
 
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.PsiStubDDItem
-import org.plan.research.minimization.plugin.psi.stub.KtStub
 import org.plan.research.minimization.plugin.psi.PsiUtils
+import org.plan.research.minimization.plugin.psi.stub.KtStub
+import org.plan.research.minimization.plugin.psi.trie.PsiTrie
 
 import com.intellij.openapi.application.readAction
 import com.intellij.psi.PsiElement
@@ -12,7 +13,6 @@ import mu.KotlinLogging
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
-import org.plan.research.minimization.plugin.psi.trie.PsiTrie
 
 import kotlin.io.path.relativeTo
 
@@ -32,9 +32,9 @@ class FunctionDeletingLens : BasePsiLens<PsiStubDDItem, KtStub>() {
     override suspend fun useTrie(
         trie: PsiTrie<PsiStubDDItem, KtStub>,
         context: IJDDContext,
-        ktFile: KtFile
+        ktFile: KtFile,
     ): IJDDContext {
-        super.useTrie(trie, context, ktFile)
+        val context = super.useTrie(trie, context, ktFile)
         val rootPath = context.projectDir.toNioPath()
         val localPath = ktFile.virtualFile.toNioPath().relativeTo(rootPath)
 
@@ -58,7 +58,7 @@ class FunctionDeletingLens : BasePsiLens<PsiStubDDItem, KtStub>() {
             unusedImports.forEach(PsiElement::delete)
         }
         return context.copy(
-            importRefCounter = counters.performAction { this.put(localPath, modifiedCounter.purgeUnusedImports()) },
+            importRefCounter = counters.performAction { this[localPath] = modifiedCounter.purgeUnusedImports() },
         )
     }
 
@@ -81,6 +81,6 @@ class FunctionDeletingLens : BasePsiLens<PsiStubDDItem, KtStub>() {
     }
 
     override fun createTrie(items: List<PsiStubDDItem>, context: IJDDContext) = PsiTrie.create(
-        items.flatMap { it.childrenElements + it }
+        items.flatMap { it.childrenElements + it },
     )
 }

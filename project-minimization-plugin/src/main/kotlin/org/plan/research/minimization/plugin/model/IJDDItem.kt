@@ -52,19 +52,6 @@ sealed interface PsiDDItem<T : PsiChildrenPathIndex> : IJDDItem {
 
 sealed interface PsiStubDDItem : PsiDDItem<KtStub> {
     val childrenElements: List<PsiStubDDItem>
-    data class NonOverriddenPsiStubDDItem(
-        override val localPath: Path,
-        override val childrenPath: List<KtStub>
-    ) : PsiStubDDItem {
-        override val childrenElements: List<PsiStubDDItem>
-            get() = emptyList()
-    }
-
-    data class OverriddenPsiStubDDItem(
-        override val localPath: Path,
-        override val childrenPath: List<KtStub>,
-        override val childrenElements: List<PsiStubDDItem>
-    ) : PsiStubDDItem
 
     companion object {
         val DELETABLE_PSI_INSIDE_FUNCTION_CLASSES: List<ClassKtExpression> = listOf(
@@ -77,11 +64,27 @@ sealed interface PsiStubDDItem : PsiDDItem<KtStub> {
                 KtProperty::class.java,
             )
     }
+    data class NonOverriddenPsiStubDDItem(
+        override val localPath: Path,
+        override val childrenPath: List<KtStub>,
+    ) : PsiStubDDItem {
+        override val childrenElements: List<PsiStubDDItem>
+            get() = emptyList()
+    }
+
+    data class OverriddenPsiStubDDItem(
+        override val localPath: Path,
+        override val childrenPath: List<KtStub>,
+        override val childrenElements: List<PsiStubDDItem>,
+    ) : PsiStubDDItem
 }
 
-data class IntChildrenIndex(val childrenIndex: Int) : PsiChildrenPathIndex, Comparable<IntChildrenIndex> {
+class IntChildrenIndex(val childrenIndex: Int) : PsiChildrenPathIndex, Comparable<IntChildrenIndex> {
     override fun getNext(element: PsiElement): PsiElement? = element.children[childrenIndex]
     override fun compareTo(other: IntChildrenIndex): Int = childrenIndex.compareTo(other.childrenIndex)
+    override fun equals(other: Any?) = childrenIndex == (other as? IntChildrenIndex)?.childrenIndex
+    override fun hashCode() = childrenIndex.hashCode()
+    override fun toString() = childrenIndex.toString()
 }
 
 data class PsiChildrenIndexDDItem(

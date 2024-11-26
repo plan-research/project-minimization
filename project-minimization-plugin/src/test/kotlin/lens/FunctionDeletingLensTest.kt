@@ -18,9 +18,11 @@ import kotlin.test.assertIs
 
 class FunctionDeletingLensTest : PsiLensTestBase<PsiStubDDItem, KtStub>() {
     override fun getLens() = FunctionDeletingLens()
-    override suspend fun getAllItems(context: IJDDContext) =
-        service<MinimizationPsiManagerService>()
+    override suspend fun getAllItems(context: IJDDContext): List<PsiStubDDItem> {
+        configureModules(context.indexProject)
+        return service<MinimizationPsiManagerService>()
             .findDeletablePsiItems(context)
+    }
 
     override fun getTestDataPath() = "src/test/resources/testData/function-deleting"
 
@@ -97,8 +99,8 @@ class FunctionDeletingLensTest : PsiLensTestBase<PsiStubDDItem, KtStub>() {
     }
 
     fun testStartImportMultiStage() {
-        return // FIXME
         myFixture.copyDirectoryToProject("project-import-star", ".")
+        configureModules(project)
         val context = runBlocking { LightIJDDContext(project).withImportRefCounter() }
         kotlin.test.assertNotNull(context.importRefCounter)
         assertIs<LightIJDDContext>(context)

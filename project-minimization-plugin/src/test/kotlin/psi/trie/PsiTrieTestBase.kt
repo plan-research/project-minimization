@@ -1,5 +1,6 @@
 package psi.trie
 
+import AbstractAnalysisKotlinTest
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.psi.PsiElement
@@ -18,7 +19,7 @@ import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.psi.trie.PsiTrie
 import kotlin.test.assertIs
 
-abstract class PsiTrieTestBase<ITEM, T> : JavaCodeInsightFixtureTestCase() where ITEM : PsiDDItem<T>, T : PsiChildrenPathIndex, T : Comparable<T>{
+abstract class PsiTrieTestBase<ITEM, T> : AbstractAnalysisKotlinTest() where ITEM : PsiDDItem<T>, T : PsiChildrenPathIndex, T : Comparable<T>{
     override fun getTestDataPath(): String {
         return "src/test/resources/testData/kotlin-psi"
     }

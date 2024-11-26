@@ -80,6 +80,7 @@ class PsiTrieModificationTest : PsiTrieTestBase<PsiChildrenIndexDDItem, IntChild
         expectedFile: String,
         filter: (PsiElement) -> Boolean,
     ) = runBlocking {
+        configureModules(project)
         val context = LightIJDDContext(project)
         val selectedPsi =
             selectElements(context) { readAction { filter(PsiUtils.getPsiElementFromItem(context, it)!!) } }

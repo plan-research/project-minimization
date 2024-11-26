@@ -16,6 +16,7 @@ import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
 import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
+import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.IntChildrenIndex
 import org.plan.research.minimization.plugin.model.LightIJDDContext
@@ -34,11 +35,14 @@ class FunctionModificationLensTest : PsiLensTestBase<PsiChildrenIndexDDItem, Int
     }
 
     override fun getLens() = FunctionModificationLens()
-    override suspend fun getAllItems(context: IJDDContext) =
-        service<MinimizationPsiManagerService>().findAllPsiWithBodyItems(context)
+    override suspend fun getAllItems(context: IJDDContext): List<PsiChildrenIndexDDItem> {
+        configureModules(context.indexProject)
+        return service<MinimizationPsiManagerService>().findAllPsiWithBodyItems(context)
+    }
 
     fun testProjectSimple() {
         myFixture.copyDirectoryToProject("project-simple", ".")
+        configureModules(project)
         val context = LightIJDDContext(project)
         runBlocking { doTest(context, emptyList(), "project-simple-modified") }
     }
@@ -46,6 +50,7 @@ class FunctionModificationLensTest : PsiLensTestBase<PsiChildrenIndexDDItem, Int
     fun testMultipleFilesProject() {
         val root = myFixture.copyDirectoryToProject("project-multiple-files", ".")
         val context = LightIJDDContext(project)
+        configureModules(project)
         runBlocking {
             val elementsA = getAllElements(context, root.findFile("a.kt")!!)
             val elementsB = getAllElements(context, root.findFile("b.kt")!!)
@@ -68,6 +73,7 @@ class FunctionModificationLensTest : PsiLensTestBase<PsiChildrenIndexDDItem, Int
 
     fun testMultiStageProject() {
         val root = myFixture.copyDirectoryToProject("project-multi-stage", ".")
+        configureModules(project)
         val context = LightIJDDContext(project)
         runBlocking {
             val elementsA = getAllElements(context, root.findFile("a.kt")!!)
@@ -91,11 +97,16 @@ class FunctionModificationLensTest : PsiLensTestBase<PsiChildrenIndexDDItem, Int
         }
     }
 
-    override suspend fun doTest(context: LightIJDDContext, elements: List<PsiChildrenIndexDDItem>, expectedFolder: String): LightIJDDContext {
+    override suspend fun doTest(
+        context: LightIJDDContext,
+        elements: List<PsiChildrenIndexDDItem>,
+        expectedFolder: String
+    ): LightIJDDContext {
         val projectCloningService = project.service<ProjectCloningService>()
         val psiGetterService = service<MinimizationPsiManagerService>()
         var cloned = projectCloningService.clone(context)
         kotlin.test.assertNotNull(cloned)
+        configureModules(cloned.indexProject)
         val lens = FunctionModificationLens()
         val items = psiGetterService.findAllPsiWithBodyItems(cloned)
         cloned = cloned.copy(currentLevel = items)
@@ -123,6 +134,7 @@ class FunctionModificationLensTest : PsiLensTestBase<PsiChildrenIndexDDItem, Int
     }
 
     override suspend fun getAllElements(context: IJDDContext, vfs: VirtualFile): List<PsiChildrenIndexDDItem> {
+        configureModules(context.indexProject)
         val service = service<MinimizationPsiManagerService>()
         val elements = service.findAllPsiWithBodyItems(context)
         val vfsRelativePath = context.projectDir.toNioPath().relativize(vfs.toNioPath())

@@ -95,7 +95,7 @@ class RootsManagerService {
             .state
             .ignorePaths
         val ignoreRoots: List<VirtualFile> = ignorePaths.mapNotNull { relativePath ->
-            VfsUtil.findRelativeFile(context.indexProjectDir, *relativePath.split("/").toTypedArray())
+            context.indexProjectDir.findFileByRelativePath(relativePath)
         }
 
         val mergedRoots = propagateAndMergeRoots(contentRoots, srcRoots, sourceRoots, ignoreRoots).takeIf { it.isNotEmpty() }

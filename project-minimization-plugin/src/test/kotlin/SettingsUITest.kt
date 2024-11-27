@@ -1,4 +1,5 @@
 import com.intellij.openapi.components.service
+import com.intellij.openapi.project.guessProjectDir
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.state.*
@@ -77,8 +78,8 @@ class SettingsUITest : BasePlatformTestCase() {
     }
 
     fun testIgnoreList() {
-        component.ignorePaths = listOf("/Users/Roman.Vsemirnov/Desktop/project-minimization/project-minimization-plugin/build.gradle.kts")
+        component.ignorePaths = listOf(project.guessProjectDir()!!.toString())
         assertEquals(1, component.ignorePaths.size)
-        assertEquals("/Users/Roman.Vsemirnov/Desktop/project-minimization/project-minimization-plugin/build.gradle.kts", component.ignorePaths[0])
+        assertEquals(project.guessProjectDir()!!.toString(), component.ignorePaths[0])
     }
 }

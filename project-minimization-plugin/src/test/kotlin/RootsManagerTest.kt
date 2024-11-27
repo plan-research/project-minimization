@@ -405,5 +405,5 @@ abstract class RootsManagerTest<C : IJDDContext> : JavaCodeInsightFixtureTestCas
     }
 }
 
-class ExampleLightTest : RootsManagerTest<LightIJDDContext>(), TestWithContext<LightIJDDContext> by TestWithLightContext()
-class ExampleHeavyTest : RootsManagerTest<HeavyIJDDContext>(), TestWithContext<HeavyIJDDContext> by TestWithHeavyContext()
+class RootsManagerLightTest : RootsManagerTest<LightIJDDContext>(), TestWithContext<LightIJDDContext> by TestWithLightContext()
+class RootsManagerHeavyTest : RootsManagerTest<HeavyIJDDContext>(), TestWithContext<HeavyIJDDContext> by TestWithHeavyContext()

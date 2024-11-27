@@ -19,10 +19,11 @@ import java.awt.BorderLayout
 import java.util.*
 import javax.swing.*
 import javax.swing.table.DefaultTableModel
+import kotlin.io.path.relativeTo
 
 @Suppress("NO_CORRESPONDING_PROPERTY")
 class AppSettingsComponent(project: Project) {
-    private val projectBaseDir = project.basePath ?: ""
+    private val projectBaseDir = project.guessProjectDir()!!
     private val myMainPanel: JPanel
 
     // Fields from MinimizationPluginState
@@ -178,10 +179,10 @@ class AppSettingsComponent(project: Project) {
         }
 
     var ignorePaths: List<String>
-        get() = (0 until pathTableModel.rowCount).map { toRelativePath(pathTableModel.getValueAt(it, 0).toString()) }
+        get() = (0 until pathTableModel.rowCount).map { pathTableModel.getValueAt(it, 0).toString() }
         set(value) {
             pathTableModel.rowCount = 0  // clean table
-            value.forEach { pathTableModel.addRow(arrayOf(toAbsolutePath(it))) }  // add paths
+            value.forEach { pathTableModel.addRow(arrayOf(it)) }  // add paths
         }
 
     private var isFunctionStageEnabled: Boolean
@@ -258,9 +259,13 @@ class AppSettingsComponent(project: Project) {
             .setAddAction {
                 val chosenFiles = FileChooser.chooseFiles(fileChooserDescriptor, null, null)
                 for (file in chosenFiles) {
-                    val path = file.path
-                    if ((0 until pathTableModel.rowCount).none { pathTableModel.getValueAt(it, 0) == path }) {
-                        pathTableModel.addRow(arrayOf(path))
+                    // val absolutePath = Paths.get(file.path)
+                    // val projectPath = Paths.get(projectBaseDir)
+                    // val relativePath = projectPath.relativize(absolutePath).toString()
+                    val relativePath = file.toNioPath().relativeTo(projectBaseDir.toNioPath())
+
+                    if ((0 until pathTableModel.rowCount).none { pathTableModel.getValueAt(it, 0) == relativePath }) {
+                        pathTableModel.addRow(arrayOf(relativePath))
                     }
                 }
             }
@@ -275,18 +280,6 @@ class AppSettingsComponent(project: Project) {
         return JPanel(BorderLayout()).apply {
             add(toolbarDecoratorPanel, BorderLayout.CENTER)
         }
-    }
-
-    private fun toRelativePath(absolutePath: String): String = if (projectBaseDir.isNotBlank() && absolutePath.startsWith(projectBaseDir)) {
-        absolutePath.removePrefix("$projectBaseDir/")  // Убираем корневую директорию
-    } else {
-        absolutePath
-    }
-
-    private fun toAbsolutePath(relativePath: String): String = if (projectBaseDir.isNotBlank()) {
-        "$projectBaseDir/$relativePath"
-    } else {
-        relativePath
     }
 
     private fun updateUIState() {

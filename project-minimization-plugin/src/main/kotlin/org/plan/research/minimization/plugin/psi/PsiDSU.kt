@@ -32,13 +32,13 @@ class PsiDSU<T, R>(private val availableElements: List<Pair<T, R>>, private val 
         if (leftParent == rightParent) {
             return
         }
-        if (ranks[leftIndex] == ranks[rightIndex]) {
-            ranks[leftIndex]++
+        if (ranks[leftParent] == ranks[rightParent]) {
+            ranks[leftParent]++
         }
-        val (newParent, newChild) = if (ranks[leftIndex] < ranks[rightIndex]) {
-            rightIndex to leftIndex
+        val (newParent, newChild) = if (ranks[leftParent] < ranks[rightParent]) {
+            rightParent to leftParent
         } else {
-            leftIndex to rightIndex
+            leftParent to rightParent
         }
         parents[newChild] = newParent
         if (compareFunction(representativeElement[newParent], representativeElement[newChild]) > 0) {
@@ -46,5 +46,5 @@ class PsiDSU<T, R>(private val availableElements: List<Pair<T, R>>, private val 
         }
     }
 
-    fun representativeElementOf(element: T) = elementToIndexMap[element]?.let { representativeElement[it] }
+    fun representativeElementOf(element: T) = elementToIndexMap[element]?.let { representativeElement[getParent(it)] }
 }

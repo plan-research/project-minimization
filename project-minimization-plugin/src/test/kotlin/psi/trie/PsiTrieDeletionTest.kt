@@ -4,10 +4,13 @@ import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.service
 import com.intellij.psi.PsiElement
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.kotlin.idea.util.isComma
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtProperty
+import org.jetbrains.plugins.groovy.lang.psi.util.isWhiteSpaceOrNewLine
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.PsiStubDDItem
@@ -90,6 +93,14 @@ class PsiTrieDeletionTest : PsiTrieTestBase<PsiStubDDItem, KtStub>() {
         }
     }
 
+    fun testValueParameters() {
+        val psiFile = loadPsiFile("function-variable.kt", "function-variable-2.kt")
+        doTest(
+            psiFile,
+            "fun-var-2.kt"
+        ) { runBlocking { readAction { (it is KtParameter && it.name == "x") } } }
+    }
+
     private fun doTest(
         psiFile: KtFile,
         expectedFile: String,
@@ -97,7 +108,13 @@ class PsiTrieDeletionTest : PsiTrieTestBase<PsiStubDDItem, KtStub>() {
     ) = runBlocking {
         val context = LightIJDDContext(project)
         val selectedPsi = readAction { runBlocking { selectElements(context) { filter(it.psi(context)!!) } } }
-        super.doTest(psiFile, selectedPsi) { _, it -> it.delete() }
+        super.doTest(psiFile, selectedPsi) { _, it ->
+            var nextSibling = it.nextSibling
+            it.delete()
+            if (nextSibling?.isComma == true) {
+                nextSibling.delete()
+            }
+        }
         val expectedFile = myFixture.configureByFile("deletion-results/$expectedFile")
         assertIs<KtFile>(expectedFile)
         readAction {
@@ -111,7 +128,7 @@ class PsiTrieDeletionTest : PsiTrieTestBase<PsiStubDDItem, KtStub>() {
     private fun PsiStubDDItem.psi(context: IJDDContext) =
         PsiUtils.getPsiElementFromItem(context, this)
 
-     override suspend fun getAllElements(context: IJDDContext): List<PsiStubDDItem> {
+    override suspend fun getAllElements(context: IJDDContext): List<PsiStubDDItem> {
         val service = service<MinimizationPsiManagerService>()
         return service.findDeletablePsiItems(context)
     }

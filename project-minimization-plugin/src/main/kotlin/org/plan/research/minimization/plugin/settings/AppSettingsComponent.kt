@@ -1,22 +1,21 @@
 package org.plan.research.minimization.plugin.settings
 
-import com.intellij.openapi.fileChooser.FileChooser
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.MinimizationStage
 import org.plan.research.minimization.plugin.model.state.*
+
+import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
-
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.ToolbarDecorator
 import com.intellij.ui.components.*
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.FormBuilder
-import com.intellij.util.ui.JBUI
-import java.awt.BorderLayout
 
+import java.awt.BorderLayout
 import java.util.*
 import javax.swing.*
 import javax.swing.table.DefaultTableModel
@@ -85,14 +84,12 @@ class AppSettingsComponent(project: Project) {
     private val pathTable = JBTable(pathTableModel).apply {
         setShowGrid(false)
         setEnableAntialiasing(true)
-        emptyText.text = "Exclude files/directories" // text for empty table
-        preferredScrollableViewportSize = JBUI.size(700, -1) // size of the scrollable window
-        selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION // allow single selection
+        emptyText.text = "Exclude files/directories"  // text for empty table
+        selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION  // allow single selection
     }
-
     private val fileChooserDescriptor = FileChooserDescriptor(
-        true, true, false, true, false, true
-    ).withRoots(project.guessProjectDir()!!)/*.withRoots(project.guessProjectDir()!!)*/
+        true, true, false, true, false, true,
+    ).withRoots(project.guessProjectDir()!!)
 
     var isFrozen: Boolean = false
         set(value) {
@@ -183,8 +180,8 @@ class AppSettingsComponent(project: Project) {
     var ignorePaths: List<String>
         get() = (0 until pathTableModel.rowCount).map { toRelativePath(pathTableModel.getValueAt(it, 0).toString()) }
         set(value) {
-            pathTableModel.rowCount = 0 // clean table
-            value.forEach { pathTableModel.addRow(arrayOf(toAbsolutePath(it))) } // add paths
+            pathTableModel.rowCount = 0  // clean table
+            value.forEach { pathTableModel.addRow(arrayOf(toAbsolutePath(it))) }  // add paths
         }
 
     private var isFunctionStageEnabled: Boolean
@@ -252,7 +249,7 @@ class AppSettingsComponent(project: Project) {
 
     private fun createPathPanel(): JPanel {
         pathTable.columnModel.getColumn(0).apply {
-            preferredWidth = 700 // Width of first column
+            preferredWidth = 700  // Width of first column
         }
 
         val toolbarDecoratorPanel = ToolbarDecorator.createDecorator(pathTable)
@@ -280,22 +277,17 @@ class AppSettingsComponent(project: Project) {
         }
     }
 
-    private fun toRelativePath(absolutePath: String): String {
-        return if (projectBaseDir.isNotBlank() && absolutePath.startsWith(projectBaseDir)) {
-            absolutePath.removePrefix("$projectBaseDir/") // Убираем корневую директорию
-        } else {
-            absolutePath
-        }
+    private fun toRelativePath(absolutePath: String): String = if (projectBaseDir.isNotBlank() && absolutePath.startsWith(projectBaseDir)) {
+        absolutePath.removePrefix("$projectBaseDir/")  // Убираем корневую директорию
+    } else {
+        absolutePath
     }
 
-    private fun toAbsolutePath(relativePath: String): String {
-        return if (projectBaseDir.isNotBlank()) {
-            "$projectBaseDir/$relativePath"
-        } else {
-            relativePath
-        }
+    private fun toAbsolutePath(relativePath: String): String = if (projectBaseDir.isNotBlank()) {
+        "$projectBaseDir/$relativePath"
+    } else {
+        relativePath
     }
-
 
     private fun updateUIState() {
         compilationStrategyComboBox.isEnabled = !isFrozen

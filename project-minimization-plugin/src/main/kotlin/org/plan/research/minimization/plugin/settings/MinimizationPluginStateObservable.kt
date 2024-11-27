@@ -33,7 +33,6 @@ data class MinimizationPluginStateObservable(private val stateGetter: () -> Mini
         getter = { stateGetter().minimizationTransformations },
         setter = { stateGetter().minimizationTransformations = it },
     )
-
     var ignorePaths = StateDelegate(
         getter = { stateGetter().ignorePaths },
         setter = { stateGetter().ignorePaths = it },

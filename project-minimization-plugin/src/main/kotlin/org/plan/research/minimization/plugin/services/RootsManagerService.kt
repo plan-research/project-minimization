@@ -1,13 +1,16 @@
 package org.plan.research.minimization.plugin.services
 
+import org.plan.research.minimization.plugin.model.IJDDContext
+
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import mu.KotlinLogging
-import org.plan.research.minimization.plugin.model.IJDDContext
+
 import java.nio.file.Path
+
 import kotlin.io.path.relativeTo
 
 @Service(Service.Level.APP)
@@ -18,7 +21,7 @@ class RootsManagerService {
         contentRoots: List<VirtualFile>,
         srcRoots: List<VirtualFile>,
         sourceRoots: List<VirtualFile>,
-        ignoreRoots: List<VirtualFile>
+        ignoreRoots: List<VirtualFile>,
     ): List<VirtualFile> {
         // propagate src roots (replace them with their children) if it contains any content root
         val propagationStatus = HashMap<VirtualFile, PropagationStatus>()
@@ -48,7 +51,7 @@ class RootsManagerService {
 
         val sourceRootsToAdd = sourceRoots.filter { sourceRoot ->
             roots.none { src -> VfsUtil.isAncestor(src, sourceRoot, false) } &&
-            ignoreRoots.none { VfsUtil.isAncestor(it, sourceRoot, false) }
+                ignoreRoots.none { VfsUtil.isAncestor(it, sourceRoot, false) }
         }
 
         roots.addAll(propagateSourceRoots(sourceRootsToAdd, ignoreRoots, propagationStatus))
@@ -59,7 +62,7 @@ class RootsManagerService {
     private fun propagateSourceRoots(
         srcRoots: List<VirtualFile>,
         ignoreRoots: List<VirtualFile>,
-        propagationStatus: HashMap<VirtualFile, PropagationStatus>
+        propagationStatus: HashMap<VirtualFile, PropagationStatus>,
     ): List<VirtualFile> {
         val queue = ArrayDeque<VirtualFile>()
         queue.addAll(srcRoots.filter { srcRoot ->
@@ -88,7 +91,9 @@ class RootsManagerService {
         val contentRoots = rootManager.contentRoots.toList()
         val srcRoots = contentRoots.mapNotNull { it.findChild("src") }
 
-        val ignorePaths: List<String> = context.originalProject.service<MinimizationPluginSettings>().state.ignorePaths
+        val ignorePaths: List<String> = context.originalProject.service<MinimizationPluginSettings>()
+            .state
+            .ignorePaths
         val ignoreRoots: List<VirtualFile> = ignorePaths.mapNotNull { relativePath ->
             VfsUtil.findRelativeFile(context.indexProjectDir, *relativePath.split("/").toTypedArray())
         }

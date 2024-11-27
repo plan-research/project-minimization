@@ -1,5 +1,6 @@
 package psi.manager
 
+import AbstractAnalysisKotlinTest
 import arrow.core.compareTo
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import org.plan.research.minimization.plugin.model.IJDDContext
@@ -7,7 +8,7 @@ import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
 import org.plan.research.minimization.plugin.model.PsiDDItem
 import org.plan.research.minimization.plugin.psi.PsiUtils
 
-abstract class MinimizationPsiManagerTestBase : JavaCodeInsightFixtureTestCase() {
+abstract class MinimizationPsiManagerTestBase : AbstractAnalysisKotlinTest() {
     override fun getTestDataPath(): String {
         return "src/test/resources/testData/kotlin-psi"
     }

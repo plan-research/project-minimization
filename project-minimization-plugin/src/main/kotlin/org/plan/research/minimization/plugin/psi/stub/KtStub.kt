@@ -10,6 +10,9 @@ import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtClassBody
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtObjectDeclaration
+import org.jetbrains.kotlin.psi.KtParameter
+import org.jetbrains.kotlin.psi.KtParameterList
+import org.jetbrains.kotlin.psi.KtPrimaryConstructor
 import org.jetbrains.kotlin.psi.KtProperty
 
 abstract class KtStub : PsiChildrenPathIndex, Comparable<KtStub> {
@@ -40,6 +43,9 @@ abstract class KtStub : PsiChildrenPathIndex, Comparable<KtStub> {
                 is KtClassBody -> KtClassBodyStub
                 is KtBlockExpression -> KtBlockExpressionStub
                 is KtObjectDeclaration -> KtObjectStub.create(element)
+                is KtPrimaryConstructor -> KtPrimaryConstructorStub
+                is KtParameter -> KtParameterStub.create(element)
+                is KtParameterList -> KtParameterListStub
                 else -> raise(None)
             }
         }

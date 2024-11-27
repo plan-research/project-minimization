@@ -11,6 +11,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import mu.KotlinLogging
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
+import org.jetbrains.kotlin.idea.util.isComma
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
 
@@ -22,7 +23,13 @@ class FunctionDeletingLens : BasePsiLens<PsiStubDDItem, KtStub>() {
         item: PsiStubDDItem,
         psiElement: PsiElement,
         context: IJDDContext,
-    ) = psiElement.delete()
+    ) {
+        val nextSibling = psiElement.nextSibling
+        psiElement.delete()
+        if (nextSibling?.isComma == true) {
+            nextSibling.delete()
+        }
+    }
 
     override fun getWriteCommandActionName(
         psiFile: KtFile,

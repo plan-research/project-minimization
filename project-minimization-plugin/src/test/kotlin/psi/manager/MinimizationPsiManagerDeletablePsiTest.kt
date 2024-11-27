@@ -42,8 +42,9 @@ class MinimizationPsiManagerDeletablePsiTest : MinimizationPsiManagerTestBase() 
             service.findDeletablePsiItems(context)
         }
         val psi = runBlocking { readAction { elements.getPsi(context) } }
-        assertSize(4, psi)
-        val (fn, clazz, var2, var1) = psi
+        assertSize(6, psi)
+        val (fn, clazz, classVar1, classVar2, var2) = psi
+        val var1 = psi[5]
         runBlocking {
             readAction {
                 assertIs<KtNamedFunction>(fn)
@@ -56,6 +57,12 @@ class MinimizationPsiManagerDeletablePsiTest : MinimizationPsiManagerTestBase() 
                 assertEquals("z", var1.name)
                 assertIs<KtProperty>(var2)
                 assertEquals("x", var2.name)
+
+                assertIs<KtParameter>(classVar1)
+                assertEquals("x", classVar1.name)
+
+                assertIs<KtParameter>(classVar2)
+                assertEquals("y", classVar2.name)
             }
         }
     }

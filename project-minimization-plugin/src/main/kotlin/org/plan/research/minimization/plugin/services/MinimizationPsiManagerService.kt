@@ -28,6 +28,8 @@ import org.jetbrains.kotlin.config.TestSourceKotlinRootType
 import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.psi.KtElement
 
+import org.jetbrains.kotlin.psi.KtPrimaryConstructor
+import org.jetbrains.kotlin.psi.KtValVarKeywordOwner
 import kotlin.collections.singleOrNull
 import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
@@ -63,7 +65,7 @@ class MinimizationPsiManagerService {
             val nonStructuredItems = findPsiInKotlinFiles(context, PsiStubDDItem.DELETABLE_PSI_JAVA_CLASSES)
                 .mapNotNull { psiElement ->
                     PsiUtils.buildDeletablePsiItem(context, psiElement).getOrNull()?.let { psiElement to it }
-                }
+                } + getPrimaryConstructorProperties(context)
 
             val dsu = PsiDSU<KtElement, PsiStubDDItem>(nonStructuredItems) { lhs, rhs ->
                 lhs.childrenPath.size
@@ -146,6 +148,19 @@ class MinimizationPsiManagerService {
                     item.childrenPath,
                     clazz.filter { it != item },
                 )
+            }
+            .toList()
+    }
+
+    private fun getPrimaryConstructorProperties(context: IJDDContext): List<CoreDsuElement> {
+        val primaryConstructors = findPsiInKotlinFiles(context, listOf(KtPrimaryConstructor::class.java))
+        return primaryConstructors
+            .asSequence()
+            .flatMap { it.valueParameters }
+            .filterIsInstance<KtValVarKeywordOwner>()
+            .filterIsInstance<KtElement>()
+            .mapNotNull { psiElement ->
+                PsiUtils.buildDeletablePsiItem(context, psiElement).getOrNull()?.let { psiElement to it }
             }
             .toList()
     }

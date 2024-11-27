@@ -42,11 +42,20 @@ class RootsManagerService {
             }
         }
 
+        val sourceRootsToAdd = sourceRoots.filter { sourceRoot ->
+            srcRoots.none { src -> VfsUtil.isAncestor(src, sourceRoot, false) }
+        }
+
+        val srcRootsToAdd = srcRoots.filter { scrRoot ->
+            sourceRootsToAdd.none { source -> VfsUtil.isAncestor(source, scrRoot, false) }
+        }
+
         // Check if src is a child of any Ignore Root, don't add it in that case
         val queue = ArrayDeque<VirtualFile>()
-        queue.addAll(srcRoots.filter { srcRoot ->
+        queue.addAll((srcRootsToAdd + sourceRootsToAdd).filter { srcRoot ->
             ignoreRoots.none { VfsUtil.isAncestor(it, srcRoot, false) }
         })
+
 
         val roots = mutableListOf<VirtualFile>()
         while (queue.isNotEmpty()) {
@@ -60,13 +69,6 @@ class RootsManagerService {
             }
         }
 
-        // delete all sourceRoots that are in any of the already added roots or in any of Ignore Roots
-        val sourceRootsToAdd = sourceRoots.filter { sourceRoot ->
-            roots.none { src -> VfsUtil.isAncestor(src, sourceRoot, false) } &&
-            ignoreRoots.none { VfsUtil.isAncestor(it, sourceRoot, false) }
-        }
-        roots.addAll(sourceRootsToAdd)
-
         return roots
     }
 
@@ -77,7 +79,6 @@ class RootsManagerService {
         val contentRoots = rootManager.contentRoots.toList()
         val srcRoots = contentRoots.mapNotNull { it.findChild("src") }
 
-        // get list of Virtual Files using full string paths at ignorePaths
         val ignorePaths: List<String> = context.originalProject.service<MinimizationPluginSettings>().state.ignorePaths
         val ignoreRoots: List<VirtualFile> = ignorePaths.mapNotNull { relativePath ->
             VfsUtil.findRelativeFile(context.indexProjectDir, *relativePath.split("/").toTypedArray())

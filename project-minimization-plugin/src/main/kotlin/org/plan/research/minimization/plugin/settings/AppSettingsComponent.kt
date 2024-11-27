@@ -81,11 +81,11 @@ class AppSettingsComponent(project: Project) {
     }
 
     // ignore files
-    private val pathTableModel = DefaultTableModel(arrayOf<Array<Any>>(), arrayOf("Ignore files for minimization plugin"))
+    private val pathTableModel = DefaultTableModel(arrayOf<Array<Any>>(), arrayOf("Exclude from minimization"))
     private val pathTable = JBTable(pathTableModel).apply {
         setShowGrid(false)
         setEnableAntialiasing(true)
-        emptyText.text = "ignored files" // text for empty table
+        emptyText.text = "Exclude files/directories" // text for empty table
         preferredScrollableViewportSize = JBUI.size(700, -1) // size of the scrollable window
         selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION // allow single selection
     }

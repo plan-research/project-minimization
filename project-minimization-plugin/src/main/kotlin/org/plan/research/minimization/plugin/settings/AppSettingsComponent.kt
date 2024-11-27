@@ -239,6 +239,9 @@ class AppSettingsComponent(project: Project) {
             .addSeparator()
             .addLabeledComponent(JBLabel("Transformations:"), createTransformationPanel(), 1, false)
             .addSeparator()
+            .addComponent(JBLabel("Add here directories/files of your project if you are sure that they are important or can not be minimized").apply {
+                border = BorderFactory.createEmptyBorder(10, 0, 10, 0)
+            })
             .addComponent(pathsPanel)
             .addSeparator()
             .addComponentFillVertically(JPanel(), 0)

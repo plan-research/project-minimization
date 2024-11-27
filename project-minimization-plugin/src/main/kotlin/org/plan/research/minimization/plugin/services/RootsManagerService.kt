@@ -42,20 +42,29 @@ class RootsManagerService {
             }
         }
 
+        val roots = mutableListOf<VirtualFile>()
+
+        roots.addAll(propagateSourceRoots(srcRoots, ignoreRoots, propagationStatus))
+
         val sourceRootsToAdd = sourceRoots.filter { sourceRoot ->
-            srcRoots.none { src -> VfsUtil.isAncestor(src, sourceRoot, false) }
+            roots.none { src -> VfsUtil.isAncestor(src, sourceRoot, false) } &&
+            ignoreRoots.none { VfsUtil.isAncestor(it, sourceRoot, false) }
         }
 
-        val srcRootsToAdd = srcRoots.filter { scrRoot ->
-            sourceRootsToAdd.none { source -> VfsUtil.isAncestor(source, scrRoot, false) }
-        }
+        roots.addAll(propagateSourceRoots(sourceRootsToAdd, ignoreRoots, propagationStatus))
 
-        // Check if src is a child of any Ignore Root, don't add it in that case
+        return roots
+    }
+
+    private fun propagateSourceRoots(
+        srcRoots: List<VirtualFile>,
+        ignoreRoots: List<VirtualFile>,
+        propagationStatus: HashMap<VirtualFile, PropagationStatus>
+    ): List<VirtualFile> {
         val queue = ArrayDeque<VirtualFile>()
-        queue.addAll((srcRootsToAdd + sourceRootsToAdd).filter { srcRoot ->
+        queue.addAll(srcRoots.filter { srcRoot ->
             ignoreRoots.none { VfsUtil.isAncestor(it, srcRoot, false) }
         })
-
 
         val roots = mutableListOf<VirtualFile>()
         while (queue.isNotEmpty()) {

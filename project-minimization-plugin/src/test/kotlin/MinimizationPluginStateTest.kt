@@ -1,7 +1,7 @@
 import com.intellij.openapi.components.service
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import org.plan.research.minimization.plugin.model.FileLevelStage
-import org.plan.research.minimization.plugin.model.FunctionLevelBodyReplacementStage
+import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.state.*
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.settings.loadStateFromFile
@@ -32,7 +32,7 @@ class MinimizationPluginStateTest : BasePlatformTestCase() {
         )
         assertEquals(
             listOf(
-                FunctionLevelBodyReplacementStage(
+                FunctionLevelStage(
                     ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
                 ),
                 FileLevelStage(

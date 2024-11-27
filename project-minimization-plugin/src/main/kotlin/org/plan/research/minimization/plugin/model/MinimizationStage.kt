@@ -19,12 +19,12 @@ interface MinimizationStageExecutor {
 
     suspend fun executeFunctionLevelStage(
         context: HeavyIJDDContext,
-        functionLevelBodyReplacementStage: FunctionLevelBodyReplacementStage,
+        functionLevelStage: FunctionLevelStage,
     ): Either<MinimizationError, IJDDContext>
 
-    suspend fun executeFunctionDeletingStage(
+    suspend fun executeDeclarationLevelStage(
         context: HeavyIJDDContext,
-        functionDeletingStage: FunctionDeletingStage,
+        declarationLevelStage: DeclarationLevelStage,
     ): Either<MinimizationError, IJDDContext>
 }
 
@@ -62,8 +62,8 @@ data class FileLevelStage(
         executor.executeFileLevelStage(context, this)
 }
 
-@Tag("functionLevelBodyReplacementStage")
-data class FunctionLevelBodyReplacementStage(
+@Tag("functionLevelStage")
+data class FunctionLevelStage(
     @Property val ddAlgorithm: DDStrategy = DDStrategy.PROBABILISTIC_DD,
 ) : MinimizationStage {
     override val name: String = "Body Replacement Algorithm"
@@ -74,8 +74,8 @@ data class FunctionLevelBodyReplacementStage(
     ): Either<MinimizationError, IJDDContext> = executor.executeFunctionLevelStage(context, this)
 }
 
-@Tag("functionDeletingStage")
-data class FunctionDeletingStage(
+@Tag("declarationLevelStage")
+data class DeclarationLevelStage(
     @Property val ddAlgorithm: DDStrategy,
 ) : MinimizationStage {
     override val name: String = "Function Deleting Algorithm"
@@ -83,5 +83,5 @@ data class FunctionDeletingStage(
     override suspend fun apply(
         context: HeavyIJDDContext,
         executor: MinimizationStageExecutor,
-    ): Either<MinimizationError, IJDDContext> = executor.executeFunctionDeletingStage(context, this)
+    ): Either<MinimizationError, IJDDContext> = executor.executeDeclarationLevelStage(context, this)
 }

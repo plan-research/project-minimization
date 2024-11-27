@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.settings
 
 import org.plan.research.minimization.plugin.model.FileLevelStage
-import org.plan.research.minimization.plugin.model.FunctionLevelBodyReplacementStage
+import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.MinimizationStage
 import org.plan.research.minimization.plugin.model.state.*
 
@@ -118,7 +118,7 @@ class AppSettingsComponent {
     var stages: List<MinimizationStage>
         get() = buildList {
             if (functionStageCheckBox.isSelected) {
-                add(FunctionLevelBodyReplacementStage(functionDDStrategy))
+                add(FunctionLevelStage(functionDDStrategy))
             }
             if (fileStageCheckBox.isSelected) {
                 add(
@@ -130,10 +130,10 @@ class AppSettingsComponent {
             }
         }
         set(value) {
-            functionStageCheckBox.isSelected = value.any { it is FunctionLevelBodyReplacementStage }
+            functionStageCheckBox.isSelected = value.any { it is FunctionLevelStage }
             functionDDStrategy = value
-                .find { it is FunctionLevelBodyReplacementStage }
-                ?.let { (it as FunctionLevelBodyReplacementStage).ddAlgorithm }
+                .find { it is FunctionLevelStage }
+                ?.let { (it as FunctionLevelStage).ddAlgorithm }
                 ?: DDStrategy.PROBABILISTIC_DD
 
             fileStageCheckBox.isSelected = value.any { it is FileLevelStage }
@@ -298,24 +298,6 @@ class AppSettingsComponent {
     private fun updateFunctionStageSettingsEnabled() {
         val isEnabled = functionStageCheckBox.isSelected
         functionDDAlgorithmComboBox.isEnabled = isEnabled
-    }
-
-    private fun updateStages() {
-        stages = mutableListOf<MinimizationStage>().apply {
-            if (functionStageCheckBox.isSelected) {
-                add(FunctionLevelBodyReplacementStage(
-                    functionDDAlgorithmComboBox.selectedItem as DDStrategy,
-                ),
-                )
-            }
-            if (fileStageCheckBox.isSelected) {
-                add(FileLevelStage(
-                    fileHierarchyStrategyComboBox.selectedItem as HierarchyCollectionStrategy,
-                    fileDDAlgorithmComboBox.selectedItem as DDStrategy,
-                ),
-                )
-            }
-        }.toList()
     }
 
     private fun createTransformationPanel(): JPanel = JPanel().apply {

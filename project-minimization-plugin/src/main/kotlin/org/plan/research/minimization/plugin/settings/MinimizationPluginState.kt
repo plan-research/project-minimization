@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.settings
 
 import org.plan.research.minimization.plugin.model.FileLevelStage
-import org.plan.research.minimization.plugin.model.FunctionLevelBodyReplacementStage
+import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.MinimizationStage
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.model.state.ExceptionComparingStrategy
@@ -27,7 +27,7 @@ class MinimizationPluginState : BaseState() {
     @get:XCollection(
         style = XCollection.Style.v1,
         elementName = "stage",
-        elementTypes = [FunctionLevelBodyReplacementStage::class, FileLevelStage::class],
+        elementTypes = [FunctionLevelStage::class, FileLevelStage::class],
     )
     var stages by property(defaultStages) { it == defaultStages }
 
@@ -37,7 +37,7 @@ class MinimizationPluginState : BaseState() {
 
     companion object {
         private val defaultStages: List<MinimizationStage> = listOf(
-            FunctionLevelBodyReplacementStage(),
+            FunctionLevelStage(),
             FileLevelStage(),
         )
         private val defaultTransformations: List<TransformationDescriptors> = listOf(

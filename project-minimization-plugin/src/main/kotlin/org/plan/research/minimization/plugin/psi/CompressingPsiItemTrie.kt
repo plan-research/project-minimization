@@ -16,10 +16,12 @@ private typealias NextAdjacentNodes<I, T> = MutableMap<T, NextPsiDDItemInfo<I, T
 /**
  * The Trie that is designed to compress the children's path of the PSI item to quickly lookup for the child PSI DD element in the PSI tree
  */
-class CompressingPsiItemTrie<I, T : PsiChildrenPathIndex> private constructor() where I : PsiDDItem<T> {
+class CompressingPsiItemTrie<I, T> private constructor() where I : PsiDDItem<T>, T : PsiChildrenPathIndex {
     private val children: AdjacentNodes<I, T> = mutableMapOf()
     private val logger = KotlinLogging.logger {}
-    private val nextItem: NextAdjacentNodes<I, T> = mutableMapOf()
+    private val closestPsiItems: NextAdjacentNodes<I, T> = mutableMapOf()
+    var maxDepth: Int = 0
+        private set
     private var correspondingItem: I? = null
 
     /**
@@ -28,18 +30,19 @@ class CompressingPsiItemTrie<I, T : PsiChildrenPathIndex> private constructor() 
      *
      * @return A list containing the next items in the trie.
      */
-    fun getNextItems() = nextItem.values.toList()
+    fun getNextItems() = closestPsiItems.values.toList()
 
     private fun add(item: I, depth: Int = 0): NextPsiDDItemInfo<I, T> {
         if (depth == item.childrenPath.size) {
             require(correspondingItem == null)
             correspondingItem = item
+            maxDepth = maxDepth.coerceAtLeast(depth)
             return NextPsiDDItemInfo(this, item, depth)
         }
         val edge = item.childrenPath[depth]
         val nextNode = children.getOrPut(edge) { CompressingPsiItemTrie() }
         val addedNode = nextNode.add(item, depth + 1)
-        nextItem.compute(edge) { _, previousValue ->
+        closestPsiItems.compute(edge) { _, previousValue ->
             if (previousValue == null || previousValue.depth > addedNode.depth) {
                 addedNode
             } else {

@@ -6,7 +6,7 @@ TODO
 
 TODO
 
-## Function-level body replacement stage
+## Function-level stage
 
 Currently, the function stage is implemented as a DD algorithm that tries to minimize the number of the top-level
 elements with body.
@@ -26,7 +26,7 @@ The stage is works in several stages:
    elements.
 4. After it, they are modified using [MinimizationPsiManager][psi-manager].
 
-## Function-level deletion stage
+## Declaration-level stage
 
 On this stage, the functions, classes, objects, properties are tried to be deleted via HDD. This stage is added since
 after body replacement stage a lot of objects became unused, therefore could be deleted.

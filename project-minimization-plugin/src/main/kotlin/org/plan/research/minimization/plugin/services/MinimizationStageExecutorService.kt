@@ -53,16 +53,16 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
 
     override suspend fun executeFunctionLevelStage(
         context: HeavyIJDDContext,
-        functionLevelBodyReplacementStage: FunctionLevelBodyReplacementStage,
+        functionLevelStage: FunctionLevelStage,
     ) = either {
         logger.info { "Start Function level stage" }
         statLogger.info {
-            "Function level stage settings. DDAlgorithm: ${functionLevelBodyReplacementStage.ddAlgorithm}"
+            "Function level stage settings. DDAlgorithm: ${functionLevelStage.ddAlgorithm}"
         }
 
         val lightContext = context.asLightContext()
 
-        val ddAlgorithm = functionLevelBodyReplacementStage.ddAlgorithm.getDDAlgorithm()
+        val ddAlgorithm = functionLevelStage.ddAlgorithm.getDDAlgorithm()
         val lens = FunctionModificationLens()
         val firstLevel = service<MinimizationPsiManagerService>()
             .findAllPsiWithBodyItems(lightContext)
@@ -103,19 +103,19 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         }
     }
 
-    override suspend fun executeFunctionDeletingStage(
+    override suspend fun executeDeclarationLevelStage(
         context: HeavyIJDDContext,
-        functionDeletingStage: FunctionDeletingStage,
+        declarationLevelStage: DeclarationLevelStage,
     ) = either {
         logger.info { "Start Function deleting stage" }
         statLogger.info {
             "Function deleting stage settings, " +
-                "DDAlgorithm: ${functionDeletingStage.ddAlgorithm}"
+                "DDAlgorithm: ${declarationLevelStage.ddAlgorithm}"
         }
 
         val lightContext = context.asLightContext()
 
-        val ddAlgorithm = functionDeletingStage.ddAlgorithm.getDDAlgorithm()
+        val ddAlgorithm = declarationLevelStage.ddAlgorithm.getDDAlgorithm()
         val hierarchicalDD = HierarchicalDD(ddAlgorithm)
         val hierarchy = DeletablePsiElementHierarchyGenerator()
             .produce(context)

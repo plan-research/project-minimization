@@ -78,7 +78,7 @@ data class FunctionLevelStage(
 data class DeclarationLevelStage(
     @Property val ddAlgorithm: DDStrategy,
 ) : MinimizationStage {
-    override val name: String = "Function Deleting Algorithm"
+    override val name: String = "Instance-level Minimization"
 
     override suspend fun apply(
         context: HeavyIJDDContext,

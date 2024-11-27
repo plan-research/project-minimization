@@ -39,6 +39,16 @@ class MinimizationPsiManagerService {
             .filter { readAction { PsiChildrenIndexDDItem.hasBodyIfAvailable(it) != false } }
             .mapNotNull { readAction { PsiUtils.buildReplaceablePsiItem(context, it) } }
 
+    /**
+     * Finds all deletable PSI items in Kotlin files within the given context.
+     * The deletable elements are the elements that
+     *  * are one of the [PsiStubDDItem.DELETABLE_PSI_JAVA_CLASSES] classes
+     *  * on the path from [org.jetbrains.kotlin.psi.KtFile] to that element there are only serializable elements.
+     *  That means that they could be represented via [org.plan.research.minimization.plugin.psi.stub.KtStub]
+     *
+     * @param context The context for the minimization process containing the current project and relevant properties.
+     * @return A list of deletable PSI items found in the Kotlin files of the project.
+     */
     suspend fun findDeletablePsiItems(context: IJDDContext): List<PsiStubDDItem> =
         findPsiInKotlinFiles(context, PsiStubDDItem.DELETABLE_PSI_JAVA_CLASSES)
             .mapNotNull { readAction { PsiUtils.buildDeletablePsiItem(context, it) }.getOrNull() }
@@ -101,7 +111,8 @@ class MinimizationPsiManagerService {
 
         override fun contains(file: VirtualFile): Boolean =
             index.isUnderSourceRootOfType(
-                file, setOf(
+                file,
+                setOf(
                     SourceKotlinRootType, TestSourceKotlinRootType,
                     JavaSourceRootType.SOURCE, JavaSourceRootType.TEST_SOURCE,
                 ),

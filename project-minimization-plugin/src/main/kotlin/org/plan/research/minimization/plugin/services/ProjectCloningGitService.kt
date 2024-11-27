@@ -4,8 +4,10 @@ import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.isProjectOrWorkspaceFile
+import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.toNioPathOrNull
+import com.intellij.platform.ijent.spi.connectToRunningIjent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.plan.research.minimization.plugin.model.IJDDContext
@@ -14,8 +16,9 @@ import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
 import org.eclipse.jgit.api.Git
 
+
 @Service(Service.Level.PROJECT)
-class ProjectCloningGitService(private val rootProject: Project) {
+class ProjectCloningGitService(private val rootProject: Project? = null) {
     private val importantFiles = setOf("modules.xml", "misc.xml", "libraries")
 
     suspend fun commitChanges(context: IJDDContext): IJDDContext {
@@ -29,10 +32,14 @@ class ProjectCloningGitService(private val rootProject: Project) {
         projectDir.refresh(false, true) // ???
         return withContext(Dispatchers.IO) {
             Git.open(projectDir.toNioPath().toFile()).let {
+//                println("HEAD ${it.repository.resolve("HEAD")?.name}")
+//                println(it.branchList().call()?.map { it.name })
                 projectDir.gitAdd(it) { file ->
                     isImportant(file, projectDir)
                 }
-                it.commit().setMessage(UUID.randomUUID().toString()).call()
+                it.commit().setMessage(UUID.randomUUID().toString()).setAllowEmpty(true).call()
+//                println("HEAD ${it.repository.resolve("HEAD")?.name}")
+//                println(it.branchList().call()?.map { it.name })
                 it.close()
             }
         }
@@ -52,13 +59,17 @@ class ProjectCloningGitService(private val rootProject: Project) {
             return
         }
         val originalPath = this.toNioPathOrNull() ?: return
+        val projectDir = git.repository.directory.parentFile
         if (originalPath.toString().contains(".git")) { // merge with the filter
             return
         }
         try {
             withContext(Dispatchers.IO) {
-                git.add().addFilepattern(originalPath.pathString).call()
-                //println(originalPath.pathString)
+                println(originalPath.toFile().relativeTo(projectDir))
+                if (!FileUtil.filesEqual(originalPath.toFile(), projectDir)) {
+                    git.add().addFilepattern(originalPath.toFile().relativeTo(projectDir).toString()).call()
+                    println("added")
+                }
             }
         } catch (e: Throwable) {
             return

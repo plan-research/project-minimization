@@ -45,18 +45,21 @@ class ProjectCloningGitSnapshotManager(rootProject: Project) : SnapshotManager {
                 catch = { raise(TransactionFailed(it)) },
             )
         } catch (e: Throwable) {
+            println("reset project")
             resetProject(context)
             throw e
         }
     }.onRight {
         generalLogger.info { "Transaction completed successfully" }
         statLogger.info { "Transaction result: success" }
+        println("commit project")
         projectCloning.commitChanges(context)
     }.onLeft { it.log() }
 
     private suspend fun resetProject(context: IJDDContext) {
         withContext(Dispatchers.IO) { // git reset --hard
             Git.open(context.projectDir.toNioPath().toFile()).apply {
+                println("HEAD reset ${this.repository.resolve("HEAD")?.name}")
                 reset().setMode(ResetCommand.ResetType.HARD).call()
                 clean().setCleanDirectories(true).call()
                 close()

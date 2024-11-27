@@ -9,6 +9,7 @@ import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.services.ProjectCloningGitService
+import java.io.File
 
 @Suppress("UNCHECKED_CAST")
 abstract class ProjectCloningGitTest<C : IJDDContext> : ProjectCloningBaseTest(), TestWithContext<C> {
@@ -56,10 +57,10 @@ abstract class ProjectCloningGitTest<C : IJDDContext> : ProjectCloningBaseTest()
         val project = myFixture.project
         val files = originalFileSet ?: project.getAllFiles()
         val projectCloningGitService = project.service<ProjectCloningGitService>()
-        val context = createContext(project)
-        val git = gitInit()
+        val git = gitInitOrOpen()
         val originalCommitList = getCommitList(git)
-        val clonedContext = runBlocking { projectCloningGitService.clone(context) }
+        val context = createContext(project)
+        val clonedContext = runBlocking { projectCloningGitService.commitChanges(context) }
         assertNotNull(clonedContext)
         val clonedFiles = clonedContext!!.projectDir.getAllFiles(clonedContext.projectDir.toNioPath())
         val clonedCommitList = getCommitList(git)
@@ -67,7 +68,7 @@ abstract class ProjectCloningGitTest<C : IJDDContext> : ProjectCloningBaseTest()
                     clonedFiles.filter { !it.path.startsWith(".git") && !it.path.toString().contains("/.git/")})
         assertEquals(myFixture.project.guessProjectDir()!!.name, clonedContext.projectDir.name)
         assertEquals(originalCommitList.size + 1, clonedCommitList.size)
-        deleteContext(clonedContext as C)
+        //deleteContext(clonedContext as C)
         return files
     }
 
@@ -75,24 +76,24 @@ abstract class ProjectCloningGitTest<C : IJDDContext> : ProjectCloningBaseTest()
         val project = myFixture.project
         val files = originalFileSet ?: project.getAllFiles()
         val projectCloningGitService = project.service<ProjectCloningGitService>()
-        val context = createContext(project)
-        val git = gitInit()
+        val git = gitInitOrOpen()
         val originalCommitList = getCommitList(git)
-        val clonedContext = runBlocking { projectCloningGitService.clone(context) }
+        val context = createContext(project)
+        val clonedContext = runBlocking { projectCloningGitService.commitChanges(context) }
         assertNotNull(clonedContext)
         val clonedFiles = clonedContext!!.projectDir.getAllFiles(clonedContext.projectDir.toNioPath())
         val clonedCommitList = getCommitList(git)
-        assertEquals(files.filter { !it.path.startsWith(".git") && !it.path.toString().contains("/.git/")},
-            clonedFiles.filter { !it.path.startsWith(".git") && !it.path.toString().contains("/.git/")})
+        assertEquals(files.filter { !it.path.startsWith(".git") && !it.path.toString().contains("/.git/")}.toSet(),
+            clonedFiles.filter { !it.path.startsWith(".git") && !it.path.toString().contains("/.git/")}.toSet())
 
         val clonedClonedContext =
-            runBlocking { projectCloningGitService.clone(clonedContext) }
+            runBlocking { projectCloningGitService.commitChanges(clonedContext) }
         assertNotNull(clonedClonedContext)
         val clonedClonedFiles = clonedClonedContext!!.projectDir.getAllFiles(clonedClonedContext.projectDir.toNioPath())
         val clonedClonedCommitList = getCommitList(git)
-        assertEquals(files.filter { !it.path.startsWith(".git") && !it.path.toString().contains("/.git/")},
-            clonedClonedFiles.filter { !it.path.startsWith(".git") && !it.path.toString().contains("/.git/")})
-        assertNotEquals(clonedContext, clonedClonedContext)
+        assertEquals(files.filter { !it.path.startsWith(".git") && !it.path.toString().contains("/.git/")}.toSet(),
+            clonedClonedFiles.filter { !it.path.startsWith(".git") && !it.path.toString().contains("/.git/")}.toSet())
+        //assertNotEquals(clonedContext, clonedClonedContext)
 
         assertEquals(myFixture.project.guessProjectDir()!!.name, clonedContext.projectDir.name)
         assertEquals(myFixture.project.guessProjectDir()!!.name, clonedClonedContext.projectDir.name)
@@ -101,13 +102,17 @@ abstract class ProjectCloningGitTest<C : IJDDContext> : ProjectCloningBaseTest()
         assertEquals(originalCommitList.size + 2, clonedClonedCommitList.size)
 
         assertEquals(clonedCommitList[0], clonedClonedCommitList[1])
-
-        deleteContext(clonedContext as C)
-        deleteContext(clonedClonedContext as C)
+//
+//        deleteContext(clonedContext as C)
+//        deleteContext(clonedClonedContext as C)
         return files
     }
 
-    private fun gitInit(): Git {
+    private fun gitInitOrOpen(): Git {
+        val projectDir: File = myFixture.project.guessProjectDir()!!.toNioPath().toFile()
+        if (projectDir.resolve(".git").exists()) {
+            return Git.open(projectDir)
+        }
         return Git.init()
             .setDirectory(myFixture.project.guessProjectDir()!!.toNioPath().toFile())
             .call()

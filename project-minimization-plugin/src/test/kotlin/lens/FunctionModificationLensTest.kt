@@ -1,5 +1,6 @@
 package lens
 
+import lens.PsiLensTestBase
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.application.writeAction
@@ -9,7 +10,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findFile
 import com.intellij.openapi.vfs.toNioPathOrNull
 import com.intellij.psi.PsiElement
-import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.psi.KtLambdaExpression
@@ -17,6 +17,7 @@ import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
 import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
 import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.IntChildrenIndex
 import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
@@ -27,12 +28,14 @@ import org.plan.research.minimization.plugin.services.ProjectCloningService
 import kotlin.collections.toTypedArray
 import kotlin.io.path.relativeTo
 
-class FunctionModificationLensTest : JavaCodeInsightFixtureTestCase() {
+class FunctionModificationLensTest : PsiLensTestBase<PsiChildrenIndexDDItem, IntChildrenIndex>() {
     override fun getTestDataPath(): String {
         return "src/test/resources/testData/function-modification"
     }
 
-    override fun runInDispatchThread(): Boolean = false
+    override fun getLens() = FunctionModificationLens()
+    override suspend fun getAllItems(context: IJDDContext) =
+        service<MinimizationPsiManagerService>().findAllPsiWithBodyItems(context)
 
     fun testProjectSimple() {
         myFixture.copyDirectoryToProject("project-simple", ".")
@@ -88,7 +91,7 @@ class FunctionModificationLensTest : JavaCodeInsightFixtureTestCase() {
         }
     }
 
-    private suspend fun doTest(context: LightIJDDContext, elements: List<PsiChildrenIndexDDItem>, expectedFolder: String) {
+    override suspend fun doTest(context: LightIJDDContext, elements: List<PsiChildrenIndexDDItem>, expectedFolder: String): LightIJDDContext {
         val projectCloningService = project.service<ProjectCloningService>()
         val psiGetterService = service<MinimizationPsiManagerService>()
         var cloned = projectCloningService.clone(context)
@@ -116,18 +119,10 @@ class FunctionModificationLensTest : JavaCodeInsightFixtureTestCase() {
                     )
                 }
             }
+        return cloned
     }
 
-    private fun<T: PsiChildrenPathIndex, ITEM: PsiDDItem<T>> List<ITEM>.findByPsi(context: IJDDContext, filter: (PsiElement) -> Boolean) =
-        find { filter(PsiUtils.getPsiElementFromItem(context, it)!!) }
-
-    private fun<T: PsiChildrenPathIndex, ITEM: PsiDDItem<T>> List<ITEM>.findLastByPsi(context: IJDDContext, filter: (PsiElement) -> Boolean) =
-        findLast { filter(PsiUtils.getPsiElementFromItem(context, it)!!) }
-
-    private fun<T: PsiChildrenPathIndex, ITEM: PsiDDItem<T>> List<ITEM>.filterByPsi(context: IJDDContext, filter: (PsiElement) -> Boolean) =
-        filter { filter(PsiUtils.getPsiElementFromItem(context, it)!!) }
-
-    private suspend fun getAllElements(context: IJDDContext, vfs: VirtualFile): List<PsiChildrenIndexDDItem> {
+    override suspend fun getAllElements(context: IJDDContext, vfs: VirtualFile): List<PsiChildrenIndexDDItem> {
         val service = service<MinimizationPsiManagerService>()
         val elements = service.findAllPsiWithBodyItems(context)
         val vfsRelativePath = context.projectDir.toNioPath().relativize(vfs.toNioPath())

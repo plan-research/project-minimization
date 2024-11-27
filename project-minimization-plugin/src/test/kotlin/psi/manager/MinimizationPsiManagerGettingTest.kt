@@ -1,19 +1,15 @@
 package psi.manager
 
-import arrow.core.compareTo
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.service
-import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.psi.*
-import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
-import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import kotlin.test.assertIs
 
-class MinimizationPsiManagerServiceGettingTest : JavaCodeInsightFixtureTestCase() {
+class MinimizationPsiManagerGettingTest : MinimizationPsiManagerTestBase() {
     override fun getTestDataPath(): String {
         return "src/test/resources/testData/kotlin-psi"
     }
@@ -29,7 +25,7 @@ class MinimizationPsiManagerServiceGettingTest : JavaCodeInsightFixtureTestCase(
         }
 
         assertSize(4, elements)
-        val (first, second, third, fourth) = elements.getPsi(context)
+        val (first, second, third, fourth) = runBlocking { readAction { elements.getPsi(context) } }
         assertIs<KtNamedFunction>(first)
         assertIs<KtNamedFunction>(second)
         assertIs<KtNamedFunction>(third)
@@ -59,7 +55,7 @@ class MinimizationPsiManagerServiceGettingTest : JavaCodeInsightFixtureTestCase(
         }
 
         assertSize(3, elements)
-        val (first, second, third) = elements.getPsi(context)
+        val (first, second, third) = runBlocking { readAction { elements.getPsi(context) } }
         assertIs<KtLambdaExpression>(first)
         assertIs<KtLambdaExpression>(second)
         assertIs<KtNamedFunction>(third)
@@ -97,7 +93,7 @@ class MinimizationPsiManagerServiceGettingTest : JavaCodeInsightFixtureTestCase(
         val elements = runBlocking {
             service.findAllPsiWithBodyItems(context)
         }
-        val mappedElements = elements.getPsi(context)
+        val mappedElements = runBlocking { readAction { elements.getPsi(context) } }
         assertSize(6, mappedElements)
         val (funA, funSimple, funSimple2, funSimple3, funOverridden) = mappedElements
         val funComplex = mappedElements[5]
@@ -139,7 +135,7 @@ class MinimizationPsiManagerServiceGettingTest : JavaCodeInsightFixtureTestCase(
         val elements = runBlocking {
             service.findAllPsiWithBodyItems(context)
         }
-        val mappedElements = elements.getPsi(context)
+        val mappedElements = runBlocking { readAction { elements.getPsi(context) } }
         assertSize(8, elements)
         val (first, second, third, fourth, fifth) = mappedElements
         val sixth = mappedElements[5]
@@ -172,10 +168,5 @@ class MinimizationPsiManagerServiceGettingTest : JavaCodeInsightFixtureTestCase(
                 assertIs<KtClassInitializer>(eighth)
             }
         }
-    }
-
-    private fun List<PsiChildrenIndexDDItem>.getPsi(context: IJDDContext) = runBlocking {
-        sortedWith { a, b -> a.childrenPath.compareTo(b.childrenPath) }
-            .map { readAction { PsiUtils.getPsiElementFromItem(context, it) } }
     }
 }

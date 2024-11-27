@@ -5,6 +5,7 @@ import org.plan.research.minimization.core.model.PropertyTester
 import org.plan.research.minimization.core.model.PropertyTesterError
 import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.logging.withLog
+import org.plan.research.minimization.plugin.logging.withLog
 import org.plan.research.minimization.plugin.model.*
 import org.plan.research.minimization.plugin.model.exception.CompilationException
 import org.plan.research.minimization.plugin.model.exception.ExceptionComparator

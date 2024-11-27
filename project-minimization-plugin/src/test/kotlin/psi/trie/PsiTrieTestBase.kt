@@ -48,6 +48,7 @@ abstract class PsiTrieTestBase<ITEM, T> : JavaCodeInsightFixtureTestCase() where
         }
     }
 
+
     protected fun loadPsiFile(sourcePath: String, targetPath: String): KtFile {
         val vfsFile = myFixture.copyFileToProject(sourcePath, targetPath)
         val psiFile = runBlocking { smartReadAction(project) { vfsFile.toPsiFile(project) } }

@@ -21,6 +21,11 @@ interface MinimizationStageExecutor {
         context: HeavyIJDDContext,
         functionLevelStage: FunctionLevelStage,
     ): Either<MinimizationError, IJDDContext>
+
+    suspend fun executeDeclarationLevelStage(
+        context: HeavyIJDDContext,
+        declarationLevelStage: DeclarationLevelStage,
+    ): Either<MinimizationError, IJDDContext>
 }
 
 /**
@@ -67,4 +72,16 @@ data class FunctionLevelStage(
         context: HeavyIJDDContext,
         executor: MinimizationStageExecutor,
     ): Either<MinimizationError, IJDDContext> = executor.executeFunctionLevelStage(context, this)
+}
+
+@Tag("declarationLevelStage")
+data class DeclarationLevelStage(
+    @Property val ddAlgorithm: DDStrategy,
+) : MinimizationStage {
+    override val name: String = "Instance-level Minimization"
+
+    override suspend fun apply(
+        context: HeavyIJDDContext,
+        executor: MinimizationStageExecutor,
+    ): Either<MinimizationError, IJDDContext> = executor.executeDeclarationLevelStage(context, this)
 }

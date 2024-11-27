@@ -6,6 +6,7 @@ import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTest
 import org.plan.research.minimization.plugin.getDDAlgorithm
 import org.plan.research.minimization.plugin.getExceptionComparator
 import org.plan.research.minimization.plugin.getHierarchyCollectionStrategy
+import org.plan.research.minimization.plugin.hierarchy.DeletablePsiElementHierarchyGenerator
 import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
 import org.plan.research.minimization.plugin.logging.statLogger
 import org.plan.research.minimization.plugin.model.*
@@ -101,6 +102,29 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
                 text.joinToString("\n") { "\t- $it" }
         }
     }
+
+    override suspend fun executeDeclarationLevelStage(
+        context: HeavyIJDDContext,
+        declarationLevelStage: DeclarationLevelStage,
+    ) = either {
+        logger.info { "Start Function deleting stage" }
+        statLogger.info {
+            "Function deleting stage settings, " +
+                "DDAlgorithm: ${declarationLevelStage.ddAlgorithm}"
+        }
+
+        val lightContext = context.asLightContext()
+
+        val ddAlgorithm = declarationLevelStage.ddAlgorithm.getDDAlgorithm()
+        val hierarchicalDD = HierarchicalDD(ddAlgorithm)
+        val hierarchy = DeletablePsiElementHierarchyGenerator()
+            .produce(context)
+            .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
+
+        lightContext.withProgress {
+            hierarchicalDD.minimize(it, hierarchy)
+        }
+    }.logResult("Function Deleting")
 
     private fun <A, B> Either<A, B>.logResult(stageName: String) = onRight {
         logger.info { "End $stageName level stage" }

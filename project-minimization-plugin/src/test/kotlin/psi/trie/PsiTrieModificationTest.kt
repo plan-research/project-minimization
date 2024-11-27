@@ -84,7 +84,7 @@ class PsiTrieModificationTest : PsiTrieTestBase<PsiChildrenIndexDDItem, IntChild
         val selectedPsi =
             selectElements(context) { readAction { filter(PsiUtils.getPsiElementFromItem(context, it)!!) } }
         val psiBodyReplacer = PsiBodyReplacer(context)
-        super.doTest(psiFile, selectedPsi, psiBodyReplacer::transform)
+        super.doTest(psiFile, selectedPsi) { item, psiElement -> psiBodyReplacer.transform(item, psiElement)}
         val expectedFile = myFixture.configureByFile("modification-results/$expectedFile")
         assertIs<KtFile>(expectedFile)
         readAction {

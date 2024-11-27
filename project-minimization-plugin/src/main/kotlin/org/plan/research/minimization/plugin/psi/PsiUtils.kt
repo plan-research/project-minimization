@@ -5,7 +5,11 @@ import org.plan.research.minimization.plugin.model.IntChildrenIndex
 import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
 import org.plan.research.minimization.plugin.model.PsiDDItem
+import org.plan.research.minimization.plugin.model.PsiStubDDItem
+import org.plan.research.minimization.plugin.psi.stub.KtStub
 
+import arrow.core.Option
+import arrow.core.raise.option
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.command.writeCommandAction
 import com.intellij.openapi.editor.EditorFactory
@@ -61,6 +65,23 @@ object PsiUtils {
         val localPath = currentFile.virtualFile.toNioPath().relativeTo(context.projectDir.toNioPath())
         val renderedType = PsiBodyTypeRenderer.transform(element)
         return PsiChildrenIndexDDItem.create(element, parentPath, localPath, renderedType)
+    }
+
+    /**
+     * Transforms PsiElement into **deletable** PsiDDItem by traversing the parents and collecting file information
+     *
+     * @param element Element to transform
+     * @param context
+     * @return a converted PSIDDItem
+     */
+    @RequiresReadLock
+    fun buildDeletablePsiItem(
+        context: IJDDContext,
+        element: PsiElement,
+    ): Option<PsiStubDDItem> = option {
+        val (currentFile, parentPath) = buildParentPath(element, { _, element -> KtStub.create(element) }) { true }!!
+        val localPath = currentFile.virtualFile.toNioPath().relativeTo(context.projectDir.toNioPath())
+        PsiStubDDItem(localPath, parentPath.map { it.bind() })
     }
 
     @RequiresReadLock

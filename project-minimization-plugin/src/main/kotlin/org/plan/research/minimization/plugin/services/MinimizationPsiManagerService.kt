@@ -2,6 +2,7 @@ package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
+import org.plan.research.minimization.plugin.model.PsiStubDDItem
 import org.plan.research.minimization.plugin.psi.PsiUtils
 
 import com.intellij.openapi.application.readAction
@@ -38,12 +39,30 @@ class MinimizationPsiManagerService {
             .filter { readAction { PsiChildrenIndexDDItem.hasBodyIfAvailable(it) != false } }
             .mapNotNull { readAction { PsiUtils.buildReplaceablePsiItem(context, it) } }
 
+    /**
+     * Finds all deletable PSI items in Kotlin files within the given context.
+     * The deletable elements are the elements that
+     *  * are one of the [PsiStubDDItem.DELETABLE_PSI_JAVA_CLASSES] classes
+     *  * on the path from [org.jetbrains.kotlin.psi.KtFile] to that element there are only serializable elements.
+     *  That means that they could be represented via [org.plan.research.minimization.plugin.psi.stub.KtStub]
+     *
+     * @param context The context for the minimization process containing the current project and relevant properties.
+     * @return A list of deletable PSI items found in the Kotlin files of the project.
+     */
+    suspend fun findDeletablePsiItems(context: IJDDContext): List<PsiStubDDItem> =
+        findPsiInKotlinFiles(context, PsiStubDDItem.DELETABLE_PSI_JAVA_CLASSES)
+            .mapNotNull { readAction { PsiUtils.buildDeletablePsiItem(context, it) }.getOrNull() }
+
     suspend fun findAllKotlinFilesInIndexProject(context: IJDDContext): List<VirtualFile> =
         smartReadAction(context.indexProject) {
-            val roots = service<RootsManagerService>().findPossibleRoots(context).mapNotNull {
+            val roots = service<RootsManagerService>().findPossibleRoots(context)
+            logger.debug {
+                "Found ${roots.size} roots: $roots"
+            }
+            val rootFiles = roots.mapNotNull {
                 context.indexProjectDir.findFileByRelativePath(it.pathString)
             }
-            val scope = GlobalSearchScopes.directoriesScope(context.indexProject, true, *roots.toTypedArray())
+            val scope = GlobalSearchScopes.directoriesScope(context.indexProject, true, *rootFiles.toTypedArray())
                 .intersectWith(SourcesScope(context.indexProject))
             FileTypeIndex.getFiles(KotlinFileType.INSTANCE, scope).toList()
         }
@@ -91,10 +110,13 @@ class MinimizationPsiManagerService {
         private val index = ProjectFileIndex.getInstance(project)
 
         override fun contains(file: VirtualFile): Boolean =
-            index.isUnderSourceRootOfType(file, setOf(
-                SourceKotlinRootType, TestSourceKotlinRootType,
-                JavaSourceRootType.SOURCE, JavaSourceRootType.TEST_SOURCE,
-            ))
+            index.isUnderSourceRootOfType(
+                file,
+                setOf(
+                    SourceKotlinRootType, TestSourceKotlinRootType,
+                    JavaSourceRootType.SOURCE, JavaSourceRootType.TEST_SOURCE,
+                ),
+            )
 
         override fun isSearchInModuleContent(aModule: Module): Boolean = true
         override fun isSearchInLibraries(): Boolean = false

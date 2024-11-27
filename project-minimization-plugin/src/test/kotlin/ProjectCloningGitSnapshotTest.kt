@@ -25,7 +25,6 @@ import kotlin.io.path.relativeTo
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.jvm.isAccessible
 
-@Suppress("UNCHECKED_CAST")
 abstract class ProjectCloningGitSnapshotTest<C : IJDDContext> : ProjectCloningBaseTest(), TestWithContext<C> {
     fun testOneFileProjectPartialCloning() {
         val file = myFixture.configureByFile("oneFileProject.txt")
@@ -47,25 +46,28 @@ abstract class ProjectCloningGitSnapshotTest<C : IJDDContext> : ProjectCloningBa
 
     fun testTreeProjectPartialCloning() {
         val root = myFixture.copyDirectoryToProject("treeProject", "")
-        val fileMap = buildMap {
-            VfsUtilCore.iterateChildrenRecursively(root, null) {
-                this[it.toNioPath().relativeTo(project.guessProjectDir()!!.toNioPath())] = it
-                true
+        val updatedFileMap = {
+            buildMap {
+                VfsUtilCore.iterateChildrenRecursively(root, null) {
+                    this[it.toNioPath().relativeTo(project.guessProjectDir()!!.toNioPath())] = it
+                    true
+                }
             }
         }
         doPartialCloningTest(listOf(root))
-        doPartialCloningTest(listOf(fileMap[Path("root-file")]!!))
-        doPartialCloningTest(listOf(fileMap[Path("depth-1-a", "depth-2-a", "depth-2-file-a-a")]!!))
-//        doPartialCloningTest(
-//            listOf(
-//                fileMap[Path("depth-1-a", "depth-2-a", "pretty-good-file")]!!,
-//                fileMap[Path("depth-1-a", "depth-2-a-prime", "pretty-good-file")]!!,
-//                fileMap[Path("depth-1-a", "pretty-good-file")]!!,
-//                fileMap[Path("depth-1-b", "pretty-good-file")]!!,
-//                fileMap[Path("depth-1-b", "depth-2-b", "pretty-good-file")]!!,
-//                fileMap[Path("depth-1-b", "depth-2-b-prime", "pretty-good-file")]!!,
-//            )
-//        )
+        doPartialCloningTest(listOf(updatedFileMap()[Path("root-file")]!!))
+        doPartialCloningTest(listOf(updatedFileMap()[Path("depth-1-a", "depth-2-a", "depth-2-file-a-a")]!!))
+        val fileMap = updatedFileMap()
+        doPartialCloningTest(
+            listOf(
+                fileMap[Path("depth-1-a", "depth-2-a", "pretty-good-file")]!!,
+                fileMap[Path("depth-1-a", "depth-2-a-prime", "pretty-good-file")]!!,
+                fileMap[Path("depth-1-a", "pretty-good-file")]!!,
+                fileMap[Path("depth-1-b", "pretty-good-file")]!!,
+                fileMap[Path("depth-1-b", "depth-2-b", "pretty-good-file")]!!,
+                fileMap[Path("depth-1-b", "depth-2-b-prime", "pretty-good-file")]!!,
+            )
+        )
     }
 
     private fun doPartialCloningTest(
@@ -77,12 +79,10 @@ abstract class ProjectCloningGitSnapshotTest<C : IJDDContext> : ProjectCloningBa
         val git = gitInitOrOpen()
         runBlocking { ProjectCloningGitService().commitChanges(createContext(project)) }
         val originalCommitList = getCommitList(git)
-        val context = createContext(project)
         val originalFiles =
-            selectedFiles.getAllFiles(projectDir!!) + projectDir.getPathContentPair(projectDir.toNioPath()) +
+            selectedFiles.getAllFiles(projectDir) + projectDir.getPathContentPair(projectDir.toNioPath()) +
                     projectDir.findChild(".git")!!.getAllFiles(projectDir.toNioPath())
-
-        println(File("${projectDir.path}/depth-1-a/depth-2-a/depth-2-file-a-a").readText()) // works
+        val context = createContext(project)
 
         val clonedProject = runBlocking {
             val clonedContext = context

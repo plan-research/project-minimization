@@ -125,8 +125,6 @@ class MinimizationPsiManagerOverriddenTest : MinimizationPsiManagerTestBase() {
                     ) == true
                 })
 
-                // FIXME
-                return@readAction
                 assertSize(2, property.childrenElements)
                 val psiProperty = PsiUtils.getPsiElementFromItem(context, property)
                 assertIs<KtProperty>(psiProperty)

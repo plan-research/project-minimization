@@ -259,9 +259,6 @@ class AppSettingsComponent(project: Project) {
             .setAddAction {
                 val chosenFiles = FileChooser.chooseFiles(fileChooserDescriptor, null, null)
                 for (file in chosenFiles) {
-                    // val absolutePath = Paths.get(file.path)
-                    // val projectPath = Paths.get(projectBaseDir)
-                    // val relativePath = projectPath.relativize(absolutePath).toString()
                     val relativePath = file.toNioPath().relativeTo(projectBaseDir.toNioPath())
 
                     if ((0 until pathTableModel.rowCount).none { pathTableModel.getValueAt(it, 0) == relativePath }) {

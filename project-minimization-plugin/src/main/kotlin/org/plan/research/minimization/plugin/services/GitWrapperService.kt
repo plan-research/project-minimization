@@ -86,7 +86,7 @@ class GitWrapperService {
     /* returns all commits in the chronically reversed order */
     /* getCommitList(git)[0] == HEAD */
     public fun getCommitList(git: Git): List<String> {
-        if (commitListEmpty(git)) {
+        if (isCommitListEmpty(git)) {
             return listOf()
         }
         return git.log()

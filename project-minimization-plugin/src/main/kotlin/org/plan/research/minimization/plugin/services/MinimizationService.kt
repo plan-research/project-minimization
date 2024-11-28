@@ -142,6 +142,10 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
 
     private suspend fun postProcess(context: HeavyIJDDContext) {
         val importCleaner = PsiImportCleaner()
-        importCleaner.cleanAllImports(context)
+        try {
+            importCleaner.cleanAllImports(context)
+        } catch (e: Throwable) {
+            logger.error(e) { "Error happened on the cleaning unused imports" }
+        }
     }
 }

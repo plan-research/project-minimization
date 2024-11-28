@@ -135,7 +135,7 @@ class KotlincExceptionTranslatorTest : JavaCodeInsightFixtureTestCase() {
             "While analysing Test.kt:19:3: java.lang.IllegalArgumentException: Failed requirement.",
             translated2.message
         )
-        assert(translated2.stacktrace.lines().all { it.startsWith("\tat ") })
+        assert(translated2.stacktrace!!.lines().all { it.startsWith("\tat ") })
 
         val oldBackendError = MockBuildEvent(
             "org.jetbrains.kotlin.backend.common.BackendException: Backend Internal error: Exception during IR lowering",

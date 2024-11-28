@@ -20,10 +20,12 @@ import arrow.core.raise.either
 import arrow.core.raise.ensureNotNull
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.guessProjectDir
+import mu.KotlinLogging
 
 import java.nio.file.Path
 
 class DeletablePsiElementHierarchyGenerator : ProjectHierarchyProducer<PsiStubDDItem> {
+    private val logger = KotlinLogging.logger { }
     override suspend fun produce(fromContext: IJDDContext): ProjectHierarchyProducerResult<PsiStubDDItem> = either {
         val project = fromContext.originalProject
         ensureNotNull(project.guessProjectDir()) { NoRootFound }
@@ -42,7 +44,9 @@ class DeletablePsiElementHierarchyGenerator : ProjectHierarchyProducer<PsiStubDD
 
     private suspend fun buildTries(context: IJDDContext): Map<Path, StubCompressingPsiTrie> {
         val items = service<MinimizationPsiManagerService>().findDeletablePsiItems(context)
+        logger.debug { "Found ${items.size} deletable items " }
         return items.groupBy(PsiStubDDItem::localPath)
             .mapValues { (_, items) -> CompressingPsiItemTrie.create(items) }
+            .also { logger.debug { "Created ${it.size} tries. The maximum trie depth is ${it.maxOfOrNull { (_, trie) -> trie.maxDepth }}" } }
     }
 }

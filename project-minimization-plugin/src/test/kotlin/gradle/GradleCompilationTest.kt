@@ -200,8 +200,8 @@ abstract class GradleCompilationTest<C : IJDDContext> : GradleProjectBaseTest(),
         val buildErrors = compilationResult.value.kotlincExceptions
         assertIs<List<KotlincException.GenericInternalCompilerException>>(buildErrors)
         assertSize(1, buildErrors)
-        assert(buildErrors[0].stacktrace.isNotBlank())
-        assert(buildErrors[0].stacktrace.lines().all { it.startsWith("\tat") })
+        assert(buildErrors[0].stacktrace!!.isNotBlank())
+        assert(buildErrors[0].stacktrace!!.lines().all { it.startsWith("\tat") })
         assert(buildErrors[0].message.startsWith("While analysing "))
         assert(buildErrors[0].message.endsWith("java.lang.IllegalArgumentException: Failed requirement."))
 

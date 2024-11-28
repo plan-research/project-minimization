@@ -91,7 +91,7 @@ abstract class BasePsiLens<I, T> :
             logger.error { "The desired path for focused path $relativePath is not a Kotlin file in the project (name=${currentContext.indexProject.name})" }
             return currentContext
         }
-        logger.debug { "Processing all focused elements in $relativePath" }
+        logger.trace { "Processing all focused elements in $relativePath" }
         return useTrie(trie, currentContext, psiFile)
     }
 }

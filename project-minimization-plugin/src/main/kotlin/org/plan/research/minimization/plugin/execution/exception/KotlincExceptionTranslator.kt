@@ -102,7 +102,7 @@ class KotlincExceptionTranslator : BuildEventTranslator {
         exceptionMessage: String,
     ): Either<CompilationPropertyCheckerError, KotlincException.GenericInternalCompilerException> = either {
         val (message, stacktrace) = exceptionMessage.splitMessageAndStacktrace()
-            .getOrElse { raise(CompilationPropertyCheckerError.CompilationSuccess) }
+            .getOrElse { return@either KotlincException.GenericInternalCompilerException(null, exceptionMessage) }
         KotlincException.GenericInternalCompilerException(stacktrace, message)
     }
 
@@ -114,7 +114,8 @@ class KotlincExceptionTranslator : BuildEventTranslator {
         message.endsWith("Please report this problem https://kotl.in/issue") ||
             message.startsWith("org.jetbrains.kotlin.util.FileAnalysisException") ||
             message.startsWith(BACKEND_COMPILER_EXCEPTION_CLASSNAME) ||
-            message.startsWith(COMMON_BACKEND_EXCEPTION_CLASSNAME)
+            message.startsWith(COMMON_BACKEND_EXCEPTION_CLASSNAME) ||
+            message.startsWith(FILE_ANALYSIS_EXCEPTION_CLASSNAME)
 
     private fun parseExceptionMessage(message: String): Pair<String, String>? {
         val colonIndex = message.indexOfOrNull(COLON) ?: return null
@@ -151,5 +152,7 @@ class KotlincExceptionTranslator : BuildEventTranslator {
 
         private const val COMMON_BACKEND_EXCEPTION_CLASSNAME =
             "org.jetbrains.kotlin.backend.common.BackendException"  // old version, I suppose
+        private const val FILE_ANALYSIS_EXCEPTION_CLASSNAME =
+            "org.jetbrains.kotlin.util.FileAnalysisException"
     }
 }

@@ -1,3 +1,7 @@
+import base.ProjectCloningBaseTest
+import base.TestWithContext
+import base.TestWithHeavyContext
+import base.TestWithLightContext
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.guessProjectDir
 import kotlinx.coroutines.runBlocking
@@ -5,6 +9,8 @@ import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.services.GitWrapperService
+
+
 
 abstract class GitWrapperTest<C : IJDDContext> : ProjectCloningBaseTest(), TestWithContext<C> {
     fun testOneFileProject() {

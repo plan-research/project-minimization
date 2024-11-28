@@ -1,3 +1,7 @@
+import base.ProjectCloningBaseTest
+import base.TestWithContext
+import base.TestWithHeavyContext
+import base.TestWithLightContext
 import com.intellij.openapi.components.service
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertNotEquals

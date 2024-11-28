@@ -1,3 +1,7 @@
+import base.ProjectCloningBaseTest
+import base.TestWithContext
+import base.TestWithHeavyContext
+import base.TestWithLightContext
 import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.guessProjectDir

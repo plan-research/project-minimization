@@ -1,6 +1,7 @@
+package base
+
 import com.intellij.openapi.components.service
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
-import org.plan.research.minimization.plugin.services.ProjectCloningService
 import org.plan.research.minimization.plugin.services.ProjectOpeningService
 
 abstract class ProjectCloningBaseTest : JavaCodeInsightFixtureTestCase() {

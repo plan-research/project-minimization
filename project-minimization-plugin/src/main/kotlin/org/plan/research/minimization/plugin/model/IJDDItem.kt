@@ -1,15 +1,19 @@
 package org.plan.research.minimization.plugin.model
 
 import org.plan.research.minimization.core.model.DDItem
+import org.plan.research.minimization.plugin.psi.stub.KtStub
 
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.util.concurrency.annotations.RequiresReadLock
+import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtClassInitializer
 import org.jetbrains.kotlin.psi.KtDeclarationWithBody
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.KtObjectDeclaration
+import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
 
 import java.nio.file.Path
@@ -37,34 +41,74 @@ data class ProjectFileDDItem(val localPath: Path) : IJDDItem {
     }
 }
 
-data class PsiWithBodyDDItem(
-    val localPath: Path,
-    val childrenPath: List<Int>,
-) : IJDDItem {
+interface PsiChildrenPathIndex {
+    fun getNext(element: PsiElement): PsiElement?
+}
+
+sealed interface PsiDDItem<T : PsiChildrenPathIndex> : IJDDItem {
+    val localPath: Path
+    val childrenPath: List<T>
+}
+
+data class PsiStubDDItem(
+    override val localPath: Path,
+    override val childrenPath: List<KtStub>,
+) : PsiDDItem<KtStub> {
     companion object {
-        val WITH_BODY_JAVA_CLASSES: List<ClassDeclarationWithBody> = listOf(
+        val DELETABLE_PSI_INSIDE_FUNCTION_CLASSES: List<ClassKtExpression> = listOf(
+            KtNamedFunction::class.java,
+            KtClass::class.java,
+            KtObjectDeclaration::class.java,
+        )
+        val DELETABLE_PSI_JAVA_CLASSES: List<ClassKtExpression> =
+            DELETABLE_PSI_INSIDE_FUNCTION_CLASSES + listOf(
+                KtProperty::class.java,
+            )
+    }
+}
+
+data class IntChildrenIndex(val childrenIndex: Int) : PsiChildrenPathIndex, Comparable<IntChildrenIndex> {
+    override fun getNext(element: PsiElement): PsiElement? = element.children[childrenIndex]
+    override fun compareTo(other: IntChildrenIndex): Int = childrenIndex.compareTo(other.childrenIndex)
+}
+
+data class PsiChildrenIndexDDItem(
+    override val localPath: Path,
+    override val childrenPath: List<IntChildrenIndex>,
+    val renderedType: String?,
+) : PsiDDItem<IntChildrenIndex> {
+    companion object {
+        val DECLARATIONS_WITH_BODY_JAVA_CLASSES: List<ClassDeclarationWithBody> = listOf(
             KtNamedFunction::class.java,
             KtPropertyAccessor::class.java,
         )
-        val WO_BODY_JAVA_CLASSES: List<ClassKtExpression> = listOf(
+        val EXPRESSIONS_WITH_BODY_JAVA_CLASSES: List<ClassKtExpression> = listOf(
             KtLambdaExpression::class.java,
             KtClassInitializer::class.java,
         )
-        val PSI_ALL_JAVA_CLASSES: List<ClassKtExpression> = WITH_BODY_JAVA_CLASSES + WO_BODY_JAVA_CLASSES
-        fun isCompatible(psiElement: PsiElement) =
-            PSI_ALL_JAVA_CLASSES.any { it.isInstance(psiElement) } && hasBodyIfAvailable(psiElement) != false
+        val BODY_REPLACEABLE_PSI_JAVA_CLASSES: List<ClassKtExpression> =
+            DECLARATIONS_WITH_BODY_JAVA_CLASSES + EXPRESSIONS_WITH_BODY_JAVA_CLASSES
 
-        fun hasBodyIfAvailable(psiElement: PsiElement): Boolean? = WITH_BODY_JAVA_CLASSES
+        fun isCompatible(psiElement: PsiElement) =
+            BODY_REPLACEABLE_PSI_JAVA_CLASSES.any { it.isInstance(psiElement) } && hasBodyIfAvailable(psiElement) != false
+
+        fun hasBodyIfAvailable(psiElement: PsiElement): Boolean? = DECLARATIONS_WITH_BODY_JAVA_CLASSES
             .find { it.isInstance(psiElement) }
             ?.let { (psiElement as KtDeclarationWithBody) }
             ?.hasBody()
 
         @RequiresReadLock
-        fun create(element: PsiElement, parentPath: List<Int>, localPath: Path): PsiWithBodyDDItem =
+        fun create(
+            element: PsiElement,
+            parentPath: List<IntChildrenIndex>,
+            localPath: Path,
+            renderedType: String?,
+        ): PsiChildrenIndexDDItem =
             if (isCompatible(element)) {
-                PsiWithBodyDDItem(
+                PsiChildrenIndexDDItem(
                     localPath,
                     parentPath,
+                    renderedType,
                 )
             } else {
                 error(
@@ -74,5 +118,20 @@ data class PsiWithBodyDDItem(
                         "but got ${element.javaClass.simpleName}",
                 )
             }
+    }
+
+    interface PsiWithBodyTransformer<T> {
+        fun transform(classInitializer: KtClassInitializer): T
+        fun transform(function: KtNamedFunction): T
+        fun transform(lambdaExpression: KtLambdaExpression): T
+        fun transform(accessor: KtPropertyAccessor): T
+
+        fun transform(element: PsiElement): T = when (element) {
+            is KtClassInitializer -> transform(element)
+            is KtNamedFunction -> transform(element)
+            is KtLambdaExpression -> transform(element)
+            is KtPropertyAccessor -> transform(element)
+            else -> error("Invalid PSI element type: ${element::class.simpleName}. Expected one of: KtClassInitializer, KtNamedFunction, KtLambdaExpression, KtPropertyAccessor")
+        }
     }
 }

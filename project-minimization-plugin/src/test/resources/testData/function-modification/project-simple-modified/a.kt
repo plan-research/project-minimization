@@ -1,3 +1,3 @@
 fun x() {
-    TODO("Removed by DD")
+    TODO("Removed by DD") as Unit
 }

@@ -31,7 +31,6 @@ class PsiImportCleaner {
             val ktFile = smartReadAction(context.project) {
                 PsiUtils.getKtFile(context, file)
             } ?: continue
-
             cleanImports(context, ktFile)
         }
     }

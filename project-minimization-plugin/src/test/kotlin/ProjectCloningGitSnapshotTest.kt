@@ -103,7 +103,7 @@ abstract class ProjectCloningGitSnapshotTest<C : IJDDContext> : ProjectCloningBa
             clonedFiles.filter { !it.path.startsWith(".git") && !it.path.toString().contains("/.git/")}.toSet())
         assertEquals(originalCommitList.size + 1, clonedCommitList.size)
 
-        git.reset().setMode(ResetCommand.ResetType.HARD).setRef("HEAD~1").call();
+        git.reset().setMode(ResetCommand.ResetType.HARD).setRef("HEAD~1").call()
         File("${projectDir.path}/.git").deleteRecursively()
         project.guessProjectDir()!!.refresh(false, true)
     }

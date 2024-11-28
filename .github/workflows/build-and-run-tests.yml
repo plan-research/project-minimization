@@ -34,7 +34,7 @@ jobs:
         run: ./gradlew buildPlugin
 
       - name: Run Tests
-        run: ./gradlew test
+        run: ./gradlew test --no-build-cache --no-configuration-cache
 
       - name: Store reports
         uses: dorny/test-reporter@v1

@@ -49,6 +49,7 @@ class CompressingPsiItemTrie<I, T> private constructor() where I : PsiDDItem<T>,
                 previousValue
             }
         }
+        maxDepth = maxDepth.coerceAtLeast(nextNode.maxDepth)
         return addedNode
     }
 

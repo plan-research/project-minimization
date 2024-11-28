@@ -1,5 +1,6 @@
 package org.plan.research.minimization.plugin.settings
 
+import org.plan.research.minimization.plugin.model.DeclarationLevelStage
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.MinimizationStage
@@ -69,6 +70,8 @@ class AppSettingsComponent(project: Project) {
     // Stage List
     private val functionStageCheckBox = JBCheckBox("Enable function level stage")
     private val functionDDAlgorithmComboBox = ComboBox(DefaultComboBoxModel(DDStrategy.entries.toTypedArray()))
+    private val declarationStageCheckBox = JBCheckBox("Enable declaration level stage")
+    private val declarationDDAlgorithmComboBox = ComboBox(DefaultComboBoxModel(DDStrategy.entries.toTypedArray()))
     private val fileStageCheckBox = JBCheckBox("Enable file level stage")
     private val fileHierarchyStrategyComboBox =
         ComboBox(DefaultComboBoxModel(HierarchyCollectionStrategy.entries.toTypedArray()))
@@ -144,6 +147,9 @@ class AppSettingsComponent(project: Project) {
             if (functionStageCheckBox.isSelected) {
                 add(FunctionLevelStage(functionDDStrategy))
             }
+            if (declarationStageCheckBox.isSelected) {
+                add(DeclarationLevelStage(declarationDDAlgorithm))
+            }
             if (fileStageCheckBox.isSelected) {
                 add(
                     FileLevelStage(
@@ -158,6 +164,13 @@ class AppSettingsComponent(project: Project) {
             functionDDStrategy = value
                 .find { it is FunctionLevelStage }
                 ?.let { (it as FunctionLevelStage).ddAlgorithm }
+                ?: DDStrategy.PROBABILISTIC_DD
+
+            declarationStageCheckBox.isSelected = value.any { it is DeclarationLevelStage }
+            declarationDDAlgorithm = value
+                .filterIsInstance<DeclarationLevelStage>()
+                .firstOrNull()
+                ?.ddAlgorithm
                 ?: DDStrategy.PROBABILISTIC_DD
 
             fileStageCheckBox.isSelected = value.any { it is FileLevelStage }
@@ -199,6 +212,18 @@ class AppSettingsComponent(project: Project) {
             functionDDAlgorithmComboBox.selectedItem = value
         }
 
+    private var isDeclarationStageEnabled: Boolean
+        get() = declarationStageCheckBox.isSelected
+        set(value) {
+            declarationStageCheckBox.isSelected = value
+        }
+
+    private var declarationDDAlgorithm: DDStrategy
+        get() = declarationDDAlgorithmComboBox.selectedItem as DDStrategy
+        set(value) {
+            declarationDDAlgorithmComboBox.selectedItem = value
+        }
+
     private var isFileStageEnabled: Boolean
         get() = fileStageCheckBox.isSelected
         set(value) {
@@ -220,6 +245,8 @@ class AppSettingsComponent(project: Project) {
     private lateinit var stagesPanel: JPanel
     private lateinit var functionStagePanel: JPanel
     private lateinit var functionStageSettings: JPanel
+    private lateinit var declarationStagePanel: JPanel
+    private lateinit var declarationStageSettings: JPanel
     private lateinit var fileStagePanel: JPanel
     private lateinit var fileStageSettings: JPanel
 
@@ -291,6 +318,8 @@ class AppSettingsComponent(project: Project) {
         exceptionComparingStrategyComboBox.isEnabled = !isFrozen
         functionStageCheckBox.isEnabled = !isFrozen
         functionDDAlgorithmComboBox.isEnabled = !isFrozen && isFunctionStageEnabled
+        declarationStageCheckBox.isEnabled = !isFrozen
+        declarationDDAlgorithmComboBox.isEnabled = !isFrozen && isDeclarationStageEnabled
         fileStageCheckBox.isEnabled = !isFrozen
         fileHierarchyStrategyComboBox.isEnabled = !isFrozen && isFileStageEnabled
         fileDDAlgorithmComboBox.isEnabled = !isFrozen && isFileStageEnabled
@@ -299,12 +328,14 @@ class AppSettingsComponent(project: Project) {
 
     private fun stagesPanelInit() {
         functionStagePanelInit()
+        declarationStagePanelInit()
         fileStagePanelInit()
         // add more stages here in future
 
         stagesPanel = FormBuilder.createFormBuilder()
             .addComponent(JBLabel("Stages settings"))
             .addComponent(functionStagePanel, 1)
+            .addComponent(declarationStagePanel, 1)
             .addComponent(fileStagePanel, 1)
             .panel
     }
@@ -331,6 +362,28 @@ class AppSettingsComponent(project: Project) {
         }
 
         updateFunctionStageSettingsEnabled()
+    }
+
+    private fun declarationStagePanelInit() {
+        declarationStageSettings = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            border = BorderFactory.createEmptyBorder(0, 20, 0, 0)
+
+            add(
+                FormBuilder.createFormBuilder()
+                    .addLabeledComponent(JBLabel("DD algorithm:"), declarationDDAlgorithmComboBox, 1, false)
+                    .panel,
+            )
+        }
+        declarationStagePanel = FormBuilder.createFormBuilder()
+            .addComponent(declarationStageCheckBox, 1)
+            .addComponent(declarationStageSettings, 1)
+            .panel
+
+        declarationStageCheckBox.addActionListener {
+            updateDeclarationStageSettingsEnabled()
+        }
+        updateDeclarationStageSettingsEnabled()
     }
 
     private fun fileStagePanelInit() {
@@ -367,6 +420,11 @@ class AppSettingsComponent(project: Project) {
     private fun updateFunctionStageSettingsEnabled() {
         val isEnabled = functionStageCheckBox.isSelected
         functionDDAlgorithmComboBox.isEnabled = isEnabled
+    }
+
+    private fun updateDeclarationStageSettingsEnabled() {
+        val isEnabled = declarationStageCheckBox.isSelected
+        declarationDDAlgorithmComboBox.isEnabled = isEnabled
     }
 
     private fun createTransformationPanel(): JPanel = JPanel().apply {

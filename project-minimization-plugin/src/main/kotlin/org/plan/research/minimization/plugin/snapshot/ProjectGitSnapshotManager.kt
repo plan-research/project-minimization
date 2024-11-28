@@ -15,7 +15,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import mu.KotlinLogging
 
-class ProjectGitSnapshotManager(rootProject: Project) : SnapshotManager {
+class   ProjectGitSnapshotManager(rootProject: Project) : SnapshotManager {
     private val gitWrapperService = rootProject.service<GitWrapperService>()
     private val generalLogger = KotlinLogging.logger {}
 
@@ -30,7 +30,6 @@ class ProjectGitSnapshotManager(rootProject: Project) : SnapshotManager {
             recover<T, _>(
                 block = {
                     val transaction = TransactionBody(this@recover)
-                    @Suppress("UNCHECKED_CAST")
                     transaction.action(context as C)
                 },
                 recover = { raise(Aborted(it)) },

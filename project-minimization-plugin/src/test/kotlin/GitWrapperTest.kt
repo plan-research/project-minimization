@@ -1,15 +1,12 @@
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.guessProjectDir
 import kotlinx.coroutines.runBlocking
-import org.eclipse.jgit.api.Git
-import org.eclipse.jgit.api.errors.NoHeadException
 import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.services.GitWrapperService
-import java.io.File
 
-abstract class ProjectCloningGitTest<C : IJDDContext> : ProjectCloningBaseTest(), TestWithContext<C> {
+abstract class GitWrapperTest<C : IJDDContext> : ProjectCloningBaseTest(), TestWithContext<C> {
     fun testOneFileProject() {
         myFixture.configureByFile("oneFileProject.txt")
         doFullCloningTest()
@@ -104,9 +101,9 @@ abstract class ProjectCloningGitTest<C : IJDDContext> : ProjectCloningBaseTest()
 }
 
 class ProjectCloningGitLightTest :
-    ProjectCloningGitTest<LightIJDDContext>(),
+    GitWrapperTest<LightIJDDContext>(),
     TestWithContext<LightIJDDContext> by TestWithLightContext()
 
 class ProjectCloningGitHeavyTest :
-    ProjectCloningGitTest<HeavyIJDDContext>(),
+    GitWrapperTest<HeavyIJDDContext>(),
     TestWithContext<HeavyIJDDContext> by TestWithHeavyContext()

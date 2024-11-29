@@ -21,7 +21,7 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
     override fun getPreferredFocusedComponent(): JComponent? = mySettingsComponent?.getPreferredFocusedComponent()
 
     override fun createComponent(): JComponent? {
-        mySettingsComponent = AppSettingsComponent()
+        mySettingsComponent = AppSettingsComponent(project)
         return mySettingsComponent?.getPanel()
     }
 
@@ -35,20 +35,22 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
             mySettingsComponent?.exceptionComparingStrategy != state.exceptionComparingStrategy ||
             mySettingsComponent?.stages != state.stages ||
             mySettingsComponent?.transformations != state.minimizationTransformations ||
+            mySettingsComponent?.ignorePaths != state.ignorePaths ||
             mySettingsComponent?.isFrozen != project.service<MinimizationPluginSettings>().freezeSettings
     }
 
     override fun apply() {
-        val newState = mySettingsComponent?.let {
+        val newState = mySettingsComponent?.let { settingsComponentState ->
             MinimizationPluginState().apply {
-                compilationStrategy = it.compilationStrategy
-                gradleTask = it.gradleTask
-                gradleOptions = it.gradleOptions
-                temporaryProjectLocation = it.temporaryProjectLocation
-                snapshotStrategy = it.snapshotStrategy
-                exceptionComparingStrategy = it.exceptionComparingStrategy
-                stages = it.stages
-                minimizationTransformations = it.transformations
+                compilationStrategy = settingsComponentState.compilationStrategy
+                gradleTask = settingsComponentState.gradleTask
+                gradleOptions = settingsComponentState.gradleOptions
+                temporaryProjectLocation = settingsComponentState.temporaryProjectLocation
+                snapshotStrategy = settingsComponentState.snapshotStrategy
+                exceptionComparingStrategy = settingsComponentState.exceptionComparingStrategy
+                stages = settingsComponentState.stages
+                minimizationTransformations = settingsComponentState.transformations
+                ignorePaths = settingsComponentState.ignorePaths
             }
         } ?: MinimizationPluginState()
 
@@ -65,6 +67,7 @@ class AppSettingsConfigurable(private val project: Project) : Configurable {
         mySettingsComponent?.exceptionComparingStrategy = state.exceptionComparingStrategy
         mySettingsComponent?.stages = state.stages
         mySettingsComponent?.transformations = state.minimizationTransformations
+        mySettingsComponent?.ignorePaths = state.ignorePaths
         mySettingsComponent?.isFrozen = project.service<MinimizationPluginSettings>().freezeSettings
     }
 

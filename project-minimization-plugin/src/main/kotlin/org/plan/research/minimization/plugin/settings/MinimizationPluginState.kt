@@ -35,6 +35,10 @@ class MinimizationPluginState : BaseState() {
     @get:XCollection(style = XCollection.Style.v1, elementName = "transformation")
     var minimizationTransformations by property(defaultTransformations) { it == defaultTransformations }
 
+    @get:Tag
+    @get:XCollection(style = XCollection.Style.v1, elementName = "ignore-paths")
+    var ignorePaths by property(emptyList<String>()) { it.isEmpty() }
+
     companion object {
         private val defaultStages: List<MinimizationStage> = listOf(
             FunctionLevelStage(),

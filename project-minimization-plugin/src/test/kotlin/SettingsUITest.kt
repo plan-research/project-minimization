@@ -1,4 +1,5 @@
 import com.intellij.openapi.components.service
+import com.intellij.openapi.project.guessProjectDir
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.state.*
@@ -11,7 +12,7 @@ class SettingsUITest : BasePlatformTestCase() {
 
     override fun setUp() {
         super.setUp()
-        component = AppSettingsComponent()
+        component = AppSettingsComponent(project)
     }
 
     fun testUpdateSettings() {
@@ -74,5 +75,11 @@ class SettingsUITest : BasePlatformTestCase() {
     fun testUpdateTemporaryProjectLocation() {
         component.temporaryProjectLocation = "new-location"
         assertEquals("new-location", component.temporaryProjectLocation)
+    }
+
+    fun testIgnoreList() {
+        component.ignorePaths = listOf(project.guessProjectDir()!!.toString())
+        assertEquals(1, component.ignorePaths.size)
+        assertEquals(project.guessProjectDir()!!.toString(), component.ignorePaths[0])
     }
 }

@@ -8,6 +8,7 @@ import com.intellij.openapi.externalSystem.service.execution.ProgressExecutionMo
 import com.intellij.openapi.externalSystem.util.ExternalSystemUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.vfs.LocalFileSystem
 import org.jetbrains.kotlin.idea.configuration.GRADLE_SYSTEM_ID
 import java.nio.file.Path
 
@@ -22,6 +23,8 @@ class ProjectOpeningService {
             runConversionBeforeOpen = false
             isRefreshVfsNeeded = !isTest
         }) ?: return null
+
+        LocalFileSystem.getInstance().refreshAndFindFileByNioFile(projectPath)?.refresh(false, true)
 
         forceImportGradleProject(project)
 

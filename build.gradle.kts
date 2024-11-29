@@ -65,3 +65,7 @@ allprojects {
 }
 
 createDiktatTask()
+
+tasks.named("diktatFix") {
+    notCompatibleWithConfigurationCache("https://github.com/saveourtool/diktat/issues/1732")
+}

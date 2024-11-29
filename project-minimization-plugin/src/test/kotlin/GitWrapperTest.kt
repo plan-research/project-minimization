@@ -1,4 +1,3 @@
-import base.ProjectCloningBaseTest
 import base.TestWithContext
 import base.TestWithHeavyContext
 import base.TestWithLightContext
@@ -9,7 +8,7 @@ import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.services.GitWrapperService
-
+import snapshot.ProjectCloningBaseTest
 
 
 abstract class GitWrapperTest<C : IJDDContext> : ProjectCloningBaseTest(), TestWithContext<C> {

@@ -1,4 +1,3 @@
-import base.ProjectCloningBaseTest
 import base.TestWithContext
 import base.TestWithHeavyContext
 import base.TestWithLightContext
@@ -19,6 +18,7 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.services.GitWrapperService
 import org.plan.research.minimization.plugin.snapshot.ProjectGitSnapshotManager
+import snapshot.ProjectCloningBaseTest
 import java.io.File
 import kotlin.io.path.Path
 import kotlin.io.path.relativeTo

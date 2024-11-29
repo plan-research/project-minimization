@@ -1,10 +1,10 @@
 class C {
     fun method() {
-        TODO("Removed by DD")
+        TODO("Removed by DD") as Unit
     }
 
-    fun method2() = TODO("Removed by DD")
-    var lambda = { x: Int -> TODO("Removed by DD") }
+    fun method2() = TODO("Removed by DD") as Nothing
+    var lambda = { x: Int -> TODO("Removed by DD") as Nothing }
     val x: Int
 
     init {

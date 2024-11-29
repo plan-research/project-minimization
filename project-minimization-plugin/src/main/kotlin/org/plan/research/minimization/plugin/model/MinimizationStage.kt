@@ -5,6 +5,7 @@ import org.plan.research.minimization.plugin.model.state.DDStrategy
 import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
 
 import arrow.core.Either
+import com.intellij.util.xmlb.annotations.Property
 import com.intellij.util.xmlb.annotations.Tag
 
 /**
@@ -19,6 +20,11 @@ interface MinimizationStageExecutor {
     suspend fun executeFunctionLevelStage(
         context: HeavyIJDDContext,
         functionLevelStage: FunctionLevelStage,
+    ): Either<MinimizationError, IJDDContext>
+
+    suspend fun executeDeclarationLevelStage(
+        context: HeavyIJDDContext,
+        declarationLevelStage: DeclarationLevelStage,
     ): Either<MinimizationError, IJDDContext>
 }
 
@@ -47,8 +53,8 @@ sealed interface MinimizationStage {
  */
 @Tag("fileLevelStage")
 data class FileLevelStage(
-    var hierarchyCollectionStrategy: HierarchyCollectionStrategy,
-    var ddAlgorithm: DDStrategy,
+    @Property val hierarchyCollectionStrategy: HierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
+    @Property val ddAlgorithm: DDStrategy = DDStrategy.PROBABILISTIC_DD,
 ) : MinimizationStage {
     override val name: String = "File-Level Minimization"
 
@@ -58,7 +64,7 @@ data class FileLevelStage(
 
 @Tag("functionLevelStage")
 data class FunctionLevelStage(
-    var ddAlgorithm: DDStrategy,
+    @Property val ddAlgorithm: DDStrategy = DDStrategy.PROBABILISTIC_DD,
 ) : MinimizationStage {
     override val name: String = "Body Replacement Algorithm"
 
@@ -66,4 +72,16 @@ data class FunctionLevelStage(
         context: HeavyIJDDContext,
         executor: MinimizationStageExecutor,
     ): Either<MinimizationError, IJDDContext> = executor.executeFunctionLevelStage(context, this)
+}
+
+@Tag("declarationLevelStage")
+data class DeclarationLevelStage(
+    @Property val ddAlgorithm: DDStrategy,
+) : MinimizationStage {
+    override val name: String = "Instance-level Minimization"
+
+    override suspend fun apply(
+        context: HeavyIJDDContext,
+        executor: MinimizationStageExecutor,
+    ): Either<MinimizationError, IJDDContext> = executor.executeDeclarationLevelStage(context, this)
 }

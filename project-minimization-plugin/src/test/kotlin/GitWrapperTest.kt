@@ -76,7 +76,7 @@ abstract class GitWrapperTest<C : IJDDContext> : ProjectCloningBaseTest(), TestW
         val context = createContext(project)
         val clonedContext = runBlocking { gitWrapperService.commitChanges(context) }
         assertNotNull(clonedContext)
-        val clonedFiles = clonedContext!!.projectDir.getAllFiles(clonedContext.projectDir.toNioPath())
+        val clonedFiles = clonedContext.projectDir.getAllFiles(clonedContext.projectDir.toNioPath())
         val clonedCommitList = gitWrapperService.getCommitList(git)
         assertEquals(files.filter { !it.path.startsWith(".git") && !it.path.toString().contains("/.git/")}.toSet(),
             clonedFiles.filter { !it.path.startsWith(".git") && !it.path.toString().contains("/.git/")}.toSet())

@@ -4,10 +4,7 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.*
 import com.intellij.testFramework.utils.vfs.deleteRecursively
 import kotlinx.coroutines.runBlocking
-import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ResetCommand
-import org.eclipse.jgit.api.errors.NoHeadException
-import org.eclipse.jgit.treewalk.TreeWalk
 import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.getAllNestedElements
 import org.plan.research.minimization.plugin.model.HeavyIJDDContext
@@ -15,6 +12,7 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.services.GitWrapperService
 import org.plan.research.minimization.plugin.snapshot.ProjectGitSnapshotManager
+import snapshot.ProjectCloningBaseTest
 import java.io.File
 import kotlin.io.path.Path
 import kotlin.io.path.relativeTo

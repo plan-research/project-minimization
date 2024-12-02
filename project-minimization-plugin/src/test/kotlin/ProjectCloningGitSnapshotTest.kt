@@ -3,6 +3,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.*
 import com.intellij.testFramework.utils.vfs.deleteRecursively
+import com.intellij.util.application
 import kotlinx.coroutines.runBlocking
 import org.eclipse.jgit.api.ResetCommand
 import org.plan.research.minimization.plugin.errors.SnapshotError
@@ -67,8 +68,8 @@ abstract class ProjectCloningGitSnapshotTest<C : IJDDContext> : ProjectCloningBa
     ) {
         val project = myFixture.project
         val projectDir = project.guessProjectDir()!!
-        val snapshotManager = ProjectGitSnapshotManager(project)
-        val gitWrapperService = project.service<GitWrapperService>()
+        val snapshotManager = ProjectGitSnapshotManager()
+        val gitWrapperService = application.service<GitWrapperService>()
         val git = gitWrapperService.gitInitOrOpen(projectDir)
         runBlocking { gitWrapperService.commitChanges(createContext(project)) }
         val originalCommitList = gitWrapperService.getCommitList(git)
@@ -110,9 +111,9 @@ abstract class ProjectCloningGitSnapshotTest<C : IJDDContext> : ProjectCloningBa
         myFixture.copyDirectoryToProject("flatProject", "")
         val project = myFixture.project
         val projectDir = project.guessProjectDir()!!
-        val gitWrapperService = project.service<GitWrapperService>()
+        val gitWrapperService = application.service<GitWrapperService>()
         val git = gitWrapperService.gitInitOrOpen(projectDir)
-        val snapshotManager = ProjectGitSnapshotManager(project)
+        val snapshotManager = ProjectGitSnapshotManager()
         val context = createContext(project)
         runBlocking { gitWrapperService.commitChanges(createContext(project)) }
         val originalCommitList = gitWrapperService.getCommitList(git)
@@ -136,13 +137,13 @@ abstract class ProjectCloningGitSnapshotTest<C : IJDDContext> : ProjectCloningBa
         myFixture.copyDirectoryToProject("flatProject", "")
         val project = myFixture.project
         val projectDir = project.guessProjectDir()!!
-        val gitWrapperService = project.service<GitWrapperService>()
+        val gitWrapperService = application.service<GitWrapperService>()
         val git = gitWrapperService.gitInitOrOpen(projectDir)
         val context = createContext(project)
         runBlocking { gitWrapperService.commitChanges(createContext(project)) }
         val originalCommitList = gitWrapperService.getCommitList(git)
 
-        val snapshotManager = ProjectGitSnapshotManager(project)
+        val snapshotManager = ProjectGitSnapshotManager()
         val result = runBlocking {
             snapshotManager.transaction<String, _>(context) { newContext ->
                 writeAction {

@@ -8,9 +8,10 @@ Here’s a compact overview of the `MinimizationPluginState` settings fields and
 - **temporaryProjectLocation**: Sets the temporary project location for storing project snapshots. Default is `"minimization-project-snapshots"`.
 - **snapshotStrategy**: Determines the snapshot strategy. Default is `PROJECT_CLONING` from `SnapshotStrategy`.
 - **exceptionComparingStrategy**: Configures the exception comparison strategy. Default is `SIMPLE` from `ExceptionComparingStrategy`.
-- **gradleOptions**: A list of additional options for Gradle. Default is an empty list.
+- **gradleOptions**: List of additional options for Gradle. Default is an empty list.
 - **stages**: Defines a list of minimization stages. Default stages are `FunctionLevelStage` and `FileLevelStage`.
 - **minimizationTransformations**: Specifies transformations to apply during minimization. Default is `[PATH_RELATIVIZATION]` from `TransformationDescriptors`.
+- **ignorePaths**: List of directories/files excluded from minimization algorithm.
 
 ### Accessing and Modifying Settings
 

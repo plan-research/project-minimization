@@ -23,7 +23,7 @@ import kotlin.io.path.relativeTo
 
 @Suppress("NO_CORRESPONDING_PROPERTY")
 class AppSettingsComponent(project: Project) {
-    private val projectBaseDir = project.guessProjectDir()!!
+    private val projectBaseDir = project.guessProjectDir()
     private val myMainPanel: JPanel
 
     // Fields from MinimizationPluginState
@@ -90,7 +90,9 @@ class AppSettingsComponent(project: Project) {
     }
     private val fileChooserDescriptor = FileChooserDescriptor(
         true, true, false, true, false, true,
-    ).withRoots(project.guessProjectDir()!!)
+    ).apply {
+        projectBaseDir?.let { withRoots(it) }
+    }
 
     var isFrozen: Boolean = false
         set(value) {
@@ -249,6 +251,7 @@ class AppSettingsComponent(project: Project) {
     }
 
     private fun createPathPanel(): JPanel {
+        projectBaseDir ?: return JPanel()
         pathTable.columnModel.getColumn(0).apply {
             preferredWidth = 700  // Width of first column
         }

@@ -32,6 +32,7 @@ class AppSettingsComponent(project: Project) {
         emptyText.text = "build"
     }
     private val gradleOptionsField = JBTextField().apply {
+        assert(emptyText.text != null)
         emptyText.text = "--offline --refresh-dependencies etc..."
 
         inputVerifier = object : InputVerifier() {

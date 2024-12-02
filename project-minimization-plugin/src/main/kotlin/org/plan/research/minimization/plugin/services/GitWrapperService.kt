@@ -1,6 +1,6 @@
 package org.plan.research.minimization.plugin.services
 
-import org.plan.research.minimization.plugin.model.IJDDContext
+import  org.plan.research.minimization.plugin.model.IJDDContext
 
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.Service
@@ -21,6 +21,9 @@ import kotlin.io.path.relativeTo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+/**
+ * Service responsible for git operations within ProjectGitSnapshotManager.
+ */
 @Service(Service.Level.APP)
 class GitWrapperService {
     private val importantFiles = setOf("modules.xml", "misc.xml", "libraries")

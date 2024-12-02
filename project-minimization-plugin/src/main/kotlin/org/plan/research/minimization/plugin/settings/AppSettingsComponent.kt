@@ -91,7 +91,9 @@ class AppSettingsComponent(project: Project) {
     }
     private val fileChooserDescriptor = FileChooserDescriptor(
         true, true, false, true, false, true,
-    ).withRoots(project.guessProjectDir()!!)
+    ).apply {
+        projectBaseDir?.let { withRoots(it) }
+    }
 
     var isFrozen: Boolean = false
         set(value) {

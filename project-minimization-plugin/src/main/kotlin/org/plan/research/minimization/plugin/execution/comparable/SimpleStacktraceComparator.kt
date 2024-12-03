@@ -2,22 +2,25 @@ package org.plan.research.minimization.plugin.execution.comparable
 
 import org.apache.commons.text.similarity.JaccardSimilarity
 import org.apache.commons.text.similarity.LevenshteinDistance
+import org.plan.research.minimization.plugin.logging.statLogger
 import kotlin.math.exp
 
 class SimpleStacktraceComparator : StacktraceComparator {
     override fun areEqual(stack1: String, stack2: String): Boolean {
-        var stackList1 = parse(stack1)
-        var stackList2 = parse(stack2)
+        val stackList1 = parse(stack1)
+        val stackList2 = parse(stack2)
 
-        var similarity: Double = 1.0
+        var similarity: Double = ABSOLUTE_SIMILARITY
 
         stackList1.zip(stackList2).forEachIndexed { index, (line1, line2) ->
-            val lineDifference = JaccartDifference(line1, line2)
+            val lineDifference = jaccardDifference(line1, line2)
             val coefficient = attentionCoefficient(index + 1)
             similarity -= coefficient * lineDifference
         }
 
-        return similarity > 0.9  // Threshold value can be changed in future
+        statLogger.info { "Stacktrace similarity: $similarity" }
+
+        return similarity > THRESHOLD
     }
 
     // leave informative part of stacktrace lines
@@ -34,10 +37,16 @@ class SimpleStacktraceComparator : StacktraceComparator {
     /* difference can take values from 0 to 1
        0 means equal
        1 absolutely different */
-    private fun LehtensteinDifference(str1: String, str2: String): Double = LevenshteinDistance().apply(str1, str2).toDouble() / (str1.length + str2.length)
+    private fun levensteinDifference(str1: String, str2: String): Double = LevenshteinDistance().apply(str1, str2).toDouble() / (str1.length + str2.length)
 
     /* difference can take values from 0 to 1
        0 means equal
        1 absolutely different */
-    private fun JaccartDifference(str1: String, str2: String): Double = 1 - JaccardSimilarity().apply(str1, str2)
+    private fun jaccardDifference(str1: String, str2: String): Double = 1 - JaccardSimilarity().apply(str1, str2)
+
+    companion object {
+        const val ABSOLUTE_SIMILARITY = 1.0
+
+        const val THRESHOLD = 0.95  // Threshold value can be changed in future
+    }
 }

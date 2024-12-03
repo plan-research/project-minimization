@@ -1,8 +1,10 @@
 package org.plan.research.minimization.plugin.execution.comparable
 
+import org.plan.research.minimization.plugin.logging.statLogger
+
 import org.apache.commons.text.similarity.JaccardSimilarity
 import org.apache.commons.text.similarity.LevenshteinDistance
-import org.plan.research.minimization.plugin.logging.statLogger
+
 import kotlin.math.exp
 
 class SimpleStacktraceComparator : StacktraceComparator {

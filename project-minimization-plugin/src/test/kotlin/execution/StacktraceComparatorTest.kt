@@ -2,9 +2,10 @@ package execution
 
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import org.plan.research.minimization.plugin.execution.comparable.SimpleStacktraceComparator
-import org.plan.research.minimization.plugin.execution.comparable.StacktraceComparator
+import org.plan.research.minimization.plugin.model.exception.StacktraceComparator
 import java.io.File
-import java.nio.file.Paths
+import kotlin.io.path.Path
+import kotlin.io.path.exists
 
 class StacktraceComparatorTest: JavaCodeInsightFixtureTestCase() {
     private var stacktraceComparator: StacktraceComparator? = null
@@ -52,8 +53,10 @@ class StacktraceComparatorTest: JavaCodeInsightFixtureTestCase() {
     }
 
     private fun getFilePathFromResources(resourcePath: String): String {
-        val resourceUrl = this::class.java.classLoader.getResource(resourcePath)
+        val resourceFile = Path("src/test/resources", resourcePath)
+            .takeIf { it.exists() }
             ?: throw IllegalArgumentException("Resource not found: $resourcePath")
-        return Paths.get(resourceUrl.toURI()).toString()
+
+        return resourceFile.toString()
     }
 }

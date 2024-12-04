@@ -1,11 +1,13 @@
 package org.plan.research.minimization.plugin.execution.comparable
 
 import org.plan.research.minimization.plugin.logging.statLogger
+import org.plan.research.minimization.plugin.model.exception.StacktraceComparator
 
 import org.apache.commons.text.similarity.JaccardSimilarity
 import org.apache.commons.text.similarity.LevenshteinDistance
 
 import kotlin.math.exp
+import kotlin.math.max
 
 class SimpleStacktraceComparator : StacktraceComparator {
     override fun areEqual(stack1: String, stack2: String): Boolean {
@@ -15,7 +17,7 @@ class SimpleStacktraceComparator : StacktraceComparator {
         var similarity: Double = ABSOLUTE_SIMILARITY
 
         stackList1.zip(stackList2).forEachIndexed { index, (line1, line2) ->
-            val lineDifference = jaccardDifference(line1, line2)
+            val lineDifference = levensteinDifference(line1, line2)
             val coefficient = attentionCoefficient(index + 1)
             similarity -= coefficient * lineDifference
         }
@@ -39,7 +41,8 @@ class SimpleStacktraceComparator : StacktraceComparator {
     /* difference can take values from 0 to 1
        0 means equal
        1 absolutely different */
-    private fun levensteinDifference(str1: String, str2: String): Double = LevenshteinDistance().apply(str1, str2).toDouble() / (str1.length + str2.length)
+    private fun levensteinDifference(str1: String, str2: String): Double =
+        LevenshteinDistance().apply(str1, str2).toDouble() / max(str1.length, str2.length)
 
     /* difference can take values from 0 to 1
        0 means equal

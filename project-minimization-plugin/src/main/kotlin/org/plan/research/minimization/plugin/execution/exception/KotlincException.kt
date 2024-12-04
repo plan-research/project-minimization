@@ -1,6 +1,5 @@
 package org.plan.research.minimization.plugin.execution.exception
 
-import org.plan.research.minimization.plugin.execution.comparable.SimpleStacktraceComparator
 import org.plan.research.minimization.plugin.model.CaretPosition
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.CompilationException
@@ -28,21 +27,6 @@ sealed interface KotlincException : CompilationException {
             transformation: ExceptionTransformation,
             context: IJDDContext,
         ) = transformation.transform(this, context)
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) {
-                return true
-            }
-            if (other == null || javaClass != other.javaClass) {
-                return false
-            }
-
-            other as BackendCompilerException
-
-            return SimpleStacktraceComparator().areEqual(this.stacktrace, other.stacktrace)
-        }
-
-        override fun hashCode(): Int = stacktrace.hashCode()
     }
 
     /**
@@ -60,21 +44,6 @@ sealed interface KotlincException : CompilationException {
             transformation: ExceptionTransformation,
             context: IJDDContext,
         ) = transformation.transform(this, context)
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) {
-                return true
-            }
-            if (other == null || javaClass != other.javaClass) {
-                return false
-            }
-
-            other as BackendCompilerException
-
-            return SimpleStacktraceComparator().areEqual(this.stacktrace, other.stacktrace)
-        }
-
-        override fun hashCode(): Int = stacktrace.hashCode()
     }
 
     /**

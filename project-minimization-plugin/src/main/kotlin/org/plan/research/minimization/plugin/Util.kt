@@ -5,6 +5,8 @@ import org.plan.research.minimization.core.algorithm.dd.impl.DDMin
 import org.plan.research.minimization.core.algorithm.dd.impl.ProbabilisticDD
 import org.plan.research.minimization.plugin.execution.DumbCompiler
 import org.plan.research.minimization.plugin.execution.comparable.SimpleExceptionComparator
+import org.plan.research.minimization.plugin.execution.comparable.SimpleStacktraceComparator
+import org.plan.research.minimization.plugin.execution.comparable.StacktraceExceptionComparator
 import org.plan.research.minimization.plugin.execution.gradle.GradleBuildExceptionProvider
 import org.plan.research.minimization.plugin.execution.transformer.PathRelativizationTransformation
 import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchyGenerator
@@ -69,6 +71,7 @@ fun List<VirtualFile>.getAllParents(root: VirtualFile): List<VirtualFile> = buil
 
 fun ExceptionComparingStrategy.getExceptionComparator() = when (this) {
     ExceptionComparingStrategy.SIMPLE -> SimpleExceptionComparator()
+    ExceptionComparingStrategy.STACKTRACE -> StacktraceExceptionComparator(SimpleExceptionComparator(), SimpleStacktraceComparator())
 }
 
 fun TransformationDescriptors.getExceptionTransformations() = when (this) {

@@ -21,6 +21,7 @@ import arrow.core.raise.ensureNotNull
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.guessProjectDir
 import mu.KotlinLogging
+import org.plan.research.minimization.plugin.execution.comparable.withLogging
 
 import java.nio.file.Path
 
@@ -34,7 +35,7 @@ class DeletablePsiElementHierarchyGenerator : ProjectHierarchyProducer<PsiStubDD
         val propertyTester = SameExceptionPropertyTester
             .create<PsiStubDDItem>(
                 project.service<BuildExceptionProviderService>(),
-                settings.state.exceptionComparingStrategy.getExceptionComparator(),
+                settings.state.exceptionComparingStrategy.getExceptionComparator().withLogging(),
                 FileDeletingItemLens(),
                 fromContext,
             )

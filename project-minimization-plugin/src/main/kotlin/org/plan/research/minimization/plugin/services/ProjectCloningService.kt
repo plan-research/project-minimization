@@ -9,7 +9,6 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
-import com.intellij.openapi.project.isProjectOrWorkspaceFile
 import com.intellij.openapi.util.io.findOrCreateDirectory
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
@@ -19,8 +18,6 @@ import java.nio.file.Path
 import java.util.*
 
 import kotlin.io.path.copyTo
-import kotlin.io.path.pathString
-import kotlin.io.path.relativeTo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -70,14 +67,9 @@ class ProjectCloningService(private val rootProject: Project) {
         }
     }
 
-    private fun isImportant(file: VirtualFile, root: VirtualFile): Boolean {
-        val path = file.toNioPath().relativeTo(root.toNioPath())
-        if (isProjectOrWorkspaceFile(file) && file.name != Project.DIRECTORY_STORE_FOLDER) {
-            val pathString = path.pathString
-            return importantFiles.any { it in pathString }
-        }
-        return true
-    }
+    private fun isImportant(file: VirtualFile, root: VirtualFile): Boolean =
+        // JBRes-2481: make sure on each clone we re-import the project
+        file.name != Project.DIRECTORY_STORE_FOLDER
 
     private fun createNewProjectDirectory(): Path =
         getSnapshotLocation().findOrCreateDirectory(UUID.randomUUID().toString())

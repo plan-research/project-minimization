@@ -70,8 +70,6 @@ These methods allow you to persist configuration data by serializing `Minimizati
    5. add function similar to ```functionStagePanelInit```. This function should construct new Panel for your stage.
    6. add this panel to ```stagesPanelInit```
 
-We understand that a more friendly and automated interface could be written for this, but we did not do so hoping that in reality there would be no need for this.
-
 [plugin-state]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/settings/MinimizationPluginState.kt
 
 [app-settings-component]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/settings/AppSettingsComponent.kt

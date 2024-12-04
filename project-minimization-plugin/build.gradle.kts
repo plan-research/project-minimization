@@ -4,6 +4,7 @@ import org.jetbrains.intellij.platform.gradle.tasks.RunIdeTask
 
 plugins {
     alias(libs.plugins.intellij)
+    alias(libs.plugins.serialization)
 }
 
 group = rootProject.group
@@ -56,6 +57,7 @@ dependencies {
     }
     implementation(project(":project-minimization-core"))
     implementation(libs.kotlinx.immutable)
+    implementation(libs.kotlinx.serialization)
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.1.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.1.0")

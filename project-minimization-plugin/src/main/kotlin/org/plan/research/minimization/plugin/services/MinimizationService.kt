@@ -136,7 +136,7 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
 
         // TODO: JBRes-2103 Resource Management
         ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(oldContext.project)
-
+        logger.info { "Made new heavy context: ${newContext.projectDir}"}
         return newContext
     }
 

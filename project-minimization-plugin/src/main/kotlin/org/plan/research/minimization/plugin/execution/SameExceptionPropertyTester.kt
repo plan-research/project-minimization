@@ -42,7 +42,7 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
             val focusedContext = lens.focusOn(items, newContext)  // Assume that `newContext` has the same `.currentLevel` as `context`
 
             val compilationResult = buildExceptionProvider
-                .checkCompilation(newContext)
+                .checkCompilation(focusedContext)
                 .getOrElse { raise(PropertyTesterError.NoProperty) }
 
             if (comparator.areEquals(initialException, compilationResult)) {

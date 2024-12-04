@@ -22,10 +22,10 @@ import java.nio.file.Path
  * An abstract class for the PSI element focusing lens
  */
 abstract class BasePsiLens<I, T> :
-    ProjectItemLens where I : PsiDDItem<T>, T : Comparable<T>, T : PsiChildrenPathIndex {
+    ProjectItemLens<I> where I : PsiDDItem<T>, T : Comparable<T>, T : PsiChildrenPathIndex {
     private val logger = KotlinLogging.logger {}
     final override suspend fun focusOn(
-        items: List<IJDDItem>,
+        items: List<I>,
         currentContext: IJDDContext,
     ): IJDDContext {
         val currentLevel = currentContext.currentLevel as? List<I>

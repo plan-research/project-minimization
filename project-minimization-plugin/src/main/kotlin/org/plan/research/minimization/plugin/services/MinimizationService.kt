@@ -46,6 +46,7 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
                             context = cloneProject(context, reporter)
 
                             for (stage in stages) {
+                                logger.info { "Starting stage=${stage.name}. The starting snapshot is: ${context.projectDir.toNioPath()}"}
                                 context = processStage(context, stage, reporter)
                             }
                         }

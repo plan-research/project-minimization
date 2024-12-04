@@ -4,7 +4,6 @@ import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoExcept
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoRootFound
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.getExceptionComparator
-import org.plan.research.minimization.plugin.lenses.FileDeletingItemLens
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducerResult
@@ -22,6 +21,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.guessProjectDir
 import mu.KotlinLogging
 import org.plan.research.minimization.plugin.execution.comparable.withLogging
+import org.plan.research.minimization.plugin.lenses.FunctionDeletingLens
 
 import java.nio.file.Path
 
@@ -36,7 +36,7 @@ class DeletablePsiElementHierarchyGenerator : ProjectHierarchyProducer<PsiStubDD
             .create<PsiStubDDItem>(
                 project.service<BuildExceptionProviderService>(),
                 settings.state.exceptionComparingStrategy.getExceptionComparator().withLogging(),
-                FileDeletingItemLens(),
+                FunctionDeletingLens(),
                 fromContext,
             )
             .getOrElse { raise(NoExceptionFound) }

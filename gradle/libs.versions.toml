@@ -8,7 +8,7 @@ logging = "2.1.21"
 logback = "1.2.11"
 diktat = "2.0.0"
 kotlinx-immutable-collections = "0.3.8"
-kotlinx-serialization = "1.6.3"
+kotlinx-serialization = "1.7.3"
 
 [libraries]
 diktat-gradle-plugin = { module = "com.saveourtool.diktat:diktat-gradle-plugin", version.ref = "diktat" }

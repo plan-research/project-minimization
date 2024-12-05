@@ -41,7 +41,11 @@ internal data class CollectedReference(val reference: KtReference) {
             return callInfo.calls.isNotEmpty()
         }
 
-        val resolvedSymbols = reference.resolveToSymbols()
+        val resolvedSymbols = try {
+            reference.resolveToSymbols()
+        } catch (_: IllegalArgumentException) {
+            return false
+        }
 
         return resolvedSymbols.isNotEmpty()
     }

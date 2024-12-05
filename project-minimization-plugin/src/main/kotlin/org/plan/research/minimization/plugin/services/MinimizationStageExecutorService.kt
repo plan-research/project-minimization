@@ -20,6 +20,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import mu.KotlinLogging
+import org.plan.research.minimization.plugin.psi.withImportRefCounter
 
 @Service(Service.Level.PROJECT)
 class MinimizationStageExecutorService(private val project: Project) : MinimizationStageExecutor {
@@ -113,7 +114,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
                 "DDAlgorithm: ${declarationLevelStage.ddAlgorithm}"
         }
 
-        val lightContext = context.asLightContext()
+        val lightContext = context.asLightContext().withImportRefCounter()
 
         val ddAlgorithm = declarationLevelStage.ddAlgorithm.getDDAlgorithm()
         val hierarchicalDD = HierarchicalDD(ddAlgorithm)

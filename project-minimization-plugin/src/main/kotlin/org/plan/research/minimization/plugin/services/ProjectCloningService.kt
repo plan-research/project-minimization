@@ -34,7 +34,7 @@ class ProjectCloningService(private val rootProject: Project) {
         .stateObservable
         .temporaryProjectLocation
         .observe { it }
-    private val importantFiles = setOf("modules.xml", "misc.xml", "libraries")
+    private val importantFiles = setOf("misc.xml", "libraries")
 
     suspend fun clone(context: IJDDContext): IJDDContext? =
         when (context) {

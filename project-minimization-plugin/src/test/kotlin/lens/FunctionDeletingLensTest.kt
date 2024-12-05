@@ -1,8 +1,14 @@
 package lens
 
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.service
+import com.intellij.openapi.vfs.findFile
+import com.intellij.testFramework.PlatformTestUtil
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.plan.research.minimization.plugin.lenses.FunctionDeletingLens
@@ -14,6 +20,8 @@ import org.plan.research.minimization.plugin.psi.stub.KtFunctionStub
 import org.plan.research.minimization.plugin.psi.KtSourceImportRefCounter
 import org.plan.research.minimization.plugin.psi.withImportRefCounter
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
+import org.plan.research.minimization.plugin.services.ProjectCloningService
+import kotlin.io.path.exists
 import kotlin.test.assertIs
 
 class FunctionDeletingLensTest : PsiLensTestBase<PsiStubDDItem, KtStub>() {
@@ -110,6 +118,42 @@ class FunctionDeletingLensTest : PsiLensTestBase<PsiStubDDItem, KtStub>() {
             val afterTestContext = doTest(context, firstStage, "project-import-star-stage-1")
             val secondStage = readAction { firstStage.filterByPsi(context) { it !is KtNamedFunction } }
             doTest(afterTestContext, secondStage, "project-import-star-stage-2")
+        }
+    }
+
+    fun testDeletingAll() {
+        myFixture.copyDirectoryToProject("project-simple", ".")
+        configureModules(project)
+        val context = runBlocking { LightIJDDContext(project).withImportRefCounter() }
+        kotlin.test.assertNotNull(context.importRefCounter)
+        assertIs<LightIJDDContext>(context)
+
+        runBlocking {
+            val projectCloningService = project.service<ProjectCloningService>()
+            var cloned = projectCloningService.clone(context)
+            kotlin.test.assertNotNull(cloned)
+            val psiFile = readAction { cloned!!.projectDir.findFile("a.kt")!!.toPsiFile(cloned!!.indexProject)!! }
+            readAction { assertTrue(psiFile.isValid) }
+            val lens = getLens()
+            val items = getAllItems(context)
+            cloned = lens.focusOn(emptyList(), cloned.copy(currentLevel = items)) as LightIJDDContext
+            withContext(Dispatchers.EDT) {
+                PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+            }
+            readAction { assertFalse(psiFile.isValid) }
+            assertFalse(cloned.projectDir.toNioPath().resolve("a.kt").exists())
+        }
+    }
+
+    fun testDeletingOverriddenFromMultipleFiles() {
+        myFixture.copyDirectoryToProject("project-overridden-multiple-files", ".")
+        val context = runBlocking { LightIJDDContext(project).withImportRefCounter() }
+        kotlin.test.assertNotNull(context.importRefCounter)
+        assertIs<LightIJDDContext>(context)
+        val allItems = runBlocking { getAllItems(context) }
+        val items = allItems.filter { it.childrenPath.size == 1 }
+        runBlocking {
+            doTest(context, items, "project-overridden-multiple-files-result")
         }
     }
 }

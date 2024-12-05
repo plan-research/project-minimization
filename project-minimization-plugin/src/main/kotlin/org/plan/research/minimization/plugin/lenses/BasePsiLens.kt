@@ -1,7 +1,6 @@
 package org.plan.research.minimization.plugin.lenses
 
 import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.IJDDItem
 import org.plan.research.minimization.plugin.model.ProjectItemLens
 import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
 import org.plan.research.minimization.plugin.model.PsiDDItem
@@ -40,7 +39,9 @@ abstract class BasePsiLens<I, T> :
             return currentContext
         }
         logFocusedItems(items, currentContext)
-        val levelDiff = (currentLevel.toSet() - items.toSet()).groupBy(PsiDDItem<T>::localPath)
+        val levelDiff = (currentLevel.toSet() - items.toSet())
+            .flatMap { transformSelectedElements(it, currentContext) }
+            .groupBy(PsiDDItem<T>::localPath)
         val finalContext =
             levelDiff.fold(currentContext) { context, (path, items) -> focusOnInsideFile(context, items, path) }
 
@@ -48,12 +49,14 @@ abstract class BasePsiLens<I, T> :
         return finalContext
     }
 
+    protected open fun transformSelectedElements(item: I, context: IJDDContext): List<I> = listOf(item)
+
     private suspend fun logFocusedItems(items: List<I>, context: IJDDContext) {
         if (!logger.isTraceEnabled) {
             return
         }
-        val psiElements = items.map { PsiUtils.getPsiElementFromItem(context, it) }
         readAction {
+            val psiElements = items.map { PsiUtils.getPsiElementFromItem(context, it) }
             logger.trace {
                 "Focusing on items: \n${psiElements.joinToString("\n") { "\t- ${it?.text}" }}"
             }
@@ -68,8 +71,6 @@ abstract class BasePsiLens<I, T> :
     }
 
     protected abstract fun focusOnPsiElement(item: I, psiElement: PsiElement, context: IJDDContext)
-    protected open fun createTrie(items: List<I>, context: IJDDContext): PsiTrie<I, T> =
-        PsiTrie.create(items)
 
     protected abstract fun getWriteCommandActionName(psiFile: KtFile, context: IJDDContext): String
 
@@ -78,7 +79,7 @@ abstract class BasePsiLens<I, T> :
         focusItems: List<I>,
         relativePath: Path,
     ): IJDDContext {
-        val trie = createTrie(focusItems, currentContext)
+        val trie = PsiTrie.create(focusItems)
         val virtualFile = readAction {
             currentContext.projectDir.findFile(relativePath.toString())
         }

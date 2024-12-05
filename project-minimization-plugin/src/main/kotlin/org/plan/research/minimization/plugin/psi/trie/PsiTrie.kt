@@ -21,11 +21,8 @@ class PsiTrie<I, T> private constructor() where I : PsiDDItem<T>, T : Comparable
 
     fun processMarkedElements(element: PsiElement, processor: PsiProcessor<I>) {
         containingItem?.let {
-            if (logger.isTraceEnabled) {
-                // to preserve suspended context
-                logger.trace(
-                    "Processing marked element: ${element.textOffset} in ${element.containingFile.virtualFile.path}",
-                )
+            logger.trace {
+                "Processing marked element: ${element.textRange} (type: ${element.javaClass.simpleName}) in ${element.containingFile.virtualFile.path}"
             }
             processor(it, element)
             return

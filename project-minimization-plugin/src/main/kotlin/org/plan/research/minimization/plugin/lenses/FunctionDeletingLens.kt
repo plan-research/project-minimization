@@ -44,6 +44,14 @@ class FunctionDeletingLens : BasePsiLens<PsiStubDDItem, KtStub>() {
         val context = super.useTrie(trie, context, ktFile)
         val rootPath = context.projectDir.toNioPath()
         val localPath = ktFile.virtualFile.toNioPath().relativeTo(rootPath)
+        if (readAction { !ktFile.isValid }) {
+            // See [KtClassOrObject::delete] —
+            // on deleting a single top-level declaration,
+            // the file will be deleted
+            return context.copy(
+                importRefCounter = context.importRefCounter?.performAction { remove(localPath) },
+            )
+        }
 
         logger.debug { "Optimizing imports in $localPath" }
         val indexKtFile = readAction { getKtFileInIndexProject(ktFile, context) } ?: return context
@@ -87,7 +95,6 @@ class FunctionDeletingLens : BasePsiLens<PsiStubDDItem, KtStub>() {
         }
     }
 
-    override fun createTrie(items: List<PsiStubDDItem>, context: IJDDContext) = PsiTrie.create(
-        items.flatMap { it.childrenElements + it },
-    )
+    override fun transformSelectedElements(item: PsiStubDDItem, context: IJDDContext): List<PsiStubDDItem> =
+        item.childrenElements + item
 }

@@ -33,10 +33,10 @@ class KtSourceImportRefCounter private constructor(private val refs: PersistentM
                 service<MinimizationPsiManagerService>().findAllKotlinFilesInIndexProject(context)
             }
             val ktFiles = vfs
-                .asFlow()
+                .toList()
                 .map { readAction { it.toPsiFile(context.indexProject) } }
                 .filterIsInstance<KtFile>()
-            val projectDir = context.indexProjectDir.toNioPathOrNull()
+            val projectDir = context.projectDir.toNioPathOrNull()
             ensureNotNull(projectDir)
             val psiRefCounters = ktFiles
                 .mapNotNull {

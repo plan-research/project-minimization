@@ -7,6 +7,7 @@ arrow = "1.2.4"
 logging = "2.1.21"
 logback = "1.2.11"
 diktat = "2.0.0"
+jgit-ver = "7.0.0.202409031743-r"
 
 [libraries]
 diktat-gradle-plugin = { module = "com.saveourtool.diktat:diktat-gradle-plugin", version.ref = "diktat" }
@@ -16,7 +17,9 @@ kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-c
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
 kotlin-logging = { module = "io.github.microutils:kotlin-logging-jvm", version.ref = "logging" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
-
+jgit-core = { module =  "org.eclipse.jgit:org.eclipse.jgit", version.ref = "jgit-ver"}
+jgit-ssh-apache = { module =  "org.eclipse.jgit:org.eclipse.jgit.ssh.apache", version.ref = "jgit-ver"}
+jgit-gpg-bc = { module =  "org.eclipse.jgit:org.eclipse.jgit.gpg.bc", version.ref = "jgit-ver"}
 
 [plugins]
 intellij = { id = "org.jetbrains.intellij.platform", version.ref = "intellij" }

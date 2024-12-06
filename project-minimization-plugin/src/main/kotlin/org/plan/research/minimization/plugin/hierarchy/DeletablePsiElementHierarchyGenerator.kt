@@ -3,7 +3,9 @@ package org.plan.research.minimization.plugin.hierarchy
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoExceptionFound
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoRootFound
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
+import org.plan.research.minimization.plugin.execution.comparable.withLogging
 import org.plan.research.minimization.plugin.getExceptionComparator
+import org.plan.research.minimization.plugin.lenses.FunctionDeletingLens
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducerResult
@@ -20,8 +22,6 @@ import arrow.core.raise.ensureNotNull
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.guessProjectDir
 import mu.KotlinLogging
-import org.plan.research.minimization.plugin.execution.comparable.withLogging
-import org.plan.research.minimization.plugin.lenses.FunctionDeletingLens
 
 import java.nio.file.Path
 
@@ -32,10 +32,11 @@ class DeletablePsiElementHierarchyGenerator : ProjectHierarchyProducer<PsiStubDD
         ensureNotNull(project.guessProjectDir()) { NoRootFound }
 
         val settings = project.service<MinimizationPluginSettings>()
+        val exceptionComparator = settings.state.exceptionComparingStrategy.getExceptionComparator()
         val propertyTester = SameExceptionPropertyTester
             .create<PsiStubDDItem>(
                 project.service<BuildExceptionProviderService>(),
-                settings.state.exceptionComparingStrategy.getExceptionComparator().withLogging(),
+                exceptionComparator.withLogging(),
                 FunctionDeletingLens(),
                 fromContext,
             )

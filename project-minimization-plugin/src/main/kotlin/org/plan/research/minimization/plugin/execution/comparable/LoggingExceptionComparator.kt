@@ -1,16 +1,21 @@
 package org.plan.research.minimization.plugin.execution.comparable
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import mu.KotlinLogging
 import org.plan.research.minimization.plugin.model.exception.CompilationException
 import org.plan.research.minimization.plugin.model.exception.ExceptionComparator
+
+import mu.KotlinLogging
+
 import java.util.UUID
+
 import kotlin.io.path.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 import kotlin.io.path.writeText
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+
+private val logger = KotlinLogging.logger {}
 
 class LoggingExceptionComparator(private val backedComparator: ExceptionComparator) : ExceptionComparator {
     private val logger = KotlinLogging.logger {}
@@ -24,7 +29,7 @@ class LoggingExceptionComparator(private val backedComparator: ExceptionComparat
 
     override fun areEquals(
         exception1: CompilationException,
-        exception2: CompilationException
+        exception2: CompilationException,
     ): Boolean {
         if (!logger.isDebugEnabled) {
             return backedComparator.areEquals(exception1, exception2)
@@ -34,7 +39,7 @@ class LoggingExceptionComparator(private val backedComparator: ExceptionComparat
         val serializableClass = ExceptionComparison(
             exception1.toString(),
             exception2.toString(),
-            backedComparator.areEquals(exception1, exception2)
+            backedComparator.areEquals(exception1, exception2),
         )
         loggingLocation
             .resolve("$newId.json")
@@ -50,8 +55,6 @@ class LoggingExceptionComparator(private val backedComparator: ExceptionComparat
         private val json = Json { prettyPrint = true }
     }
 }
-
-private val logger = KotlinLogging.logger {}
 
 fun ExceptionComparator.withLogging(): ExceptionComparator = when {
     this is LoggingExceptionComparator || !logger.isDebugEnabled -> this

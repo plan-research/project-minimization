@@ -24,13 +24,14 @@ class StacktraceExceptionComparator(
             return generalComparator.areEquals(exception1, exception2)
         }
 
-        val stacktrace1 = getStacktrace(exception1) ?: return generalComparator.areEquals(exception1, exception2)
-        val stacktrace2 = getStacktrace(exception2) ?: return generalComparator.areEquals(exception1, exception2)
+        val exceptionLines1 = extractExceptionLines(exception1) ?: return generalComparator.areEquals(exception1, exception2)
+        val exceptionLines2 = extractExceptionLines(exception2) ?: return generalComparator.areEquals(exception1, exception2)
 
-        return isSimilar(stacktrace1, stacktrace2)
+        return isSimilar(exceptionLines1, exceptionLines2)
     }
 
-    private fun getStacktrace(exception: KotlincException): List<String>? = when (exception) {
+    // return message + stacktrace if possible
+    private fun extractExceptionLines(exception: KotlincException): List<String>? = when (exception) {
         is KotlincException.BackendCompilerException -> parseMessage(exception.additionalMessage) + parseStacktrace(exception.stacktrace)
         is KotlincException.GenericInternalCompilerException -> parseMessage(exception.message) + parseStacktrace(exception.stacktrace)
         is KotlincException.GeneralKotlincException -> null

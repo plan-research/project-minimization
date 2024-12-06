@@ -4,7 +4,6 @@ import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.symbols.psi
 import org.jetbrains.kotlin.analysis.api.symbols.sourcePsi
 import org.jetbrains.kotlin.analysis.api.types.symbol
-import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtParameter
@@ -34,20 +33,12 @@ object KotlinOverriddenElementsGetter {
             .mapNotNull { it.sourcePsi<KtElement>() }
             .toList()
     }
+
     private fun getOverriddenParameters(element: KtParameter) = analyze(element) {
         val symbol = element.symbol
         symbol
             .directlyOverriddenSymbols
             .mapNotNull { it.sourcePsi<KtElement>() }
             .toList()
-    }
-
-    private fun getOverriddenClass(element: KtClass) = analyze(element) {
-        val symbol = element.classSymbol
-        symbol
-            ?.superTypes
-            ?.mapNotNull { type -> type.symbol?.sourcePsi<KtElement>() }
-            ?.toList()
-            ?: emptyList()
     }
 }

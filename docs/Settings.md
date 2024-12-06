@@ -61,7 +61,7 @@ These methods allow you to persist configuration data by serializing `Minimizati
 
 ### How to add new minimization stage in settings
 
-1. In [MinimizationPluginState][plugin-state] add your stage to ```defaultStages```
+1. In [MinimizationPluginState][plugin-state] add your stage to ```defaultStages```. Add new stage class to ```elementTypes``` parameter of the ```@get:Xcollection``` annotation.
 2. In [AppSetnigsComponent][app-settings-component] 
    1. initialize new boxes by analogy at Stage list
    2. update getter and setter for varibale ```stages```

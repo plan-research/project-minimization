@@ -2,6 +2,7 @@ package org.plan.research.minimization.plugin.lenses
 
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.PsiStubDDItem
+import org.plan.research.minimization.plugin.psi.PsiImportRefCounter
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.psi.stub.KtStub
 import org.plan.research.minimization.plugin.psi.trie.PsiTrie
@@ -15,6 +16,9 @@ import org.jetbrains.kotlin.idea.util.isComma
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
 
+import java.nio.file.Path
+
+import kotlin.collections.set
 import kotlin.io.path.relativeTo
 
 class FunctionDeletingLens : BasePsiLens<PsiStubDDItem, KtStub>() {
@@ -42,50 +46,36 @@ class FunctionDeletingLens : BasePsiLens<PsiStubDDItem, KtStub>() {
         ktFile: KtFile,
     ): IJDDContext {
         val context = super.useTrie(trie, context, ktFile)
-        val rootPath = context.projectDir.toNioPath()
-        val localPath = ktFile.virtualFile.toNioPath().relativeTo(rootPath)
+        val localPath = ktFile.getLocalPath(context)
         if (readAction { !ktFile.isValid }) {
+            logger.debug { "All top-level declarations has been removed from $localPath. Invalidating the ref counter for it" }
             // See [KtClassOrObject::delete] —
             // on deleting a single top-level declaration,
             // the file will be deleted
-            return context.copy(
-                importRefCounter = context.importRefCounter?.performAction { remove(localPath) },
-            )
+            return context.copyWithout(localPath)
         }
 
         logger.debug { "Optimizing imports in $localPath" }
-        val indexKtFile = readAction { getKtFileInIndexProject(ktFile, context) } ?: return context
-        val terminalElements = readAction {
-            buildList {
-                trie.processMarkedElements(indexKtFile) { item, psiElement -> add(psiElement) }
-            }.filterIsInstance<KtElement>()
-        }
+        val terminalElements = context.getTerminalElements(ktFile, trie)
+            ?: return context.copyWithout(localPath)  // If any searching problem with the file occurred, then the file should be removed completely
 
-        val counters = context.importRefCounter ?: error("The ref counter couldn't be null in the FunctionDeletingLens")
-        val counterForCurrentFile = counters[localPath]
-            .getOrNull()
-            ?: error("Couldn't find a ref counter for localPath=$localPath")
-        val modifiedCounter = terminalElements.fold(counterForCurrentFile) { currentCounter, psiElement ->
-            currentCounter.decreaseCounterBasedOnKtElement(psiElement)
-        }
-        val unusedImports = readAction { modifiedCounter.getUnusedImports(ktFile.importDirectives) }
-        PsiUtils.performPsiChangesAndSave(context, ktFile, "Optimizing import after instance level focusing") {
-            unusedImports.forEach(PsiElement::delete)
-        }
+        val modifiedCounter = context.processRefs(ktFile, terminalElements)
         return context.copy(
-            importRefCounter = counters.performAction { this[localPath] = modifiedCounter.purgeUnusedImports() },
+            importRefCounter = context
+                .importRefCounter!!  // <- 100% true
+                .performAction { put(localPath, modifiedCounter) },
         )
     }
 
     @RequiresReadLock
-    private fun getKtFileInIndexProject(ktFile: KtFile, context: IJDDContext): KtFile? {
-        val rootPath = context.projectDir.toNioPath()
+    private fun IJDDContext.getKtFileInIndexProject(ktFile: KtFile): KtFile? {
+        val rootPath = projectDir.toNioPath()
         val localPath = ktFile.virtualFile.toNioPath().relativeTo(rootPath)
-        val indexFile = context.indexProjectDir.findFileByRelativePath(localPath.toString()) ?: run {
+        val indexFile = indexProjectDir.findFileByRelativePath(localPath.toString()) ?: run {
             logger.error { "Can't find a local file with path $localPath in index project" }
             return null
         }
-        val indexKtFile = indexFile.toPsiFile(context.indexProject) ?: run {
+        val indexKtFile = indexFile.toPsiFile(indexProject) ?: run {
             logger.error { "Can't find a PSI file for a local file with path $localPath in index project" }
             return null
         }
@@ -97,4 +87,49 @@ class FunctionDeletingLens : BasePsiLens<PsiStubDDItem, KtStub>() {
 
     override fun transformSelectedElements(item: PsiStubDDItem, context: IJDDContext): List<PsiStubDDItem> =
         item.childrenElements + item
+
+    private fun KtFile.getLocalPath(context: IJDDContext): Path {
+        val rootPath = context.projectDir.toNioPath()
+        return this.virtualFile.toNioPath().relativeTo(rootPath)
+    }
+
+    private suspend fun IJDDContext.getTerminalElements(
+        ktFile: KtFile,
+        trie: PsiTrie<PsiStubDDItem, KtStub>,
+    ) = readAction {
+        val indexKtFile = getKtFileInIndexProject(ktFile) ?: return@readAction null
+        buildList {
+            trie.processMarkedElements(indexKtFile) { item, psiElement -> add(psiElement) }
+        }.filterIsInstance<KtElement>()
+    }
+
+    private suspend fun IJDDContext.removeUnusedImports(
+        ktFile: KtFile,
+        refCounter: PsiImportRefCounter,
+    ) {
+        val unusedImports = readAction { refCounter.getUnusedImports(ktFile.importDirectives) }
+        PsiUtils.performPsiChangesAndSave(this, ktFile, "Optimizing import after instance level focusing") {
+            unusedImports.forEach(PsiElement::delete)
+        }
+    }
+
+    private suspend fun List<KtElement>.processElements(initialCounter: PsiImportRefCounter) =
+        fold(initialCounter) { currentCounter, psiElement ->
+            currentCounter.decreaseCounterBasedOnKtElement(psiElement)
+        }
+
+    private suspend fun IJDDContext.processRefs(ktFile: KtFile, currentRefs: List<KtElement>): PsiImportRefCounter {
+        requireNotNull(importRefCounter) { "The ref counter couldn't be null in the FunctionDeletingLens" }
+
+        val counterForCurrentFile = importRefCounter[ktFile.getLocalPath(this)]
+            .getOrNull()
+            ?: error("Couldn't find a ref counter for localPath=${ktFile.getLocalPath(this)}")
+        val modifiedCounter = currentRefs.processElements(counterForCurrentFile)
+        removeUnusedImports(ktFile, modifiedCounter)
+        return modifiedCounter.purgeUnusedImports()
+    }
+
+    private fun IJDDContext.copyWithout(localPath: Path) = copy(
+        importRefCounter = importRefCounter?.performAction { remove(localPath) },
+    )
 }

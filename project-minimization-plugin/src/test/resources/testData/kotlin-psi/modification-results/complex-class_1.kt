@@ -3,8 +3,8 @@ class C {
         TODO("Removed by DD") as Unit
     }
 
-    fun method2() = TODO("Removed by DD") as Nothing
-    var lambda = { x: Int -> TODO("Removed by DD") as Nothing }
+    fun method2() = TODO("Removed by DD") as Unit
+    var lambda = { x: Int -> TODO("Removed by DD") as Unit }
     val x: Int
 
     init {

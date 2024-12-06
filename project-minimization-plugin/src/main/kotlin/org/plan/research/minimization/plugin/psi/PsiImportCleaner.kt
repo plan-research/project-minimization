@@ -25,8 +25,32 @@ class PsiImportCleaner {
         }
     }
 
+    suspend fun isAnyUnusedImports(context: HeavyIJDDContext, psiFile: KtFile): Boolean {
+        val facility = KotlinOptimizeImportsFacility.getInstance()
+        return smartReadAction(context.project) {
+            facility.analyzeImports(psiFile)?.unusedImports?.isNotEmpty() == true
+        }
+    }
+
+    suspend fun isAnyUnusedImports(context: HeavyIJDDContext): KtFile? {
+        val files = smartReadAction(context.indexProject) {
+            service<MinimizationPsiManagerService>().findAllKotlinFilesInIndexProject(context)
+        }
+        for (file in files) {
+            val ktFile = smartReadAction(context.project) {
+                PsiUtils.getKtFile(context, file)
+            } ?: continue
+            if (isAnyUnusedImports(context, ktFile)) {
+                return ktFile
+            }
+        }
+        return null
+    }
+
     suspend fun cleanAllImports(context: HeavyIJDDContext) {
-        val files = service<MinimizationPsiManagerService>().findAllKotlinFilesInIndexProject(context)
+        val files = smartReadAction(context.indexProject) {
+            service<MinimizationPsiManagerService>().findAllKotlinFilesInIndexProject(context)
+        }
         for (file in files) {
             val ktFile = smartReadAction(context.project) {
                 PsiUtils.getKtFile(context, file)

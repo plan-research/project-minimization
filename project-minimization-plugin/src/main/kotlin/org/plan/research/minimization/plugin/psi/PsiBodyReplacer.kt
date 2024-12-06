@@ -30,14 +30,14 @@ class PsiBodyReplacer(private val context: IJDDContext) : PsiChildrenIndexDDItem
         val (hasBlockBody, hasBody) = function.hasBlockBody() to function.hasBody()
         when {
             hasBlockBody -> {
-                logger.debug { "Replacing function body block: ${function.name} in ${function.containingFile.virtualFile.path}" }
+                logger.trace { "Replacing function body block: ${function.name} in ${function.containingFile.virtualFile.path}" }
                 function.bodyBlockExpression?.replace(
                     psiFactory.createBlock(replacementText),
                 )
             }
 
             hasBody -> {
-                logger.debug { "Replacing function body without block: ${function.name} in ${function.containingFile.virtualFile.path}" }
+                logger.trace { "Replacing function body without block: ${function.name} in ${function.containingFile.virtualFile.path}" }
                 function.bodyExpression!!.replace(
                     psiFactory.createExpression(replacementText),
                 )
@@ -50,7 +50,7 @@ class PsiBodyReplacer(private val context: IJDDContext) : PsiChildrenIndexDDItem
     override fun transform(lambdaExpression: KtLambdaExpression) {
         val replacementText = getReplacementText(item, hasExplicitReturnType = false)
 
-        logger.debug { "Replacing lambda expression in ${lambdaExpression.containingFile.virtualFile.path}" }
+        logger.trace { "Replacing lambda expression in ${lambdaExpression.containingFile.virtualFile.path}" }
         lambdaExpression.bodyExpression!!.replace(
             psiFactory.createLambdaExpression(
                 "",
@@ -63,7 +63,7 @@ class PsiBodyReplacer(private val context: IJDDContext) : PsiChildrenIndexDDItem
         val explicitType = accessor.returnTypeReference != null
         val replacementText = getReplacementText(item, explicitType)
 
-        logger.debug { "Replacing accessor body: ${accessor.name} in ${accessor.containingFile.virtualFile.path}" }
+        logger.trace { "Replacing accessor body: ${accessor.name} in ${accessor.containingFile.virtualFile.path}" }
         when {
             accessor.bodyBlockExpression != null -> accessor.bodyBlockExpression!!.replace(
                 psiFactory.createBlock(replacementText),

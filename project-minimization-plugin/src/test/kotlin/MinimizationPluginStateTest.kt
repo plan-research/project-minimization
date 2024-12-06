@@ -1,5 +1,6 @@
 import com.intellij.openapi.components.service
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import org.plan.research.minimization.plugin.model.DeclarationLevelStage
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.state.*
@@ -33,6 +34,9 @@ class MinimizationPluginStateTest : BasePlatformTestCase() {
         assertEquals(
             listOf(
                 FunctionLevelStage(
+                    ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
+                ),
+                DeclarationLevelStage(
                     ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
                 ),
                 FileLevelStage(

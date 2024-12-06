@@ -46,6 +46,7 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
                             context = cloneProject(context, reporter)
 
                             for (stage in stages) {
+                                logger.info { "Starting stage=${stage.name}. The starting snapshot is: ${context.projectDir.toNioPath()}" }
                                 context = processStage(context, stage, reporter)
                             }
                         }
@@ -136,12 +137,16 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
 
         // TODO: JBRes-2103 Resource Management
         ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(oldContext.project)
-
+        logger.info { "Made new heavy context: ${newContext.projectDir}" }
         return newContext
     }
 
     private suspend fun postProcess(context: HeavyIJDDContext) {
         val importCleaner = PsiImportCleaner()
-        importCleaner.cleanAllImports(context)
+        try {
+            importCleaner.cleanAllImports(context)
+        } catch (e: Throwable) {
+            logger.error(e) { "Error happened on the cleaning unused imports" }
+        }
     }
 }

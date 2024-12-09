@@ -31,11 +31,11 @@ class LoggingExceptionComparator(private val backedComparator: ExceptionComparat
         exception1: CompilationException,
         exception2: CompilationException,
     ): Boolean {
-        if (!logger.isDebugEnabled) {
+        if (!logger.isTraceEnabled) {
             return backedComparator.areEquals(exception1, exception2)
         }
         val newId = UUID.randomUUID().toString()
-        logger.debug { "Comparing exceptions with id $newId" }
+        logger.trace { "Comparing exceptions with id $newId" }
         val serializableClass = ExceptionComparison(
             exception1.toString(),
             exception2.toString(),
@@ -57,6 +57,6 @@ class LoggingExceptionComparator(private val backedComparator: ExceptionComparat
 }
 
 fun ExceptionComparator.withLogging(): ExceptionComparator = when {
-    this is LoggingExceptionComparator || !logger.isDebugEnabled -> this
+    this is LoggingExceptionComparator || !logger.isTraceEnabled -> this
     else -> LoggingExceptionComparator(this)
 }

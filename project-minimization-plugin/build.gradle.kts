@@ -77,7 +77,6 @@ tasks.named<RunIdeTask>("runIde") {
     jvmArgumentProviders += CommandLineArgumentProvider {
         listOf("-Didea.kotlin.plugin.use.k2=true")
     }
-    systemProperty("idea.log.debug.categories", "org.jetbrains.plugins.gradle")
 }
 
 tasks.test {

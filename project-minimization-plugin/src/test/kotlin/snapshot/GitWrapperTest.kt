@@ -1,11 +1,17 @@
+package snapshot
+
+import PathContent
+import TestWithContext
+import TestWithHeavyContext
+import TestWithLightContext
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.guessProjectDir
+import getAllFiles
 import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.services.GitWrapperService
-import snapshot.ProjectCloningBaseTest
 
 abstract class GitWrapperTest<C : IJDDContext> : ProjectCloningBaseTest(), TestWithContext<C> {
     fun testOneFileProject() {

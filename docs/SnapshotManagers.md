@@ -4,7 +4,7 @@ Snapshot Managers are responsible for managing the creation and lifecycle of pro
 
 All classes implementing this functionality are located in:`project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/snapshot`.
 
-## ProjectCloningSnapshotManager
+## [ProjectCloningSnapshotManager](../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/snapshot/ProjectCloningSnapshotManager.kt)
 
 `transaction` method executes a transaction within the provided context, typically involving project cloning and rollback upon failures.
 
@@ -14,13 +14,13 @@ Before a transaction begins, the manager copies the current minimization stageâ€
 - **On failure**, the clone is discarded, and the minimization process continues with the previous instance.
 
 The copying of the project is managed by
-`src.main.kotlin.org.plan.research.minimization.plugin.services.ProjectCloningService`
+[ProjectCloningService.kt](../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/services/ProjectCloningService.kt)
 
 ### Transaction guarantees that:
 - Cloned project is closed if a transaction fails.
 - If a transaction is successful, the project of the [context] is closed.
 
-## ProjectGitSnapshotManager
+## [ProjectGitSnapshotManager](../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/snapshot/ProjectGitSnapshotManager.kt)
 
 `transaction` executes a transaction within the provided context. 
 
@@ -30,5 +30,5 @@ It is expected that there was at least one commit before any transaction is exec
 - **On successful transaction**, `git commit` will be executed.
 - **On failure**, `git reset --HARD` will be executed.
 
-Git operations within the manager are executed by
-`src.main.kotlin.org.plan.research.minimization.plugin.services.GitWrapperService`
+Git operations within the manager are executed by 
+[GitWrapperService.kt](../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/services/GitWrapperService.kt)

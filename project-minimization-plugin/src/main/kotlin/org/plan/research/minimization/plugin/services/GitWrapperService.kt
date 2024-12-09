@@ -42,6 +42,7 @@ class GitWrapperService {
                 close()
             }
         }
+        context.projectDir.refresh(false, true)
     }
 
     private suspend fun commit(projectDir: VirtualFile) = withContext(Dispatchers.IO) {
@@ -53,6 +54,7 @@ class GitWrapperService {
                 .call()
             it.close()
         }
+        projectDir.refresh(false, true)
     }
 
     private fun isImportant(file: VirtualFile, root: VirtualFile): Boolean {
@@ -64,8 +66,8 @@ class GitWrapperService {
         return true
     }
 
-    fun gitInitOrOpen(VFProjectDir: VirtualFile): Git {
-        val projectDir: File = VFProjectDir.toNioPath().toFile()
+        fun gitInitOrOpen(virtualProjectDir: VirtualFile): Git {
+        val projectDir: File = virtualProjectDir.toNioPath().toFile()
         if (projectDir.resolve(".git").exists()) {
             return Git.open(projectDir)
         }
@@ -78,7 +80,7 @@ class GitWrapperService {
     }
 
     private fun isCommitListEmpty(git: Git): Boolean = try {
-        git.log().call()  // This will throw NoHeadException if there are no commits
+        git.log().setMaxCount(1).call()  // This will throw NoHeadException if there are no commits
         false
     } catch (e: NoHeadException) {
         true

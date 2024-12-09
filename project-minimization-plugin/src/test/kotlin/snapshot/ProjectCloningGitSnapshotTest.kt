@@ -1,9 +1,16 @@
+package snapshot
+
+import TestWithContext
+import TestWithHeavyContext
+import TestWithLightContext
 import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.*
 import com.intellij.testFramework.utils.vfs.deleteRecursively
 import com.intellij.util.application
+import getAllFiles
+import getPathContentPair
 import kotlinx.coroutines.runBlocking
 import org.eclipse.jgit.api.ResetCommand
 import org.plan.research.minimization.plugin.errors.SnapshotError
@@ -13,7 +20,6 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.services.GitWrapperService
 import org.plan.research.minimization.plugin.snapshot.ProjectGitSnapshotManager
-import snapshot.ProjectCloningBaseTest
 import java.io.File
 import kotlin.io.path.Path
 import kotlin.io.path.relativeTo

@@ -29,14 +29,14 @@ class GitWrapperService {
     private val importantFiles = setOf("modules.xml", "misc.xml", "libraries")
 
     suspend fun commitChanges(context: IJDDContext): IJDDContext = context.apply {
-        commit(this.projectDir)
+        commit(context)
         projectDir.refresh(false, true)
     }
 
     suspend fun resetChanges(context: IJDDContext) {
         withContext(Dispatchers.IO) {
             // git reset --hard
-            Git.open(context.projectDir.toNioPath().toFile()).apply {
+            context.git.apply {
                 reset().setMode(ResetCommand.ResetType.HARD).call()
                 clean().setCleanDirectories(true).call()
                 close()
@@ -45,16 +45,12 @@ class GitWrapperService {
         context.projectDir.refresh(false, true)
     }
 
-    private suspend fun commit(projectDir: VirtualFile) = withContext(Dispatchers.IO) {
-        Git.open(projectDir.toNioPath().toFile()).let {
-            projectDir.gitAdd(it) { file ->
-                isImportant(file, projectDir)
-            }
-            it.commit().setMessage(UUID.randomUUID().toString()).setAllowEmpty(true)
-                .call()
-            it.close()
+    private suspend fun commit(context: IJDDContext) = withContext(Dispatchers.IO) {
+        context.git.apply {
+            // git commit -a
+            commit().setMessage(UUID.randomUUID().toString()).setAll(true).setAllowEmpty(true).call()
+            close()
         }
-        projectDir.refresh(false, true)
     }
 
     private fun isImportant(file: VirtualFile, root: VirtualFile): Boolean {
@@ -66,16 +62,25 @@ class GitWrapperService {
         return true
     }
 
-        fun gitInitOrOpen(virtualProjectDir: VirtualFile): Git {
+    suspend fun gitInit(virtualProjectDir: VirtualFile): Git {
         val projectDir: File = virtualProjectDir.toNioPath().toFile()
+
         if (projectDir.resolve(".git").exists()) {
-            return Git.open(projectDir)
+            projectDir.resolve(".git").deleteRecursively()
         }
+        if (projectDir.resolve(".gitignore").exists()) {
+            projectDir.resolve(".gitignore").delete()
+        }
+
         return Git.init()
             .setDirectory(projectDir)
             .call()
-            .apply {
-                commit().setMessage("init commit").call()
+            .also {
+                virtualProjectDir.gitAdd(it)  { file ->
+                    isImportant(file, virtualProjectDir)
+                }
+                it.commit().setMessage("init commit").call()
+                virtualProjectDir.refresh(false, true)
             }
     }
 
@@ -106,8 +111,7 @@ class GitWrapperService {
         }
         val originalPath = this.toNioPathOrNull() ?: return
         val projectDir = git.repository.directory.parentFile
-        if (originalPath.toString().contains(".git")) {
-            // merge with the filter
+        if (originalPath.toString().contains(git.repository.directory.toString())) {
             return
         }
         try {

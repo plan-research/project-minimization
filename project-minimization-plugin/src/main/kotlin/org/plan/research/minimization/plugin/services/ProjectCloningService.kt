@@ -32,6 +32,7 @@ import kotlinx.coroutines.withContext
 @Service(Service.Level.PROJECT)
 class ProjectCloningService(private val rootProject: Project) {
     private val openingService = service<ProjectOpeningService>()
+    private val snapshotService = service<GitWrapperService>()
     private val tempProjectsDirectoryName by rootProject
         .service<MinimizationPluginSettings>()
         .stateObservable
@@ -39,11 +40,14 @@ class ProjectCloningService(private val rootProject: Project) {
         .observe { it }
     private val importantFiles = setOf("modules.xml", "misc.xml", "libraries")
 
-    suspend fun clone(context: IJDDContext): IJDDContext? =
-        when (context) {
+    suspend fun clone(context: IJDDContext): IJDDContext? {
+        val clonedContext = when (context) {
             is HeavyIJDDContext -> clone(context)
             is LightIJDDContext -> clone(context)
         }
+        clonedContext?.setGit(snapshotService::gitInit)
+        return clonedContext
+    }
 
     suspend fun clone(context: LightIJDDContext): LightIJDDContext? {
         val clonedPath = cloneProjectImpl(context.projectDir)

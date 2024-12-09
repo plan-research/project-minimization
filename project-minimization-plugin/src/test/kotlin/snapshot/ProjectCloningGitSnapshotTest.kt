@@ -76,7 +76,7 @@ abstract class ProjectCloningGitSnapshotTest<C : IJDDContext> : ProjectCloningBa
         val projectDir = project.guessProjectDir()!!
         val snapshotManager = ProjectGitSnapshotManager()
         val gitWrapperService = application.service<GitWrapperService>()
-        val git = gitWrapperService.gitInitOrOpen(projectDir)
+        val git = runBlocking { gitWrapperService.gitInit(projectDir) }
         runBlocking { gitWrapperService.commitChanges(createContext(project)) }
         val originalCommitList = gitWrapperService.getCommitList(git)
         val originalFiles =
@@ -118,7 +118,7 @@ abstract class ProjectCloningGitSnapshotTest<C : IJDDContext> : ProjectCloningBa
         val project = myFixture.project
         val projectDir = project.guessProjectDir()!!
         val gitWrapperService = application.service<GitWrapperService>()
-        val git = gitWrapperService.gitInitOrOpen(projectDir)
+        val git = runBlocking { gitWrapperService.gitInit(projectDir) }
         val snapshotManager = ProjectGitSnapshotManager()
         val context = createContext(project)
         runBlocking { gitWrapperService.commitChanges(createContext(project)) }
@@ -144,7 +144,7 @@ abstract class ProjectCloningGitSnapshotTest<C : IJDDContext> : ProjectCloningBa
         val project = myFixture.project
         val projectDir = project.guessProjectDir()!!
         val gitWrapperService = application.service<GitWrapperService>()
-        val git = gitWrapperService.gitInitOrOpen(projectDir)
+        val git = runBlocking { gitWrapperService.gitInit(projectDir) }
         val context = createContext(project)
         runBlocking { gitWrapperService.commitChanges(createContext(project)) }
         val originalCommitList = gitWrapperService.getCommitList(git)

@@ -58,3 +58,18 @@ The settings can be saved to and loaded from an XML file using the following met
   ```
 
 These methods allow you to persist configuration data by serializing `MinimizationPluginState` to XML and then deserializing it back into the application.
+
+### How to add new minimization stage in settings
+
+1. In [MinimizationPluginState][plugin-state] add your stage to ```defaultStages```. Add new stage class to ```elementTypes``` parameter of the ```@get:Xcollection``` annotation.
+2. In [AppSetnigsComponent][app-settings-component] 
+   1. initialize new boxes by analogy at Stage list
+   2. update getter and setter for varibale ```stages```
+   3. add new UI objects to ```updateUIState ```
+   4. add function similar to ```isFunctionStageEnabled```. It is used in ```updateUIState ``` to correctly freeze/unfreeze the settings.
+   5. add function similar to ```functionStagePanelInit```. This function should construct new Panel for your stage.
+   6. add this panel to ```stagesPanelInit```
+
+[plugin-state]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/settings/MinimizationPluginState.kt
+
+[app-settings-component]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/settings/AppSettingsComponent.kt

@@ -1,5 +1,6 @@
 package lens
 
+import AbstractAnalysisKotlinTest
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.service
@@ -20,7 +21,7 @@ import org.plan.research.minimization.plugin.services.ProjectCloningService
 import kotlin.io.path.relativeTo
 
 abstract class PsiLensTestBase<ITEM, T> :
-    JavaCodeInsightFixtureTestCase() where ITEM : PsiDDItem<T>, T : PsiChildrenPathIndex, T : Comparable<T> {
+    AbstractAnalysisKotlinTest() where ITEM : PsiDDItem<T>, T : PsiChildrenPathIndex, T : Comparable<T> {
     override fun runInDispatchThread(): Boolean = false
 
     protected abstract fun getLens(): BasePsiLens<ITEM, T>
@@ -36,8 +37,7 @@ abstract class PsiLensTestBase<ITEM, T> :
         kotlin.test.assertNotNull(cloned)
         val lens = getLens()
         val items = getAllItems(context)
-        cloned = cloned.copy(currentLevel = items)
-        lens.focusOn(elements, cloned)
+        cloned = lens.focusOn(elements, cloned.copy(currentLevel = items)) as LightIJDDContext
 
         val files = smartReadAction(cloned.indexProject) {
             val fileIndex = ProjectRootManager.getInstance(cloned.indexProject).fileIndex
@@ -59,18 +59,6 @@ abstract class PsiLensTestBase<ITEM, T> :
             }
         return cloned
     }
-
-    @RequiresReadLock
-    protected fun List<ITEM>.findByPsi(context: IJDDContext, filter: (PsiElement) -> Boolean) =
-        find { filter(PsiUtils.getPsiElementFromItem(context, it)!!) }
-
-    @RequiresReadLock
-    protected fun List<ITEM>.findLastByPsi(context: IJDDContext, filter: (PsiElement) -> Boolean) =
-        findLast { filter(PsiUtils.getPsiElementFromItem(context, it)!!) }
-
-    @RequiresReadLock
-    protected fun List<ITEM>.filterByPsi(context: IJDDContext, filter: (PsiElement) -> Boolean) =
-        filter { filter(PsiUtils.getPsiElementFromItem(context, it)!!) }
 
     protected open suspend fun getAllElements(context: IJDDContext, vfs: VirtualFile): List<ITEM> {
         val elements = getAllItems(context)

@@ -37,7 +37,7 @@ sealed interface KotlincException : CompilationException {
      * @property message A string representing a human-readable message describing the exception.
      */
     data class GenericInternalCompilerException(
-        val stacktrace: String,
+        val stacktrace: String?,
         val message: String,
     ) : KotlincException {
         override suspend fun apply(

@@ -11,6 +11,7 @@ import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
 import org.plan.research.minimization.plugin.logging.statLogger
 import org.plan.research.minimization.plugin.model.*
 import org.plan.research.minimization.plugin.psi.PsiUtils
+import org.plan.research.minimization.plugin.psi.withImportRefCounter
 
 import arrow.core.Either
 import arrow.core.getOrElse
@@ -113,7 +114,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
                 "DDAlgorithm: ${declarationLevelStage.ddAlgorithm}"
         }
 
-        val lightContext = context.asLightContext()
+        val lightContext = context.asLightContext().withImportRefCounter()
 
         val ddAlgorithm = declarationLevelStage.ddAlgorithm.getDDAlgorithm()
         val hierarchicalDD = HierarchicalDD(ddAlgorithm)

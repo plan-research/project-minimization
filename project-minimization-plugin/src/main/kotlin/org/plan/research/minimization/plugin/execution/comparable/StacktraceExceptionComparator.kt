@@ -33,7 +33,7 @@ class StacktraceExceptionComparator(
     // return message + stacktrace if possible
     private fun extractExceptionLines(exception: KotlincException): List<String>? = when (exception) {
         is KotlincException.BackendCompilerException -> parseMessage(exception.additionalMessage) + parseStacktrace(exception.stacktrace)
-        is KotlincException.GenericInternalCompilerException -> parseMessage(exception.message) + parseStacktrace(exception.stacktrace)
+        is KotlincException.GenericInternalCompilerException -> parseMessage(exception.message) + parseStacktrace(exception.stacktrace ?: "")
         is KotlincException.GeneralKotlincException -> null
         is KotlincException.KspException -> parseMessage(exception.message) + parseStacktrace(exception.stacktrace)
     }

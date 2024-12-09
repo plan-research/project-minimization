@@ -24,7 +24,7 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
     rootProject: Project,
     private val buildExceptionProvider: BuildExceptionProvider,
     private val comparator: ExceptionComparator,
-    private val lens: ProjectItemLens,
+    private val lens: ProjectItemLens<T>,
     private val initialException: CompilationException,
 ) : PropertyTester<IJDDContext, T> {
     private val snapshotManager = rootProject.service<SnapshotManagerService>()
@@ -39,14 +39,14 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
         snapshotManager.transaction(context) { newContext ->
             context.currentLevel ?: return@transaction newContext
 
-            lens.focusOn(items, newContext)  // Assume that `newContext` has the same `.currentLevel` as `context`
+            val focusedContext = lens.focusOn(items, newContext)  // Assume that `newContext` has the same `.currentLevel` as `context`
 
             val compilationResult = buildExceptionProvider
-                .checkCompilation(newContext)
+                .checkCompilation(focusedContext)
                 .getOrElse { raise(PropertyTesterError.NoProperty) }
 
             if (comparator.areEquals(initialException, compilationResult)) {
-                newContext
+                focusedContext
             } else {
                 raise(PropertyTesterError.UnknownProperty)
             }
@@ -63,7 +63,7 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
         suspend fun <T : IJDDItem> create(
             compilerPropertyChecker: BuildExceptionProvider,
             exceptionComparator: ExceptionComparator,
-            lens: ProjectItemLens,
+            lens: ProjectItemLens<T>,
             context: IJDDContext,
         ) = option {
             val initialException = compilerPropertyChecker.checkCompilation(context).getOrNone().bind()

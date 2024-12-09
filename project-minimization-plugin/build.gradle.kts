@@ -1,8 +1,10 @@
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.models.Coordinates
+import org.jetbrains.intellij.platform.gradle.tasks.RunIdeTask
 
 plugins {
     alias(libs.plugins.intellij)
+    alias(libs.plugins.serialization)
 }
 
 group = rootProject.group
@@ -54,6 +56,8 @@ dependencies {
         testPlatformDependency(Coordinates("com.jetbrains.intellij.platform", "external-system-test-framework"))
     }
     implementation(project(":project-minimization-core"))
+    implementation(libs.kotlinx.immutable)
+    implementation(libs.kotlinx.serialization)
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.1.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.1.0")
@@ -66,5 +70,17 @@ tasks {
         // Only run tests from classes that end with "Test"
         include("**/*Test.class")
         systemProperty("idea.is.internal", true)
+    }
+}
+
+tasks.named<RunIdeTask>("runIde") {
+    jvmArgumentProviders += CommandLineArgumentProvider {
+        listOf("-Didea.kotlin.plugin.use.k2=true")
+    }
+}
+
+tasks.test {
+    jvmArgumentProviders += CommandLineArgumentProvider {
+        listOf("-Didea.kotlin.plugin.use.k2=true")
     }
 }

@@ -1,12 +1,14 @@
 package org.plan.research.minimization.plugin.model
 
-import org.plan.research.minimization.core.model.DDContext
+import  org.plan.research.minimization.core.model.DDContext
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.util.progress.SequentialProgressReporter
 import com.intellij.platform.util.progress.reportSequentialProgress
+import org.eclipse.jgit.api.Git
+import org.plan.research.minimization.plugin.services.GitWrapperService
 
 @Suppress("KDOC_EXTRA_PROPERTY", "KDOC_NO_CLASS_BODY_PROPERTIES_IN_HEADER")
 /**
@@ -16,6 +18,7 @@ import com.intellij.platform.util.progress.reportSequentialProgress
  * @property currentLevel An optional list of [ProjectFileDDItem] representing the current level of the minimizing project files.
  * @property progressReporter An optional progress reporter for the minimization process
  * @property indexProject The project that can be used for indexes or for progress reporting purposes
+ * @property git Git API for creating snapshots of the project state during the minimization process
  * @constructor projectDir The directory of the current project to be minimized.
  */
 sealed class IJDDContext(
@@ -26,6 +29,7 @@ sealed class IJDDContext(
     abstract val projectDir: VirtualFile
     abstract val indexProject: Project
     val indexProjectDir: VirtualFile by lazy { indexProject.guessProjectDir()!! }
+    lateinit var git: Git
 
     abstract fun copy(
         currentLevel: List<IJDDItem>? = this.currentLevel,
@@ -37,6 +41,10 @@ sealed class IJDDContext(
             val context = action(copy(progressReporter = reporter))
             context.copy(progressReporter = null)
         }
+
+    suspend fun setGit(getGit: suspend (VirtualFile) -> Git) {
+        git = getGit(indexProjectDir)
+    }
 }
 
 /**

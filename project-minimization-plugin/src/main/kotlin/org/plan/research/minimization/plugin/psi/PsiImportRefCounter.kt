@@ -46,19 +46,16 @@ class PsiImportRefCounter private constructor(private val counter: PersistentMap
     )
 
     companion object {
-        suspend fun create(ktFile: KtFile): PsiImportRefCounter {
-            val usedReferences = readAction {
-                analyze(ktFile) {
-                    UsedReferencesCollector(ktFile).run { collectUsedReferences() }
-                }
+        @RequiresReadLock
+        fun create(ktFile: KtFile): PsiImportRefCounter {
+            val usedReferences = analyze(ktFile) {
+                UsedReferencesCollector(ktFile).run { collectUsedReferences() }
             }
             val counter = mutableMapOf<ImportPath, Int>()
-            readAction {
-                usedReferences.processImportDirectives(
-                    ktFile.importDirectives,
-                    ktFile.packageFqName,
-                ) { importPath, times -> counter.merge(importPath, times, Int::plus) }
-            }
+            usedReferences.processImportDirectives(
+                ktFile.importDirectives,
+                ktFile.packageFqName,
+            ) { importPath, times -> counter.merge(importPath, times, Int::plus) }
             return PsiImportRefCounter(counter.toPersistentMap())
         }
     }

@@ -2,6 +2,7 @@ package org.plan.research.minimization.plugin.hierarchy
 
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoExceptionFound
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoRootFound
+import org.plan.research.minimization.plugin.execution.DebugPropertyCheckingListener
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.execution.comparable.withLogging
 import org.plan.research.minimization.plugin.getExceptionComparator
@@ -39,6 +40,7 @@ class DeletablePsiElementHierarchyGenerator : ProjectHierarchyProducer<PsiStubDD
                 exceptionComparator.withLogging(),
                 FunctionDeletingLens(),
                 fromContext,
+                listOfNotNull(DebugPropertyCheckingListener<PsiStubDDItem>("declaration")),
             )
             .getOrElse { raise(NoExceptionFound) }
         DeletablePsiElementHierarchyDDGenerator(propertyTester, buildTries(fromContext))

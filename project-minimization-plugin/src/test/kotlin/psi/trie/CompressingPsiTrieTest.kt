@@ -128,4 +128,23 @@ class CompressingPsiTrieTest {
             doTest(idxs.map { items[it] })
         }
     }
+
+    @Test
+    fun `test distant nodes`() {
+        val paths = listOf(
+            listOf(0, 0),
+            listOf(0, 1)
+        )
+        val items = paths.map {
+            PsiChildrenIndexDDItem(
+                localPath = Path("."),
+                childrenPath = it.map { IntChildrenIndex(it) },
+                renderedType = null
+            )
+        }
+        val trie = CompressingPsiItemTrie.Companion.create(items)
+        val compressed = trie.getNextItems()
+        assertEquals(2, compressed.size)
+        assert(compressed.all { it.depth == 2})
+    }
 }

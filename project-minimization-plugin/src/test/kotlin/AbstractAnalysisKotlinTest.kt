@@ -22,6 +22,7 @@ import org.plan.research.minimization.plugin.psi.PsiUtils
 import kotlin.collections.filter
 
 abstract class AbstractAnalysisKotlinTest : JavaCodeInsightFixtureTestCase() {
+    override fun runInDispatchThread(): Boolean = false
     protected fun configureModules(project: Project) = runBlocking {
         writeAction {
             val moduleManager = ModuleManager.getInstance(project)

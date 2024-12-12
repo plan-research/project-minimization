@@ -120,7 +120,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
 
         val ddAlgorithm = declarationLevelStage.ddAlgorithm.getDDAlgorithm()
         val hierarchicalDD = HierarchicalDD(ddAlgorithm)
-        val hierarchy = DeletablePsiElementHierarchyGenerator()
+        val hierarchy = DeletablePsiElementHierarchyGenerator(declarationLevelStage.depthThreshold)
             .produce(context)
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
 

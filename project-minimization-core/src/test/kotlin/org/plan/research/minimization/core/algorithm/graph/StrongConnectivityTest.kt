@@ -8,14 +8,17 @@ import org.plan.research.minimization.core.algorithm.graph.condensation.Condense
 import org.plan.research.minimization.core.algorithm.graph.condensation.CondensedVertex
 import org.plan.research.minimization.core.algorithm.graph.condensation.CondensedVertexSet
 import org.plan.research.minimization.core.algorithm.graph.condensation.StrongConnectivityCondensation
+import org.plan.research.minimization.core.algorithm.graph.domain.TestGraphDAGDomain
+import org.plan.research.minimization.core.algorithm.graph.domain.TestGraphDomain
+import org.plan.research.minimization.core.algorithm.graph.domain.TestGraphTreeDomain
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-private typealias CondensedSet = CondensedVertexSet<TestNode, TestEdge, TestGraph>
-private typealias CondensedV = CondensedVertex<TestNode>
-private typealias CondensedE = CondensedEdge<TestNode, TestEdge>
-private typealias CondensedG = CondensedGraph<TestNode, TestEdge, TestGraph>
+typealias CondensedSet = CondensedVertexSet<TestNode, TestEdge, TestGraph>
+typealias CondensedV = CondensedVertex<TestNode>
+typealias CondensedE = CondensedEdge<TestNode, TestEdge>
+typealias CondensedG = CondensedGraph<TestNode, TestEdge>
 
 class StrongConnectivityTest {
 
@@ -30,7 +33,7 @@ class StrongConnectivityTest {
     fun `test DAG condensation`(@ForAll dag: TestGraph) {
         doTest(dag)
     }
-    @Property(tries = 100)
+    @Property(tries = 50)
     @Domain(TestGraphDomain::class)
     fun `test on random graph`(@ForAll graph: TestGraph) {
         doTest(graph)

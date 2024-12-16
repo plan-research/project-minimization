@@ -31,6 +31,8 @@ abstract class DepthFirstGraphWalker<V : DDItem, E : GraphEdge<V>, G : GraphWith
                 visited.add(edge.to)
                 onUnvisitedNode(graph, edge.to, data)
                 onPassedEdge(graph, edge, data)
+            } else {
+                onPassedEdge(graph, edge, data)
             }
         }
     }

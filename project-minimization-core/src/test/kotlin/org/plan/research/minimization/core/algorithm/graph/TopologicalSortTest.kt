@@ -6,6 +6,8 @@ import net.jqwik.api.PropertyDefaults
 import net.jqwik.api.ShrinkingMode
 import net.jqwik.api.domains.Domain
 import org.plan.research.minimization.core.algorithm.graph.condensation.TopologicalSort
+import org.plan.research.minimization.core.algorithm.graph.domain.TestGraphDAGDomain
+import org.plan.research.minimization.core.algorithm.graph.domain.TestGraphTreeDomain
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 

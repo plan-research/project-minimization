@@ -29,7 +29,7 @@ class CondensedVertexSet<V : DDItem, E : GraphEdge<V>, G : GraphWithAdjacencyLis
                     .edgesFrom(it)
                     .bind()
                     .mapNotNull {
-                        val toComponent = getComponent(it.to).getOrNull() ?: return@mapNotNull null
+                        val toComponent = getComponent(it.to).getOrNull().takeIf { component !== it } ?: return@mapNotNull null
                         toComponent to it
                     }
             }.getOrElse { emptyList() }

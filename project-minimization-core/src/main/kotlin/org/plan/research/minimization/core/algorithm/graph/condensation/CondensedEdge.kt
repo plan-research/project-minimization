@@ -7,4 +7,6 @@ data class CondensedEdge<V : DDItem, E : GraphEdge<V>>(
     val from: CondensedVertex<V>,
     override val to: CondensedVertex<V>,
     val originalEdges: List<E>,
-) : GraphEdge<CondensedVertex<V>>
+) : GraphEdge<CondensedVertex<V>> {
+    override fun toString(): String = "Edge($from => $to)"
+}

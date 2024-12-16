@@ -1,10 +1,15 @@
-package org.plan.research.minimization.core.algorithm.graph
+package org.plan.research.minimization.core.algorithm.graph.domain
 
+import arrow.core.getOrElse
 import net.jqwik.api.Arbitraries
 import net.jqwik.api.Arbitrary
 import net.jqwik.api.Provide
 import net.jqwik.api.domains.DomainContextBase
 import net.jqwik.kotlin.api.any
+import org.plan.research.minimization.core.algorithm.graph.TestEdge
+import org.plan.research.minimization.core.algorithm.graph.TestGraph
+import org.plan.research.minimization.core.algorithm.graph.TestNode
+import kotlin.collections.plus
 
 class TestGraphDAGDomain : DomainContextBase() {
     @Provide
@@ -16,7 +21,8 @@ class TestGraphDAGDomain : DomainContextBase() {
                 return@flatMap treeGenerator
             }
             val edges = tree.edges.toSet()
-            val allEdges = (0 until (treeSize - 1)).map { from ->
+            val allEdges = (0 until (treeSize - 1)).mapNotNull { from ->
+                if (tree.edgesFrom(tree.vertices[from]).getOrElse {emptyList()}.size == (treeSize - from - 1)) return@mapNotNull null
                 Int
                     .any(from + 1 until treeSize)
                     .map { to -> TestEdge(TestNode("$from"), TestNode("$to")) }

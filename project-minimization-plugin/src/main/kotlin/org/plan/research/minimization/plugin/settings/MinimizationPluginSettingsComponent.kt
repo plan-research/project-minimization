@@ -28,7 +28,7 @@ import javax.swing.table.DefaultTableModel
 import kotlin.io.path.relativeTo
 
 @Suppress("NO_CORRESPONDING_PROPERTY")
-class AppSettingsComponent(project: Project) {
+class MinimizationPluginSettingsComponent(project: Project) {
     private val projectBaseDir = project.guessProjectDir()
     private val myMainPanel: JPanel
 

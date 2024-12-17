@@ -4,33 +4,31 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.state.*
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
-import org.plan.research.minimization.plugin.settings.AppSettingsComponent
+import org.plan.research.minimization.plugin.settings.MinimizationPluginSettingsComponent
 
 class SettingsUITest : BasePlatformTestCase() {
 
-    private lateinit var component: AppSettingsComponent
+    private lateinit var component: MinimizationPluginSettingsComponent
 
     override fun setUp() {
         super.setUp()
-        component = AppSettingsComponent(project)
+        component = MinimizationPluginSettingsComponent(project)
     }
 
     fun testUpdateSettings() {
         val settings = project.service<MinimizationPluginSettings>().stateObservable
-        var compilationStrategy by settings.compilationStrategy.mutable()
-        var temporaryProjectLocation by settings.temporaryProjectLocation.mutable()
-        var snapshotStrategy by settings.snapshotStrategy.mutable()
-        var stages by settings.stages.mutable()
-        var minimizationTransformations by settings.minimizationTransformations.mutable()
 
-
-        compilationStrategy = CompilationStrategy.DUMB
-        temporaryProjectLocation = "new-project-location"
-        snapshotStrategy = SnapshotStrategy.PROJECT_CLONING
-        stages = mutableListOf(
-            FileLevelStage(HierarchyCollectionStrategy.FILE_TREE, DDStrategy.DD_MIN)
+        settings.compilationStrategy.set(CompilationStrategy.DUMB)
+        settings.temporaryProjectLocation.set("new-project-location")
+        settings.snapshotStrategy.set(SnapshotStrategy.PROJECT_CLONING)
+        settings.stages.set(
+            mutableListOf(
+                FileLevelStage(HierarchyCollectionStrategy.FILE_TREE, DDStrategy.DD_MIN)
+            )
         )
-        minimizationTransformations = mutableListOf(TransformationDescriptors.PATH_RELATIVIZATION)
+        settings.minimizationTransformations.set(
+            mutableListOf(TransformationDescriptors.PATH_RELATIVIZATION)
+        )
 
         val updatedSettings = project.service<MinimizationPluginSettings>().state
         assertEquals(CompilationStrategy.DUMB, updatedSettings.compilationStrategy)

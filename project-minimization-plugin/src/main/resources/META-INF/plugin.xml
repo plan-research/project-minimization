@@ -32,8 +32,8 @@
     <extensions defaultExtensionNs="com.intellij">
         <projectConfigurable
                 parentId="tools"
-                instance="org.plan.research.minimization.plugin.settings.AppSettingsConfigurable"
-                id="org.plan.research.minimization.plugin.settings.AppSettingsConfigurable"
+                instance="org.plan.research.minimization.plugin.settings.MinimizationPluginSettingsConfigurable"
+                id="org.plan.research.minimization.plugin.settings.MinimizationPluginSettingsConfigurable"
                 displayName="Project Minimization"/>
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.kotlin">

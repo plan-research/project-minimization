@@ -94,14 +94,18 @@ abstract class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
     }
 
     protected fun enableDeduplication() {
-        var minimizationTransformations by project.service<MinimizationPluginSettings>().stateObservable.minimizationTransformations.mutable()
-        if (!minimizationTransformations.contains(TransformationDescriptors.PATH_RELATIVIZATION)) {
-            minimizationTransformations = minimizationTransformations + TransformationDescriptors.PATH_RELATIVIZATION
+        project.service<MinimizationPluginSettings>().stateObservable.minimizationTransformations.mutate {
+            if (!it.contains(TransformationDescriptors.PATH_RELATIVIZATION)) {
+                it + TransformationDescriptors.PATH_RELATIVIZATION
+            } else {
+                it
+            }
         }
     }
 
     protected fun disableDeduplication() {
-        var minimizationTransformations by project.service<MinimizationPluginSettings>().stateObservable.minimizationTransformations.mutable()
-        minimizationTransformations = minimizationTransformations - TransformationDescriptors.PATH_RELATIVIZATION
+        project.service<MinimizationPluginSettings>().stateObservable.minimizationTransformations.mutate {
+            it - TransformationDescriptors.PATH_RELATIVIZATION
+        }
     }
 }

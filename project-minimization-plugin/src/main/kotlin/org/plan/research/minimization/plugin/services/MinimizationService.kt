@@ -35,35 +35,35 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
 
     fun minimizeProject(project: Project, onComplete: suspend (HeavyIJDDContext) -> Unit = { }) {
         coroutineScope.launch {
-            project.service<MinimizationPluginSettings>().freezeSettings = true
-            try {
+            project.service<MinimizationPluginSettings>().withFrozenState {
                 withBackgroundProgress(project, "Minimizing project") {
-                    either {
-                        logger.info { "Start Project minimization" }
-                        var context = HeavyIJDDContext(project)
-
-                        reportSequentialProgress(stages.size) { reporter ->
-                            context = cloneProject(context, reporter)
-
-                            for (stage in stages) {
-                                logger.info { "Starting stage=${stage.name}. The starting snapshot is: ${context.projectDir.toNioPath()}" }
-                                context = processStage(context, stage, reporter)
-                            }
-                        }
-
-                        context.also { onComplete(it) }
-                    }.onRight {
-                        logger.info { "End Project minimization" }
-                    }.onLeft { error ->
-                        logger.info { "End Project minimization" }
-                        logger.error { "End minimizeProject with error: $error" }
-                    }
+                    minimizeProjectImpl(project).onRight { onComplete(it) }
                 }
-            } finally {
-                project.service<MinimizationPluginSettings>().freezeSettings = false
             }
         }
     }
+
+    private suspend fun minimizeProjectImpl(project: Project) =
+        either {
+            logger.info { "Start Project minimization" }
+            var context = HeavyIJDDContext(project)
+
+            reportSequentialProgress(stages.size) { reporter ->
+                context = cloneProject(context, reporter)
+
+                for (stage in stages) {
+                    logger.info { "Starting stage=${stage.name}. The starting snapshot is: ${context.projectDir.toNioPath()}" }
+                    context = processStage(context, stage, reporter)
+                }
+            }
+
+            context
+        }.onRight {
+            logger.info { "End Project minimization" }
+        }.onLeft { error ->
+            logger.info { "End Project minimization" }
+            logger.error { "End minimizeProject with error: $error" }
+        }
 
     private suspend fun Raise<MinimizationError>.processStage(
         context: HeavyIJDDContext,

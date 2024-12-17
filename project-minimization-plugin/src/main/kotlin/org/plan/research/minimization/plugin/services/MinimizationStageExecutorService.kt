@@ -2,6 +2,7 @@ package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDD
 import org.plan.research.minimization.plugin.errors.MinimizationError
+import org.plan.research.minimization.plugin.execution.DebugPropertyCheckingListener
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.getDDAlgorithm
 import org.plan.research.minimization.plugin.getExceptionComparator
@@ -74,6 +75,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
                 .getExceptionComparator(),
             lens,
             lightContext,
+            listOfNotNull(DebugPropertyCheckingListener.create<PsiChildrenIndexDDItem>("body-replacement")),
         ).getOrElse {
             logger.error { "Property checker creation failed. Aborted" }
             raise(MinimizationError.PropertyCheckerFailed)
@@ -91,7 +93,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
             }
     }.logResult("Function Body Replacement")
 
-    private suspend fun<T : PsiChildrenPathIndex> List<PsiDDItem<T>>.logPsiElements(context: IJDDContext) {
+    private suspend fun <T : PsiChildrenPathIndex> List<PsiDDItem<T>>.logPsiElements(context: IJDDContext) {
         if (!logger.isTraceEnabled) {
             return
         }
@@ -118,7 +120,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
 
         val ddAlgorithm = declarationLevelStage.ddAlgorithm.getDDAlgorithm()
         val hierarchicalDD = HierarchicalDD(ddAlgorithm)
-        val hierarchy = DeletablePsiElementHierarchyGenerator()
+        val hierarchy = DeletablePsiElementHierarchyGenerator(declarationLevelStage.depthThreshold)
             .produce(context)
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
 

@@ -41,7 +41,7 @@ class KtSourceImportRefCounter private constructor(private val refs: PersistentM
             val psiRefCounters = ktFiles
                 .mapNotNull {
                     val localPath = it.virtualFile.toNioPathOrNull()?.relativeTo(projectDir) ?: return@mapNotNull null
-                    localPath to PsiImportRefCounter.create(it)
+                    localPath to smartReadAction(context.indexProject) { PsiImportRefCounter.create(it) }
                 }
                 .toList()
                 .associate { it }

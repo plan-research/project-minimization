@@ -2,6 +2,7 @@ package org.plan.research.minimization.plugin.hierarchy
 
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoExceptionFound
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoRootFound
+import org.plan.research.minimization.plugin.execution.DebugPropertyCheckingListener
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.execution.comparable.withLogging
 import org.plan.research.minimization.plugin.getExceptionComparator
@@ -25,7 +26,7 @@ import mu.KotlinLogging
 
 import java.nio.file.Path
 
-class DeletablePsiElementHierarchyGenerator : ProjectHierarchyProducer<PsiStubDDItem> {
+class DeletablePsiElementHierarchyGenerator(private val depthThreshold: Int) : ProjectHierarchyProducer<PsiStubDDItem> {
     private val logger = KotlinLogging.logger { }
     override suspend fun produce(fromContext: IJDDContext): ProjectHierarchyProducerResult<PsiStubDDItem> = either {
         val project = fromContext.originalProject
@@ -39,6 +40,7 @@ class DeletablePsiElementHierarchyGenerator : ProjectHierarchyProducer<PsiStubDD
                 exceptionComparator.withLogging(),
                 FunctionDeletingLens(),
                 fromContext,
+                listOfNotNull(DebugPropertyCheckingListener.create<PsiStubDDItem>("instance-level")),
             )
             .getOrElse { raise(NoExceptionFound) }
         DeletablePsiElementHierarchyDDGenerator(propertyTester, buildTries(fromContext))
@@ -47,7 +49,8 @@ class DeletablePsiElementHierarchyGenerator : ProjectHierarchyProducer<PsiStubDD
     private suspend fun buildTries(context: IJDDContext): Map<Path, StubCompressingPsiTrie> {
         val items = service<MinimizationPsiManagerService>().findDeletablePsiItems(context)
         logger.debug { "Found ${items.size} deletable items " }
-        return items.groupBy(PsiStubDDItem::localPath)
+        val filteredItems = items.asSequence().filter { it.childrenPath.size <= depthThreshold }
+        return filteredItems.groupBy(PsiStubDDItem::localPath)
             .mapValues { (_, items) -> CompressingPsiItemTrie.create(items) }
             .also { logger.debug { "Created ${it.size} tries. The maximum trie depth is ${it.maxOfOrNull { (_, trie) -> trie.maxDepth }}" } }
     }

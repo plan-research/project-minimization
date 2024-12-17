@@ -11,14 +11,19 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.ui.ComboBox
+import com.intellij.openapi.ui.ComponentValidator
+import com.intellij.openapi.ui.ValidationInfo
+import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.ToolbarDecorator
 import com.intellij.ui.components.*
+import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.FormBuilder
 
 import java.awt.BorderLayout
 import java.util.*
 import javax.swing.*
+import javax.swing.event.DocumentEvent
 import javax.swing.table.DefaultTableModel
 import kotlin.io.path.relativeTo
 
@@ -72,6 +77,32 @@ class AppSettingsComponent(project: Project) {
     private val functionDDAlgorithmComboBox = ComboBox(DefaultComboBoxModel(DDStrategy.entries.toTypedArray()))
     private val declarationStageCheckBox = JBCheckBox("Enable declaration level stage")
     private val declarationDDAlgorithmComboBox = ComboBox(DefaultComboBoxModel(DDStrategy.entries.toTypedArray()))
+    private val declarationDepthThresholdField = JBTextField().apply {
+        emptyText.text = "2"
+    }
+    private val declarationDepthThresholdValidator = ComponentValidator(project).withValidator {
+        val thresholdText = declarationDepthThresholdField.text
+        if (thresholdText.isNotEmpty()) {
+            try {
+                val thresholdValue = thresholdText.toInt()
+                if (thresholdValue >= 1) {
+                    return@withValidator null
+                } else {
+                    return@withValidator ValidationInfo(
+                        DECLARATION_DEPTH_THRESHOLD_VALIDATION_MESSAGE,
+                        declarationDepthThresholdField,
+                    )
+                }
+            } catch (_: NumberFormatException) {
+                return@withValidator ValidationInfo(
+                    DECLARATION_DEPTH_THRESHOLD_VALIDATION_MESSAGE,
+                    declarationDepthThresholdField,
+                )
+            }
+        } else {
+            return@withValidator null
+        }
+    }
     private val fileStageCheckBox = JBCheckBox("Enable file level stage")
     private val fileHierarchyStrategyComboBox =
         ComboBox(DefaultComboBoxModel(HierarchyCollectionStrategy.entries.toTypedArray()))
@@ -79,8 +110,9 @@ class AppSettingsComponent(project: Project) {
 
     // Transformation List
     private val transformationCheckBoxes = TransformationDescriptors.entries.associateWith { descriptor ->
-        JBCheckBox(descriptor.name.replace("_", " ")
-            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() })
+        JBCheckBox(
+            descriptor.name.replace("_", " ")
+                .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() })
     }
 
     // ignore files
@@ -148,7 +180,7 @@ class AppSettingsComponent(project: Project) {
                 add(FunctionLevelStage(functionDDStrategy))
             }
             if (declarationStageCheckBox.isSelected) {
-                add(DeclarationLevelStage(declarationDDAlgorithm))
+                add(DeclarationLevelStage(declarationDDAlgorithm, declarationDepthThreshold))
             }
             if (fileStageCheckBox.isSelected) {
                 add(
@@ -172,6 +204,11 @@ class AppSettingsComponent(project: Project) {
                 .firstOrNull()
                 ?.ddAlgorithm
                 ?: DDStrategy.PROBABILISTIC_DD
+            declarationDepthThreshold = value
+                .filterIsInstance<DeclarationLevelStage>()
+                .firstOrNull()
+                ?.depthThreshold
+                ?: 2
 
             fileStageCheckBox.isSelected = value.any { it is FileLevelStage }
             fileHierarchyStrategy = value
@@ -222,6 +259,11 @@ class AppSettingsComponent(project: Project) {
         get() = declarationDDAlgorithmComboBox.selectedItem as DDStrategy
         set(value) {
             declarationDDAlgorithmComboBox.selectedItem = value
+        }
+    private var declarationDepthThreshold: Int
+        get() = declarationDepthThresholdField.text.toIntOrNull() ?: 0
+        set(value) {
+            declarationDepthThresholdField.text = value.toString()
         }
 
     private var isFileStageEnabled: Boolean
@@ -378,8 +420,14 @@ class AppSettingsComponent(project: Project) {
         declarationStagePanel = FormBuilder.createFormBuilder()
             .addComponent(declarationStageCheckBox, 1)
             .addComponent(declarationStageSettings, 1)
+            .addLabeledComponent(JBLabel("A maximum depth for the stage: "), declarationDepthThresholdField, 1)
             .panel
-
+        declarationDepthThresholdValidator.installOn(declarationDepthThresholdField)
+        declarationDepthThresholdField.document.addDocumentListener(object : DocumentAdapter() {
+            override fun textChanged(e: DocumentEvent) {
+                ComponentValidator.getInstance(declarationDepthThresholdField).ifPresent { it.revalidate() }
+            }
+        })
         declarationStageCheckBox.addActionListener {
             updateDeclarationStageSettingsEnabled()
         }
@@ -435,4 +483,9 @@ class AppSettingsComponent(project: Project) {
     fun getPanel(): JPanel = myMainPanel
 
     fun getPreferredFocusedComponent(): JComponent = compilationStrategyComboBox
+
+    companion object {
+        private const val DECLARATION_DEPTH_THRESHOLD_VALIDATION_MESSAGE =
+            "Validation threshold must be a positive integer"
+    }
 }

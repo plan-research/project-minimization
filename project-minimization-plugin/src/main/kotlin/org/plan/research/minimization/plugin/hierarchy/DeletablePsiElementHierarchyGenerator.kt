@@ -40,7 +40,7 @@ class DeletablePsiElementHierarchyGenerator(private val depthThreshold: Int) : P
                 exceptionComparator.withLogging(),
                 FunctionDeletingLens(),
                 fromContext,
-                listOfNotNull(DebugPropertyCheckingListener<PsiStubDDItem>("declaration")),
+                listOfNotNull(DebugPropertyCheckingListener.create<PsiStubDDItem>("instance-level")),
             )
             .getOrElse { raise(NoExceptionFound) }
         DeletablePsiElementHierarchyDDGenerator(propertyTester, buildTries(fromContext))

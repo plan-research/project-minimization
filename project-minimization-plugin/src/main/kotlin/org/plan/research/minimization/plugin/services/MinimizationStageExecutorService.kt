@@ -75,7 +75,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
                 .getExceptionComparator(),
             lens,
             lightContext,
-            listOfNotNull(DebugPropertyCheckingListener<PsiChildrenIndexDDItem>("body-replacement")),
+            listOfNotNull(DebugPropertyCheckingListener.create<PsiChildrenIndexDDItem>("body-replacement")),
         ).getOrElse {
             logger.error { "Property checker creation failed. Aborted" }
             raise(MinimizationError.PropertyCheckerFailed)

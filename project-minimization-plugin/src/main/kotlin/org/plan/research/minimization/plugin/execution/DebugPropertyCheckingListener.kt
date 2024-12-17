@@ -15,9 +15,9 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class DebugPropertyCheckingListener<T : IJDDItem>(folderSuffix: String) : PropertyCheckingListener<T> {
-    private val logger = KotlinLogging.logger { }
     private val logLocation = Path(System.getProperty("idea.log.path"), "property-checking-log-$folderSuffix")
     private val entries = mutableMapOf<String, LogStage>()
+    private val logger = KotlinLogging.logger { }
 
     init {
         logLocation.createDirectories()
@@ -90,5 +90,13 @@ class DebugPropertyCheckingListener<T : IJDDItem>(folderSuffix: String) : Proper
 
     companion object {
         private val json = Json { prettyPrint = true }
+        fun<T : IJDDItem> create(name: String): DebugPropertyCheckingListener<T>? {
+            val logger = KotlinLogging.logger { }
+            return if (logger.isTraceEnabled) {
+                DebugPropertyCheckingListener(name)
+            } else {
+                null
+            }
+        }
     }
 }

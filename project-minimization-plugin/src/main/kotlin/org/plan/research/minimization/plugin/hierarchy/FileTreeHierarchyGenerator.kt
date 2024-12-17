@@ -30,7 +30,7 @@ class FileTreeHierarchyGenerator : ProjectHierarchyProducer<ProjectFileDDItem> {
                     .exceptionComparingStrategy.getExceptionComparator(),
                 FileDeletingItemLens(),
                 fromContext,
-                listOfNotNull(DebugPropertyCheckingListener<ProjectFileDDItem>("file-level")),
+                listOfNotNull(DebugPropertyCheckingListener.create<ProjectFileDDItem>("file-level")),
             )
             .getOrElse { raise(NoExceptionFound) }
         FileTreeHierarchicalDDGenerator(propertyTester)

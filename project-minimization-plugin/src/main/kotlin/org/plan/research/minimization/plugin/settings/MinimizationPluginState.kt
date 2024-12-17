@@ -1,5 +1,6 @@
 package org.plan.research.minimization.plugin.settings
 
+import org.plan.research.minimization.plugin.model.DeclarationLevelStage
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.MinimizationStage
@@ -27,7 +28,7 @@ class MinimizationPluginState : BaseState() {
     @get:XCollection(
         style = XCollection.Style.v1,
         elementName = "stage",
-        elementTypes = [FunctionLevelStage::class, FileLevelStage::class],
+        elementTypes = [FunctionLevelStage::class, DeclarationLevelStage::class, FileLevelStage::class],
     )
     var stages by property(defaultStages) { it == defaultStages }
 
@@ -35,9 +36,14 @@ class MinimizationPluginState : BaseState() {
     @get:XCollection(style = XCollection.Style.v1, elementName = "transformation")
     var minimizationTransformations by property(defaultTransformations) { it == defaultTransformations }
 
+    @get:Tag
+    @get:XCollection(style = XCollection.Style.v1, elementName = "ignore-paths")
+    var ignorePaths by property(emptyList<String>()) { it.isEmpty() }
+
     companion object {
         private val defaultStages: List<MinimizationStage> = listOf(
             FunctionLevelStage(),
+            DeclarationLevelStage(),
             FileLevelStage(),
         )
         private val defaultTransformations: List<TransformationDescriptors> = listOf(

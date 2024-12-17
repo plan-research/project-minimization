@@ -43,16 +43,20 @@ class KotlincExceptionTranslator : BuildEventTranslator {
         if (buildEvent.message.startsWith("[ksp]")) {
             return@either parseKspError(buildEvent).bind()
         }
-        ensure(buildEvent is FileMessageEvent) {
+        ensure(buildEvent is MessageEvent) {
             raise(
                 CompilationPropertyCheckerError.BuildSystemFail(
                     cause = IllegalStateException(
-                        "Invalid event type: ${buildEvent.javaClass}, but expected FileMessageEvent",
+                        "Invalid event type: ${buildEvent.javaClass}, but expected MessageEvent",
                     ),
                 ),
             )
         }
-        val filePosition = CaretPosition.fromFilePosition(buildEvent.filePosition)
+        val filePosition = if (buildEvent is FileMessageEvent) {
+            CaretPosition.fromFilePosition(buildEvent.filePosition)
+        } else {
+            null
+        }
         KotlincException.GeneralKotlincException(filePosition, buildEvent.message, buildEvent.severity())
     }
 
@@ -102,7 +106,7 @@ class KotlincExceptionTranslator : BuildEventTranslator {
         exceptionMessage: String,
     ): Either<CompilationPropertyCheckerError, KotlincException.GenericInternalCompilerException> = either {
         val (message, stacktrace) = exceptionMessage.splitMessageAndStacktrace()
-            .getOrElse { raise(CompilationPropertyCheckerError.CompilationSuccess) }
+            .getOrElse { return@either KotlincException.GenericInternalCompilerException(null, exceptionMessage) }
         KotlincException.GenericInternalCompilerException(stacktrace, message)
     }
 
@@ -114,7 +118,8 @@ class KotlincExceptionTranslator : BuildEventTranslator {
         message.endsWith("Please report this problem https://kotl.in/issue") ||
             message.startsWith("org.jetbrains.kotlin.util.FileAnalysisException") ||
             message.startsWith(BACKEND_COMPILER_EXCEPTION_CLASSNAME) ||
-            message.startsWith(COMMON_BACKEND_EXCEPTION_CLASSNAME)
+            message.startsWith(COMMON_BACKEND_EXCEPTION_CLASSNAME) ||
+            message.startsWith(FILE_ANALYSIS_EXCEPTION_CLASSNAME)
 
     private fun parseExceptionMessage(message: String): Pair<String, String>? {
         val colonIndex = message.indexOfOrNull(COLON) ?: return null
@@ -151,5 +156,7 @@ class KotlincExceptionTranslator : BuildEventTranslator {
 
         private const val COMMON_BACKEND_EXCEPTION_CLASSNAME =
             "org.jetbrains.kotlin.backend.common.BackendException"  // old version, I suppose
+        private const val FILE_ANALYSIS_EXCEPTION_CLASSNAME =
+            "org.jetbrains.kotlin.util.FileAnalysisException"
     }
 }

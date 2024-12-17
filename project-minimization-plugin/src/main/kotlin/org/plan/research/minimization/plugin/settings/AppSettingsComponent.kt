@@ -1,19 +1,35 @@
 package org.plan.research.minimization.plugin.settings
 
+import org.plan.research.minimization.plugin.model.DeclarationLevelStage
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.MinimizationStage
 import org.plan.research.minimization.plugin.model.state.*
 
+import com.intellij.openapi.fileChooser.FileChooser
+import com.intellij.openapi.fileChooser.FileChooserDescriptor
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.ui.ComboBox
+import com.intellij.openapi.ui.ComponentValidator
+import com.intellij.openapi.ui.ValidationInfo
+import com.intellij.ui.DocumentAdapter
+import com.intellij.ui.ToolbarDecorator
 import com.intellij.ui.components.*
+import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.FormBuilder
 
+import java.awt.BorderLayout
 import java.util.*
 import javax.swing.*
+import javax.swing.event.DocumentEvent
+import javax.swing.table.DefaultTableModel
+import kotlin.io.path.relativeTo
 
 @Suppress("NO_CORRESPONDING_PROPERTY")
-class AppSettingsComponent {
+class AppSettingsComponent(project: Project) {
+    private val projectBaseDir = project.guessProjectDir()
     private val myMainPanel: JPanel
 
     // Fields from MinimizationPluginState
@@ -59,6 +75,34 @@ class AppSettingsComponent {
     // Stage List
     private val functionStageCheckBox = JBCheckBox("Enable function level stage")
     private val functionDDAlgorithmComboBox = ComboBox(DefaultComboBoxModel(DDStrategy.entries.toTypedArray()))
+    private val declarationStageCheckBox = JBCheckBox("Enable declaration level stage")
+    private val declarationDDAlgorithmComboBox = ComboBox(DefaultComboBoxModel(DDStrategy.entries.toTypedArray()))
+    private val declarationDepthThresholdField = JBTextField().apply {
+        emptyText.text = "2"
+    }
+    private val declarationDepthThresholdValidator = ComponentValidator(project).withValidator {
+        val thresholdText = declarationDepthThresholdField.text
+        if (thresholdText.isNotEmpty()) {
+            try {
+                val thresholdValue = thresholdText.toInt()
+                if (thresholdValue >= 1) {
+                    return@withValidator null
+                } else {
+                    return@withValidator ValidationInfo(
+                        DECLARATION_DEPTH_THRESHOLD_VALIDATION_MESSAGE,
+                        declarationDepthThresholdField,
+                    )
+                }
+            } catch (_: NumberFormatException) {
+                return@withValidator ValidationInfo(
+                    DECLARATION_DEPTH_THRESHOLD_VALIDATION_MESSAGE,
+                    declarationDepthThresholdField,
+                )
+            }
+        } else {
+            return@withValidator null
+        }
+    }
     private val fileStageCheckBox = JBCheckBox("Enable file level stage")
     private val fileHierarchyStrategyComboBox =
         ComboBox(DefaultComboBoxModel(HierarchyCollectionStrategy.entries.toTypedArray()))
@@ -66,8 +110,23 @@ class AppSettingsComponent {
 
     // Transformation List
     private val transformationCheckBoxes = TransformationDescriptors.entries.associateWith { descriptor ->
-        JBCheckBox(descriptor.name.replace("_", " ")
-            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() })
+        JBCheckBox(
+            descriptor.name.replace("_", " ")
+                .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() })
+    }
+
+    // ignore files
+    private val pathTableModel = DefaultTableModel(arrayOf<Array<Any>>(), arrayOf("Exclude from minimization"))
+    private val pathTable = JBTable(pathTableModel).apply {
+        setShowGrid(false)
+        setEnableAntialiasing(true)
+        emptyText.text = "Exclude files/directories"  // text for empty table
+        selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION  // allow single selection
+    }
+    private val fileChooserDescriptor = FileChooserDescriptor(
+        true, true, false, true, false, true,
+    ).apply {
+        projectBaseDir?.let { withRoots(it) }
     }
 
     var isFrozen: Boolean = false
@@ -120,6 +179,9 @@ class AppSettingsComponent {
             if (functionStageCheckBox.isSelected) {
                 add(FunctionLevelStage(functionDDStrategy))
             }
+            if (declarationStageCheckBox.isSelected) {
+                add(DeclarationLevelStage(declarationDDAlgorithm, declarationDepthThreshold))
+            }
             if (fileStageCheckBox.isSelected) {
                 add(
                     FileLevelStage(
@@ -135,6 +197,18 @@ class AppSettingsComponent {
                 .find { it is FunctionLevelStage }
                 ?.let { (it as FunctionLevelStage).ddAlgorithm }
                 ?: DDStrategy.PROBABILISTIC_DD
+
+            declarationStageCheckBox.isSelected = value.any { it is DeclarationLevelStage }
+            declarationDDAlgorithm = value
+                .filterIsInstance<DeclarationLevelStage>()
+                .firstOrNull()
+                ?.ddAlgorithm
+                ?: DDStrategy.PROBABILISTIC_DD
+            declarationDepthThreshold = value
+                .filterIsInstance<DeclarationLevelStage>()
+                .firstOrNull()
+                ?.depthThreshold
+                ?: 2
 
             fileStageCheckBox.isSelected = value.any { it is FileLevelStage }
             fileHierarchyStrategy = value
@@ -156,6 +230,13 @@ class AppSettingsComponent {
             }
         }
 
+    var ignorePaths: List<String>
+        get() = (0 until pathTableModel.rowCount).map { pathTableModel.getValueAt(it, 0).toString() }
+        set(value) {
+            pathTableModel.rowCount = 0  // clean table
+            value.forEach { pathTableModel.addRow(arrayOf(it)) }  // add paths
+        }
+
     private var isFunctionStageEnabled: Boolean
         get() = functionStageCheckBox.isSelected
         set(value) {
@@ -166,6 +247,23 @@ class AppSettingsComponent {
         get() = functionDDAlgorithmComboBox.selectedItem as DDStrategy
         set(value) {
             functionDDAlgorithmComboBox.selectedItem = value
+        }
+
+    private var isDeclarationStageEnabled: Boolean
+        get() = declarationStageCheckBox.isSelected
+        set(value) {
+            declarationStageCheckBox.isSelected = value
+        }
+
+    private var declarationDDAlgorithm: DDStrategy
+        get() = declarationDDAlgorithmComboBox.selectedItem as DDStrategy
+        set(value) {
+            declarationDDAlgorithmComboBox.selectedItem = value
+        }
+    private var declarationDepthThreshold: Int
+        get() = declarationDepthThresholdField.text.toIntOrNull() ?: 0
+        set(value) {
+            declarationDepthThresholdField.text = value.toString()
         }
 
     private var isFileStageEnabled: Boolean
@@ -189,11 +287,14 @@ class AppSettingsComponent {
     private lateinit var stagesPanel: JPanel
     private lateinit var functionStagePanel: JPanel
     private lateinit var functionStageSettings: JPanel
+    private lateinit var declarationStagePanel: JPanel
+    private lateinit var declarationStageSettings: JPanel
     private lateinit var fileStagePanel: JPanel
     private lateinit var fileStageSettings: JPanel
 
     init {
         stagesPanelInit()
+        val pathsPanel = createPathPanel()
 
         myMainPanel = FormBuilder.createFormBuilder()
             .addLabeledComponent(JBLabel("Compilation strategy:"), compilationStrategyComboBox, 1, false)
@@ -207,10 +308,47 @@ class AppSettingsComponent {
             .addSeparator()
             .addLabeledComponent(JBLabel("Transformations:"), createTransformationPanel(), 1, false)
             .addSeparator()
+            .addComponent(JBLabel("Add here directories/files of your project if you are sure that they are important or can not be minimized").apply {
+                border = BorderFactory.createEmptyBorder(10, 0, 10, 0)
+            })
+            .addComponent(pathsPanel)
+            .addSeparator()
             .addComponentFillVertically(JPanel(), 0)
             .panel
 
         updateUIState()
+    }
+
+    private fun createPathPanel(): JPanel {
+        projectBaseDir ?: return JPanel()
+        pathTable.columnModel.getColumn(0).apply {
+            preferredWidth = 700  // Width of first column
+        }
+
+        val toolbarDecoratorPanel = ToolbarDecorator.createDecorator(pathTable)
+            .disableUpAction()
+            .disableDownAction()
+            .setAddAction {
+                val chosenFiles = FileChooser.chooseFiles(fileChooserDescriptor, null, null)
+                for (file in chosenFiles) {
+                    val relativePath = file.toNioPath().relativeTo(projectBaseDir.toNioPath())
+
+                    if ((0 until pathTableModel.rowCount).none { pathTableModel.getValueAt(it, 0) == relativePath }) {
+                        pathTableModel.addRow(arrayOf(relativePath))
+                    }
+                }
+            }
+            .setRemoveAction {
+                val selectedRows = pathTable.selectedRows.sortedDescending()
+                for (row in selectedRows) {
+                    pathTableModel.removeRow(row)
+                }
+            }
+            .createPanel()
+
+        return JPanel(BorderLayout()).apply {
+            add(toolbarDecoratorPanel, BorderLayout.CENTER)
+        }
     }
 
     private fun updateUIState() {
@@ -222,6 +360,8 @@ class AppSettingsComponent {
         exceptionComparingStrategyComboBox.isEnabled = !isFrozen
         functionStageCheckBox.isEnabled = !isFrozen
         functionDDAlgorithmComboBox.isEnabled = !isFrozen && isFunctionStageEnabled
+        declarationStageCheckBox.isEnabled = !isFrozen
+        declarationDDAlgorithmComboBox.isEnabled = !isFrozen && isDeclarationStageEnabled
         fileStageCheckBox.isEnabled = !isFrozen
         fileHierarchyStrategyComboBox.isEnabled = !isFrozen && isFileStageEnabled
         fileDDAlgorithmComboBox.isEnabled = !isFrozen && isFileStageEnabled
@@ -230,12 +370,14 @@ class AppSettingsComponent {
 
     private fun stagesPanelInit() {
         functionStagePanelInit()
+        declarationStagePanelInit()
         fileStagePanelInit()
         // add more stages here in future
 
         stagesPanel = FormBuilder.createFormBuilder()
             .addComponent(JBLabel("Stages settings"))
             .addComponent(functionStagePanel, 1)
+            .addComponent(declarationStagePanel, 1)
             .addComponent(fileStagePanel, 1)
             .panel
     }
@@ -262,6 +404,34 @@ class AppSettingsComponent {
         }
 
         updateFunctionStageSettingsEnabled()
+    }
+
+    private fun declarationStagePanelInit() {
+        declarationStageSettings = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            border = BorderFactory.createEmptyBorder(0, 20, 0, 0)
+
+            add(
+                FormBuilder.createFormBuilder()
+                    .addLabeledComponent(JBLabel("DD algorithm:"), declarationDDAlgorithmComboBox, 1, false)
+                    .panel,
+            )
+        }
+        declarationStagePanel = FormBuilder.createFormBuilder()
+            .addComponent(declarationStageCheckBox, 1)
+            .addComponent(declarationStageSettings, 1)
+            .addLabeledComponent(JBLabel("A maximum depth for the stage: "), declarationDepthThresholdField, 1)
+            .panel
+        declarationDepthThresholdValidator.installOn(declarationDepthThresholdField)
+        declarationDepthThresholdField.document.addDocumentListener(object : DocumentAdapter() {
+            override fun textChanged(e: DocumentEvent) {
+                ComponentValidator.getInstance(declarationDepthThresholdField).ifPresent { it.revalidate() }
+            }
+        })
+        declarationStageCheckBox.addActionListener {
+            updateDeclarationStageSettingsEnabled()
+        }
+        updateDeclarationStageSettingsEnabled()
     }
 
     private fun fileStagePanelInit() {
@@ -300,6 +470,11 @@ class AppSettingsComponent {
         functionDDAlgorithmComboBox.isEnabled = isEnabled
     }
 
+    private fun updateDeclarationStageSettingsEnabled() {
+        val isEnabled = declarationStageCheckBox.isSelected
+        declarationDDAlgorithmComboBox.isEnabled = isEnabled
+    }
+
     private fun createTransformationPanel(): JPanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         transformationCheckBoxes.values.forEach { add(it) }
@@ -308,4 +483,9 @@ class AppSettingsComponent {
     fun getPanel(): JPanel = myMainPanel
 
     fun getPreferredFocusedComponent(): JComponent = compilationStrategyComboBox
+
+    companion object {
+        private const val DECLARATION_DEPTH_THRESHOLD_VALIDATION_MESSAGE =
+            "Validation threshold must be a positive integer"
+    }
 }

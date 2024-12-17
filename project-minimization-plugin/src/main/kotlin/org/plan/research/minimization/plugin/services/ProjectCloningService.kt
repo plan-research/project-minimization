@@ -45,7 +45,7 @@ class ProjectCloningService(private val rootProject: Project) {
             is HeavyIJDDContext -> clone(context)
             is LightIJDDContext -> clone(context)
         }
-        clonedContext?.setGit(snapshotService::gitInit)
+        clonedContext?.setGit(snapshotService::gitInit, {file -> isImportant(file, clonedContext.projectDir) })
         return clonedContext
     }
 

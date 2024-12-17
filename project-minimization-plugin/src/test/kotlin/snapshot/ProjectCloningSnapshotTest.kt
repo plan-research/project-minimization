@@ -12,7 +12,9 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.utils.vfs.deleteRecursively
 import getAllFiles
 import getPathContentPair
+import junit.framework.TestCase
 import kotlinx.coroutines.runBlocking
+import org.gradle.security.internal.SecuritySupport.assertInitialized
 import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.getAllNestedElements
 import org.plan.research.minimization.plugin.model.HeavyIJDDContext
@@ -96,7 +98,8 @@ abstract class ProjectCloningSnapshotTest<C : IJDDContext> : ProjectCloningBaseT
             }
         }.getOrNull()
         assertNotNull(clonedProject)
-        val clonedFiles = clonedProject!!.projectDir.getAllFiles(clonedProject.projectDir.toNioPath())
+        assert(isGitInitialized(clonedProject!!))
+        val clonedFiles = clonedProject.projectDir.getAllFiles(clonedProject.projectDir.toNioPath())
         assertEquals(originalFiles, clonedFiles)
         deleteContext(clonedProject as C)
     }
@@ -139,6 +142,15 @@ abstract class ProjectCloningSnapshotTest<C : IJDDContext> : ProjectCloningBaseT
         assertEquals("Abort", (result as? SnapshotError.TransactionFailed)?.error?.message)
         assertNotNull(project.guessProjectDir()!!.findChild(".config"))
         assert(project.isOpen)
+    }
+
+    fun isGitInitialized(context: IJDDContext): Boolean {
+        return try {
+            context.git.hashCode()
+            true
+        } catch (e: UninitializedPropertyAccessException) {
+            false
+        }
     }
 }
 

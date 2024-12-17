@@ -25,7 +25,6 @@ The copying of the project is managed by
 `transaction` executes a transaction within the provided context. 
 
 Snapshots are managed with Git operations.
-It is expected that there was at least one commit before any transaction is executed.
 
 - **On successful transaction**, `git commit` will be executed.
 - **On failure**, `git reset --HARD` will be executed.

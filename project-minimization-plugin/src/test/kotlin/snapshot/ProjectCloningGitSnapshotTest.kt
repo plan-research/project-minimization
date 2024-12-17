@@ -76,20 +76,19 @@ abstract class ProjectCloningGitSnapshotTest<C : IJDDContext> : ProjectCloningBa
         val projectDir = project.guessProjectDir()!!
         val snapshotManager = ProjectGitSnapshotManager()
         val gitWrapperService = application.service<GitWrapperService>()
-        val git = runBlocking { gitWrapperService.gitInit(projectDir) }
-        runBlocking { gitWrapperService.commitChanges(createContext(project)) }
-        val originalCommitList = gitWrapperService.getCommitList(git)
+        val context = createContext(project)
+        runBlocking { context.setGit(gitWrapperService::gitInit,
+            {file -> !file.toString().contains("/.git/") && !file.toString().contains("/.git")}) }
+        val originalCommitList = gitWrapperService.getCommitList(context.git)
         val originalFiles =
             selectedFiles.getAllFiles(projectDir) + projectDir.getPathContentPair(projectDir.toNioPath()) +
                     projectDir.findChild(".git")!!.getAllFiles(projectDir.toNioPath())
-        val context = createContext(project)
 
         val clonedProject = runBlocking {
-            val clonedContext = context
-            snapshotManager.transaction<Unit, _>(clonedContext) { newContext ->
+            snapshotManager.transaction<Unit, _>(context) { _ ->
                 writeAction {
-                    VfsUtil.iterateChildrenRecursively(newContext.projectDir, null) {
-                        if (it.getPathContentPair(newContext.projectDir.toNioPath()) !in originalFiles) {
+                    VfsUtil.iterateChildrenRecursively(context.projectDir, null) {
+                        if (it.getPathContentPair(context.projectDir.toNioPath()) !in originalFiles) {
                             if (it.exists()) {
                                 it.deleteRecursively()
                             }
@@ -97,18 +96,18 @@ abstract class ProjectCloningGitSnapshotTest<C : IJDDContext> : ProjectCloningBa
                         true
                     }
                 }
-                newContext
+                context
             }
         }.getOrNull()
         assertNotNull(clonedProject)
         val clonedFiles = clonedProject!!.projectDir.getAllFiles(clonedProject.projectDir.toNioPath())
-        val clonedCommitList = gitWrapperService.getCommitList(git)
+        val clonedCommitList = gitWrapperService.getCommitList(context.git)
 
         assertEquals(originalFiles.filter { !it.path.startsWith(".git") && !it.path.toString().contains("/.git/")}.toSet(),
             clonedFiles.filter { !it.path.startsWith(".git") && !it.path.toString().contains("/.git/")}.toSet())
         assertEquals(originalCommitList.size + 1, clonedCommitList.size)
 
-        git.reset().setMode(ResetCommand.ResetType.HARD).setRef("HEAD~1").call()
+        context.git.reset().setMode(ResetCommand.ResetType.HARD).setRef("HEAD~1").call()
         File("${projectDir.path}/.git").deleteRecursively()
         project.guessProjectDir()!!.refresh(false, true)
     }
@@ -116,17 +115,16 @@ abstract class ProjectCloningGitSnapshotTest<C : IJDDContext> : ProjectCloningBa
     fun testAbortedTransaction() {
         myFixture.copyDirectoryToProject("flatProject", "")
         val project = myFixture.project
-        val projectDir = project.guessProjectDir()!!
         val gitWrapperService = application.service<GitWrapperService>()
-        val git = runBlocking { gitWrapperService.gitInit(projectDir) }
         val snapshotManager = ProjectGitSnapshotManager()
         val context = createContext(project)
-        runBlocking { gitWrapperService.commitChanges(createContext(project)) }
-        val originalCommitList = gitWrapperService.getCommitList(git)
+        runBlocking { context.setGit(gitWrapperService::gitInit,
+            {file -> !file.toString().contains("/.git/") && !file.toString().contains("/.git")}) }
+        val originalCommitList = gitWrapperService.getCommitList(context.git)
         val result = runBlocking {
-            snapshotManager.transaction(context) { newContext ->
+            snapshotManager.transaction(context) { _ ->
                 writeAction {
-                    newContext.projectDir.findChild(".config")!!.deleteRecursively()
+                    context.projectDir.findChild(".config")!!.deleteRecursively()
                 }
                 raise("Abort")
             }
@@ -134,7 +132,7 @@ abstract class ProjectCloningGitSnapshotTest<C : IJDDContext> : ProjectCloningBa
         assertEquals(SnapshotError.Aborted("Abort"), result)
         project.guessProjectDir()!!.refresh(false, true)
         assertNotNull(project.guessProjectDir()!!.findChild(".config"))
-        val clonedCommitList = gitWrapperService.getCommitList(git)
+        val clonedCommitList = gitWrapperService.getCommitList(context.git)
         assertEquals(originalCommitList.size, clonedCommitList.size)
         assert(project.isOpen)
     }
@@ -142,18 +140,17 @@ abstract class ProjectCloningGitSnapshotTest<C : IJDDContext> : ProjectCloningBa
     fun testExceptionInTransaction() {
         myFixture.copyDirectoryToProject("flatProject", "")
         val project = myFixture.project
-        val projectDir = project.guessProjectDir()!!
         val gitWrapperService = application.service<GitWrapperService>()
-        val git = runBlocking { gitWrapperService.gitInit(projectDir) }
         val context = createContext(project)
-        runBlocking { gitWrapperService.commitChanges(createContext(project)) }
-        val originalCommitList = gitWrapperService.getCommitList(git)
+        runBlocking { context.setGit(gitWrapperService::gitInit,
+            {file -> !file.toString().contains("/.git/") && !file.toString().contains("/.git")}) }
+        val originalCommitList = gitWrapperService.getCommitList(context.git)
 
         val snapshotManager = ProjectGitSnapshotManager()
         val result = runBlocking {
-            snapshotManager.transaction<String, _>(context) { newContext ->
+            snapshotManager.transaction<String, _>(context) { _ ->
                 writeAction {
-                    newContext.projectDir.findChild(".config")!!.deleteRecursively()
+                    context.projectDir.findChild(".config")!!.deleteRecursively()
                 }
                 throw Exception("Abort")
             }
@@ -162,7 +159,7 @@ abstract class ProjectCloningGitSnapshotTest<C : IJDDContext> : ProjectCloningBa
         assertEquals("Abort", (result as? SnapshotError.TransactionFailed)?.error?.message)
         project.guessProjectDir()!!.refresh(false, true)
         assertNotNull(project.guessProjectDir()!!.findChild(".config"))
-        val clonedCommitList = gitWrapperService.getCommitList(git)
+        val clonedCommitList = gitWrapperService.getCommitList(context.git)
         assertEquals(originalCommitList.size, clonedCommitList.size)
         assert(project.isOpen)
     }

@@ -1,11 +1,9 @@
 package org.plan.research.minimization.plugin.services
 
-import  org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.IJDDContext
 
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.Service
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.isProjectOrWorkspaceFile
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.toNioPathOrNull
@@ -16,7 +14,6 @@ import org.eclipse.jgit.api.errors.NoHeadException
 import java.io.File
 import java.util.*
 
-import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -26,8 +23,6 @@ import kotlinx.coroutines.withContext
  */
 @Service(Service.Level.APP)
 class GitWrapperService {
-    private val importantFiles = setOf("modules.xml", "misc.xml", "libraries")
-
     suspend fun commitChanges(context: IJDDContext): IJDDContext = context.apply {
         commit(context)
         projectDir.refresh(false, true)
@@ -48,21 +43,13 @@ class GitWrapperService {
     private suspend fun commit(context: IJDDContext) = withContext(Dispatchers.IO) {
         context.git.apply {
             // git commit -a
-            commit().setMessage(UUID.randomUUID().toString()).setAll(true).setAllowEmpty(true).call()
+            commit().setMessage(UUID.randomUUID().toString()).setAll(true).setAllowEmpty(true)
+                .call()
             close()
         }
     }
 
-    private fun isImportant(file: VirtualFile, root: VirtualFile): Boolean {
-        val path = file.toNioPath().relativeTo(root.toNioPath())
-        if (isProjectOrWorkspaceFile(file) && file.name != Project.DIRECTORY_STORE_FOLDER) {
-            val pathString = path.pathString
-            return importantFiles.any { it in pathString }
-        }
-        return true
-    }
-
-    suspend fun gitInit(virtualProjectDir: VirtualFile): Git {
+    suspend fun gitInit(virtualProjectDir: VirtualFile, filter: (VirtualFile) -> Boolean): Git {
         val projectDir: File = virtualProjectDir.toNioPath().toFile()
 
         if (projectDir.resolve(".git").exists()) {
@@ -76,9 +63,7 @@ class GitWrapperService {
             .setDirectory(projectDir)
             .call()
             .also {
-                virtualProjectDir.gitAdd(it)  { file ->
-                    isImportant(file, virtualProjectDir)
-                }
+                virtualProjectDir.gitAdd(it, filter)
                 it.commit().setMessage("init commit").call()
                 virtualProjectDir.refresh(false, true)
             }

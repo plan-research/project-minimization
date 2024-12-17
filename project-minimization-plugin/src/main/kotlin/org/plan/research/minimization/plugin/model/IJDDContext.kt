@@ -1,6 +1,6 @@
 package org.plan.research.minimization.plugin.model
 
-import  org.plan.research.minimization.core.model.DDContext
+import org.plan.research.minimization.core.model.DDContext
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
@@ -8,7 +8,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.util.progress.SequentialProgressReporter
 import com.intellij.platform.util.progress.reportSequentialProgress
 import org.eclipse.jgit.api.Git
-import org.plan.research.minimization.plugin.services.GitWrapperService
+
+typealias GitInitializerType = suspend (VirtualFile, (VirtualFile) -> Boolean) -> Git
 
 @Suppress("KDOC_EXTRA_PROPERTY", "KDOC_NO_CLASS_BODY_PROPERTIES_IN_HEADER")
 /**
@@ -42,8 +43,9 @@ sealed class IJDDContext(
             context.copy(progressReporter = null)
         }
 
-    suspend fun setGit(getGit: suspend (VirtualFile) -> Git) {
-        git = getGit(indexProjectDir)
+    suspend fun setGit(getGit: GitInitializerType,
+                       filterAddedFiles: (VirtualFile) -> Boolean) {
+        git = getGit(indexProjectDir, filterAddedFiles)
     }
 }
 

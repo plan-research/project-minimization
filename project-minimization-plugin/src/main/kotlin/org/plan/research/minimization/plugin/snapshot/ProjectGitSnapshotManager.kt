@@ -12,7 +12,6 @@ import org.plan.research.minimization.plugin.services.GitWrapperService
 import arrow.core.raise.either
 import arrow.core.raise.recover
 import com.intellij.openapi.components.service
-import com.intellij.openapi.project.Project
 import com.intellij.util.application
 import mu.KotlinLogging
 

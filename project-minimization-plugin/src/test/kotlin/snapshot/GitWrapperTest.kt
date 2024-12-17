@@ -59,10 +59,10 @@ abstract class GitWrapperTest<C : IJDDContext> : ProjectCloningBaseTest(), TestW
         val files = originalFileSet ?: project.getAllFiles()
         val gitWrapperService = project.service<GitWrapperService>()
         val context = createContext(project)
-        runBlocking { context.setGit(gitWrapperService::gitInit) }
+        runBlocking { context.setGit(gitWrapperService::gitInit, {file -> true}) }
         val originalCommitList = gitWrapperService.getCommitList(context.git)
-        val clonedContext = runBlocking { gitWrapperService.commitChanges(context) }
-        runBlocking { clonedContext.setGit { _ -> context.git } }
+        val clonedContext = runBlocking {gitWrapperService.commitChanges(context) }
+        runBlocking { clonedContext.setGit( { _, _ -> context.git }, {_ -> true}) }
         assertNotNull(clonedContext)
         val clonedFiles = clonedContext.projectDir.getAllFiles(clonedContext.projectDir.toNioPath())
         val clonedCommitList = gitWrapperService.getCommitList(clonedContext.git)
@@ -79,12 +79,12 @@ abstract class GitWrapperTest<C : IJDDContext> : ProjectCloningBaseTest(), TestW
         val files = originalFileSet ?: project.getAllFiles()
         val gitWrapperService = project.service<GitWrapperService>()
         val context = createContext(project)
-        runBlocking { context.setGit(gitWrapperService::gitInit) }
+        runBlocking { context.setGit(gitWrapperService::gitInit, {file -> true}) }
         val originalCommitList = gitWrapperService.getCommitList(context.git)
-        val clonedContext = runBlocking { gitWrapperService.commitChanges(context) }
+        val clonedContext = runBlocking {gitWrapperService.commitChanges(context) }
         assertNotNull(clonedContext)
         val clonedFiles = clonedContext.projectDir.getAllFiles(clonedContext.projectDir.toNioPath())
-        runBlocking { clonedContext.setGit { _ -> context.git } }
+        runBlocking { clonedContext.setGit( { _, _ -> context.git }, {_ -> true}) }
         val clonedCommitList = gitWrapperService.getCommitList(clonedContext.git)
         assertEquals(files.filter { !it.path.startsWith(".git") && !it.path.toString().contains("/.git/")}.toSet(),
             clonedFiles.filter { !it.path.startsWith(".git") && !it.path.toString().contains("/.git/")}.toSet())
@@ -92,7 +92,7 @@ abstract class GitWrapperTest<C : IJDDContext> : ProjectCloningBaseTest(), TestW
         val clonedClonedContext =
             runBlocking { gitWrapperService.commitChanges(clonedContext) }
         assertNotNull(clonedClonedContext)
-        runBlocking { clonedClonedContext.setGit{ _ -> context.git } }
+        runBlocking { clonedClonedContext.setGit({ _, _ -> context.git }, {_ -> true}) }
         val clonedClonedFiles = clonedClonedContext.projectDir.getAllFiles(clonedClonedContext.projectDir.toNioPath())
         val clonedClonedCommitList = gitWrapperService.getCommitList(clonedClonedContext.git)
         assertEquals(files.filter { !it.path.startsWith(".git") && !it.path.toString().contains("/.git/")}.toSet(),

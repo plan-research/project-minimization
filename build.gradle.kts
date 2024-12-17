@@ -29,7 +29,9 @@ allprojects {
         implementation(libs.arrow.core)
         implementation(libs.kotlin.logging)
         implementation(libs.logback.classic)
-
+        implementation(libs.jgit.core)
+        implementation(libs.jgit.ssh.apache)
+        implementation(libs.jgit.gpg.bc)
         testImplementation(kotlin("test"))
     }
 

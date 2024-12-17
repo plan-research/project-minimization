@@ -63,7 +63,8 @@ abstract class ProjectCloningTest<C : IJDDContext> : ProjectCloningBaseTest(), T
         val clonedContext = runBlocking { projectCloningService.clone(context) }
         assertNotNull(clonedContext)
         val clonedFiles = clonedContext!!.projectDir.getAllFiles(clonedContext.projectDir.toNioPath())
-        assertEquals(files, clonedFiles)
+        assertEquals(files.toSet(),
+            clonedFiles.filter { !it.path.startsWith(".git") && !it.path.toString().contains("/.git/") }.toSet())
         deleteContext(clonedContext as C)
         return files
     }
@@ -76,13 +77,15 @@ abstract class ProjectCloningTest<C : IJDDContext> : ProjectCloningBaseTest(), T
         val clonedContext = runBlocking { projectCloningService.clone(context) }
         assertNotNull(clonedContext)
         val clonedFiles = clonedContext!!.projectDir.getAllFiles(clonedContext.projectDir.toNioPath())
-        assertEquals(files, clonedFiles)
+        assertEquals(files.toSet(),
+            clonedFiles.filter { !it.path.startsWith(".git") && !it.path.toString().contains("/.git/") }.toSet())
 
         val clonedClonedContext =
             runBlocking { projectCloningService.clone(clonedContext) }
         assertNotNull(clonedClonedContext)
         val clonedClonedFiles = clonedClonedContext!!.projectDir.getAllFiles(clonedClonedContext.projectDir.toNioPath())
-        assertEquals(files, clonedClonedFiles)
+        assertEquals(files.toSet(),
+            clonedClonedFiles.filter { !it.path.startsWith(".git") && !it.path.toString().contains("/.git/") }.toSet())
         assertNotEquals(clonedContext, clonedClonedContext)
 
         deleteContext(clonedContext as C)

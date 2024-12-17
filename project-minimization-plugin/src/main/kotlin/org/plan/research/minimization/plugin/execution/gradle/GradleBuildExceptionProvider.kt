@@ -2,6 +2,8 @@ package org.plan.research.minimization.plugin.execution.gradle
 
 import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
 import org.plan.research.minimization.plugin.execution.IdeaCompilationException
+import org.plan.research.minimization.plugin.execution.exception.KotlincErrorSeverity
+import org.plan.research.minimization.plugin.execution.exception.KotlincException
 import org.plan.research.minimization.plugin.execution.exception.KotlincExceptionTranslator
 import org.plan.research.minimization.plugin.execution.exception.ParseKotlincExceptionResult
 import org.plan.research.minimization.plugin.execution.gradle.GradleConsoleRunResult.Companion.EXIT_CODE_FAIL
@@ -16,10 +18,12 @@ import arrow.core.raise.catch
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import com.intellij.build.output.KotlincOutputParser
+import com.intellij.openapi.application.readAndWriteAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.externalSystem.model.task.ExternalSystemTaskId
 import com.intellij.openapi.externalSystem.model.task.ExternalSystemTaskType
 import com.intellij.openapi.externalSystem.service.execution.ExternalSystemJdkUtil
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.platform.ide.progress.withBackgroundProgress
 import com.intellij.platform.util.progress.reportSequentialProgress
 import mu.KotlinLogging
@@ -66,29 +70,64 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
      */
     override suspend fun checkCompilation(context: IJDDContext): CompilationResult = either {
         withBackgroundProgress(context.indexProject, "Gradle building", cancellable = false) {
-            reportSequentialProgress(4) { reporter ->
-                val gradleTasks = reporter.itemStep("Extracting gradle tasks") { extractGradleTasks(context).bind() }
-                // If not gradle tasks were found ⇒ this is not a Gradle project
-                ensure(gradleTasks.isNotEmpty()) { CompilationPropertyCheckerError.InvalidBuildSystem }
-                val settings = context.originalProject.service<MinimizationPluginSettings>()
-                val buildTask = gradleTasks.findOrFail(settings.state.gradleTask).bind()
-                val buildOptions = settings.state.gradleOptions
-                val cleanTask = gradleTasks.findOrFail("clean").bind()
+            reportSequentialProgress(5) { reporter ->
+                try {
+                    reporter.itemStep("Deleting cache") { deleteCache(context) }
 
-                val cleanResult = reporter.itemStep("Running clean task") { runTask(context, cleanTask).bind() }
-                ensure(cleanResult.exitCode == EXIT_CODE_OK) {
-                    CompilationPropertyCheckerError.BuildSystemFail(
-                        cause = IllegalStateException(
-                            "Clean task failed: ${cleanResult.stdOut}",
-                        ),
-                    )
-                }
+                    val gradleTasks =
+                        reporter.itemStep("Extracting gradle tasks") { extractGradleTasks(context).bind() }
+                    // If not gradle tasks were found ⇒ this is not a Gradle project
+                    ensure(gradleTasks.isNotEmpty()) { CompilationPropertyCheckerError.InvalidBuildSystem }
+                    val settings = context.originalProject.service<MinimizationPluginSettings>()
+                    val buildTask = gradleTasks.findOrFail(settings.state.gradleTask).bind()
+                    val buildOptions = settings.state.gradleOptions
+                    val cleanTask = gradleTasks.findOrFail("clean").bind()
 
-                val buildResult = reporter.itemStep("Running build task") { runTask(context, buildTask, buildOptions).bind() }
-                ensure(buildResult.exitCode != EXIT_CODE_OK) { CompilationPropertyCheckerError.CompilationSuccess }
-                reporter.itemStep("Parsing results") {
-                    parseResults("test-build-${context.indexProject.name}", buildResult)
+                    val cleanResult = reporter.itemStep("Running clean task") { runTask(context, cleanTask).bind() }
+                    ensure(cleanResult.exitCode == EXIT_CODE_OK) {
+                        CompilationPropertyCheckerError.BuildSystemFail(
+                            cause = IllegalStateException(
+                                "Clean task failed: ${cleanResult.stdOut}",
+                            ),
+                        )
+                    }
+
+                    val buildResult =
+                        reporter.itemStep("Running build task") { runTask(context, buildTask, buildOptions).bind() }
+                    ensure(buildResult.exitCode != EXIT_CODE_OK) { CompilationPropertyCheckerError.CompilationSuccess }
+                    reporter.itemStep("Parsing results") {
+                        parseResults("test-build-${context.indexProject.name}", buildResult)
+                    }
+                } finally {
+                    context.projectDir.refresh(false, true)
                 }
+            }
+        }
+    }
+
+    private suspend fun deleteCache(context: IJDDContext) {
+        readAndWriteAction {
+            val files = buildList {
+                VfsUtil.iterateChildrenRecursively(context.projectDir, null) { file ->
+                    if (file.name == ".gradle") {
+                        add(file)
+                    }
+                    true
+                }
+            }
+            if (files.isNotEmpty()) {
+                writeAction {
+                    files.forEach {
+                        logger.trace { "Deleting ${it.path}" }
+                        try {
+                            it.delete(null)
+                        } catch (e: Throwable) {
+                            logger.error(e) { "Error while deleting ${it.path}" }
+                        }
+                    }
+                }
+            } else {
+                value(Unit)
             }
         }
     }
@@ -192,6 +231,7 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
                     }
 
                     override fun onFailure(exception: GradleConnectionException) {
+                        logger.trace(exception) { "Gradle task ${task.executableName} failure" }
                         cont.resume(EXIT_CODE_FAIL)
                     }
                 })
@@ -282,29 +322,34 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
 
         return IdeaCompilationException(
             parsedErrors
-                .mapNotNull { it.getOrNull() },
+                .mapNotNull { it.getOrNull() }
+                .filter { e ->
+                    (e as? KotlincException.GeneralKotlincException)?.let {
+                        it.severity == KotlincErrorSeverity.ERROR || it.severity == KotlincErrorSeverity.UNKNOWN
+                    } ?: true
+                },
         )
     }
 
     private fun logParsedErrors(parsedErrors: List<ParseKotlincExceptionResult>) {
-        if (logger.isDebugEnabled) {
-            logger.debug {
-                "Parsed errors:\n${
-                    parsedErrors.joinToString("\n") { error ->
-                            error.fold(
-                                ifLeft = { "Parsing failed with error:\n$it" },
-                                ifRight = { "Error parsed successfully:\n${it::class.simpleName}" },
-                            )
-                        }
-                }"
-            }
-        } else if (logger.isTraceEnabled) {
+        if (logger.isTraceEnabled) {
             logger.trace {
                 "Parsed errors:\n${
                     parsedErrors.joinToString("\n") { error ->
                             error.fold(
                                 ifLeft = { "Parsing failed with error:\n$it" },
                                 ifRight = { "Error parsed successfully:\n$it" },
+                            )
+                        }
+                }"
+            }
+        } else if (logger.isDebugEnabled) {
+            logger.debug {
+                "Parsed errors:\n${
+                    parsedErrors.joinToString("\n") { error ->
+                            error.fold(
+                                ifLeft = { "Parsing failed with error:\n$it" },
+                                ifRight = { "Error parsed successfully:\n${it::class.simpleName}" },
                             )
                         }
                 }"

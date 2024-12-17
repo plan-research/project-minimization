@@ -43,16 +43,20 @@ class KotlincExceptionTranslator : BuildEventTranslator {
         if (buildEvent.message.startsWith("[ksp]")) {
             return@either parseKspError(buildEvent).bind()
         }
-        ensure(buildEvent is FileMessageEvent) {
+        ensure(buildEvent is MessageEvent) {
             raise(
                 CompilationPropertyCheckerError.BuildSystemFail(
                     cause = IllegalStateException(
-                        "Invalid event type: ${buildEvent.javaClass}, but expected FileMessageEvent",
+                        "Invalid event type: ${buildEvent.javaClass}, but expected MessageEvent",
                     ),
                 ),
             )
         }
-        val filePosition = CaretPosition.fromFilePosition(buildEvent.filePosition)
+        val filePosition = if (buildEvent is FileMessageEvent) {
+            CaretPosition.fromFilePosition(buildEvent.filePosition)
+        } else {
+            null
+        }
         KotlincException.GeneralKotlincException(filePosition, buildEvent.message, buildEvent.severity())
     }
 

@@ -53,7 +53,7 @@ sealed interface KotlincException : CompilationException {
      * @property severity a severity level
      */
     data class GeneralKotlincException(
-        val position: CaretPosition,
+        val position: CaretPosition?,
         val message: String,
         val severity: KotlincErrorSeverity = KotlincErrorSeverity.UNKNOWN,
     ) : KotlincException {

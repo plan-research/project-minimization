@@ -42,7 +42,7 @@ internal fun KaSession.resolveTypeAliasedConstructorReference(
         return null
     }
 
-    val typealiasType = referencedType.abbreviatedType ?: return null
+    val typealiasType = referencedType.abbreviation ?: return null
 
     return typealiasType.symbol
 }

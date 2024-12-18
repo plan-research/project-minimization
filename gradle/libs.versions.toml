@@ -7,6 +7,8 @@ arrow = "1.2.4"
 logging = "2.1.21"
 logback = "1.2.11"
 diktat = "2.0.0"
+kaml = "0.59.0"
+serialization = "1.6.3"
 
 [libraries]
 diktat-gradle-plugin = { module = "com.saveourtool.diktat:diktat-gradle-plugin", version.ref = "diktat" }
@@ -16,6 +18,9 @@ kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-c
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
 kotlin-logging = { module = "io.github.microutils:kotlin-logging-jvm", version.ref = "logging" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+
+kaml = { module = "com.charleskorn.kaml:kaml", version.ref = "kaml" }
+kotlinx-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 
 
 [plugins]

@@ -35,11 +35,18 @@
                 instance="org.plan.research.minimization.plugin.settings.AppSettingsConfigurable"
                 id="org.plan.research.minimization.plugin.settings.AppSettingsConfigurable"
                 displayName="Project Minimization"/>
+        <notificationGroup id="org.plan.research.minimization.benchmark.result"
+                           displayType="BALLOON"
+                           isLogByDefault="false"/>
     </extensions>
     <actions>
         <action id="org.plan.research.minimization.plugin.MinimizeProjectAction"
                 class="org.plan.research.minimization.plugin.MinimizeProjectAction" text="Minimize Project">
             <add-to-group group-id="CodeMenu" anchor="first"/>
+        </action>
+        <action id="org.plan.research.minimization.plugin.BenchmarkAction"
+                class="org.plan.research.minimization.plugin.BenchmarkAction" text="Run Minimization Plugin Benchmarks">
+            <add-to-group group-id="ToolsMenu" anchor="first"/>
         </action>
     </actions>
 </idea-plugin>

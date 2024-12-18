@@ -73,3 +73,10 @@ sealed interface KotlincException : CompilationException {
         ) = transformation.transform(this, context)
     }
 }
+
+val KotlincException.positionOrNull: CaretPosition?
+    get() = when (this) {
+        is KotlincException.BackendCompilerException -> this.position
+        is KotlincException.GeneralKotlincException -> this.position
+        else -> null
+    }

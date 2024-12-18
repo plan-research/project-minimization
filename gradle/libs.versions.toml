@@ -10,6 +10,7 @@ diktat = "2.0.0"
 kotlinx-immutable-collections = "0.3.8"
 kotlinx-serialization = "1.7.3"
 jqwik = "1.9.2"
+graphviz-java = "0.18.1"
 
 [libraries]
 diktat-gradle-plugin = { module = "com.saveourtool.diktat:diktat-gradle-plugin", version.ref = "diktat" }
@@ -23,6 +24,8 @@ kotlinx-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immuta
 kotlinx-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 jqwik = { module = "net.jqwik:jqwik", version.ref = "jqwik" }
 jqwik-kotlin = { module = "net.jqwik:jqwik-kotlin", version.ref = "jqwik" }
+graphviz-java = { group = "guru.nidi", name = "graphviz-java", version.ref = "graphviz-java"}
+graphviz-kotlin = { group = "guru.nidi", name = "graphviz-kotlin", version.ref = "graphviz-java"}
 
 [plugins]
 intellij = { id = "org.jetbrains.intellij.platform", version.ref = "intellij" }

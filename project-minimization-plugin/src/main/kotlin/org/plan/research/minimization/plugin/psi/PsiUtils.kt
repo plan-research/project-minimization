@@ -26,6 +26,12 @@ import org.jetbrains.kotlin.psi.KtFile
 import kotlin.io.path.relativeTo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.jetbrains.kotlin.psi.KtClass
+import org.jetbrains.kotlin.psi.KtElement
+import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.KtObjectDeclaration
+import org.jetbrains.kotlin.psi.KtProperty
+import org.jetbrains.kotlin.psi.KtVisitorVoid
 
 private typealias ParentChildPsiProcessor<T> = (PsiElement, PsiElement) -> T
 
@@ -34,13 +40,40 @@ private typealias ParentChildPsiProcessor<T> = (PsiElement, PsiElement) -> T
  */
 object PsiUtils {
     @RequiresReadLock
-    fun<T : PsiChildrenPathIndex> getPsiElementFromItem(context: IJDDContext, item: PsiDDItem<T>): KtExpression? {
+    fun collectUsages(psiElement: KtElement): List<PsiElement> = buildList {
+        val visitor = UsedPsiElementGetter(psiElement is KtNamedFunction)
+        psiElement.acceptChildren(visitor)
+        addAll(visitor.usedElements)
+    }
+    @RequiresReadLock
+    fun findAllParentElements(context: IJDDContext, item: PsiStubDDItem): List<PsiStubDDItem> {
+        val currentPath = item.childrenPath.toMutableList()
         val file = context.projectDir.findFileByRelativePath(item.localPath.toString())!!
         val ktFile = getKtFile(context, file)!!
+        currentPath.removeLast()
+        return buildList {
+            while (currentPath.isNotEmpty()) {
+                val currentPsi = getElementByFileAndPath(ktFile, currentPath)
+                if (PsiStubDDItem.DELETABLE_PSI_JAVA_CLASSES.any { it.isInstance(currentPsi) }) {
+                    add(PsiStubDDItem.NonOverriddenPsiStubDDItem(item.localPath, currentPath.toList()))
+                }
+                currentPath.removeLast()
+            }
+        }
+    }
+
+    @RequiresReadLock
+    fun <T : PsiChildrenPathIndex> getPsiElementFromItem(context: IJDDContext, item: PsiDDItem<T>): KtExpression? {
+        val file = context.projectDir.findFileByRelativePath(item.localPath.toString())!!
+        val ktFile = getKtFile(context, file)!!
+        return getElementByFileAndPath(ktFile, item.childrenPath)
+    }
+
+    private fun <T : PsiChildrenPathIndex> getElementByFileAndPath(ktFile: KtFile, path: List<T>): KtExpression? {
         var currentDepth = 0
         var element: PsiElement = ktFile
-        while (currentDepth < item.childrenPath.size) {
-            element = item.childrenPath[currentDepth++].getNext(element) ?: return null
+        while (currentDepth < path.size) {
+            element = path[currentDepth++].getNext(element) ?: return null
         }
         val psiElement = element as? KtExpression
         return psiElement

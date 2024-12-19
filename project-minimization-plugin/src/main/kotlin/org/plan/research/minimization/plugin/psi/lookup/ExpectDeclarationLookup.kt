@@ -15,7 +15,7 @@ object ExpectDeclarationLookup {
         if (element !is KtNamedDeclaration) return emptyList()
         return analyze(element) {
             val symbol = element.symbol
-            (symbol.getExpectsForActual()).mapNotNull { (it.sourcePsi() as? KtDeclaration)}
+            (symbol.getExpectsForActual()).mapNotNull { (it.psi) as? KtDeclaration}
         }
     }
 }

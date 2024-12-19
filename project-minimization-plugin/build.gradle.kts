@@ -58,6 +58,8 @@ dependencies {
     implementation(project(":project-minimization-core"))
     implementation(libs.kotlinx.immutable)
     implementation(libs.kotlinx.serialization)
+    implementation(libs.graphviz.java)
+    implementation(libs.graphviz.kotlin)
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.1.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.1.0")

@@ -54,7 +54,7 @@ internal object TypeDeclarationLookup {
     @RequiresReadLock
     private fun getClassTypeDeclaration(symbol: KtClassOrObject): PsiElement? {
         analyze(symbol) {
-            return (symbol.symbol as? KaNamedClassSymbol)?.sourcePsi()
+            return (symbol.symbol as? KaNamedClassSymbol)?.psi()
         }
     }
 
@@ -62,7 +62,7 @@ internal object TypeDeclarationLookup {
     private fun getTypeAliasDeclaration(symbol: KtTypeAlias): PsiElement? {
         analyze(symbol) {
             val typeAliasSymbol = symbol.symbol
-            return (typeAliasSymbol.expandedType.expandedSymbol as? KaNamedClassSymbol)?.sourcePsi()
+            return (typeAliasSymbol.expandedType.expandedSymbol as? KaNamedClassSymbol)?.psi()
         }
     }
     @RequiresReadLock
@@ -71,7 +71,7 @@ internal object TypeDeclarationLookup {
             val symbol = symbol as? KaCallableSymbol ?: return null
             val type = typeFromSymbol(symbol) ?: return null
             val targetSymbol = type.upperBoundIfFlexible().abbreviationOrSelf.symbol ?: return null
-            return targetSymbol.sourcePsi()
+            return targetSymbol.psi()
         }
     }
 

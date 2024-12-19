@@ -8,10 +8,10 @@ import org.plan.research.minimization.core.model.graph.GraphWithAdjacencyList
 class TopologicalSort<V : DDItem, E : GraphEdge<V>, G : GraphWithAdjacencyList<V, E>> :
     DepthFirstGraphWalkerVoid<V, E, G, List<V>>() {
     private val sortedList = mutableListOf<V>()
-    override fun onUnvisitedNode(graph: G, node: V) {
+    override suspend fun onUnvisitedNode(graph: G, node: V) {
         super.onUnvisitedNode(graph, node)
         sortedList.add(node)
     }
 
-    override fun onComplete(graph: G): List<V> = sortedList.reversed()
+    override suspend fun onComplete(graph: G): List<V> = sortedList.reversed()
 }

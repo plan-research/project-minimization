@@ -55,7 +55,7 @@ C : GraphContext<V, E, G> {
                 .bind()
         }
 
-    private fun DdGraphResult<V, E, G, C>.propagateDeleted(): DdGraphResult<V, E, G, C> {
+    private suspend fun DdGraphResult<V, E, G, C>.propagateDeleted(): DdGraphResult<V, E, G, C> {
         val graph = requireNotNull(context.condensedGraph)
 
         val currentLevel = requireNotNull(context.currentLevel)

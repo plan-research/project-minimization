@@ -1,5 +1,6 @@
 package org.plan.research.minimization.core.algorithm.graph
 
+import kotlinx.coroutines.runBlocking
 import net.jqwik.api.ForAll
 import net.jqwik.api.Property
 import net.jqwik.api.PropertyDefaults
@@ -27,14 +28,14 @@ class TopologicalSortTest {
 
     @Property
     @Domain(TestGraphTreeDomain::class)
-    fun `test topological sort on trees`(@ForAll tree: TestGraph) {
+    fun `test topological sort on trees`(@ForAll tree: TestGraph) = runBlocking {
         val topologicallySorter = TopologicalSort<TestNode, TestEdge, _>().visitGraph(tree)
         assertEquals(tree.vertices.size, topologicallySorter.size)
         assertTrue { tree.isTopologicalSort(topologicallySorter) }
     }
     @Property
     @Domain(TestGraphDAGDomain::class)
-    fun `test topological sort on DAGs`(@ForAll dag: TestGraph) {
+    fun `test topological sort on DAGs`(@ForAll dag: TestGraph) = runBlocking {
         val topologicallySorter = TopologicalSort<TestNode, TestEdge, _>().visitGraph(dag)
         assertEquals(dag.vertices.size, topologicallySorter.size)
         assertTrue { dag.isTopologicalSort(topologicallySorter) }

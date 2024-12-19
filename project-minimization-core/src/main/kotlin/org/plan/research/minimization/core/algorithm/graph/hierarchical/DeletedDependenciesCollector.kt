@@ -14,7 +14,7 @@ CondensedEdge<V, E>,
 CondensedGraph<V, E>,
 Set<CondensedVertex<V>>>() {
     private val collectedElements = mutableSetOf<CondensedVertex<V>>()
-    override fun onUnvisitedNode(graph: CondensedGraph<V, E>, node: CondensedVertex<V>) {
+    override suspend fun onUnvisitedNode(graph: CondensedGraph<V, E>, node: CondensedVertex<V>) {
         if (node in deletedElements) {
             collectedElements.add(node)
         } else {
@@ -22,11 +22,11 @@ Set<CondensedVertex<V>>>() {
         }
     }
 
-    override fun onPassedEdge(graph: CondensedGraph<V, E>, edge: CondensedEdge<V, E>) {
+    override suspend fun onPassedEdge(graph: CondensedGraph<V, E>, edge: CondensedEdge<V, E>) {
         if (edge.to in collectedElements) {
             collectedElements.add(edge.from)
         }
     }
 
-    override fun onComplete(graph: CondensedGraph<V, E>) = collectedElements
+    override suspend fun onComplete(graph: CondensedGraph<V, E>) = collectedElements
 }

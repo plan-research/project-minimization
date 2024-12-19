@@ -2,7 +2,6 @@ package org.plan.research.minimization.core.algorithm.dd.impl
 
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
-import org.plan.research.minimization.core.algorithm.dd.tryZeroIfSingle
 import org.plan.research.minimization.core.model.DDContext
 import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.PropertyTester
@@ -108,7 +107,7 @@ class DDMin : DDAlgorithm {
                 }
             }
         }
-        return DDAlgorithmResult(currentContext, currentItems).tryZeroIfSingle(propertyTester)
+        return DDAlgorithmResult(currentContext, currentItems)
     }
 
     /**

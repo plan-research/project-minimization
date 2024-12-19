@@ -4,6 +4,7 @@ import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.graph.GraphEdge
 import org.plan.research.minimization.core.model.graph.GraphWithAdjacencyList
 
+import arrow.core.filterOption
 import arrow.core.getOrElse
 import arrow.core.getOrNone
 import arrow.core.memoize
@@ -29,13 +30,31 @@ class CondensedVertexSet<V : DDItem, E : GraphEdge<V>, G : GraphWithAdjacencyLis
                     .edgesFrom(it)
                     .bind()
                     .mapNotNull {
-                        val toComponent = getComponent(it.to).getOrNull().takeIf { component !== it } ?: return@mapNotNull null
+                        val toComponent =
+                            getComponent(it.to).getOrNull().takeIf { component !== it } ?: return@mapNotNull null
                         toComponent to it
                     }
             }.getOrElse { emptyList() }
         }
         .groupBy(keySelector = { it.first }, valueTransform = { it.second })
         .map { (toComponent, edges) -> CondensedEdge(component, toComponent, edges) }
-    fun getAdjacentComponents(component: CondensedVertex<V>): List<CondensedEdge<V, E>> =
-        adjacentComponentsCache(component)
+
+    fun getEdges() = originalGraph
+        .edges
+        .asSequence()
+        .map { edge ->
+            option {
+                val (from, to) = edge
+                val fromComponent = getComponent(from).bind()
+                val toComponent = getComponent(to).bind()
+                ensure(fromComponent !== toComponent)
+                (fromComponent to toComponent) to edge
+            }
+        }
+        .filterOption()
+        .groupBy(keySelector = { it.first }, valueTransform = { it.second })
+        .map { (fromTo, edges) ->
+            val (from, to) = fromTo
+            CondensedEdge(from, to, edges)
+        }
 }

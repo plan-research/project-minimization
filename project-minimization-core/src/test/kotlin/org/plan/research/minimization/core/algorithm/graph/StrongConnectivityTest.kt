@@ -1,5 +1,6 @@
 package org.plan.research.minimization.core.algorithm.graph
 
+import kotlinx.coroutines.runBlocking
 import net.jqwik.api.ForAll
 import net.jqwik.api.Property
 import net.jqwik.api.domains.Domain
@@ -39,7 +40,7 @@ class StrongConnectivityTest {
         doTest(graph)
     }
 
-    private fun doTest(graph: TestGraph) {
+    private fun doTest(graph: TestGraph) = runBlocking {
         val condensation = StrongConnectivityCondensation.compressGraph(graph)
         condensation.componentsDoNotIntersect()
         condensation.allVerticesInComponents()
@@ -54,18 +55,18 @@ class StrongConnectivityTest {
         }
     }
 
-    private fun CondensedSet.isStronglyConnected(component: CondensedV): Boolean {
+    private suspend fun CondensedSet.isStronglyConnected(component: CondensedV): Boolean {
         val vertices = component.underlyingVertexes.toSet()
 
         for (vertex in vertices) {
             val connectivityChecker = object : DepthFirstGraphWalkerVoid<TestNode, TestEdge, TestGraph, Int>() {
                 private var visitedNumber = 0
-                override fun onUnvisitedNode(graph: TestGraph, node: TestNode) {
+                override suspend fun onUnvisitedNode(graph: TestGraph, node: TestNode) {
                     if (node in vertices) visitedNumber++
                     super.onUnvisitedNode(graph, node)
                 }
 
-                override fun onComplete(graph: TestGraph) = visitedNumber
+                override suspend fun onComplete(graph: TestGraph) = visitedNumber
             }
             val visited = connectivityChecker.visitComponent(originalGraph, vertex)
             if (vertices.size != visited)
@@ -90,7 +91,7 @@ class StrongConnectivityTest {
         }
     }
 
-    private fun CondensedSet.isMaximumComponentSize(component: CondensedV) {
+    private suspend fun CondensedSet.isMaximumComponentSize(component: CondensedV) {
         val possibleVertices = originalGraph.vertices.toSet() - component.underlyingVertexes.toSet()
         for (vertice in possibleVertices) {
             assertFalse(
@@ -101,22 +102,22 @@ class StrongConnectivityTest {
     private fun CondensedSet.allVerticesInComponents() {
         assertEquals(originalGraph.vertices.size, components.sumOf { it.underlyingVertexes.size }, "Not all vertices are in components")
     }
-    private fun CondensedSet.isDag() {
+    private suspend fun CondensedSet.isDag() {
         val graph = CondensedGraph.from(this)
         val cycleChecker = object : DepthFirstGraphWalkerVoid<CondensedV, CondensedE, CondensedG, Boolean>() {
             private var visitedColors = mutableMapOf<CondensedV, Int>()
             private var hasCycle = false
-            override fun onUnvisitedNode(graph: CondensedG, node: CondensedV) {
+            override suspend fun onUnvisitedNode(graph: CondensedG, node: CondensedV) {
                 visitedColors[node] = 1
                 super.onUnvisitedNode(graph, node)
                 visitedColors[node] = 2
             }
 
-            override fun onPassedEdge(graph: CondensedG, edge: CondensedE) {
+            override suspend fun onPassedEdge(graph: CondensedG, edge: CondensedE) {
                 hasCycle = hasCycle || visitedColors[edge.to] == 1
             }
 
-            override fun onComplete(graph: CondensedG): Boolean = hasCycle
+            override suspend fun onComplete(graph: CondensedG): Boolean = hasCycle
         }
         assertFalse { cycleChecker.visitGraph(graph) }
     }

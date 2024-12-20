@@ -6,6 +6,7 @@ import org.plan.research.minimization.core.model.PropertyTesterError
 import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.logging.withLog
 import org.plan.research.minimization.plugin.logging.withLog
+import org.plan.research.minimization.plugin.logging.withStatistics
 import org.plan.research.minimization.plugin.model.*
 import org.plan.research.minimization.plugin.model.exception.CompilationException
 import org.plan.research.minimization.plugin.model.exception.ExceptionComparator
@@ -76,6 +77,7 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
             )
                 .also { logger.debug { "Initial exception is $initialException" } }
                 .withLog()
+                .withStatistics()
         }
     }
 }

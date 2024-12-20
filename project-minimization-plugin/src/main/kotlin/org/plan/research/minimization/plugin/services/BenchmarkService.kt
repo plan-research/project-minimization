@@ -1,22 +1,18 @@
 package org.plan.research.minimization.plugin.services
 
-import org.plan.research.minimization.plugin.benchmark.*
+import org.plan.research.minimization.plugin.benchmark.BenchmarkConfig
+import org.plan.research.minimization.plugin.benchmark.BenchmarkProject
+import org.plan.research.minimization.plugin.benchmark.BuildSystemType
+import org.plan.research.minimization.plugin.benchmark.ProjectModulesType
 import org.plan.research.minimization.plugin.errors.MinimizationError
-import org.plan.research.minimization.plugin.model.FileLevelStage
-import org.plan.research.minimization.plugin.model.state.DDStrategy
-import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
-//import org.plan.research.minimization.plugin.settings.MinimizationPluginSettings
+import org.plan.research.minimization.plugin.settings.loadStateFromFile
 
 import arrow.core.Either
 import arrow.core.None
 import arrow.core.Option
 import arrow.core.raise.catch
 import arrow.core.raise.option
-import arrow.core.toOption
 import com.charleskorn.kaml.Yaml
-import com.intellij.ide.impl.ProjectUtil
-import com.intellij.ide.projectView.ProjectView
-import com.intellij.ide.projectView.impl.ProjectViewPane
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -28,22 +24,19 @@ import com.intellij.openapi.vfs.readText
 import com.intellij.openapi.vfs.toNioPathOrNull
 import com.intellij.platform.ide.progress.withBackgroundProgress
 import com.intellij.platform.util.progress.reportSequentialProgress
-import com.intellij.openapi.startup.StartupManager
 
 import java.nio.file.Path
 
+import kotlin.coroutines.resume
 import kotlin.io.path.Path
 import kotlin.io.path.readText
 import kotlinx.coroutines.*
-import org.plan.research.minimization.plugin.settings.loadStateFromFile
-import kotlin.coroutines.resume
 
 @Service(Service.Level.PROJECT)
-class BenchmarkingService(private val rootProject: Project, private val cs: CoroutineScope) {
-    fun benchmark(adapter: BenchmarkResultSubscriber) = cs.launch {
+class BenchmarkService(private val rootProject: Project, private val cs: CoroutineScope) {
+    fun benchmark() = cs.launch {
         val config = readConfig().getOrNull()
         config ?: run {
-            adapter.onConfigCreationError()
             return@launch
         }
         val filteredProjects = config
@@ -57,8 +50,7 @@ class BenchmarkingService(private val rootProject: Project, private val cs: Coro
                             project.process()
                         },
                         ) {
-                            adapter.onException(it, project)
-                        }
+                            }
                     }
                 }
             }
@@ -92,7 +84,8 @@ class BenchmarkingService(private val rootProject: Project, private val cs: Coro
         }
     }
 
-    private suspend fun BenchmarkProject.process(): Project? { // Either<MinimizationError, Project>?
+    private suspend fun BenchmarkProject.process(): Project? {
+        // Either<MinimizationError, Project>?
         val gradleBuildTask = loadReproduceScript(this@process) ?: "build"
         val openedProject = openBenchmarkProject(this@process).getOrNull() ?: return null
 
@@ -101,7 +94,6 @@ class BenchmarkingService(private val rootProject: Project, private val cs: Coro
         }
 
         try {
-            println("Project initialized: ${openedProject.name}")
             setMinimizationSettings(openedProject, this.settingsFile)
             val minimizationService = openedProject.service<MinimizationService>()
 
@@ -118,7 +110,7 @@ class BenchmarkingService(private val rootProject: Project, private val cs: Coro
     }
 
     private fun setMinimizationSettings(project: Project, settingsFile: String? = null) {
-        if (settingsFile != null) {
+        settingsFile?.let {
             loadStateFromFile(project, settingsFile)
         }
     }
@@ -152,8 +144,8 @@ class BenchmarkingService(private val rootProject: Project, private val cs: Coro
 
     private fun BenchmarkProject.isSuitableForGradleBenchmarking(allowAndroid: Boolean): Boolean =
         (allowAndroid || this.extra?.tags?.contains("android") != true) &&
-                this.buildSystem.type == BuildSystemType.GRADLE &&
-                this.modules == ProjectModulesType.SINGLE
+            this.buildSystem.type == BuildSystemType.GRADLE &&
+            this.modules == ProjectModulesType.SINGLE
 
     private data class BenchmarkMinimizationResult(
         val result: Either<MinimizationError, Project>,

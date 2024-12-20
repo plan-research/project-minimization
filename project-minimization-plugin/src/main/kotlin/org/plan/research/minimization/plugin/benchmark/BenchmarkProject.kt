@@ -2,8 +2,6 @@ package org.plan.research.minimization.plugin.benchmark
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
-import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 
 @Serializable
 data class BenchmarkProject(

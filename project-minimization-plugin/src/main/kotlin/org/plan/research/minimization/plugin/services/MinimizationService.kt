@@ -1,6 +1,7 @@
 package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.plugin.errors.MinimizationError
+import org.plan.research.minimization.plugin.logging.statLogger
 import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
@@ -39,7 +40,8 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
             try {
                 withBackgroundProgress(project, "Minimizing project") {
                     either {
-                        logger.info { "Start Project minimization" }
+                        logger.info { "Start Project minimization for project: ${project.name} " }
+                        statLogger.info { "Start Project minimization for project: ${project.name}" }
                         var context = HeavyIJDDContext(project)
 
                         reportSequentialProgress(stages.size) { reporter ->
@@ -52,9 +54,11 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
 
                         context.also { onComplete(it) }
                     }.onRight {
-                        logger.info { "End Project minimization" }
+                        logger.info { "End Project minimization for project: ${project.name}" }
+                        statLogger.info { "End Project minimization for project: ${project.name}" }
                     }.onLeft { error ->
-                        logger.info { "End Project minimization" }
+                        logger.info { "End Project minimization for project: ${project.name}" }
+                        statLogger.info { "End Project minimization for project: ${project.name}" }
                         logger.error { "End minimizeProject with error: $error" }
                     }
                 }

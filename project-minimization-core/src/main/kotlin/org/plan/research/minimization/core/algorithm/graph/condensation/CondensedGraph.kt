@@ -32,12 +32,4 @@ class CondensedGraph<V : DDItem, E : GraphEdge<V>> internal constructor(
     )
 
     override fun toString(): String = "CondensedGraph(vertices=$vertices, adjacencyList=$adjacencyList)"
-
-    companion object {
-        fun <V : DDItem, E : GraphEdge<V>, G : GraphWithAdjacencyList<V, E>> from(condensedVertexSet: CondensedVertexSet<V, E, G>) =
-            CondensedGraph(
-                vertices = condensedVertexSet.components,
-                edges = condensedVertexSet.getEdges(),
-            )
-    }
 }

@@ -4,7 +4,6 @@ import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HDDLevel
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDDGenerator
 import org.plan.research.minimization.core.algorithm.graph.GraphContext
-import org.plan.research.minimization.core.algorithm.graph.condensation.CondensedGraph
 import org.plan.research.minimization.core.algorithm.graph.condensation.CondensedVertex
 import org.plan.research.minimization.core.algorithm.graph.condensation.StrongConnectivityCondensation
 import org.plan.research.minimization.core.model.DDItem
@@ -13,7 +12,6 @@ import org.plan.research.minimization.core.model.graph.GraphEdge
 import org.plan.research.minimization.core.model.graph.GraphWithAdjacencyList
 
 import arrow.core.getOrElse
-import arrow.core.raise.ensureNotNull
 import arrow.core.raise.option
 
 import kotlinx.collections.immutable.mutate
@@ -29,9 +27,8 @@ E : GraphEdge<V>,
 G : GraphWithAdjacencyList<V, E>,
 C : GraphContext<V, E, G> {
     override suspend fun generateFirstLevel(context: GraphHierarchicalDDContext<V, E, G, C>) = option {
-        val condensedVertexSet = StrongConnectivityCondensation.compressGraph(context.graph)
-        val compressedGraph = CondensedGraph.from(condensedVertexSet)
-        val sinks = compressedGraph
+        val condensedGraph = StrongConnectivityCondensation.compressGraph(context.graph)
+        val sinks = condensedGraph
             .sinks
 
         ensure(sinks.isNotEmpty())
@@ -39,7 +36,7 @@ C : GraphContext<V, E, G> {
             context = context.copy(
                 currentLevel = sinks,
                 inactiveElements = persistentMapOf(),
-                condensedGraph = compressedGraph,
+                condensedGraph = condensedGraph,
             ),
             propertyTester = propertyTester,
             items = sinks,

@@ -7,7 +7,6 @@ import net.jqwik.api.domains.Domain
 import org.plan.research.minimization.core.algorithm.graph.condensation.CondensedEdge
 import org.plan.research.minimization.core.algorithm.graph.condensation.CondensedGraph
 import org.plan.research.minimization.core.algorithm.graph.condensation.CondensedVertex
-import org.plan.research.minimization.core.algorithm.graph.condensation.CondensedVertexSet
 import org.plan.research.minimization.core.algorithm.graph.condensation.StrongConnectivityCondensation
 import org.plan.research.minimization.core.algorithm.graph.domain.TestGraphDAGDomain
 import org.plan.research.minimization.core.algorithm.graph.domain.TestGraphDomain
@@ -16,7 +15,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-typealias CondensedSet = CondensedVertexSet<TestNode, TestEdge, TestGraph>
 typealias CondensedV = CondensedVertex<TestNode>
 typealias CondensedE = CondensedEdge<TestNode, TestEdge>
 typealias CondensedG = CondensedGraph<TestNode, TestEdge>
@@ -43,19 +41,19 @@ class StrongConnectivityTest {
     private fun doTest(graph: TestGraph) = runBlocking {
         val condensation = StrongConnectivityCondensation.compressGraph(graph)
         condensation.componentsDoNotIntersect()
-        condensation.allVerticesInComponents()
+        condensation.allVerticesInComponents(graph)
         condensation.isDag()
-        condensation.components.forEach {
+        condensation.vertices.forEach {
             assertTrue(
                 message = "Component $it is not strongly connected"
             ) {
-                condensation.isStronglyConnected(it)
+                condensation.isStronglyConnected(graph, it)
             }
-            condensation.isMaximumComponentSize(it)
+            condensation.isMaximumComponentSize(graph, it)
         }
     }
 
-    private suspend fun CondensedSet.isStronglyConnected(component: CondensedV): Boolean {
+    private suspend fun CondensedG.isStronglyConnected(originalGraph: TestGraph, component: CondensedV): Boolean {
         val vertices = component.underlyingVertexes.toSet()
 
         for (vertex in vertices) {
@@ -75,9 +73,9 @@ class StrongConnectivityTest {
         return true
     }
 
-    private fun CondensedSet.componentsDoNotIntersect() {
-        components.forEach { component ->
-            components.forEach { otherComponent ->
+    private fun CondensedG.componentsDoNotIntersect() {
+        vertices.forEach { component ->
+            vertices.forEach { otherComponent ->
                 if (component !== otherComponent) {
                     assertFalse("components $component and $otherComponent intersect") {
                         component
@@ -91,19 +89,18 @@ class StrongConnectivityTest {
         }
     }
 
-    private suspend fun CondensedSet.isMaximumComponentSize(component: CondensedV) {
+    private suspend fun CondensedG.isMaximumComponentSize(originalGraph: TestGraph, component: CondensedV) {
         val possibleVertices = originalGraph.vertices.toSet() - component.underlyingVertexes.toSet()
         for (vertice in possibleVertices) {
             assertFalse(
                 message = "Adding $vertice to $component left it strongly connected => That's not a maximum component"
-            ) { this.isStronglyConnected(CondensedV(component.underlyingVertexes + vertice)) }
+            ) { this.isStronglyConnected(originalGraph, CondensedV(component.underlyingVertexes + vertice)) }
         }
     }
-    private fun CondensedSet.allVerticesInComponents() {
-        assertEquals(originalGraph.vertices.size, components.sumOf { it.underlyingVertexes.size }, "Not all vertices are in components")
+    private fun CondensedG.allVerticesInComponents(originalGraph: TestGraph) {
+        assertEquals(originalGraph.vertices.size, vertices.sumOf { it.underlyingVertexes.size }, "Not all vertices are in components")
     }
-    private suspend fun CondensedSet.isDag() {
-        val graph = CondensedGraph.from(this)
+    private suspend fun CondensedG.isDag() {
         val cycleChecker = object : DepthFirstGraphWalkerVoid<CondensedV, CondensedE, CondensedG, Boolean>() {
             private var visitedColors = mutableMapOf<CondensedV, Int>()
             private var hasCycle = false
@@ -119,6 +116,6 @@ class StrongConnectivityTest {
 
             override suspend fun onComplete(graph: CondensedG): Boolean = hasCycle
         }
-        assertFalse { cycleChecker.visitGraph(graph) }
+        assertFalse { cycleChecker.visitGraph(this) }
     }
 }

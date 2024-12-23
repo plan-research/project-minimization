@@ -2,19 +2,6 @@ package org.plan.research.minimization.plugin.settings
 
 class MinimizationPluginStateObservable {
     val state: MinimizationPluginState = MinimizationPluginState()
-
-    fun updateState(newState: MinimizationPluginState) {
-        compilationStrategy.set(newState.compilationStrategy)
-        gradleTask.set(newState.gradleTask)
-        gradleOptions.set(newState.gradleOptions)
-        temporaryProjectLocation.set(newState.temporaryProjectLocation)
-        snapshotStrategy.set(newState.snapshotStrategy)
-        exceptionComparingStrategy.set(newState.exceptionComparingStrategy)
-        stages.set(newState.stages)
-        minimizationTransformations.set(newState.minimizationTransformations)
-        ignorePaths.set(newState.ignorePaths)
-    }
-
     var compilationStrategy = StateDelegate(
         getter = { state.compilationStrategy },
         setter = { state.compilationStrategy = it },
@@ -51,6 +38,18 @@ class MinimizationPluginStateObservable {
         getter = { state.ignorePaths },
         setter = { state.ignorePaths = it },
     )
+
+    fun updateState(newState: MinimizationPluginState) {
+        compilationStrategy.set(newState.compilationStrategy)
+        gradleTask.set(newState.gradleTask)
+        gradleOptions.set(newState.gradleOptions)
+        temporaryProjectLocation.set(newState.temporaryProjectLocation)
+        snapshotStrategy.set(newState.snapshotStrategy)
+        exceptionComparingStrategy.set(newState.exceptionComparingStrategy)
+        stages.set(newState.stages)
+        minimizationTransformations.set(newState.minimizationTransformations)
+        ignorePaths.set(newState.ignorePaths)
+    }
 }
 
 class StateDelegate<T>(private val getter: () -> T, private val setter: (T) -> Unit) {
@@ -58,10 +57,13 @@ class StateDelegate<T>(private val getter: () -> T, private val setter: (T) -> U
 
     fun <V> observe(transform: (T) -> V) = ChangeDelegate(transform).also { subscribers.add(it) }
 
-    fun set(value: T) {
+    fun set(value: T?) {
+        value ?: return
         setter(value)
         subscribers.forEach { it.onValueChanged(value) }
     }
+
+    fun get(): T = getter()
 
     fun mutate(transform: (T) -> T) = set(transform(getter()))
 

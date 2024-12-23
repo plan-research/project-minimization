@@ -1,8 +1,10 @@
 package org.plan.research.minimization.plugin.services
 
-import com.intellij.openapi.components.*
 import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 import org.plan.research.minimization.plugin.settings.MinimizationPluginStateObservable
+
+import com.intellij.openapi.components.*
+import com.intellij.openapi.observable.properties.AtomicBooleanProperty
 
 @Service(Service.Level.PROJECT)
 @State(
@@ -11,16 +13,14 @@ import org.plan.research.minimization.plugin.settings.MinimizationPluginStateObs
 )
 class MinimizationPluginSettings : PersistentStateComponent<MinimizationPluginState> {
     val stateObservable = MinimizationPluginStateObservable()
-
-    @Volatile
-    var freezeSettings: Boolean = false
+    var settingsEnabled = AtomicBooleanProperty(true)
 
     inline fun <T> withFrozenState(block: () -> T): T {
         try {
-            freezeSettings = true
+            settingsEnabled.set(false)
             return block()
         } finally {
-            freezeSettings = false
+            settingsEnabled.set(true)
         }
     }
 

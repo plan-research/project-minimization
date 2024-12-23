@@ -19,7 +19,7 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.plugins.gradle.settings.GradleProjectSettings
 import org.jetbrains.plugins.gradle.settings.GradleSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
-import org.plan.research.minimization.plugin.model.state.TransformationDescriptors
+import org.plan.research.minimization.plugin.model.state.TransformationDescriptor
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import kotlin.test.assertNotEquals
 
@@ -95,8 +95,8 @@ abstract class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
 
     protected fun enableDeduplication() {
         project.service<MinimizationPluginSettings>().stateObservable.minimizationTransformations.mutate {
-            if (!it.contains(TransformationDescriptors.PATH_RELATIVIZATION)) {
-                it + TransformationDescriptors.PATH_RELATIVIZATION
+            if (!it.contains(TransformationDescriptor.PATH_RELATIVIZATION)) {
+                it + TransformationDescriptor.PATH_RELATIVIZATION
             } else {
                 it
             }
@@ -105,7 +105,7 @@ abstract class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
 
     protected fun disableDeduplication() {
         project.service<MinimizationPluginSettings>().stateObservable.minimizationTransformations.mutate {
-            it - TransformationDescriptors.PATH_RELATIVIZATION
+            it - TransformationDescriptor.PATH_RELATIVIZATION
         }
     }
 }

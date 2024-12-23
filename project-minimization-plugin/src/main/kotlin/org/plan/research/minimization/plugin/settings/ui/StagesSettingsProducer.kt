@@ -128,6 +128,11 @@ class StagesSettingsProducer {
                 stageProperty.set(stageProperty.get().copy(ddAlgorithm = it))
             }
         }
+        val maxDepth = graph.property(stageProperty.get().depthThreshold).apply { 
+            afterChange { 
+                stageProperty.set(stageProperty.get().copy(depthThreshold = it))
+            }
+        }
         row {
             text("⚠ This algorithm will increase execution time dramatically!").applyToComponent {
                 foreground = JBColor.RED
@@ -140,6 +145,10 @@ class StagesSettingsProducer {
         indent {
             row("Minimization strategy:") {
                 strategy(graph, ddAlgorithm)
+            }
+            row("A max depth for the algorithm:") {
+                intTextField(range = 1..Int.MAX_VALUE)
+                    .bindIntText(maxDepth)
             }
         }
     }

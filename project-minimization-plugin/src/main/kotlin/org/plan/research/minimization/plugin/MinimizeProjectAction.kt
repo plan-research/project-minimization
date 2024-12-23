@@ -1,6 +1,7 @@
 package org.plan.research.minimization.plugin
 
 import org.plan.research.minimization.plugin.services.MinimizationService
+import org.plan.research.minimization.plugin.settings.ui.beforeExecutionDialog
 
 import com.intellij.ide.projectView.ProjectView
 import com.intellij.ide.projectView.impl.ProjectViewPane
@@ -34,6 +35,12 @@ class MinimizeProjectAction : AnAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
+
+        val dialog = beforeExecutionDialog(project)
+        if (!dialog.showAndGet()) {
+            return
+        }
+
         val minimizationService = project.service<MinimizationService>()
         minimizationService.minimizeProject(project) { context ->
             withContext(Dispatchers.EDT) {

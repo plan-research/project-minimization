@@ -10,7 +10,6 @@ import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.observable.properties.PropertyGraph
-import com.intellij.openapi.observable.util.bindEnabled
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.ui.DialogPanel
@@ -20,48 +19,29 @@ import com.intellij.util.execution.ParametersListUtil
 import javax.swing.DefaultListModel
 
 @Suppress("NO_CORRESPONDING_PROPERTY")
-class MinimizationPluginSettingsProducer(private val project: Project) {
-    private val settings = project.service<MinimizationPluginSettings>()
-    private val state = settings.stateObservable
-    private val stagesSettingsProducer = StagesSettingsProducer()
-    private val ignoreFilesSettingsProducer = IgnoreFilesSettingsProducer()
+abstract class SettingsProducerBase(protected val project: Project) {
+    protected val settings = project.service<MinimizationPluginSettings>()
+    protected val state = settings.stateObservable
+    private val stagesSettingsProducer by lazy { StagesSettingsProducer() }
+    private val ignoreFilesSettingsProducer by lazy { IgnoreFilesSettingsProducer() }
 
-    fun getPanel(): DialogPanel =
-        panel {
-            compilationStrategy()
-            gradleTask()
-            gradleOptions()
-            tempProjectLocation()
-            snapshotStrategy()
-            exceptionComparingStrategy()
+    abstract fun getPanel(): DialogPanel
 
-            separator()
-
-            stagesSettings()
-
-            separator()
-
-            transformations()
-
-            separator()
-
-            pathPanel()
-        }.bindEnabled(settings.settingsEnabled)
-
-    private fun Panel.compilationStrategy() {
+    protected fun Panel.compilationStrategy() {
         row("Compilation strategy:") {
             comboBox(CompilationStrategy.entries)
                 .bindItem(state.compilationStrategy::get, state.compilationStrategy::set)
         }
     }
 
-    private fun Panel.gradleTask() {
+    protected fun Panel.gradleTask() {
         row("Gradle task:") {
-            textField().bindText(state.gradleTask::get, state.gradleTask::set)
+            textField()
+                .bindText(state.gradleTask::get, state.gradleTask::set)
         }
     }
 
-    private fun Panel.gradleOptions() {
+    protected fun Panel.gradleOptions() {
         row("Gradle options:") {
             textField()
                 .bindText(
@@ -78,20 +58,21 @@ class MinimizationPluginSettingsProducer(private val project: Project) {
         }
     }
 
-    private fun Panel.tempProjectLocation() {
+    protected fun Panel.tempProjectLocation() {
         row("Temporary project location:") {
-            textField().bindText(state.temporaryProjectLocation::get, state.temporaryProjectLocation::set)
+            textField()
+                .bindText(state.temporaryProjectLocation::get, state.temporaryProjectLocation::set)
         }
     }
 
-    private fun Panel.snapshotStrategy() {
+    protected fun Panel.snapshotStrategy() {
         row("Snapshot strategy:") {
             comboBox(SnapshotStrategy.entries)
                 .bindItem(state.snapshotStrategy::get, state.snapshotStrategy::set)
         }
     }
 
-    private fun Panel.exceptionComparingStrategy() {
+    protected fun Panel.exceptionComparingStrategy() {
         row("Exception comparing strategy:") {
             comboBox(ExceptionComparingStrategy.entries)
                 .bindItem(state.exceptionComparingStrategy::get, state.exceptionComparingStrategy::set)
@@ -101,7 +82,7 @@ class MinimizationPluginSettingsProducer(private val project: Project) {
     private fun DefaultListModel<MinimizationStage>.isDefault(): Boolean =
         toList() == MinimizationPluginState.defaultStages
 
-    private fun Panel.stagesSettings() {
+    protected fun Panel.stagesSettings() {
         val propertyGraph = PropertyGraph(isBlockPropagation = false)
         val changed = propertyGraph.property(false)
         val (stagesPanel, listModel) = stagesSettingsProducer.createStagesPanel(changed)
@@ -130,14 +111,14 @@ class MinimizationPluginSettingsProducer(private val project: Project) {
         }.resizableRow()
     }
 
-    private fun Panel.transformations() {
+    protected fun Panel.transformations() {
         val transformationsAdapter = TransformationsAdapter(state)
         buttonsGroup("Transformations:") {
             row { checkBox("PATH RELATIVIZATION").bindSelected(transformationsAdapter::pathRelativization) }
         }
     }
 
-    private fun Panel.pathPanel() {
+    protected fun Panel.pathPanel() {
         val projectDir = project.guessProjectDir() ?: return
         val (ignorePathsPanel, ignoreFilesList) = ignoreFilesSettingsProducer.createIgnorePathsPanel(projectDir)
 

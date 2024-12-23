@@ -14,11 +14,9 @@ import com.intellij.openapi.observable.util.bindEnabled
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.ui.DialogPanel
-import com.intellij.ui.JBColor
 import com.intellij.ui.dsl.builder.*
 import com.intellij.util.execution.ParametersListUtil
 
-import javax.swing.BorderFactory
 import javax.swing.DefaultListModel
 
 @Suppress("NO_CORRESPONDING_PROPERTY")
@@ -132,20 +130,10 @@ class MinimizationPluginSettingsProducer(private val project: Project) {
         }.resizableRow()
     }
 
-    private fun transformationsList(): DialogPanel = panel {
-        val transformationsAdapter = TransformationsAdapter(state)
-        row { checkBox("PATH RELATIVIZATION").bindSelected(transformationsAdapter::pathRelativization) }
-    }.apply {
-        border = BorderFactory.createLineBorder(JBColor.border(), 1)
-    }
-
     private fun Panel.transformations() {
-        group("Transformations", indent = false) {
-            row {
-                cell(transformationsList())
-                    .resizableColumn()
-                    .align(AlignX.FILL)
-            }.resizableRow()
+        val transformationsAdapter = TransformationsAdapter(state)
+        buttonsGroup("Transformations:") {
+            row { checkBox("PATH RELATIVIZATION").bindSelected(transformationsAdapter::pathRelativization) }
         }
     }
 

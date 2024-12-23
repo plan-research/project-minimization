@@ -5,6 +5,7 @@ import org.plan.research.minimization.plugin.model.state.DDStrategy
 import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
 
 import arrow.core.Either
+import arrow.optics.optics
 import com.intellij.util.xmlb.annotations.Property
 import com.intellij.util.xmlb.annotations.Tag
 
@@ -52,6 +53,7 @@ sealed interface MinimizationStage {
  * @property ddAlgorithm The delta debugging algorithm to use for minimization.
  */
 @Tag("fileLevelStage")
+@optics
 data class FileLevelStage(
     @Property val hierarchyCollectionStrategy: HierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
     @Property val ddAlgorithm: DDStrategy = DDStrategy.PROBABILISTIC_DD,
@@ -60,9 +62,12 @@ data class FileLevelStage(
 
     override suspend fun apply(context: HeavyIJDDContext, executor: MinimizationStageExecutor) =
         executor.executeFileLevelStage(context, this)
+
+    companion object
 }
 
 @Tag("functionLevelStage")
+@optics
 data class FunctionLevelStage(
     @Property val ddAlgorithm: DDStrategy = DDStrategy.PROBABILISTIC_DD,
 ) : MinimizationStage {
@@ -72,9 +77,12 @@ data class FunctionLevelStage(
         context: HeavyIJDDContext,
         executor: MinimizationStageExecutor,
     ): Either<MinimizationError, IJDDContext> = executor.executeFunctionLevelStage(context, this)
+
+    companion object
 }
 
 @Tag("declarationLevelStage")
+@optics
 data class DeclarationLevelStage(
     @Property val ddAlgorithm: DDStrategy = DDStrategy.PROBABILISTIC_DD,
     @Property val depthThreshold: Int = 2,
@@ -85,4 +93,6 @@ data class DeclarationLevelStage(
         context: HeavyIJDDContext,
         executor: MinimizationStageExecutor,
     ): Either<MinimizationError, IJDDContext> = executor.executeDeclarationLevelStage(context, this)
+
+    companion object
 }

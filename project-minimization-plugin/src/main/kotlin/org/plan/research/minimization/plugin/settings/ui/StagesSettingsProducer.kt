@@ -1,15 +1,14 @@
 package org.plan.research.minimization.plugin.settings.ui
 
-import org.plan.research.minimization.plugin.model.DeclarationLevelStage
-import org.plan.research.minimization.plugin.model.FileLevelStage
-import org.plan.research.minimization.plugin.model.FunctionLevelStage
-import org.plan.research.minimization.plugin.model.MinimizationStage
+import org.plan.research.minimization.plugin.model.*
 import org.plan.research.minimization.plugin.model.state.DDStrategy
 import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
 
+import arrow.optics.Lens
 import com.intellij.openapi.observable.properties.GraphProperty
 import com.intellij.openapi.observable.properties.ObservableMutableProperty
 import com.intellij.openapi.observable.properties.PropertyGraph
+import com.intellij.openapi.observable.util.bind
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.JBColor
@@ -89,30 +88,34 @@ class StagesSettingsProducer {
     }
 
     private fun Row.strategy(graph: PropertyGraph, ddAlgorithm: GraphProperty<DDStrategy>) {
-        comboBox(DDStrategy.entries)
-            .bindItem(ddAlgorithm)
-
         val commentText = graph.property(ddAlgorithm.get().getComment()).apply {
             dependsOn(ddAlgorithm) { ddAlgorithm.get().getComment() }
         }
 
-        comment(commentText.get()).bindText(commentText)
+        comboBox(DDStrategy.entries)
+            .bindItem(ddAlgorithm)
+            .comment(commentText.get())
+            .apply { comment?.bind(commentText) }
+    }
+
+    private fun <T : MinimizationStage, V> PropertyGraph.stageProperty(
+        stageProperty: ObservableMutableProperty<T>,
+        lens: Lens<T, V>,
+    ) = property(lens.get(stageProperty.get())).apply {
+        afterChange {
+            stageProperty.set(lens.set(stageProperty.get(), it))
+        }
     }
 
     private fun functionLevelPanel(
         graph: PropertyGraph,
         stageProperty: ObservableMutableProperty<FunctionLevelStage>,
     ): DialogPanel = panel {
-        val ddAlgorithm = graph.property(stageProperty.get().ddAlgorithm).apply {
-            afterChange {
-                stageProperty.set(stageProperty.get().copy(ddAlgorithm = it))
-            }
-        }
+        val ddAlgorithm = graph.stageProperty(stageProperty, FunctionLevelStage.ddAlgorithm)
         row("Description") {
             text("The algorithm replaces function's bodies with `TODO` statements.")
         }
-        row("Function level settings:") { }
-        indent {
+        group("Function Level Settings", indent = false) {
             row("Minimization strategy:") {
                 strategy(graph, ddAlgorithm)
             }
@@ -123,16 +126,8 @@ class StagesSettingsProducer {
         graph: PropertyGraph,
         stageProperty: ObservableMutableProperty<DeclarationLevelStage>,
     ): DialogPanel = panel {
-        val ddAlgorithm = graph.property(stageProperty.get().ddAlgorithm).apply {
-            afterChange {
-                stageProperty.set(stageProperty.get().copy(ddAlgorithm = it))
-            }
-        }
-        val maxDepth = graph.property(stageProperty.get().depthThreshold).apply { 
-            afterChange { 
-                stageProperty.set(stageProperty.get().copy(depthThreshold = it))
-            }
-        }
+        val ddAlgorithm = graph.stageProperty(stageProperty, DeclarationLevelStage.ddAlgorithm)
+        val maxDepth = graph.stageProperty(stageProperty, DeclarationLevelStage.depthThreshold)
         row {
             text("⚠ This algorithm will increase execution time dramatically!").applyToComponent {
                 foreground = JBColor.RED
@@ -141,14 +136,21 @@ class StagesSettingsProducer {
         row("Description:") {
             text("The algorithm removes declarations, e.g. classes, functions and fields.")
         }
-        row("Declaration level settings:") { }
-        indent {
+        group("Declaration Level Settings", indent = false) {
             row("Minimization strategy:") {
                 strategy(graph, ddAlgorithm)
             }
             row("A max depth for the algorithm:") {
-                intTextField(range = 1..Int.MAX_VALUE)
+                intTextField(1..Int.MAX_VALUE)
                     .bindIntText(maxDepth)
+                    .validationOnApply {
+                        val value = it.text.toIntOrNull()
+                        if (value == null || value < 1) {
+                            error("Please enter a positive integer.")
+                        } else {
+                            null
+                        }
+                    }.comment("Recommended value: 2")
             }
         }
     }
@@ -157,23 +159,15 @@ class StagesSettingsProducer {
         graph: PropertyGraph,
         stageProperty: ObservableMutableProperty<FileLevelStage>,
     ): DialogPanel = panel {
-        val hierarchyStrategy = graph.property(stageProperty.get().hierarchyCollectionStrategy).apply {
-            afterChange {
-                stageProperty.set(stageProperty.get().copy(hierarchyCollectionStrategy = it))
-            }
-        }
-        val ddAlgorithm = graph.property(stageProperty.get().ddAlgorithm).apply {
-            afterChange {
-                stageProperty.set(stageProperty.get().copy(ddAlgorithm = it))
-            }
-        }
+        val hierarchyStrategy = graph.stageProperty(stageProperty, FileLevelStage.hierarchyCollectionStrategy)
+        val ddAlgorithm = graph.stageProperty(stageProperty, FileLevelStage.ddAlgorithm)
         row("Description:") {
             text("The algorithm deletes files")
         }
-        row("File level settings:") { }
-        indent {
+        group("File Level Settings", indent = false) {
             row("Hierarchy strategy:") {
-                comboBox(HierarchyCollectionStrategy.entries).bindItem(hierarchyStrategy)
+                comboBox(HierarchyCollectionStrategy.entries)
+                    .bindItem(hierarchyStrategy)
             }
             row("Minimization strategy:") {
                 strategy(graph, ddAlgorithm)
@@ -186,9 +180,11 @@ class StagesSettingsProducer {
         val items = createStagesData(stage)
         val dialogPanel = addStageDialogPanel(items) { current = it }
 
-        val dialog = dialog("Stage settings", dialogPanel) {
-            dialogPanel.validateAll().takeIf { it.isNotEmpty() }
+        val dialog = dialog("Stage Settings", dialogPanel) {
+            dialogPanel.validateAll() + items.filter { it.panel.isVisible }.flatMap { it.panel.validateAll() }
         }
+
+        items.forEach { it.panel.registerValidators(dialog.disposable) }
 
         return if (dialog.showAndGet()) {
             current?.get()
@@ -207,8 +203,9 @@ class StagesSettingsProducer {
             val index = items.indexOfFirst { it.isFirstSelected }
 
             row("Stage:") {
-                selected = comboBox(items.map { it.name }).applyToComponent { selectedIndex = index }
-                    .applyToComponent { selectedIndex = index }.validationOnApply {
+                selected = comboBox(items.map { it.name })
+                    .applyToComponent { selectedIndex = index }
+                    .validationOnApply {
                         if (it.selectedIndex == 0) {
                             error("Please select a valid stage.")
                         } else {

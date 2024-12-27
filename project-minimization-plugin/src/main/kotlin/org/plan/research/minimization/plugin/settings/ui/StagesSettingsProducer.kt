@@ -99,7 +99,7 @@ class StagesSettingsProducer {
     }
 
     private fun <T : MinimizationStage, V> PropertyGraph.stageProperty(
-        stageProperty: ObservableMutableProperty<T>,
+        stageProperty: GraphProperty<T>,
         lens: Lens<T, V>,
     ) = property(lens.get(stageProperty.get())).apply {
         afterChange {
@@ -109,7 +109,7 @@ class StagesSettingsProducer {
 
     private fun functionLevelPanel(
         graph: PropertyGraph,
-        stageProperty: ObservableMutableProperty<FunctionLevelStage>,
+        stageProperty: GraphProperty<FunctionLevelStage>,
     ): DialogPanel = panel {
         val ddAlgorithm = graph.stageProperty(stageProperty, FunctionLevelStage.ddAlgorithm)
         row("Description") {
@@ -124,7 +124,7 @@ class StagesSettingsProducer {
 
     private fun declarationLevelPanel(
         graph: PropertyGraph,
-        stageProperty: ObservableMutableProperty<DeclarationLevelStage>,
+        stageProperty: GraphProperty<DeclarationLevelStage>,
     ): DialogPanel = panel {
         val ddAlgorithm = graph.stageProperty(stageProperty, DeclarationLevelStage.ddAlgorithm)
         val maxDepth = graph.stageProperty(stageProperty, DeclarationLevelStage.depthThreshold)
@@ -157,7 +157,7 @@ class StagesSettingsProducer {
 
     private fun fileLevelPanel(
         graph: PropertyGraph,
-        stageProperty: ObservableMutableProperty<FileLevelStage>,
+        stageProperty: GraphProperty<FileLevelStage>,
     ): DialogPanel = panel {
         val hierarchyStrategy = graph.stageProperty(stageProperty, FileLevelStage.hierarchyCollectionStrategy)
         val ddAlgorithm = graph.stageProperty(stageProperty, FileLevelStage.ddAlgorithm)
@@ -176,7 +176,7 @@ class StagesSettingsProducer {
     }
 
     private fun showAddDialog(stage: MinimizationStage? = null): MinimizationStage? {
-        var current: ObservableMutableProperty<out MinimizationStage>? = null
+        var current: GraphProperty<out MinimizationStage>? = null
         val items = createStagesData(stage)
         val dialogPanel = addStageDialogPanel(items) { current = it }
 
@@ -195,7 +195,7 @@ class StagesSettingsProducer {
 
     private fun addStageDialogPanel(
         items: List<MinimizationStageData>,
-        setCurrent: (ObservableMutableProperty<out MinimizationStage>?) -> Unit,
+        setCurrent: (GraphProperty<out MinimizationStage>?) -> Unit,
     ): DialogPanel {
         lateinit var selected: Cell<ComboBox<String>>
 
@@ -244,6 +244,7 @@ class StagesSettingsProducer {
         val newFileStage = propertyGraph.property((stage as? FileLevelStage) ?: FileLevelStage())
 
         return listOf(
+            // it's important to keep first the "Select stage" data
             MinimizationStageData(
                 name = "Select stage",
                 panel = DialogPanel(),
@@ -274,7 +275,7 @@ class StagesSettingsProducer {
     private data class MinimizationStageData(
         val name: String,
         val panel: DialogPanel,
-        val stage: ObservableMutableProperty<out MinimizationStage>?,
+        val stage: GraphProperty<out MinimizationStage>?,
         val isFirstSelected: Boolean,
     )
 }

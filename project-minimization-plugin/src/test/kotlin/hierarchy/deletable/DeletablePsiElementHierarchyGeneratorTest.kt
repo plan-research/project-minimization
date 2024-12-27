@@ -23,8 +23,7 @@ class DeletablePsiElementHierarchyGeneratorTest : AbstractAnalysisKotlinTest() {
 
     override fun setUp() {
         super.setUp()
-        var compilationStrategy by project.service<MinimizationPluginSettings>().stateObservable.compilationStrategy.mutable()
-        compilationStrategy = CompilationStrategy.DUMB
+        project.service<MinimizationPluginSettings>().stateObservable.compilationStrategy.set(CompilationStrategy.DUMB)
     }
 
     fun testSingleLevel() {

@@ -6,25 +6,25 @@ import org.plan.research.minimization.core.model.graph.GraphWithAdjacencyList
 
 import arrow.core.getOrElse
 
-abstract class DepthFirstGraphWalker<V : DDItem, E : GraphEdge<V>, G : GraphWithAdjacencyList<V, E>, R, D : Any> {
+abstract class DepthFirstGraphWalker<V : DDItem, E : GraphEdge<V>, G : GraphWithAdjacencyList<V, E, G>, R, D : Any> {
     private val visited = mutableSetOf<V>()
-    fun visitGraph(graph: G): R {
+    suspend fun visitGraph(graph: G): R {
         graph.vertices.forEach { processComponent(graph, it) }
         return onComplete(graph)
     }
 
-    private fun processComponent(graph: G, startingVertex: V) {
+    private suspend fun processComponent(graph: G, startingVertex: V) {
         if (startingVertex !in visited) {
             val data = onNewVisitedComponent(graph, startingVertex)
             visited.add(startingVertex)
             onUnvisitedNode(graph, startingVertex, data)
         }
     }
-    fun visitComponent(graph: G, startingVertex: V): R {
+    suspend fun visitComponent(graph: G, startingVertex: V): R {
         processComponent(graph, startingVertex)
         return onComplete(graph)
     }
-    protected open fun onUnvisitedNode(graph: G, node: V, data: D) {
+    protected open suspend fun onUnvisitedNode(graph: G, node: V, data: D) {
         val edgesFrom = graph.edgesFrom(node).getOrElse { return@onUnvisitedNode }
         for (edge in edgesFrom) {
             if (edge.to !in visited) {
@@ -37,18 +37,18 @@ abstract class DepthFirstGraphWalker<V : DDItem, E : GraphEdge<V>, G : GraphWith
         }
     }
 
-    protected abstract fun onComplete(graph: G): R
+    protected abstract suspend fun onComplete(graph: G): R
 
-    protected open fun onPassedEdge(graph: G, edge: E, data: D) = Unit
-    protected abstract fun onNewVisitedComponent(graph: G, startingVertex: V): D
+    protected open suspend fun onPassedEdge(graph: G, edge: E, data: D) = Unit
+    protected abstract suspend fun onNewVisitedComponent(graph: G, startingVertex: V): D
 }
 
-abstract class DepthFirstGraphWalkerVoid<V : DDItem, E : GraphEdge<V>, G : GraphWithAdjacencyList<V, E>, R> :
+abstract class DepthFirstGraphWalkerVoid<V : DDItem, E : GraphEdge<V>, G : GraphWithAdjacencyList<V, E, G>, R> :
     DepthFirstGraphWalker<V, E, G, R, Unit>() {
-    protected open fun onUnvisitedNode(graph: G, node: V) = super.onUnvisitedNode(graph, node, Unit)
-    protected open fun onPassedEdge(graph: G, edge: E) = super.onPassedEdge(graph, edge, Unit)
-    override fun onNewVisitedComponent(graph: G, startingVertex: V) = Unit
+    protected open suspend fun onUnvisitedNode(graph: G, node: V) = super.onUnvisitedNode(graph, node, Unit)
+    protected open suspend fun onPassedEdge(graph: G, edge: E) = super.onPassedEdge(graph, edge, Unit)
+    override suspend fun onNewVisitedComponent(graph: G, startingVertex: V) = Unit
 
-    final override fun onUnvisitedNode(graph: G, node: V, data: Unit) = onUnvisitedNode(graph, node)
-    final override fun onPassedEdge(graph: G, edge: E, data: Unit) = onPassedEdge(graph, edge)
+    final override suspend fun onUnvisitedNode(graph: G, node: V, data: Unit) = onUnvisitedNode(graph, node)
+    final override suspend fun onPassedEdge(graph: G, edge: E, data: Unit) = onPassedEdge(graph, edge)
 }

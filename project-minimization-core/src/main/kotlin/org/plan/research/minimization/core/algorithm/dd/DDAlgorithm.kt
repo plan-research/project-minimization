@@ -29,13 +29,3 @@ data class DDAlgorithmResult<C : DDContext, T : DDItem>(
     val context: C,
     val items: List<T>,
 )
-
-internal suspend fun <C : DDContext, T : DDItem> DDAlgorithmResult<C, T>.tryZeroIfSingle(propertyTester: PropertyTester<C, T>): DDAlgorithmResult<C, T> {
-    val algorithmResult = DDAlgorithmResult<C, T>(context, items)
-    return items.singleOrNull()?.let {
-        propertyTester.test(context, emptyList()).fold(
-            ifLeft = { algorithmResult },
-            ifRight = { updatedContext -> DDAlgorithmResult(updatedContext, emptyList()) },
-        )
-    } ?: algorithmResult
-}

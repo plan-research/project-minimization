@@ -8,3 +8,8 @@ package org.plan.research.minimization.core.model
  * and minimization processes.
  */
 interface DDContext
+
+interface DDContextWithLevel<C : DDContextWithLevel<C>> : DDContext {
+    val currentLevel: List<DDItem>?
+    fun withCurrentLevel(currentLevel: List<DDItem>): C
+}

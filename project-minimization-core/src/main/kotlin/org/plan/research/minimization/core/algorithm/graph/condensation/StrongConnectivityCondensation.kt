@@ -15,13 +15,13 @@ import kotlin.collections.component1
 import kotlin.collections.component2
 
 object StrongConnectivityCondensation {
-    suspend fun <V : DDItem, E : GraphEdge<V>, G : GraphWithAdjacencyList<V, E>> compressGraph(graph: G): CondensedGraph<V, E> {
+    suspend fun <V : DDItem, E : GraphEdge<V>, G : GraphWithAdjacencyList<V, E, G>> compressGraph(graph: G): CondensedGraph<V, E> {
         val topologicalSortedVertices = TopologicalSort<V, E, G>().visitGraph(graph)
         val transposedGraph = TransposedGraph(graph, topologicalSortedVertices)
         return GraphCondenser<V, E, G>().visitGraph(transposedGraph)
     }
 
-    private class GraphCondenser<V : DDItem, E : GraphEdge<V>, G : GraphWithAdjacencyList<V, E>> :
+    private class GraphCondenser<V : DDItem, E : GraphEdge<V>, G : GraphWithAdjacencyList<V, E, G>> :
         DepthFirstGraphWalker<V, TransposedEdge<V>, TransposedGraph<V, E, G>, CondensedGraph<V, E>, MutableList<V>>() {
         private val currentComponents = mutableListOf<MutableList<V>>()
 

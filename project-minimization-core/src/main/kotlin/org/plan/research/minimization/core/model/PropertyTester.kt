@@ -1,5 +1,9 @@
 package org.plan.research.minimization.core.model
 
+import org.plan.research.minimization.core.model.graph.Graph
+import org.plan.research.minimization.core.model.graph.GraphCut
+import org.plan.research.minimization.core.model.graph.GraphEdge
+
 import arrow.core.Either
 
 typealias PropertyTestResult<C> = Either<PropertyTesterError, C>
@@ -17,6 +21,9 @@ typealias PropertyTestResult<C> = Either<PropertyTesterError, C>
  */
 interface PropertyTester<C : DDContext, T : DDItem> {
     suspend fun test(context: C, items: List<T>): PropertyTestResult<C>
+}
+interface PropertyTesterWithGraph<C : DDContextWithLevel<C>, V : DDItem, E : GraphEdge<V>, G : Graph<V, E, G>> {
+    suspend fun test(context: C, cut: GraphCut<V>): PropertyTestResult<C>
 }
 
 sealed interface PropertyTesterError {

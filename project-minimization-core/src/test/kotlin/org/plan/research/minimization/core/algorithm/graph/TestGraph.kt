@@ -4,6 +4,7 @@ import arrow.core.Option
 import arrow.core.getOrElse
 import arrow.core.getOrNone
 import org.plan.research.minimization.core.model.DDItem
+import org.plan.research.minimization.core.model.graph.GraphCut
 import org.plan.research.minimization.core.model.graph.GraphEdge
 import org.plan.research.minimization.core.model.graph.GraphWithAdjacencyList
 
@@ -12,9 +13,14 @@ data class TestNode(val id: String) : DDItem
 data class TestEdge(override val from: TestNode, override val to: TestNode) : GraphEdge<TestNode>()
 
 data class TestGraph(override val vertices: List<TestNode>, override val edges: List<TestEdge>) :
-    GraphWithAdjacencyList<TestNode, TestEdge>() {
+    GraphWithAdjacencyList<TestNode, TestEdge, TestGraph>() {
     private val inDegrees = edges.groupBy { it.to }.mapValues { it.value.size }
     override fun inDegreeOf(vertex: TestNode): Int = inDegrees[vertex] ?: 0
 
     override fun edgesFrom(vertex: TestNode): Option<List<TestEdge>> = adjacencyList.getOrNone(vertex)
+    override fun induce(cut: GraphCut<TestNode>): TestGraph {
+        val selectedVertices = cut.selectedVertices
+        val inducedEdges = edges.filter { it.from in selectedVertices && it.to in selectedVertices }
+        return TestGraph(selectedVertices, inducedEdges)
+    }
 }

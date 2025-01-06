@@ -1,18 +1,20 @@
 package org.plan.research.minimization.core.algorithm.graph.condensation
 
 import org.plan.research.minimization.core.model.DDItem
+import org.plan.research.minimization.core.model.graph.GraphCut
 import org.plan.research.minimization.core.model.graph.GraphEdge
 import org.plan.research.minimization.core.model.graph.GraphWithAdjacencyList
 
 import arrow.core.getOrElse
 import arrow.core.getOrNone
 
-typealias AdjacencyList<V, E> = Map<CondensedVertex<V>, List<CondensedEdge<V, E>>>
+internal typealias AdjacencyList<V, E> = Map<CondensedVertex<V>, List<CondensedEdge<V, E>>>
+private typealias CondensedCut<V> = GraphCut<CondensedVertex<V>>
 
 class CondensedGraph<V : DDItem, E : GraphEdge<V>> internal constructor(
     override val vertices: List<CondensedVertex<V>>,
     @Suppress("TYPE_ALIAS") override val edges: Collection<CondensedEdge<V, E>>,
-) : GraphWithAdjacencyList<CondensedVertex<V>, CondensedEdge<V, E>>() {
+) : GraphWithAdjacencyList<CondensedVertex<V>, CondensedEdge<V, E>, CondensedGraph<V, E>>() {
     private val inDegrees = adjacencyList
         .values
         .flatten()
@@ -32,4 +34,5 @@ class CondensedGraph<V : DDItem, E : GraphEdge<V>> internal constructor(
     )
 
     override fun toString(): String = "CondensedGraph(vertices=$vertices, adjacencyList=$adjacencyList)"
+    override fun induce(cut: CondensedCut<V>) = withoutNodes(vertices.toSet() - cut.selectedVertices)
 }

@@ -21,7 +21,7 @@ object GraphToImageDumper {
         edgeAttributes: (V, E) -> EdgeAttributes = { a, b -> emptyArray() },
     ): Graph where V : DDItem,
     E : GraphEdge<V>,
-    G : GraphWithAdjacencyList<V, E> {
+    G : GraphWithAdjacencyList<V, E, G> {
         return graph(directed = true) {
             graph[Rank.dir(TOP_TO_BOTTOM)]
             g.vertices.forEach { from ->

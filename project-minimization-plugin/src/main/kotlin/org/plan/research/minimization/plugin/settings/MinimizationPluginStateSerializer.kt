@@ -35,5 +35,5 @@ private fun serializeState(state: MinimizationPluginState): Element = XmlSeriali
 
 private fun deserializeState(project: Project, element: Element) {
     val newState = XmlSerializer.deserialize(element, MinimizationPluginState::class.java)
-    project.service<MinimizationPluginSettings>().updateState(newState)
+    project.service<MinimizationPluginSettings>().loadState(newState)
 }

@@ -97,8 +97,8 @@ fun ExceptionComparingStrategy.getExceptionComparator() = when (this) {
     ExceptionComparingStrategy.STACKTRACE -> StacktraceExceptionComparator(SimpleExceptionComparator())
 }
 
-fun TransformationDescriptors.getExceptionTransformations() = when (this) {
-    TransformationDescriptors.PATH_RELATIVIZATION -> PathRelativizationTransformation()
+fun TransformationDescriptor.getExceptionTransformations() = when (this) {
+    TransformationDescriptor.PATH_RELATIVIZATION -> PathRelativizationTransformation()
 }
 
 suspend fun CompilationException.apply(transformations: List<ExceptionTransformation>, context: IJDDContext) =

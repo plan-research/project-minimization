@@ -9,6 +9,7 @@ version = "1.0-SNAPSHOT"
 plugins {
     java
     kotlin
+    alias(libs.plugins.ksp)
 }
 
 allprojects {
@@ -18,6 +19,7 @@ allprojects {
         apply {
             plugin("java")
             plugin("kotlin")
+            plugin(libs.plugins.ksp.get().pluginId)
         }
     }
 
@@ -29,6 +31,8 @@ allprojects {
         implementation(libs.arrow.core)
         implementation(libs.kotlin.logging)
         implementation(libs.logback.classic)
+        implementation(libs.arrow.optics)
+        ksp(libs.arrow.ksp.plugin)
 
         testImplementation(kotlin("test"))
     }

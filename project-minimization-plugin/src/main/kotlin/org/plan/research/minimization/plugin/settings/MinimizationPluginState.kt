@@ -7,7 +7,7 @@ import org.plan.research.minimization.plugin.model.MinimizationStage
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.model.state.ExceptionComparingStrategy
 import org.plan.research.minimization.plugin.model.state.SnapshotStrategy
-import org.plan.research.minimization.plugin.model.state.TransformationDescriptors
+import org.plan.research.minimization.plugin.model.state.TransformationDescriptor
 
 import com.intellij.openapi.components.BaseState
 import com.intellij.util.xmlb.annotations.Tag
@@ -41,13 +41,12 @@ class MinimizationPluginState : BaseState() {
     var ignorePaths by property(emptyList<String>()) { it.isEmpty() }
 
     companion object {
-        private val defaultStages: List<MinimizationStage> = listOf(
+        val defaultStages: List<MinimizationStage> = listOf(
             FunctionLevelStage(),
-            DeclarationLevelStage(),
             FileLevelStage(),
         )
-        private val defaultTransformations: List<TransformationDescriptors> = listOf(
-            TransformationDescriptors.PATH_RELATIVIZATION,
+        val defaultTransformations: List<TransformationDescriptor> = listOf(
+            TransformationDescriptor.PATH_RELATIVIZATION,
         )
     }
 }

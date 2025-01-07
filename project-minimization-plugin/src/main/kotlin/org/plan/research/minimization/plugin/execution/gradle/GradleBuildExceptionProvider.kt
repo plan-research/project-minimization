@@ -224,7 +224,7 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
                 .setStandardOutput(std)
                 .setStandardError(err)
                 .setJavaHome(javaHome?.let { File(it) })
-                .withArguments("--no-configuration-cache", "--no-build-cache", "--quiet", *options.toTypedArray())
+                .withArguments(*defaultArguments, *options.toTypedArray())
                 .run(object : ResultHandler<Void> {
                     override fun onComplete(result: Void?) {
                         cont.resume(EXIT_CODE_OK)
@@ -372,5 +372,9 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
             fun fromTask(task: GradleTask) = ExactGradleTask(task)
             fun fromName(name: String) = GeneralGradleTask(name)
         }
+    }
+
+    companion object {
+        val defaultArguments = arrayOf("--no-configuration-cache", "--no-build-cache", "--quiet")
     }
 }

@@ -6,6 +6,6 @@ package org.plan.research.minimization.plugin.model.state
  * we can't store it in the settings
  *
  */
-enum class TransformationDescriptors {
+enum class TransformationDescriptor {
     PATH_RELATIVIZATION
 }

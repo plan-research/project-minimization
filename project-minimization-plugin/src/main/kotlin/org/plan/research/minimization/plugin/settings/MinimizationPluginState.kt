@@ -15,8 +15,9 @@ import com.intellij.util.xmlb.annotations.XCollection
 
 class MinimizationPluginState : BaseState() {
     var compilationStrategy by enum(CompilationStrategy.GRADLE_IDEA)
-    var gradleTask by property("build") { it == "build" }
-    var temporaryProjectLocation by property("minimization-project-snapshots") { it == "minimization-project-snapshots" }
+    var gradleTask by property(DEFAULT_GRADLE_TASK) { it == DEFAULT_GRADLE_TASK }
+    var temporaryProjectLocation by property(DEFAULT_TEMP_PROJ_LOCATION) { it == DEFAULT_TEMP_PROJ_LOCATION }
+    var logsLocation by property(DEFAULT_LOGS_LOCATION) { it == DEFAULT_LOGS_LOCATION }
     var snapshotStrategy by enum(SnapshotStrategy.PROJECT_CLONING)
     var exceptionComparingStrategy by enum(ExceptionComparingStrategy.SIMPLE)
 
@@ -41,6 +42,9 @@ class MinimizationPluginState : BaseState() {
     var ignorePaths by property(emptyList<String>()) { it.isEmpty() }
 
     companion object {
+        const val DEFAULT_GRADLE_TASK = "build"
+        const val DEFAULT_LOGS_LOCATION: String = "minimization-logs"
+        const val DEFAULT_TEMP_PROJ_LOCATION: String = "minimization-project-snapshots"
         val defaultStages: List<MinimizationStage> = listOf(
             FunctionLevelStage(),
             FileLevelStage(),

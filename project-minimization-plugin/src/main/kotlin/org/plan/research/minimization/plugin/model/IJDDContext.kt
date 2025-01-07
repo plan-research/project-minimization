@@ -64,6 +64,7 @@ class HeavyIJDDContext(
         projectDir, indexProject = project,
         originalProject = originalProject,
         currentLevel, progressReporter,
+        importRefCounter,
     )
 
     fun copy(

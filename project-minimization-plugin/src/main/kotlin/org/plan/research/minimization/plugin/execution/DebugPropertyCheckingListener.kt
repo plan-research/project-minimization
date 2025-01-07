@@ -1,6 +1,7 @@
 package org.plan.research.minimization.plugin.execution
 
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester.PropertyCheckingListener
+import org.plan.research.minimization.plugin.logging.ExecutionDiscriminator
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.IJDDItem
 import org.plan.research.minimization.plugin.model.exception.CompilationException
@@ -15,7 +16,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class DebugPropertyCheckingListener<T : IJDDItem>(folderSuffix: String) : PropertyCheckingListener<T> {
-    private val logLocation = Path(System.getProperty("idea.log.path"), "property-checking-log-$folderSuffix")
+    private val logLocation = Path(ExecutionDiscriminator.loggingFolder.get(), "property-checking-log-$folderSuffix")
     private val entries = mutableMapOf<String, LogStage>()
     private val logger = KotlinLogging.logger { }
 

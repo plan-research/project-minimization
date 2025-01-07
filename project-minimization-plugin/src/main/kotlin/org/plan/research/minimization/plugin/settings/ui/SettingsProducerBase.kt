@@ -52,7 +52,7 @@ abstract class SettingsProducerBase(protected val project: Project) {
                     emptyText.text = "--offline --refresh-dependencies etc..."
                 }
                 .comment(
-                    "These options are always passed to Gradle:<br>" +
+                    "These options are always passed to Gradle by default:<br>" +
                         ParametersListUtil.join(*GradleBuildExceptionProvider.defaultArguments),
                 )
         }

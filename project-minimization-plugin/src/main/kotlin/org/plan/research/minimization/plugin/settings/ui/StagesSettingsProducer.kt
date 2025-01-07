@@ -176,7 +176,7 @@ class StagesSettingsProducer {
     }
 
     private fun showAddDialog(stage: MinimizationStage? = null): MinimizationStage? {
-        var current: GraphProperty<out MinimizationStage>? = null
+        lateinit var current: GraphProperty<out MinimizationStage>
         val items = createStagesData(stage)
         val dialogPanel = addStageDialogPanel(items) { current = it }
 
@@ -187,7 +187,7 @@ class StagesSettingsProducer {
         items.forEach { it.panel.registerValidators(dialog.disposable) }
 
         return if (dialog.showAndGet()) {
-            current?.get()
+            current.get()
         } else {
             null
         }
@@ -195,23 +195,17 @@ class StagesSettingsProducer {
 
     private fun addStageDialogPanel(
         items: List<MinimizationStageData>,
-        setCurrent: (GraphProperty<out MinimizationStage>?) -> Unit,
+        setCurrent: (GraphProperty<out MinimizationStage>) -> Unit,
     ): DialogPanel {
         lateinit var selected: Cell<ComboBox<String>>
 
         return panel {
-            val index = items.indexOfFirst { it.isFirstSelected }
+            val index = items.indexOfFirst { it.isDefaultSelected }
+                .coerceAtLeast(0)
 
             row("Stage:") {
                 selected = comboBox(items.map { it.name })
                     .applyToComponent { selectedIndex = index }
-                    .validationOnApply {
-                        if (it.selectedIndex == 0) {
-                            error("Please select a valid stage.")
-                        } else {
-                            null
-                        }
-                    }
             }
 
             val cardLayout = CardLayout()
@@ -244,30 +238,23 @@ class StagesSettingsProducer {
         val newFileStage = propertyGraph.property((stage as? FileLevelStage) ?: FileLevelStage())
 
         return listOf(
-            // it's important to keep first the "Select stage" data
-            MinimizationStageData(
-                name = "Select stage",
-                panel = DialogPanel(),
-                stage = null,
-                isFirstSelected = stage == null,
-            ),
             MinimizationStageData(
                 name = "Function level stage",
                 panel = functionLevelPanel(propertyGraph, newFunctionStage),
                 stage = newFunctionStage,
-                isFirstSelected = stage is FunctionLevelStage,
+                isDefaultSelected = stage is FunctionLevelStage,
             ),
             MinimizationStageData(
                 name = "Declaration level stage",
                 panel = declarationLevelPanel(propertyGraph, newDeclarationStage),
                 stage = newDeclarationStage,
-                isFirstSelected = stage is DeclarationLevelStage,
+                isDefaultSelected = stage is DeclarationLevelStage,
             ),
             MinimizationStageData(
                 name = "File level stage",
                 panel = fileLevelPanel(propertyGraph, newFileStage),
                 stage = newFileStage,
-                isFirstSelected = stage is FileLevelStage,
+                isDefaultSelected = stage is FileLevelStage,
             ),
         )
     }
@@ -275,7 +262,7 @@ class StagesSettingsProducer {
     private data class MinimizationStageData(
         val name: String,
         val panel: DialogPanel,
-        val stage: GraphProperty<out MinimizationStage>?,
-        val isFirstSelected: Boolean,
+        val stage: GraphProperty<out MinimizationStage>,
+        val isDefaultSelected: Boolean,
     )
 }

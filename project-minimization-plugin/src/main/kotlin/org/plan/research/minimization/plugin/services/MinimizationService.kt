@@ -1,6 +1,7 @@
 package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.plugin.errors.MinimizationError
+import org.plan.research.minimization.plugin.getCurrentTimeString
 import org.plan.research.minimization.plugin.logging.ExecutionDiscriminator
 import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.IJDDContext
@@ -23,9 +24,6 @@ import com.intellij.platform.ide.progress.withBackgroundProgress
 import com.intellij.platform.util.progress.SequentialProgressReporter
 import com.intellij.platform.util.progress.reportSequentialProgress
 import mu.KotlinLogging
-
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -167,7 +165,7 @@ class MinimizationService(private val project: Project, private val coroutineSco
             project.guessProjectDir()!!.findOrCreateDirectory(logsLocation)
         }.toNioPath()
 
-        val time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))
+        val time = getCurrentTimeString()
         val executionId = "execution-$time"
 
         return ExecutionDiscriminator.withLoggingFolder(logsBaseDir, executionId, block)

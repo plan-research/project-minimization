@@ -1,7 +1,7 @@
-package org.plan.research.minimization.plugin.execution
+package org.plan.research.minimization.plugin.logging
 
+import org.plan.research.minimization.plugin.execution.IdeaCompilationException
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester.PropertyCheckingListener
-import org.plan.research.minimization.plugin.logging.ExecutionDiscriminator
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.IJDDItem
 import org.plan.research.minimization.plugin.model.exception.CompilationException
@@ -15,7 +15,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-class DebugPropertyCheckingListener<T : IJDDItem>(folderSuffix: String) : PropertyCheckingListener<T> {
+class LoggingPropertyCheckingListener<T : IJDDItem>(folderSuffix: String) : PropertyCheckingListener<T> {
     private val logLocation = Path(ExecutionDiscriminator.loggingFolder.get(), "property-checking-log-$folderSuffix")
     private val entries = mutableMapOf<String, LogStage>()
     private val logger = KotlinLogging.logger { }
@@ -61,7 +61,7 @@ class DebugPropertyCheckingListener<T : IJDDItem>(folderSuffix: String) : Proper
         val entry = entries[id] as? LogStage.BeforeFocus
             ?: logger.error { "No entry found for $id on successful compilation" }.let { return }
         fileById(context.projectDir.name).writeText(
-            Json.encodeToString(
+            json.encodeToString(
                 LogStage.SuccessfulCompilation(
                     entry.items,
                     "compilationSuccessful",
@@ -91,10 +91,10 @@ class DebugPropertyCheckingListener<T : IJDDItem>(folderSuffix: String) : Proper
 
     companion object {
         private val json = Json { prettyPrint = true }
-        fun<T : IJDDItem> create(name: String): DebugPropertyCheckingListener<T>? {
+        fun<T : IJDDItem> create(name: String): LoggingPropertyCheckingListener<T>? {
             val logger = KotlinLogging.logger { }
             return if (logger.isTraceEnabled) {
-                DebugPropertyCheckingListener(name)
+                LoggingPropertyCheckingListener(name)
             } else {
                 null
             }

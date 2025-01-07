@@ -1,5 +1,6 @@
 package org.plan.research.minimization.plugin.services
 
+import org.plan.research.minimization.plugin.getCurrentTimeString
 import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
@@ -78,7 +79,7 @@ class ProjectCloningService(private val rootProject: Project) {
         file.name != Project.DIRECTORY_STORE_FOLDER
 
     private fun createNewProjectDirectory(): Path =
-        getSnapshotLocation().findOrCreateDirectory(UUID.randomUUID().toString())
+        getSnapshotLocation().findOrCreateDirectory("snapshot-${getCurrentTimeString()}-${UUID.randomUUID()}")
 
     private fun getSnapshotLocation(): Path =
         rootProject

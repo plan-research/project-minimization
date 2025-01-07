@@ -2,10 +2,10 @@ package org.plan.research.minimization.plugin.hierarchy
 
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoExceptionFound
-import org.plan.research.minimization.plugin.execution.DebugPropertyCheckingListener
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.getExceptionComparator
 import org.plan.research.minimization.plugin.lenses.FileDeletingItemLens
+import org.plan.research.minimization.plugin.logging.LoggingPropertyCheckingListener
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.ProjectFileDDItem
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
@@ -30,7 +30,7 @@ class FileTreeHierarchyGenerator : ProjectHierarchyProducer<ProjectFileDDItem> {
                     .exceptionComparingStrategy.getExceptionComparator(),
                 FileDeletingItemLens(),
                 fromContext,
-                listOfNotNull(DebugPropertyCheckingListener.create<ProjectFileDDItem>("file-level")),
+                listOfNotNull(LoggingPropertyCheckingListener.create<ProjectFileDDItem>("file-level")),
             )
             .getOrElse { raise(NoExceptionFound) }
         FileTreeHierarchicalDDGenerator(propertyTester)

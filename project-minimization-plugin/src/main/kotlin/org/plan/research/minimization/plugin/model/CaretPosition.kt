@@ -1,7 +1,12 @@
 package org.plan.research.minimization.plugin.model
 
+import org.plan.research.minimization.plugin.PathSerializer
+
 import com.intellij.build.FilePosition
+
 import java.nio.file.Path
+
+import kotlinx.serialization.Serializable
 
 /**
  * A 0-indexed a position inside a file
@@ -9,7 +14,12 @@ import java.nio.file.Path
  * @property lineNumber 0-indexed line number of the desired position
  * @property columnNumber 0-indexed column number within that row
  */
-data class CaretPosition(val filePath: Path, val lineNumber: Int, val columnNumber: Int) {
+@Serializable
+data class CaretPosition(
+    @Serializable(with = PathSerializer::class) val filePath: Path,
+    val lineNumber: Int,
+    val columnNumber: Int,
+) {
     companion object {
         fun fromFilePosition(from: FilePosition) = CaretPosition(
             filePath = from.file.toPath(),

@@ -77,6 +77,7 @@ data class FunctionLevelStage(
 @Tag("declarationLevelStage")
 data class DeclarationLevelStage(
     @Property val ddAlgorithm: DDStrategy = DDStrategy.PROBABILISTIC_DD,
+    @Property val depthThreshold: Int = 2,
 ) : MinimizationStage {
     override val name: String = "Instance-level Minimization"
 

@@ -5,6 +5,9 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.CompilationException
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 sealed interface KotlincException : CompilationException {
     override suspend fun apply(
         transformation: ExceptionTransformation,
@@ -18,6 +21,7 @@ sealed interface KotlincException : CompilationException {
      * @property position a position where the exception occurred
      * @property additionalMessage a supplement human-readable message (including problematic IR Element) for debugging
      */
+    @Serializable
     data class BackendCompilerException(
         val stacktrace: String,
         val position: CaretPosition,
@@ -36,6 +40,7 @@ sealed interface KotlincException : CompilationException {
      * @property stacktrace A string representing the stacktrace of the exception.
      * @property message A string representing a human-readable message describing the exception.
      */
+    @Serializable
     data class GenericInternalCompilerException(
         val stacktrace: String?,
         val message: String,
@@ -52,8 +57,9 @@ sealed interface KotlincException : CompilationException {
      * @property message a human-readable description of the problem (without position and severity)
      * @property severity a severity level
      */
+    @Serializable
     data class GeneralKotlincException(
-        val position: CaretPosition,
+        val position: CaretPosition?,
         val message: String,
         val severity: KotlincErrorSeverity = KotlincErrorSeverity.UNKNOWN,
     ) : KotlincException {
@@ -62,6 +68,7 @@ sealed interface KotlincException : CompilationException {
             context: IJDDContext,
         ) = transformation.transform(this, context)
     }
+    @Serializable
     data class KspException(
         val message: String,
         val stacktrace: String,

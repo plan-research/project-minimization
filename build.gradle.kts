@@ -1,4 +1,5 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.research.code.submissions.clustering.buildutils.configureDiktat
 import org.jetbrains.research.code.submissions.clustering.buildutils.createDiktatTask
@@ -44,7 +45,10 @@ allprojects {
             targetCompatibility = "21"
         }
         withType<KotlinCompile> {
-            kotlinOptions.jvmTarget = "21"
+            compilerOptions {
+                jvmTarget = JvmTarget.JVM_21
+                freeCompilerArgs.add("-Xcontext-receivers")
+            }
         }
 
         test {

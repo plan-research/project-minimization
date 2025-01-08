@@ -11,6 +11,7 @@ import java.util.*
 import kotlin.collections.ArrayDeque
 import kotlin.math.exp
 import kotlinx.coroutines.yield
+import org.plan.research.minimization.core.model.DDContextMonad
 
 /**
  * Probabilistic Delta Debugging.
@@ -19,11 +20,11 @@ import kotlinx.coroutines.yield
  */
 @Suppress("MAGIC_NUMBER", "FLOAT_IN_ACCURATE_CALCULATIONS")
 class ProbabilisticDD : DDAlgorithm {
+    context(DDContextMonad<C>)
     override suspend fun <C : DDContext, T : DDItem> minimize(
-        context: C, items: List<T>,
+        items: List<T>,
         propertyTester: PropertyTester<C, T>,
-    ): DDAlgorithmResult<C, T> {
-        var currentContext = context
+    ): DDAlgorithmResult<T> {
         val buffer = ArrayDeque<T>()
         val probs = IdentityHashMap<T, Double>()
         val defaultProb = 1 - exp(-2.0 / items.size)
@@ -42,18 +43,17 @@ class ProbabilisticDD : DDAlgorithm {
                     break
                 }
             }
-            propertyTester.test(currentContext, currentItems).fold(
+            propertyTester.test(currentItems).fold(
                 ifLeft = {
                     excludedItems.forEach { item -> probs.computeIfPresent(item) { _, v -> v / (1 - p) } }
                     merge(probs, buffer, currentItems, excludedItems)
                 },
-                ifRight = { updatedContext ->
-                    currentContext = updatedContext
+                ifRight = {
                     excludedItems.clear()
                 },
             )
         }
-        return DDAlgorithmResult(currentContext, currentItems)
+        return currentItems
     }
 
     private fun <T> merge(

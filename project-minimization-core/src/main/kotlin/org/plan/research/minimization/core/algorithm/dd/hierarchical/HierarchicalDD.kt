@@ -7,6 +7,7 @@ import org.plan.research.minimization.core.model.DDItem
 import arrow.core.getOrElse
 
 import kotlinx.coroutines.yield
+import org.plan.research.minimization.core.model.DDContextMonad
 
 /**
  * The `HierarchicalDD` class provides a wrapper around a base delta debugging algorithm to facilitate
@@ -18,12 +19,13 @@ import kotlinx.coroutines.yield
  * @param baseDDAlgorithm The delta debugging algorithm utilized for minimization at each hierarchical level.
  */
 class HierarchicalDD(private val baseDDAlgorithm: DDAlgorithm) {
-    suspend fun <C : DDContext, T : DDItem> minimize(context: C, generator: HierarchicalDDGenerator<C, T>): C {
-        var level = generator.generateFirstLevel(context).getOrElse { return context }
+    context(DDContextMonad<C>)
+    suspend fun <C : DDContext, T : DDItem> minimize(generator: HierarchicalDDGenerator<C, T>) {
+        var level = generator.generateFirstLevel().getOrElse { return }
         while (true) {
             yield()
-            val minimizedLevel = baseDDAlgorithm.minimize(level.context, level.items, level.propertyTester)
-            level = generator.generateNextLevel(minimizedLevel).getOrElse { return minimizedLevel.context }
+            val minimizedLevel = baseDDAlgorithm.minimize(level.items, level.propertyTester)
+            level = generator.generateNextLevel(minimizedLevel).getOrElse { return }
         }
     }
 }

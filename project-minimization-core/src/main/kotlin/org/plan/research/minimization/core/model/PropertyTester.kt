@@ -2,7 +2,7 @@ package org.plan.research.minimization.core.model
 
 import arrow.core.Either
 
-typealias PropertyTestResult<C> = Either<PropertyTesterError, C>
+typealias PropertyTestResult = Either<PropertyTesterError, Unit>
 
 /**
  * Interface representing a tester for properties within a delta debugging context.
@@ -16,7 +16,8 @@ typealias PropertyTestResult<C> = Either<PropertyTesterError, C>
  * @param T The type of items being analyzed and manipulated in the delta debugging process.
  */
 interface PropertyTester<C : DDContext, T : DDItem> {
-    suspend fun test(context: C, items: List<T>): PropertyTestResult<C>
+    context(DDContextMonad<C>)
+    suspend fun test(items: List<T>): PropertyTestResult
 }
 
 sealed interface PropertyTesterError {

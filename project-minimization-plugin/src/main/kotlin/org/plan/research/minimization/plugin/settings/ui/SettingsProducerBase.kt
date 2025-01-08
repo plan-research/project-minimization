@@ -65,6 +65,13 @@ abstract class SettingsProducerBase(protected val project: Project) {
         }
     }
 
+    protected fun Panel.logsLocation() {
+        row("Logs location:") {
+            textField()
+                .bindText(state.logsLocation::get, state.logsLocation::set)
+        }
+    }
+
     protected fun Panel.snapshotStrategy() {
         row("Snapshot strategy:") {
             comboBox(SnapshotStrategy.entries)

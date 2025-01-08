@@ -27,7 +27,7 @@ class LoggingExceptionComparator(private val backedComparator: ExceptionComparat
         }
     }
 
-    override fun areEquals(
+    override suspend fun areEquals(
         exception1: CompilationException,
         exception2: CompilationException,
     ): Boolean {

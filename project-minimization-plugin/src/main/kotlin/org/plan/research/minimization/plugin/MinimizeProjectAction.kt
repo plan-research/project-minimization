@@ -42,7 +42,7 @@ class MinimizeProjectAction : AnAction() {
         }
 
         val minimizationService = project.service<MinimizationService>()
-        minimizationService.minimizeProject(project) { context ->
+        minimizationService.minimizeProject { context ->
             withContext(Dispatchers.EDT) {
                 val projectView = ProjectView.getInstance(project)
                 projectView.changeView(ProjectViewPane.ID)

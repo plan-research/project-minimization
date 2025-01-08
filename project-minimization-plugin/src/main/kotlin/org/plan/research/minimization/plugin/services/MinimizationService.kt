@@ -1,19 +1,25 @@
 package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.plugin.errors.MinimizationError
+import org.plan.research.minimization.plugin.getCurrentTimeString
+import org.plan.research.minimization.plugin.logging.ExecutionDiscriminator
 import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.MinimizationStage
 import org.plan.research.minimization.plugin.psi.PsiImportCleaner
 
+import arrow.core.Either
 import arrow.core.raise.Raise
 import arrow.core.raise.either
+import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ex.ProjectManagerEx
+import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.project.waitForSmartMode
+import com.intellij.openapi.vfs.findOrCreateDirectory
 import com.intellij.platform.ide.progress.withBackgroundProgress
 import com.intellij.platform.util.progress.SequentialProgressReporter
 import com.intellij.platform.util.progress.reportSequentialProgress
@@ -23,8 +29,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @Service(Service.Level.PROJECT)
-class MinimizationService(project: Project, private val coroutineScope: CoroutineScope) {
-    private val stages by project.service<MinimizationPluginSettings>()
+class MinimizationService(private val project: Project, private val coroutineScope: CoroutineScope) {
+    private val settings = project.service<MinimizationPluginSettings>()
+    private val stages by settings
         .stateObservable
         .stages
         .observe { it }
@@ -33,17 +40,17 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
     private val openingService = service<ProjectOpeningService>()
     private val logger = KotlinLogging.logger {}
 
-    fun minimizeProject(project: Project, onComplete: suspend (HeavyIJDDContext) -> Unit = { }) {
+    fun minimizeProject(onComplete: suspend (HeavyIJDDContext) -> Unit = { }) {
         coroutineScope.launch {
-            project.service<MinimizationPluginSettings>().withFrozenState {
+            settings.withFrozenState {
                 withBackgroundProgress(project, "Minimizing project") {
-                    minimizeProjectImpl(project).onRight { onComplete(it) }
+                    minimizeProjectImpl().onRight { onComplete(it) }
                 }
             }
         }
     }
 
-    private suspend fun minimizeProjectImpl(project: Project) =
+    private suspend fun minimizeProjectImpl(): Either<MinimizationError, HeavyIJDDContext> = withLoggingFolder {
         either {
             logger.info { "Start Project minimization" }
             var context = HeavyIJDDContext(project)
@@ -64,6 +71,7 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
             logger.info { "End Project minimization" }
             logger.error { "End minimizeProject with error: $error" }
         }
+    }
 
     private suspend fun Raise<MinimizationError>.processStage(
         context: HeavyIJDDContext,
@@ -131,6 +139,7 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
                 HeavyIJDDContext(
                     openedProject, context.originalProject,
                     context.currentLevel, context.progressReporter,
+                    context.importRefCounter,
                 )
             }
         }
@@ -148,5 +157,17 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
         } catch (e: Throwable) {
             logger.error(e) { "Error happened on the cleaning unused imports" }
         }
+    }
+
+    private suspend inline fun <T> withLoggingFolder(block: () -> T): T {
+        val logsLocation = settings.stateObservable.logsLocation.get()
+        val logsBaseDir = writeAction {
+            project.guessProjectDir()!!.findOrCreateDirectory(logsLocation)
+        }.toNioPath()
+
+        val time = getCurrentTimeString()
+        val executionId = "execution-$time"
+
+        return ExecutionDiscriminator.withLoggingFolder(logsBaseDir, executionId, block)
     }
 }

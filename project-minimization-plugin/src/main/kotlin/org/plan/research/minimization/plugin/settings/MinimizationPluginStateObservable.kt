@@ -18,6 +18,10 @@ class MinimizationPluginStateObservable {
         getter = { state.temporaryProjectLocation },
         setter = { state.temporaryProjectLocation = it },
     )
+    var logsLocation = StateDelegate(
+        getter = { state.logsLocation },
+        setter = { state.logsLocation = it },
+    )
     var snapshotStrategy = StateDelegate(
         getter = { state.snapshotStrategy },
         setter = { state.snapshotStrategy = it },
@@ -82,13 +86,5 @@ class StateDelegate<T>(private val getter: () -> T, private val setter: (T) -> U
         fun onValueChanged(newValue: T) {
             value = transform(newValue)
         }
-    }
-
-    inner class MutableChangeDelegate {
-        operator fun setValue(thisRef: Any?, property: Any?, value: T) {
-            set(value)
-        }
-
-        operator fun getValue(thisRef: Any?, property: Any?): T = getter()
     }
 }

@@ -25,6 +25,8 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 
 import java.nio.file.Path
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 import kotlin.io.path.Path
 import kotlinx.serialization.KSerializer
@@ -103,3 +105,5 @@ fun TransformationDescriptor.getExceptionTransformations() = when (this) {
 
 suspend fun CompilationException.apply(transformations: List<ExceptionTransformation>, context: IJDDContext) =
     transformations.fold(this) { acc, it -> acc.apply(it, context) }
+
+fun getCurrentTimeString(): String = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))

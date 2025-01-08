@@ -149,13 +149,13 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
 
         // Set the Gradle JVM (Java home)
         val gradleJvm = defaultProjectSettings.gradleJvm
-        logger.debug { "Gradle JVM: $gradleJvm" }
+        logger.trace { "Gradle JVM: $gradleJvm" }
         gradleJvm?.let {
             val sdk = ExternalSystemJdkUtil.getJdk(context.indexProject, gradleJvm)
-            logger.debug { "Found sdk: $sdk" }
+            logger.trace { "Found sdk: $sdk" }
             sdk?.let {
                 executionSettings.javaHome = sdk.homePath
-                logger.debug {
+                logger.trace {
                     """
                        Target jvm: ${sdk.name},
                         homePath: ${sdk.homePath},
@@ -168,7 +168,7 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
 
         // Return the configured execution settings
         return executionSettings.also {
-            logger.debug {
+            logger.trace {
                 "Execution gradle settings: $it"
             }
         }

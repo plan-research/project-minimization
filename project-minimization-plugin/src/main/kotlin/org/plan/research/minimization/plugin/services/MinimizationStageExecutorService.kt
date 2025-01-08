@@ -2,13 +2,13 @@ package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDD
 import org.plan.research.minimization.plugin.errors.MinimizationError
-import org.plan.research.minimization.plugin.execution.DebugPropertyCheckingListener
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.getDDAlgorithm
 import org.plan.research.minimization.plugin.getExceptionComparator
 import org.plan.research.minimization.plugin.getHierarchyCollectionStrategy
 import org.plan.research.minimization.plugin.hierarchy.DeletablePsiElementHierarchyGenerator
 import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
+import org.plan.research.minimization.plugin.logging.LoggingPropertyCheckingListener
 import org.plan.research.minimization.plugin.logging.statLogger
 import org.plan.research.minimization.plugin.model.*
 import org.plan.research.minimization.plugin.psi.PsiUtils
@@ -75,7 +75,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
                 .getExceptionComparator(),
             lens,
             lightContext,
-            listOfNotNull(DebugPropertyCheckingListener.create<PsiChildrenIndexDDItem>("body-replacement")),
+            listOfNotNull(LoggingPropertyCheckingListener.create<PsiChildrenIndexDDItem>("body-replacement")),
         ).getOrElse {
             logger.error { "Property checker creation failed. Aborted" }
             raise(MinimizationError.PropertyCheckerFailed)

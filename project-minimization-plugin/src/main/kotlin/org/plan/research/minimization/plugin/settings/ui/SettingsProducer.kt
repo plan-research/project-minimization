@@ -13,6 +13,7 @@ class SettingsProducer(project: Project) : SettingsProducerBase(project) {
             gradleTask()
             gradleOptions()
             tempProjectLocation()
+            logsLocation()
             snapshotStrategy()
             exceptionComparingStrategy()
 

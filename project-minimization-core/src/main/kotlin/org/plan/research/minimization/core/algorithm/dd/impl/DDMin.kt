@@ -3,12 +3,12 @@ package org.plan.research.minimization.core.algorithm.dd.impl
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.model.DDContext
+import org.plan.research.minimization.core.model.DDContextMonad
 import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.PropertyTester
 
 import kotlin.math.min
 import kotlinx.coroutines.yield
-import org.plan.research.minimization.core.model.DDContextMonad
 
 /**
  * Default Delta Debugging algorithm.
@@ -17,11 +17,11 @@ import org.plan.research.minimization.core.model.DDContextMonad
  * so it's not necessary to implement your own.
  */
 class DDMin : DDAlgorithm {
-    context(DDContextMonad<C>)
+    context(M)
     @Suppress("NESTED_BLOCK", "TOO_LONG_FUNCTION")
-    override suspend fun <C : DDContext, T : DDItem> minimize(
+    override suspend fun <M : DDContextMonad<C>, C : DDContext, T : DDItem> minimize(
         items: List<T>,
-        propertyTester: PropertyTester<C, T>,
+        propertyTester: PropertyTester<M, C, T>,
     ): DDAlgorithmResult<T> {
         var currentItems = ArrayDeque(items)
         var smallItems = ArrayDeque<T>()

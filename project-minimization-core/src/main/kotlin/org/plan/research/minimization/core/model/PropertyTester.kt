@@ -15,8 +15,8 @@ typealias PropertyTestResult = Either<PropertyTesterError, Unit>
  * @param C The type of context that provides information relevant to the delta debugging process.
  * @param T The type of items being analyzed and manipulated in the delta debugging process.
  */
-interface PropertyTester<C : DDContext, T : DDItem> {
-    context(DDContextMonad<C>)
+interface PropertyTester<M : DDContextMonad<C>, C : DDContext, T : DDItem> {
+    context(M)
     suspend fun test(items: List<T>): PropertyTestResult
 }
 

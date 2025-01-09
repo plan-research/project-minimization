@@ -14,9 +14,9 @@ typealias DDAlgorithmResult<T> = List<T>
  * identify and minimize the subset of items that cause a specific error or property.
  */
 interface DDAlgorithm {
-    context(DDContextMonad<C>)
-    suspend fun <C : DDContext, T : DDItem> minimize(
+    context(M)
+    suspend fun <M : DDContextMonad<C>, C : DDContext, T : DDItem> minimize(
         items: List<T>,
-        propertyTester: PropertyTester<C, T>,
+        propertyTester: PropertyTester<M, C, T>,
     ): DDAlgorithmResult<T>
 }

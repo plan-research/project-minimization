@@ -14,9 +14,10 @@ abstract class DDAlgorithmTestBase {
 
     data object EmptyDDContext : DDContext
     data class SomeDDItem(val value: Int) : DDItem
+    object EmptyMonad : DDContextMonad<EmptyDDContext>(EmptyDDContext)
 
-    class SimpleTester(private val target: Set<SomeDDItem>) : PropertyTester<EmptyDDContext, SomeDDItem> {
-        context(DDContextMonad<EmptyDDContext>)
+    class SimpleTester(private val target: Set<SomeDDItem>) : PropertyTester<EmptyMonad, EmptyDDContext, SomeDDItem> {
+        context(EmptyMonad)
         override suspend fun test(
             items: List<SomeDDItem>
         ): PropertyTestResult = either {
@@ -27,8 +28,8 @@ abstract class DDAlgorithmTestBase {
     class ComplexTester(
         private val target: Set<SomeDDItem>,
         private val badItems: Set<SomeDDItem>,
-    ) : PropertyTester<EmptyDDContext, SomeDDItem> {
-        context(DDContextMonad<EmptyDDContext>)
+    ) : PropertyTester<EmptyMonad, EmptyDDContext, SomeDDItem> {
+        context(EmptyMonad)
         override suspend fun test(
             items: List<SomeDDItem>
         ): PropertyTestResult = either {
@@ -52,8 +53,7 @@ abstract class DDAlgorithmTestBase {
         }
 
         val propertyTester = SimpleTester(target.toSet())
-        val monad = DDContextMonad(EmptyDDContext)
-        val result = monad.run { algorithm.minimize(items, propertyTester) }
+        val result = EmptyMonad.run { algorithm.minimize(items, propertyTester) }
         assertContentEquals(result.sortedBy { it.value }, target.sortedBy { it.value })
     }
 
@@ -84,8 +84,7 @@ abstract class DDAlgorithmTestBase {
         }
 
         val propertyTester = ComplexTester(target.toSet(), bad.toSet())
-        val monad = DDContextMonad(EmptyDDContext)
-        val result = monad.run { algorithm.minimize(items, propertyTester) }
+        val result = EmptyMonad.run { algorithm.minimize(items, propertyTester) }
 
         if (result.size == targetSize) {
             assertContentEquals(result.sortedBy { it.value }, target.sortedBy { it.value })

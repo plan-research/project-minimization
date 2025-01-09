@@ -19,6 +19,7 @@ data class ProjectStatistics(
     val commentLocAfter: Int,
     val codeLocBefore: Int,
     val codeLocAfter: Int,
+    val numberOfCompilations: Int,
 )
 
 class LogParser {
@@ -53,6 +54,8 @@ class LogParser {
                 val codeLocBefore = extractStat(relevantLogs, "Code LOC", first = true)
                 val codeLocAfter = extractStat(relevantLogs, "Code LOC", first = false)
 
+                val numberOfCompilations = relevantLogs.count { it.contains("Project dir:") }
+
                 projectsStatistics.add(
                     ProjectStatistics(
                         projectName,
@@ -67,6 +70,7 @@ class LogParser {
                         commentLocAfter,
                         codeLocBefore,
                         codeLocAfter,
+                        numberOfCompilations,
                     ),
                 )
             }
@@ -91,14 +95,14 @@ class LogParser {
         file.bufferedWriter().use { writer ->
             writer.write(
                 "Project Name,Duration (minutes),Kotlin Files Before,Kotlin Files After,Total LOC Before,Total LOC After," +
-                    "Blank LOC Before,Blank LOC After,Comment LOC Before,Comment LOC After,Code LOC Before,Code LOC After\n",
+                    "Blank LOC Before,Blank LOC After,Comment LOC Before,Comment LOC After,Code LOC Before,Code LOC After, Number of Compilations\n",
             )
 
             projectsStatistics.forEach { stats ->
                 writer.write(
                     "${stats.projectName},${stats.durationMinutes},${stats.ktFilesBefore},${stats.ktFilesAfter}," +
                         "${stats.totalLocBefore},${stats.totalLocAfter},${stats.blankLocBefore},${stats.blankLocAfter}," +
-                        "${stats.commentLocBefore},${stats.commentLocAfter},${stats.codeLocBefore},${stats.codeLocAfter}\n",
+                        "${stats.commentLocBefore},${stats.commentLocAfter},${stats.codeLocBefore},${stats.codeLocAfter},${stats.numberOfCompilations}\n",
                 )
             }
         }

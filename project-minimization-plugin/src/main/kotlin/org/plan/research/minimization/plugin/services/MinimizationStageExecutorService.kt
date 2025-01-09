@@ -1,13 +1,5 @@
 package org.plan.research.minimization.plugin.services
 
-import arrow.core.Either
-import arrow.core.getOrElse
-import arrow.core.raise.either
-import com.intellij.openapi.application.readAction
-import com.intellij.openapi.components.Service
-import com.intellij.openapi.components.service
-import com.intellij.openapi.project.Project
-import mu.KotlinLogging
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDD
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
@@ -29,6 +21,15 @@ import org.plan.research.minimization.plugin.model.item.PsiDDItem
 import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.psi.withImportRefCounter
+
+import arrow.core.Either
+import arrow.core.getOrElse
+import arrow.core.raise.either
+import com.intellij.openapi.application.readAction
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
+import mu.KotlinLogging
 
 @Service(Service.Level.PROJECT)
 class MinimizationStageExecutorService(private val project: Project) : MinimizationStageExecutor {

@@ -1,7 +1,9 @@
 package org.plan.research.minimization.plugin.model.item
 
-import org.jetbrains.kotlin.psi.*
 import org.plan.research.minimization.plugin.psi.stub.KtStub
+
+import org.jetbrains.kotlin.psi.*
+
 import java.nio.file.Path
 
 typealias ClassKtExpression = Class<out KtExpression>

@@ -1,11 +1,11 @@
 package org.plan.research.minimization.plugin.psi
 
 import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.item.index.IntChildrenIndex
 import org.plan.research.minimization.plugin.model.item.PsiChildrenIndexDDItem
-import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
 import org.plan.research.minimization.plugin.model.item.PsiDDItem
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
+import org.plan.research.minimization.plugin.model.item.index.IntChildrenIndex
+import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
 import org.plan.research.minimization.plugin.psi.stub.KtStub
 
 import arrow.core.Option

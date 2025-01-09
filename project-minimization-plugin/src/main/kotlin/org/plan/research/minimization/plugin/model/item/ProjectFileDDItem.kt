@@ -1,8 +1,11 @@
 package org.plan.research.minimization.plugin.model.item
 
-import com.intellij.openapi.vfs.VirtualFile
 import org.plan.research.minimization.plugin.model.context.IJDDContext
+
+import com.intellij.openapi.vfs.VirtualFile
+
 import java.nio.file.Path
+
 import kotlin.io.path.relativeTo
 
 /**

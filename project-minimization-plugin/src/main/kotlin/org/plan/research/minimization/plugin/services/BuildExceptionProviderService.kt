@@ -4,13 +4,13 @@ import org.plan.research.minimization.plugin.execution.withTransformations
 import org.plan.research.minimization.plugin.getCompilationStrategy
 import org.plan.research.minimization.plugin.getExceptionTransformations
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
+import org.plan.research.minimization.plugin.model.CompilationResult
 import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import org.plan.research.minimization.plugin.model.CompilationResult
 
 @Service(Service.Level.PROJECT)
 class BuildExceptionProviderService(

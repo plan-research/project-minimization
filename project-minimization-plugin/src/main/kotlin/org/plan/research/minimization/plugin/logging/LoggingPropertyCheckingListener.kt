@@ -3,8 +3,8 @@ package org.plan.research.minimization.plugin.logging
 import org.plan.research.minimization.plugin.execution.IdeaCompilationException
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester.PropertyCheckingListener
 import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.item.IJDDItem
 import org.plan.research.minimization.plugin.model.exception.CompilationException
+import org.plan.research.minimization.plugin.model.item.IJDDItem
 
 import mu.KotlinLogging
 

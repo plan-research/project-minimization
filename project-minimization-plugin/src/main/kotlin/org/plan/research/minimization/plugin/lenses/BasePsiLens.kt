@@ -1,9 +1,10 @@
 package org.plan.research.minimization.plugin.lenses
 
-import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.ProjectItemLens
-import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
 import org.plan.research.minimization.plugin.model.item.PsiDDItem
+import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.psi.trie.PsiTrie
 
@@ -13,19 +14,18 @@ import com.intellij.openapi.vfs.findFile
 import com.intellij.psi.PsiElement
 import mu.KotlinLogging
 import org.jetbrains.kotlin.psi.KtFile
-import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
 
 import java.nio.file.Path
 
 /**
  * An abstract class for the PSI element focusing lens
  */
-abstract class BasePsiLens<BC : IJDDContext, I, T> :
-    ProjectItemLens<BC, I> where I : PsiDDItem<T>, T : Comparable<T>, T : PsiChildrenPathIndex {
+abstract class BasePsiLens<B : IJDDContext, I, T> :
+    ProjectItemLens<B, I> where I : PsiDDItem<T>, T : Comparable<T>, T : PsiChildrenPathIndex {
     private val logger = KotlinLogging.logger {}
 
     context(IJDDContextMonad<C>)
-    final override suspend fun <C : BC> focusOn(
+    final override suspend fun <C : B> focusOn(
         items: List<I>,
     ) {
         val currentLevel = context.currentLevel as? List<I>
@@ -49,9 +49,9 @@ abstract class BasePsiLens<BC : IJDDContext, I, T> :
         logger.info { "Focusing complete" }
     }
 
-    protected open fun transformSelectedElements(item: I, context: BC): List<I> = listOf(item)
+    protected open fun transformSelectedElements(item: I, context: B): List<I> = listOf(item)
 
-    private suspend fun logFocusedItems(items: List<I>, context: BC) {
+    private suspend fun logFocusedItems(items: List<I>, context: B) {
         if (!logger.isTraceEnabled) {
             return
         }
@@ -64,16 +64,16 @@ abstract class BasePsiLens<BC : IJDDContext, I, T> :
     }
 
     context(IJDDContextMonad<C>)
-    protected open suspend fun <C : BC> useTrie(trie: PsiTrie<I, T>, ktFile: KtFile) {
+    protected open suspend fun <C : B> useTrie(trie: PsiTrie<I, T>, ktFile: KtFile) {
         PsiUtils.performPsiChangesAndSave(context, ktFile) {
             trie.processMarkedElements(ktFile) { item, psiElement -> focusOnPsiElement(item, psiElement, context) }
         }
     }
 
-    protected abstract fun focusOnPsiElement(item: I, psiElement: PsiElement, context: BC)
+    protected abstract fun focusOnPsiElement(item: I, psiElement: PsiElement, context: B)
 
     context(IJDDContextMonad<C>)
-    private suspend fun <C : BC> focusOnInsideFile(
+    private suspend fun <C : B> focusOnInsideFile(
         focusItems: List<I>,
         relativePath: Path,
     ) {

@@ -1,11 +1,5 @@
 package org.plan.research.minimization.plugin.execution
 
-import arrow.core.getOrElse
-import arrow.core.raise.ensure
-import arrow.core.raise.option
-import com.intellij.openapi.components.service
-import com.intellij.openapi.project.Project
-import mu.KotlinLogging
 import org.plan.research.minimization.core.model.PropertyTestResult
 import org.plan.research.minimization.core.model.PropertyTesterError
 import org.plan.research.minimization.plugin.errors.SnapshotError
@@ -19,6 +13,13 @@ import org.plan.research.minimization.plugin.model.exception.CompilationExceptio
 import org.plan.research.minimization.plugin.model.exception.ExceptionComparator
 import org.plan.research.minimization.plugin.model.item.IJDDItem
 import org.plan.research.minimization.plugin.services.SnapshotManagerService
+
+import arrow.core.getOrElse
+import arrow.core.raise.ensure
+import arrow.core.raise.option
+import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
+import mu.KotlinLogging
 
 private typealias Listeners<T> = List<SameExceptionPropertyTester.PropertyCheckingListener<T>>
 

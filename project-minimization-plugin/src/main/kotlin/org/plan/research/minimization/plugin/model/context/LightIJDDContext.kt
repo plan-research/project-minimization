@@ -1,11 +1,12 @@
 package org.plan.research.minimization.plugin.model.context
 
+import org.plan.research.minimization.plugin.model.item.IJDDItem
+import org.plan.research.minimization.plugin.psi.KtSourceImportRefCounter
+
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.util.progress.SequentialProgressReporter
-import org.plan.research.minimization.plugin.model.item.IJDDItem
-import org.plan.research.minimization.plugin.psi.KtSourceImportRefCounter
 
 /**
  * This context represents a project as a usual project in the file system.

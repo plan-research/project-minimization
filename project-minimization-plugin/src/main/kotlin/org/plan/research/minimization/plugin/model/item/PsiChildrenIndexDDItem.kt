@@ -1,9 +1,11 @@
 package org.plan.research.minimization.plugin.model.item
 
+import org.plan.research.minimization.plugin.model.item.index.IntChildrenIndex
+
 import com.intellij.psi.PsiElement
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.psi.*
-import org.plan.research.minimization.plugin.model.item.index.IntChildrenIndex
+
 import java.nio.file.Path
 
 data class PsiChildrenIndexDDItem(

@@ -1,8 +1,5 @@
 package org.plan.research.minimization.plugin.hierarchy
 
-import arrow.core.None
-import arrow.core.raise.option
-import com.intellij.platform.util.progress.SequentialProgressReporter
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HDDLevel
 import org.plan.research.minimization.plugin.model.IJHierarchicalDDGenerator
@@ -13,11 +10,16 @@ import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
 import org.plan.research.minimization.plugin.psi.CompressingPsiItemTrie.NextPsiDDItemInfo
 import org.plan.research.minimization.plugin.psi.StubCompressingPsiTrie
 import org.plan.research.minimization.plugin.psi.stub.KtStub
+
+import arrow.core.None
+import arrow.core.raise.option
+import com.intellij.platform.util.progress.SequentialProgressReporter
+
 import java.nio.file.Path
 
 private typealias DeletableNextItemInfo = NextPsiDDItemInfo<PsiStubDDItem, KtStub>
 
-class DeletablePsiElementHierarchyDDGenerator<C: IJDDContext>(
+class DeletablePsiElementHierarchyDDGenerator<C : IJDDContext>(
     private val propertyChecker: IJPropertyTester<C, PsiStubDDItem>,
     private val perFileTries: Map<Path, StubCompressingPsiTrie>,
 ) : IJHierarchicalDDGenerator<C, PsiStubDDItem> {

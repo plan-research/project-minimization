@@ -3,11 +3,11 @@ package org.plan.research.minimization.plugin.logging
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.model.DDContext
+import org.plan.research.minimization.core.model.DDContextMonad
 import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.PropertyTester
 
 import mu.KotlinLogging
-import org.plan.research.minimization.core.model.DDContextMonad
 
 class DDAlgorithmWithLog(
     private val innerDDAlgorithm: DDAlgorithm,

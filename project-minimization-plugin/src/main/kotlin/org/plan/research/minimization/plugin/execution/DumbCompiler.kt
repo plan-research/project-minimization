@@ -3,13 +3,13 @@ package org.plan.research.minimization.plugin.execution
 import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
 import org.plan.research.minimization.plugin.execution.DumbCompiler.targetPaths
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
+import org.plan.research.minimization.plugin.model.CompilationResult
 import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.CompilationException
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
 
 import arrow.core.raise.either
 import arrow.core.raise.ensureNotNull
-import org.plan.research.minimization.plugin.model.CompilationResult
 
 /**
  * A dumb compiler that checks containing of [targetPaths].

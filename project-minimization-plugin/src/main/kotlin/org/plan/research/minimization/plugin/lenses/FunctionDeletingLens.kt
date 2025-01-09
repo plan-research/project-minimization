@@ -1,6 +1,7 @@
 package org.plan.research.minimization.plugin.lenses
 
 import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
 import org.plan.research.minimization.plugin.psi.PsiImportRefCounter
 import org.plan.research.minimization.plugin.psi.PsiUtils
@@ -15,7 +16,6 @@ import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.idea.util.isComma
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
-import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
 
 import java.nio.file.Path
 
@@ -53,7 +53,8 @@ class FunctionDeletingLens : BasePsiLens<IJDDContext, PsiStubDDItem, KtStub>() {
 
         logger.debug { "Optimizing imports in $localPath" }
         val terminalElements = context.getTerminalElements(ktFile, trie)
-            ?: run { // If any searching problem with the file occurred, then the file should be removed completely
+            ?: run {
+                // If any searching problem with the file occurred, then the file should be removed completely
                 updateContext { it.copyWithout(localPath) }
                 return
             }

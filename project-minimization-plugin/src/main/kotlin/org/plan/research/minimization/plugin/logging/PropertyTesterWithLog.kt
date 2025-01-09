@@ -1,11 +1,12 @@
 package org.plan.research.minimization.plugin.logging
 
-import mu.KotlinLogging
 import org.plan.research.minimization.core.model.PropertyTestResult
 import org.plan.research.minimization.plugin.model.IJPropertyTester
 import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
 import org.plan.research.minimization.plugin.model.item.IJDDItem
+
+import mu.KotlinLogging
 
 class PropertyTesterWithLog<C : IJDDContext, T : IJDDItem>(
     private val innerTester: IJPropertyTester<C, T>,

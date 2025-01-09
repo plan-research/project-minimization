@@ -1,11 +1,5 @@
 package org.plan.research.minimization.plugin.hierarchy
 
-import arrow.core.raise.option
-import com.intellij.openapi.application.readAction
-import com.intellij.openapi.application.smartReadAction
-import com.intellij.openapi.components.service
-import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.platform.util.progress.SequentialProgressReporter
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HDDLevel
 import org.plan.research.minimization.plugin.model.IJHierarchicalDDGenerator
@@ -14,11 +8,20 @@ import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
 import org.plan.research.minimization.plugin.model.item.ProjectFileDDItem
 import org.plan.research.minimization.plugin.services.RootsManagerService
+
+import arrow.core.raise.option
+import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.smartReadAction
+import com.intellij.openapi.components.service
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.platform.util.progress.SequentialProgressReporter
+
 import java.nio.file.Path
+
 import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
 
-class FileTreeHierarchicalDDGenerator<C: IJDDContext>(
+class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
     private val propertyTester: IJPropertyTester<C, ProjectFileDDItem>,
 ) : IJHierarchicalDDGenerator<C, ProjectFileDDItem> {
     private var reporter: ProgressReporter? = null

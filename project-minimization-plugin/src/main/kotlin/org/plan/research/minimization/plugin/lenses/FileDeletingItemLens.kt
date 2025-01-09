@@ -1,11 +1,11 @@
 package org.plan.research.minimization.plugin.lenses
 
-import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.item.ProjectFileDDItem
 import org.plan.research.minimization.plugin.model.ProjectItemLens
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
+import org.plan.research.minimization.plugin.model.item.ProjectFileDDItem
 
 import com.intellij.openapi.application.writeAction
-import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
 
 class FileDeletingItemLens : ProjectItemLens<IJDDContext, ProjectFileDDItem> {
     context(IJDDContextMonad<C>)

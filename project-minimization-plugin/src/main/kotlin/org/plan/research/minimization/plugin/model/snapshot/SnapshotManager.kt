@@ -2,10 +2,10 @@ package org.plan.research.minimization.plugin.model.snapshot
 
 import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
 
 import arrow.core.Either
 import arrow.core.raise.Raise
-import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
 
 typealias TransactionResult<T> = Either<SnapshotError<T>, Unit>
 typealias TransactionAction<T, C> = suspend context(IJDDContextMonad<C>, Raise<T>) () -> Unit
@@ -22,6 +22,6 @@ interface SnapshotManager {
      */
     context(IJDDContextMonad<C>)
     suspend fun <T, C : IJDDContext> transaction(
-        action: TransactionAction<T, C>
+        action: TransactionAction<T, C>,
     ): TransactionResult<T>
 }

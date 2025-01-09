@@ -3,10 +3,10 @@ package org.plan.research.minimization.plugin.services
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.getCurrentTimeString
 import org.plan.research.minimization.plugin.logging.ExecutionDiscriminator
+import org.plan.research.minimization.plugin.model.MinimizationStage
 import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.context.LightIJDDContext
-import org.plan.research.minimization.plugin.model.MinimizationStage
 import org.plan.research.minimization.plugin.psi.PsiImportCleaner
 
 import arrow.core.Either

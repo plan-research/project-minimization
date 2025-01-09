@@ -5,7 +5,9 @@ import org.plan.research.minimization.plugin.errors.SnapshotError.*
 import org.plan.research.minimization.plugin.logging.statLogger
 import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
 import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
+import org.plan.research.minimization.plugin.model.snapshot.TransactionAction
 import org.plan.research.minimization.plugin.model.snapshot.TransactionResult
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 
@@ -19,8 +21,6 @@ import mu.KotlinLogging
 
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
-import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
-import org.plan.research.minimization.plugin.model.snapshot.TransactionAction
 
 /**
  * Manages the creation and handling of project cloning snapshots for transactions.

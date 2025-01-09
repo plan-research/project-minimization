@@ -8,9 +8,9 @@ import com.intellij.openapi.components.service
 import getAllFiles
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertNotEquals
-import org.plan.research.minimization.plugin.model.HeavyIJDDContext
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.LightIJDDContext
+import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.LightIJDDContext
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 
 @Suppress("UNCHECKED_CAST")

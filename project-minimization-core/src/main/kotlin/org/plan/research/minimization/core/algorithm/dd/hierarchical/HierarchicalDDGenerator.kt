@@ -28,8 +28,10 @@ data class HDDLevel<M : DDContextMonad<C>, C : DDContext, T : DDItem>(
  * @param C The type of context associated with the hierarchical delta debugging process.
  * @param T The type of items being analyzed and manipulated.
  */
-context(M)
 interface HierarchicalDDGenerator<M : DDContextMonad<C>, C : DDContext, T : DDItem> {
+    context(M)
     suspend fun generateFirstLevel(): Option<HDDLevel<M, C, T>>
+
+    context(M)
     suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<T>): Option<HDDLevel<M, C, T>>
 }

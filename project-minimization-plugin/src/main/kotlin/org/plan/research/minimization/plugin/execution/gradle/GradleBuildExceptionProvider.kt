@@ -9,8 +9,7 @@ import org.plan.research.minimization.plugin.execution.exception.ParseKotlincExc
 import org.plan.research.minimization.plugin.execution.gradle.GradleConsoleRunResult.Companion.EXIT_CODE_FAIL
 import org.plan.research.minimization.plugin.execution.gradle.GradleConsoleRunResult.Companion.EXIT_CODE_OK
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.exception.CompilationResult
+import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 
 import arrow.core.Either
@@ -46,6 +45,7 @@ import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.suspendCancellableCoroutine
+import org.plan.research.minimization.plugin.model.CompilationResult
 
 /**
  * An implementation of the [BuildExceptionProvider]

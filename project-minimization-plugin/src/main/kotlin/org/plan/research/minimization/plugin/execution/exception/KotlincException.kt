@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.execution.exception
 
 import org.plan.research.minimization.plugin.model.CaretPosition
-import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.CompilationException
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
 

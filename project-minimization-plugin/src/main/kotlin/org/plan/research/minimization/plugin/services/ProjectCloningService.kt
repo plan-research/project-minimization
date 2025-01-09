@@ -1,9 +1,9 @@
 package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.plugin.getCurrentTimeString
-import org.plan.research.minimization.plugin.model.HeavyIJDDContext
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.LightIJDDContext
+import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.LightIJDDContext
 
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.Service

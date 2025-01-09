@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.lenses
 
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.PsiStubDDItem
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
 import org.plan.research.minimization.plugin.psi.PsiImportRefCounter
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.psi.stub.KtStub
@@ -15,13 +15,13 @@ import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.idea.util.isComma
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
+import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
 
 import java.nio.file.Path
 
-import kotlin.collections.set
 import kotlin.io.path.relativeTo
 
-class FunctionDeletingLens : BasePsiLens<PsiStubDDItem, KtStub>() {
+class FunctionDeletingLens : BasePsiLens<IJDDContext, PsiStubDDItem, KtStub>() {
     private val logger = KotlinLogging.logger {}
     override fun focusOnPsiElement(
         item: PsiStubDDItem,
@@ -35,36 +35,38 @@ class FunctionDeletingLens : BasePsiLens<PsiStubDDItem, KtStub>() {
         }
     }
 
-    override fun getWriteCommandActionName(
-        psiFile: KtFile,
-        context: IJDDContext,
-    ): String = "Deleting PSI elements from ${psiFile.name}"
-
-    override suspend fun useTrie(
+    context(IJDDContextMonad<C>)
+    override suspend fun <C : IJDDContext> useTrie(
         trie: PsiTrie<PsiStubDDItem, KtStub>,
-        context: IJDDContext,
         ktFile: KtFile,
-    ): IJDDContext {
-        val context = super.useTrie(trie, context, ktFile)
+    ) {
+        super.useTrie(trie, ktFile)
         val localPath = ktFile.getLocalPath(context)
         if (readAction { !ktFile.isValid }) {
             logger.debug { "All top-level declarations has been removed from $localPath. Invalidating the ref counter for it" }
             // See [KtClassOrObject::delete] —
             // on deleting a single top-level declaration,
             // the file will be deleted
-            return context.copyWithout(localPath)
+            updateContext { it.copyWithout(localPath) }
+            return
         }
 
         logger.debug { "Optimizing imports in $localPath" }
         val terminalElements = context.getTerminalElements(ktFile, trie)
-            ?: return context.copyWithout(localPath)  // If any searching problem with the file occurred, then the file should be removed completely
+            ?: run { // If any searching problem with the file occurred, then the file should be removed completely
+                updateContext { it.copyWithout(localPath) }
+                return
+            }
 
         val modifiedCounter = context.processRefs(ktFile, terminalElements)
-        return context.copy(
-            importRefCounter = context
-                .importRefCounter!!  // <- 100% true
-                .performAction { put(localPath, modifiedCounter) },
-        )
+        updateContext {
+            @Suppress("UNCHECKED_CAST")
+            it.copy(
+                importRefCounter = it
+                    .importRefCounter!!  // <- 100% true
+                    .performAction { put(localPath, modifiedCounter) },
+            ) as C
+        }
     }
 
     @RequiresReadLock
@@ -99,7 +101,7 @@ class FunctionDeletingLens : BasePsiLens<PsiStubDDItem, KtStub>() {
     ) = readAction {
         val indexKtFile = getKtFileInIndexProject(ktFile) ?: return@readAction null
         buildList {
-            trie.processMarkedElements(indexKtFile) { item, psiElement -> add(psiElement) }
+            trie.processMarkedElements(indexKtFile) { _, psiElement -> add(psiElement) }
         }.filterIsInstance<KtElement>()
     }
 
@@ -129,7 +131,8 @@ class FunctionDeletingLens : BasePsiLens<PsiStubDDItem, KtStub>() {
         return modifiedCounter.purgeUnusedImports()
     }
 
-    private fun IJDDContext.copyWithout(localPath: Path) = copy(
+    @Suppress("UNCHECKED_CAST")
+    private fun <C : IJDDContext> C.copyWithout(localPath: Path) = copy(
         importRefCounter = importRefCounter?.performAction { remove(localPath) },
-    )
+    ) as C
 }

@@ -11,10 +11,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.execution.DumbCompiler
 import org.plan.research.minimization.plugin.model.FileLevelStage
-import org.plan.research.minimization.plugin.model.HeavyIJDDContext
+import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.model.state.DDStrategy
-import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.services.MinimizationStageExecutorService
 import org.plan.research.minimization.plugin.services.ProjectCloningService
@@ -64,7 +63,6 @@ class FileLevelStageTest : JavaCodeInsightFixtureTestCase() {
         val project = myFixture.project
         val executor = project.service<MinimizationStageExecutorService>()
         val stage = FileLevelStage(
-            HierarchyCollectionStrategy.FILE_TREE,
             DDStrategy.PROBABILISTIC_DD
         )
         val context = HeavyIJDDContext(project)

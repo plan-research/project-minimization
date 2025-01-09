@@ -7,57 +7,56 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.toNioPathOrNull
-import com.intellij.psi.PsiElement
-import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
-import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.plan.research.minimization.plugin.lenses.BasePsiLens
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.LightIJDDContext
-import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
-import org.plan.research.minimization.plugin.model.PsiDDItem
-import org.plan.research.minimization.plugin.psi.PsiUtils
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.LightIJDDContext
+import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
+import org.plan.research.minimization.plugin.model.item.PsiDDItem
 import org.plan.research.minimization.plugin.services.ProjectCloningService
+import runMonad
 import kotlin.io.path.relativeTo
 
 abstract class PsiLensTestBase<ITEM, T> :
     AbstractAnalysisKotlinTest() where ITEM : PsiDDItem<T>, T : PsiChildrenPathIndex, T : Comparable<T> {
     override fun runInDispatchThread(): Boolean = false
 
-    protected abstract fun getLens(): BasePsiLens<ITEM, T>
+    protected abstract fun getLens(): BasePsiLens<IJDDContext, ITEM, T>
     protected abstract suspend fun getAllItems(context: IJDDContext): List<ITEM>
 
     protected open suspend fun doTest(
-        context: LightIJDDContext,
+        initialContext: LightIJDDContext,
         elements: List<ITEM>,
         expectedFolder: String
     ): LightIJDDContext {
         val projectCloningService = project.service<ProjectCloningService>()
-        var cloned = projectCloningService.clone(context)
+        val cloned = projectCloningService.clone(initialContext)
         kotlin.test.assertNotNull(cloned)
         val lens = getLens()
-        val items = getAllItems(context)
-        cloned = lens.focusOn(elements, cloned.copy(currentLevel = items)) as LightIJDDContext
+        val items = getAllItems(initialContext)
 
-        val files = smartReadAction(cloned.indexProject) {
-            val fileIndex = ProjectRootManager.getInstance(cloned.indexProject).fileIndex
-            buildList { fileIndex.iterateContentUnderDirectory(cloned.projectDir) { fileOrDir -> add(fileOrDir); true } }
-        }
-        val projectRoot = cloned.projectDir.toNioPath()
+        return cloned.copy(currentLevel = items).runMonad {
+            lens.focusOn(elements)
 
-        files.mapNotNull { smartReadAction(cloned.indexProject) { it.toPsiFile(cloned.indexProject) } }
-            .forEach { file ->
-                val relativePath = file.virtualFile.toNioPathOrNull()!!.relativeTo(projectRoot)
-                val expectedPsiFile = myFixture.configureByFile("$expectedFolder/$relativePath")
-                readAction {
-                    kotlin.test.assertEquals(
-                        expectedPsiFile.text,
-                        file.text,
-                        "File $relativePath is not equal. Expected:\n${expectedPsiFile.text}\nActual:\n${file.text}\n"
-                    )
-                }
+            val files = smartReadAction(context.indexProject) {
+                val fileIndex = ProjectRootManager.getInstance(context.indexProject).fileIndex
+                buildList { fileIndex.iterateContentUnderDirectory(context.projectDir) { fileOrDir -> add(fileOrDir); true } }
             }
-        return cloned
+            val projectRoot = context.projectDir.toNioPath()
+
+            files.mapNotNull { smartReadAction(context.indexProject) { it.toPsiFile(context.indexProject) } }
+                .forEach { file ->
+                    val relativePath = file.virtualFile.toNioPathOrNull()!!.relativeTo(projectRoot)
+                    val expectedPsiFile = myFixture.configureByFile("$expectedFolder/$relativePath")
+                    readAction {
+                        kotlin.test.assertEquals(
+                            expectedPsiFile.text,
+                            file.text,
+                            "File $relativePath is not equal. Expected:\n${expectedPsiFile.text}\nActual:\n${file.text}\n"
+                        )
+                    }
+                }
+        }
     }
 
     protected open suspend fun getAllElements(context: IJDDContext, vfs: VirtualFile): List<ITEM> {

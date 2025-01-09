@@ -1,31 +1,30 @@
 package org.plan.research.minimization.plugin.hierarchy
 
-import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
-import org.plan.research.minimization.core.algorithm.dd.hierarchical.HDDLevel
-import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDDGenerator
-import org.plan.research.minimization.core.model.PropertyTester
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.ProjectFileDDItem
-import org.plan.research.minimization.plugin.services.RootsManagerService
-
 import arrow.core.raise.option
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.util.progress.SequentialProgressReporter
-
+import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
+import org.plan.research.minimization.core.algorithm.dd.hierarchical.HDDLevel
+import org.plan.research.minimization.plugin.model.IJHierarchicalDDGenerator
+import org.plan.research.minimization.plugin.model.IJPropertyTester
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
+import org.plan.research.minimization.plugin.model.item.ProjectFileDDItem
+import org.plan.research.minimization.plugin.services.RootsManagerService
 import java.nio.file.Path
 import kotlin.io.path.pathString
-
 import kotlin.io.path.relativeTo
 
-class FileTreeHierarchicalDDGenerator(
-    private val propertyTester: PropertyTester<IJDDContext, ProjectFileDDItem>,
-) : HierarchicalDDGenerator<IJDDContext, ProjectFileDDItem> {
+class FileTreeHierarchicalDDGenerator<C: IJDDContext>(
+    private val propertyTester: IJPropertyTester<C, ProjectFileDDItem>,
+) : IJHierarchicalDDGenerator<C, ProjectFileDDItem> {
     private var reporter: ProgressReporter? = null
 
-    override suspend fun generateFirstLevel(context: IJDDContext) =
+    context(IJDDContextMonad<C>)
+    override suspend fun generateFirstLevel() =
         option {
             val level = smartReadAction(context.indexProject) {
                 val rootManager = service<RootsManagerService>()
@@ -39,22 +38,35 @@ class FileTreeHierarchicalDDGenerator(
             }
 
             reporter?.updateProgress(level)
-            HDDLevel(context.copy(currentLevel = level), level, propertyTester)
+
+            updateContext {
+                @Suppress("UNCHECKED_CAST")
+                it.copy(currentLevel = level) as C
+            }
+
+            HDDLevel(level, propertyTester)
         }
 
-    override suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<IJDDContext, ProjectFileDDItem>) =
+    context(IJDDContextMonad<C>)
+    override suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<ProjectFileDDItem>) =
         option {
-            val nextFiles = minimizationResult.items.flatMap {
-                val vf = it.getVirtualFile(minimizationResult.context) ?: return@flatMap emptyList()
+            val nextFiles = minimizationResult.flatMap {
+                val vf = it.getVirtualFile(context) ?: return@flatMap emptyList()
                 readAction { vf.children }
                     .map { file ->
-                        ProjectFileDDItem.create(minimizationResult.context, file)
+                        ProjectFileDDItem.create(context, file)
                     }
             }
             ensure(nextFiles.isNotEmpty())
 
             reporter?.updateProgress(nextFiles)
-            HDDLevel(minimizationResult.context.copy(currentLevel = nextFiles), nextFiles, propertyTester)
+
+            updateContext {
+                @Suppress("UNCHECKED_CAST")
+                it.copy(currentLevel = nextFiles) as C
+            }
+
+            HDDLevel(nextFiles, propertyTester)
         }
 
     /**

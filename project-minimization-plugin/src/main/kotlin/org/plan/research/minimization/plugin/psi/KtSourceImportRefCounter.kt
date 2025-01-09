@@ -1,6 +1,6 @@
 package org.plan.research.minimization.plugin.psi
 
-import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 
 import arrow.core.raise.option
@@ -17,7 +17,6 @@ import kotlin.io.path.relativeTo
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.toPersistentHashMap
-import kotlinx.coroutines.flow.*
 
 class KtSourceImportRefCounter private constructor(private val refs: PersistentMap<Path, PsiImportRefCounter>) {
     operator fun get(path: Path) = option {

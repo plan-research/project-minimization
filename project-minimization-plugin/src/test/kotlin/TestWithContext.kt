@@ -3,9 +3,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ex.ProjectManagerEx
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import org.plan.research.minimization.plugin.model.HeavyIJDDContext
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.LightIJDDContext
+import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.LightIJDDContext
 
 interface TestWithContext<C : IJDDContext> {
     fun createContext(project: Project): C

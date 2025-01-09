@@ -4,6 +4,8 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.isFile
 import org.plan.research.minimization.plugin.getAllParents
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
 import java.nio.file.Path
 import kotlin.io.path.invariantSeparatorsPathString
 import kotlin.io.path.relativeTo
@@ -58,4 +60,10 @@ fun generateAllPermutations(possibleIndices: Set<Int>): Sequence<List<Int>> {
             yieldAll(generateAllPermutations(next).map { listOf(element) + it })
         }
     }
+}
+
+inline fun <C : IJDDContext> C.runMonad(block: context(IJDDContextMonad<C>) () -> Unit): C {
+    val monad = IJDDContextMonad(this)
+    block(monad)
+    return monad.context
 }

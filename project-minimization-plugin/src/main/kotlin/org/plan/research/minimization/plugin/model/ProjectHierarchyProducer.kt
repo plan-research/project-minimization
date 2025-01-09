@@ -1,14 +1,15 @@
 package org.plan.research.minimization.plugin.model
 
-import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDDGenerator
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError
 
 import arrow.core.Either
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.item.IJDDItem
 
-typealias ProjectHierarchyProducerResult<T> = Either<HierarchyBuildError, HierarchicalDDGenerator<IJDDContext, T>>
+typealias ProjectHierarchyProducerResult<C, T> = Either<HierarchyBuildError, IJHierarchicalDDGenerator<C, T>>
 
-interface ProjectHierarchyProducer<T : IJDDItem> {
-    suspend fun produce(
-        fromContext: IJDDContext,
-    ): ProjectHierarchyProducerResult<T>
+interface ProjectHierarchyProducer<BC : IJDDContext, T : IJDDItem> {
+    suspend fun <C : BC> produce(
+        context: C,
+    ): ProjectHierarchyProducerResult<C, T>
 }

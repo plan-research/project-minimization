@@ -1,6 +1,6 @@
 package org.plan.research.minimization.plugin.psi.stub
 
-import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
+import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
 
 import arrow.core.None
 import arrow.core.raise.option

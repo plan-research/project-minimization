@@ -1,6 +1,6 @@
 package org.plan.research.minimization.plugin.psi
 
-import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
+import org.plan.research.minimization.plugin.model.item.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.psi.KotlinTypeRenderer.renderType
 
 import org.jetbrains.kotlin.analysis.api.analyze

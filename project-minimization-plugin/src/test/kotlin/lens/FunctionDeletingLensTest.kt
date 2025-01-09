@@ -12,15 +12,15 @@ import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.plan.research.minimization.plugin.lenses.FunctionDeletingLens
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.LightIJDDContext
-import org.plan.research.minimization.plugin.model.PsiStubDDItem
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.LightIJDDContext
+import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
 import org.plan.research.minimization.plugin.psi.stub.KtStub
 import org.plan.research.minimization.plugin.psi.stub.KtFunctionStub
-import org.plan.research.minimization.plugin.psi.KtSourceImportRefCounter
 import org.plan.research.minimization.plugin.psi.withImportRefCounter
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import org.plan.research.minimization.plugin.services.ProjectCloningService
+import runMonad
 import kotlin.io.path.exists
 import kotlin.test.assertIs
 
@@ -136,7 +136,9 @@ class FunctionDeletingLensTest : PsiLensTestBase<PsiStubDDItem, KtStub>() {
             readAction { assertTrue(psiFile.isValid) }
             val lens = getLens()
             val items = getAllItems(context)
-            cloned = lens.focusOn(emptyList(), cloned.copy(currentLevel = items)) as LightIJDDContext
+            cloned = cloned.copy(currentLevel = items).runMonad {
+                lens.focusOn(emptyList())
+            }
             withContext(Dispatchers.EDT) {
                 PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
             }

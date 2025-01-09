@@ -2,7 +2,6 @@ package org.plan.research.minimization.plugin.settings.ui
 
 import org.plan.research.minimization.plugin.model.*
 import org.plan.research.minimization.plugin.model.state.DDStrategy
-import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
 
 import arrow.optics.Lens
 import com.intellij.openapi.observable.properties.GraphProperty
@@ -159,16 +158,11 @@ class StagesSettingsProducer {
         graph: PropertyGraph,
         stageProperty: GraphProperty<FileLevelStage>,
     ): DialogPanel = panel {
-        val hierarchyStrategy = graph.stageProperty(stageProperty, FileLevelStage.hierarchyCollectionStrategy)
         val ddAlgorithm = graph.stageProperty(stageProperty, FileLevelStage.ddAlgorithm)
         row("Description:") {
             text("The algorithm deletes files")
         }
         group("File Level Settings", indent = false) {
-            row("Hierarchy strategy:") {
-                comboBox(HierarchyCollectionStrategy.entries)
-                    .bindItem(hierarchyStrategy)
-            }
             row("Minimization strategy:") {
                 strategy(graph, ddAlgorithm)
             }

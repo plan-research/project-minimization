@@ -1,7 +1,6 @@
 package org.plan.research.minimization.plugin.execution.exception
 
 import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
-import org.plan.research.minimization.plugin.model.BuildEventTranslator
 import org.plan.research.minimization.plugin.model.CaretPosition
 
 import arrow.core.Either
@@ -22,7 +21,7 @@ typealias ParseKotlincExceptionResult = Either<CompilationPropertyCheckerError, 
  * KotlincExceptionTranslator provides functionality to interpret build events and transform them into either
  * general compilation errors or internal Kotlin compiler exceptions.
  */
-class KotlincExceptionTranslator : BuildEventTranslator {
+class KotlincExceptionTranslator {
     /**
      * Parses a [BuildEvent] to determine if it represents an internal or general Kotlin compiler exception.
      *
@@ -30,7 +29,7 @@ class KotlincExceptionTranslator : BuildEventTranslator {
      * @return An [Either] containing a [CompilationPropertyCheckerError] if parsing fails,
      * or a [KotlincException] representing the parsed exception.
      */
-    override fun parseException(event: BuildEvent): ParseKotlincExceptionResult =
+    fun parseException(event: BuildEvent): ParseKotlincExceptionResult =
         either {
             if (event.isInternal()) {
                 parseInternalException(event)

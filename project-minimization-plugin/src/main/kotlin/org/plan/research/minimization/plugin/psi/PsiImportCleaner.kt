@@ -1,6 +1,6 @@
 package org.plan.research.minimization.plugin.psi
 
-import org.plan.research.minimization.plugin.model.HeavyIJDDContext
+import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 
 import com.intellij.openapi.application.smartReadAction

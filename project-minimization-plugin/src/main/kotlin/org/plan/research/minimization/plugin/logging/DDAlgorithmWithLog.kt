@@ -7,17 +7,19 @@ import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.PropertyTester
 
 import mu.KotlinLogging
+import org.plan.research.minimization.core.model.DDContextMonad
 
 class DDAlgorithmWithLog(
     private val innerDDAlgorithm: DDAlgorithm,
 ) : DDAlgorithm {
     private val logger = KotlinLogging.logger {}
 
-    override suspend fun <C : DDContext, T : DDItem> minimize(
-        context: C, items: List<T>,
-        propertyTester: PropertyTester<C, T>,
-    ): DDAlgorithmResult<C, T> {
-        val result: DDAlgorithmResult<C, T>
+    context(M)
+    override suspend fun <M : DDContextMonad<C>, C : DDContext, T : DDItem> minimize(
+        items: List<T>,
+        propertyTester: PropertyTester<M, C, T>,
+    ): DDAlgorithmResult<T> {
+        val result: DDAlgorithmResult<T>
 
         logger.info {
             "Start minimization algorithm \n" +
@@ -36,13 +38,13 @@ class DDAlgorithmWithLog(
         statLogger.info { "DDAlgorithm started with size: ${items.size}" }
 
         try {
-            result = innerDDAlgorithm.minimize(context, items, propertyTester)
+            result = innerDDAlgorithm.minimize(items, propertyTester)
         } catch (e: Throwable) {
             logger.error { "DDAlgorithm ended up with error: ${e.message}" }
             throw e
         }
 
-        statLogger.info { "DDAlgorithm ended with size and ratio: ${result.items.size}, ${result.items.size.toDouble() / items.size}" }
+        statLogger.info { "DDAlgorithm ended with size and ratio: ${result.size}, ${result.size.toDouble() / items.size}" }
         logger.info { "End minimization algorithm" }
 
         return result

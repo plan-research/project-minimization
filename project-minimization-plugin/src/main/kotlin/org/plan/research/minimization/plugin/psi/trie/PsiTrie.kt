@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.psi.trie
 
-import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
-import org.plan.research.minimization.plugin.model.PsiDDItem
+import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
+import org.plan.research.minimization.plugin.model.item.PsiDDItem
 
 import com.intellij.psi.PsiElement
 import mu.KotlinLogging

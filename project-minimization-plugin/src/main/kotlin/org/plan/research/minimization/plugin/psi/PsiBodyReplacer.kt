@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.psi
 
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.item.PsiChildrenIndexDDItem
 
 import com.intellij.psi.PsiElement
 import mu.KotlinLogging

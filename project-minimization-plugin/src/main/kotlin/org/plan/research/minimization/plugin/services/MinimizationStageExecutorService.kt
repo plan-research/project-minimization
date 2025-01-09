@@ -1,19 +1,5 @@
 package org.plan.research.minimization.plugin.services
 
-import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDD
-import org.plan.research.minimization.plugin.errors.MinimizationError
-import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
-import org.plan.research.minimization.plugin.getDDAlgorithm
-import org.plan.research.minimization.plugin.getExceptionComparator
-import org.plan.research.minimization.plugin.getHierarchyCollectionStrategy
-import org.plan.research.minimization.plugin.hierarchy.DeletablePsiElementHierarchyGenerator
-import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
-import org.plan.research.minimization.plugin.logging.LoggingPropertyCheckingListener
-import org.plan.research.minimization.plugin.logging.statLogger
-import org.plan.research.minimization.plugin.model.*
-import org.plan.research.minimization.plugin.psi.PsiUtils
-import org.plan.research.minimization.plugin.psi.withImportRefCounter
-
 import arrow.core.Either
 import arrow.core.getOrElse
 import arrow.core.raise.either
@@ -22,6 +8,27 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import mu.KotlinLogging
+import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDD
+import org.plan.research.minimization.plugin.errors.MinimizationError
+import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
+import org.plan.research.minimization.plugin.getDDAlgorithm
+import org.plan.research.minimization.plugin.getExceptionComparator
+import org.plan.research.minimization.plugin.hierarchy.DeletablePsiElementHierarchyGenerator
+import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchyGenerator
+import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
+import org.plan.research.minimization.plugin.logging.LoggingPropertyCheckingListener
+import org.plan.research.minimization.plugin.logging.statLogger
+import org.plan.research.minimization.plugin.model.DeclarationLevelStage
+import org.plan.research.minimization.plugin.model.FileLevelStage
+import org.plan.research.minimization.plugin.model.FunctionLevelStage
+import org.plan.research.minimization.plugin.model.MinimizationStageExecutor
+import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
+import org.plan.research.minimization.plugin.model.item.PsiDDItem
+import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
+import org.plan.research.minimization.plugin.psi.PsiUtils
+import org.plan.research.minimization.plugin.psi.withImportRefCounter
 
 @Service(Service.Level.PROJECT)
 class MinimizationStageExecutorService(private val project: Project) : MinimizationStageExecutor {
@@ -31,7 +38,6 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         logger.info { "Start File level stage" }
         statLogger.info {
             "File level stage settings, " +
-                "Hierarchy strategy: ${fileLevelStage.hierarchyCollectionStrategy}, " +
                 "DDAlgorithm: ${fileLevelStage.ddAlgorithm}"
         }
 
@@ -41,15 +47,13 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         val hierarchicalDD = HierarchicalDD(baseAlgorithm)
 
         logger.info { "Initialise file hierarchy" }
-        val hierarchy = fileLevelStage
-            .hierarchyCollectionStrategy
-            .getHierarchyCollectionStrategy()
+        val hierarchy = FileTreeHierarchyGenerator()
             .produce(lightContext)
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
 
         logger.info { "Minimize" }
-        lightContext.withProgress {
-            hierarchicalDD.minimize(it, hierarchy)
+        lightContext.runMonadWithProgress {
+            hierarchicalDD.minimize(hierarchy)
         }
     }.logResult("File")
 
@@ -68,14 +72,14 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         val lens = FunctionModificationLens()
         val firstLevel = service<MinimizationPsiManagerService>()
             .findAllPsiWithBodyItems(lightContext)
-        val propertyChecker = SameExceptionPropertyTester.create<PsiChildrenIndexDDItem>(
+        val propertyChecker = SameExceptionPropertyTester.create(
             project.service<BuildExceptionProviderService>(),
             project.service<MinimizationPluginSettings>().state
                 .exceptionComparingStrategy
                 .getExceptionComparator(),
             lens,
             lightContext,
-            listOfNotNull(LoggingPropertyCheckingListener.create<PsiChildrenIndexDDItem>("body-replacement")),
+            listOfNotNull(LoggingPropertyCheckingListener.create("body-replacement")),
         ).getOrElse {
             logger.error { "Property checker creation failed. Aborted" }
             raise(MinimizationError.PropertyCheckerFailed)
@@ -84,12 +88,11 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         firstLevel.logPsiElements(lightContext)
         lightContext
             .copy(currentLevel = firstLevel)
-            .withProgress {
+            .runMonadWithProgress {
                 ddAlgorithm.minimize(
-                    it,
                     firstLevel,
                     propertyChecker,
-                ).context
+                )
             }
     }.logResult("Function Body Replacement")
 
@@ -121,11 +124,11 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         val ddAlgorithm = declarationLevelStage.ddAlgorithm.getDDAlgorithm()
         val hierarchicalDD = HierarchicalDD(ddAlgorithm)
         val hierarchy = DeletablePsiElementHierarchyGenerator(declarationLevelStage.depthThreshold)
-            .produce(context)
+            .produce(lightContext)
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
 
-        lightContext.withProgress {
-            hierarchicalDD.minimize(it, hierarchy)
+        lightContext.runMonadWithProgress {
+            hierarchicalDD.minimize(hierarchy)
         }
     }.logResult("Function Deleting")
 
@@ -137,4 +140,14 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         statLogger.info { "$stageName level stage result: $error" }
         logger.error { "$stageName level stage failed with error: $error" }
     }
+
+    @Suppress("UNCHECKED_CAST")
+    private suspend inline fun <C : IJDDContext> C.runMonadWithProgress(
+        crossinline action: suspend context(IJDDContextMonad<C>) () -> Unit,
+    ): C =
+        withProgress {
+            val monad = IJDDContextMonad(it as C)
+            action(monad)
+            monad.context
+        } as C
 }

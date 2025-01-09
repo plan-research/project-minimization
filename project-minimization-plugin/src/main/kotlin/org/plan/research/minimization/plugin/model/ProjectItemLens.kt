@@ -1,16 +1,19 @@
 package org.plan.research.minimization.plugin.model
 
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
+import org.plan.research.minimization.plugin.model.item.IJDDItem
+
 /**
  * Interface that specifies a way how the property tester focuses on selected files on that level
  */
-interface ProjectItemLens<I : IJDDItem> {
+interface ProjectItemLens<in BC : IJDDContext, I : IJDDItem> {
     /**
-     * Focus on the [items] within [currentContext].
+     * Focus on the [items].
      * The focusing process might require making changes to the context, so it returns a (modified) context
      *
      * @param items items to focus on
-     * @param currentContext within the context of focusing
-     * @return a modified copy of the [currentContext] that represents a focused state
      */
-    suspend fun focusOn(items: List<I>, currentContext: IJDDContext): IJDDContext
+    context(IJDDContextMonad<C>)
+    suspend fun <C : BC> focusOn(items: List<I>)
 }

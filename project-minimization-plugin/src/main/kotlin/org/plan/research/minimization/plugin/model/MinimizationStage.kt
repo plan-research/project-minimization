@@ -2,12 +2,15 @@ package org.plan.research.minimization.plugin.model
 
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.model.state.DDStrategy
-import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
 
 import arrow.core.Either
 import arrow.optics.optics
 import com.intellij.util.xmlb.annotations.Property
 import com.intellij.util.xmlb.annotations.Tag
+import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+
+typealias MinimizationResult = Either<MinimizationError, IJDDContext>
 
 /**
  * Interface representing an executor responsible for handling various stages of the minimization process.
@@ -16,17 +19,17 @@ interface MinimizationStageExecutor {
     suspend fun executeFileLevelStage(
         context: HeavyIJDDContext,
         fileLevelStage: FileLevelStage,
-    ): Either<MinimizationError, IJDDContext>
+    ): MinimizationResult
 
     suspend fun executeFunctionLevelStage(
         context: HeavyIJDDContext,
         functionLevelStage: FunctionLevelStage,
-    ): Either<MinimizationError, IJDDContext>
+    ): MinimizationResult
 
     suspend fun executeDeclarationLevelStage(
         context: HeavyIJDDContext,
         declarationLevelStage: DeclarationLevelStage,
-    ): Either<MinimizationError, IJDDContext>
+    ): MinimizationResult
 }
 
 /**
@@ -41,7 +44,7 @@ sealed interface MinimizationStage {
     suspend fun apply(
         context: HeavyIJDDContext,
         executor: MinimizationStageExecutor,
-    ): Either<MinimizationError, IJDDContext>
+    ): MinimizationResult
 }
 
 /**
@@ -49,13 +52,12 @@ sealed interface MinimizationStage {
  *
  * This class configures and applies a hierarchical delta debugging algorithm to minimize a project's file structure.
  *
- * @property hierarchyCollectionStrategy The strategy for collecting file hierarchy within the project.
+ * @property fileLevelHierarchyStrategy The strategy for collecting file hierarchy within the project.
  * @property ddAlgorithm The delta debugging algorithm to use for minimization.
  */
 @Tag("fileLevelStage")
 @optics
 data class FileLevelStage(
-    @Property val hierarchyCollectionStrategy: HierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
     @Property val ddAlgorithm: DDStrategy = DDStrategy.PROBABILISTIC_DD,
 ) : MinimizationStage {
     override val name: String = "File-Level Minimization"
@@ -76,7 +78,7 @@ data class FunctionLevelStage(
     override suspend fun apply(
         context: HeavyIJDDContext,
         executor: MinimizationStageExecutor,
-    ): Either<MinimizationError, IJDDContext> = executor.executeFunctionLevelStage(context, this)
+    ): MinimizationResult = executor.executeFunctionLevelStage(context, this)
 
     companion object
 }
@@ -92,7 +94,7 @@ data class DeclarationLevelStage(
     override suspend fun apply(
         context: HeavyIJDDContext,
         executor: MinimizationStageExecutor,
-    ): Either<MinimizationError, IJDDContext> = executor.executeDeclarationLevelStage(context, this)
+    ): MinimizationResult = executor.executeDeclarationLevelStage(context, this)
 
     companion object
 }

@@ -1,9 +1,9 @@
 import com.intellij.openapi.components.service
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import org.plan.research.minimization.plugin.model.FileLevelStage
-import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.state.*
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
+import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 import org.plan.research.minimization.plugin.settings.loadStateFromFile
 import org.plan.research.minimization.plugin.settings.saveStateToFile
 import org.w3c.dom.Document
@@ -25,21 +25,12 @@ class MinimizationPluginStateTest : BasePlatformTestCase() {
         assertEquals("minimization-project-snapshots", baseState.temporaryProjectLocation)
         assertEquals(SnapshotStrategy.PROJECT_CLONING, baseState.snapshotStrategy)
         assertEquals(ExceptionComparingStrategy.SIMPLE, baseState.exceptionComparingStrategy)
-        assertEquals(listOf(
-            TransformationDescriptors.PATH_RELATIVIZATION,
-        ),
+        assertEquals(
+            MinimizationPluginState.defaultTransformations,
             baseState.minimizationTransformations
         )
         assertEquals(
-            listOf(
-                FunctionLevelStage(
-                    ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
-                ),
-                FileLevelStage(
-                    hierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
-                    ddAlgorithm = DDStrategy.PROBABILISTIC_DD,
-                ),
-            ),
+            MinimizationPluginState.defaultStages,
             baseState.stages
         )
 
@@ -60,7 +51,7 @@ class MinimizationPluginStateTest : BasePlatformTestCase() {
         assertEquals("new-project-location", changedState.temporaryProjectLocation)
         assertEquals(SnapshotStrategy.PROJECT_CLONING, changedState.snapshotStrategy)
         assertEquals(ExceptionComparingStrategy.SIMPLE, changedState.exceptionComparingStrategy)
-        assertEquals(emptyList<TransformationDescriptors>(), changedState.minimizationTransformations)
+        assertEquals(emptyList<TransformationDescriptor>(), changedState.minimizationTransformations)
         assertEquals(
             listOf(FileLevelStage(HierarchyCollectionStrategy.FILE_TREE, DDStrategy.DD_MIN)),
             changedState.stages

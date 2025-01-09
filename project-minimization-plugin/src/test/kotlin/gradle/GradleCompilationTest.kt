@@ -28,8 +28,8 @@ import kotlin.test.assertNotEquals
 abstract class GradleCompilationTest<C : IJDDContext> : GradleProjectBaseTest(), TestWithContext<C> {
     override fun setUp() {
         super.setUp()
-        var compilationStrategy by project.service<MinimizationPluginSettings>().stateObservable.compilationStrategy.mutable()
-        compilationStrategy = CompilationStrategy.GRADLE_IDEA
+        project.service<MinimizationPluginSettings>()
+            .stateObservable.compilationStrategy.set(CompilationStrategy.GRADLE_IDEA)
         service<ProjectOpeningService>().isTest = true
     }
 
@@ -200,8 +200,8 @@ abstract class GradleCompilationTest<C : IJDDContext> : GradleProjectBaseTest(),
         val buildErrors = compilationResult.value.kotlincExceptions
         assertIs<List<KotlincException.GenericInternalCompilerException>>(buildErrors)
         assertSize(1, buildErrors)
-        assert(buildErrors[0].stacktrace.isNotBlank())
-        assert(buildErrors[0].stacktrace.lines().all { it.startsWith("\tat") })
+        assert(buildErrors[0].stacktrace!!.isNotBlank())
+        assert(buildErrors[0].stacktrace!!.lines().all { it.startsWith("\tat") })
         assert(buildErrors[0].message.startsWith("While analysing "))
         assert(buildErrors[0].message.endsWith("java.lang.IllegalArgumentException: Failed requirement."))
 

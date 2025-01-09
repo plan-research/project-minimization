@@ -1,5 +1,6 @@
 package org.plan.research.minimization.plugin.services
 
+import org.plan.research.minimization.plugin.getCurrentTimeString
 import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
@@ -12,6 +13,7 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.util.io.findOrCreateDirectory
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.findDirectory
 import com.intellij.openapi.vfs.toNioPathOrNull
 
 import java.nio.file.Path
@@ -29,12 +31,16 @@ import kotlinx.coroutines.withContext
 @Service(Service.Level.PROJECT)
 class ProjectCloningService(private val rootProject: Project) {
     private val openingService = service<ProjectOpeningService>()
+    private val logsDirectoryName by rootProject
+        .service<MinimizationPluginSettings>()
+        .stateObservable
+        .logsLocation
+        .observe { it }
     private val tempProjectsDirectoryName by rootProject
         .service<MinimizationPluginSettings>()
         .stateObservable
         .temporaryProjectLocation
         .observe { it }
-    private val importantFiles = setOf("modules.xml", "misc.xml", "libraries")
 
     suspend fun clone(context: IJDDContext): IJDDContext? =
         when (context) {
@@ -60,8 +66,9 @@ class ProjectCloningService(private val rootProject: Project) {
         return withContext(Dispatchers.IO) {
             val clonedProjectPath = createNewProjectDirectory()
             val snapshotLocation = getSnapshotLocation()
+            val logsLocation = getLogsLocation()
             projectDir.copyTo(clonedProjectPath) {
-                isImportant(it, projectDir) && it.toNioPath() != snapshotLocation
+                isImportant(it, projectDir) && it.toNioPath() != snapshotLocation && it.toNioPath() != logsLocation
             }
             clonedProjectPath
         }
@@ -72,13 +79,19 @@ class ProjectCloningService(private val rootProject: Project) {
         file.name != Project.DIRECTORY_STORE_FOLDER
 
     private fun createNewProjectDirectory(): Path =
-        getSnapshotLocation().findOrCreateDirectory(UUID.randomUUID().toString())
+        getSnapshotLocation().findOrCreateDirectory("snapshot-${getCurrentTimeString()}-${UUID.randomUUID()}")
 
     private fun getSnapshotLocation(): Path =
         rootProject
             .guessProjectDir()!!
             .toNioPath()
             .findOrCreateDirectory(tempProjectsDirectoryName)
+
+    private fun getLogsLocation(): Path? =
+        rootProject
+            .guessProjectDir()!!
+            .findDirectory(logsDirectoryName)
+            ?.toNioPath()
 
     private suspend fun VirtualFile.copyTo(destination: Path, root: Boolean = true, filter: (VirtualFile) -> Boolean) {
         if (!filter(this)) {

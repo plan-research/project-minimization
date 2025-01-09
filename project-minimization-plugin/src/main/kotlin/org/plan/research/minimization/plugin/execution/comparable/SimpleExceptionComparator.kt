@@ -4,6 +4,6 @@ import org.plan.research.minimization.plugin.model.exception.CompilationExceptio
 import org.plan.research.minimization.plugin.model.exception.ExceptionComparator
 
 class SimpleExceptionComparator : ExceptionComparator {
-    override fun areEquals(exception1: CompilationException, exception2: CompilationException) =
+    override suspend fun areEquals(exception1: CompilationException, exception2: CompilationException) =
         exception1 == exception2
 }

@@ -4,11 +4,12 @@ kotlin = "2.1.0"
 intellij = "2.1.0"
 coroutines = "1.8.0"
 arrow = "1.2.4"
+ksp = "2.1.0-1.0.29"
 logging = "2.1.21"
 logback = "1.2.11"
 diktat = "2.0.0"
-kaml = "0.59.0"
-serialization = "1.6.3"
+kotlinx-immutable-collections = "0.3.8"
+kotlinx-serialization = "1.7.3"
 
 [libraries]
 diktat-gradle-plugin = { module = "com.saveourtool.diktat:diktat-gradle-plugin", version.ref = "diktat" }
@@ -16,12 +17,14 @@ kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", v
 
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
+arrow-optics = { module = "io.arrow-kt:arrow-optics", version.ref = "arrow" }
+arrow-ksp-plugin = { module = "io.arrow-kt:arrow-optics-ksp-plugin", version.ref = "arrow" }
 kotlin-logging = { module = "io.github.microutils:kotlin-logging-jvm", version.ref = "logging" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
-
-kaml = { module = "com.charleskorn.kaml:kaml", version.ref = "kaml" }
-kotlinx-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
-
+kotlinx-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "kotlinx-immutable-collections" }
+kotlinx-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 
 [plugins]
 intellij = { id = "org.jetbrains.intellij.platform", version.ref = "intellij" }
+serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

@@ -15,7 +15,7 @@ import kotlin.math.max
 class StacktraceExceptionComparator(
     private val generalComparator: ExceptionComparator,
 ) : ExceptionComparator {
-    override fun areEquals(exception1: CompilationException, exception2: CompilationException): Boolean {
+    override suspend fun areEquals(exception1: CompilationException, exception2: CompilationException): Boolean {
         if (exception1 is IdeaCompilationException && exception2 is IdeaCompilationException) {
             return exception1.kotlincExceptions.zip(exception2.kotlincExceptions).all {pair -> areEquals(pair.first, pair.second) }
         }
@@ -33,7 +33,7 @@ class StacktraceExceptionComparator(
     // return message + stacktrace if possible
     private fun extractExceptionLines(exception: KotlincException): List<String>? = when (exception) {
         is KotlincException.BackendCompilerException -> parseMessage(exception.additionalMessage) + parseStacktrace(exception.stacktrace)
-        is KotlincException.GenericInternalCompilerException -> parseMessage(exception.message) + parseStacktrace(exception.stacktrace)
+        is KotlincException.GenericInternalCompilerException -> parseMessage(exception.message) + parseStacktrace(exception.stacktrace ?: "")
         is KotlincException.GeneralKotlincException -> null
         is KotlincException.KspException -> parseMessage(exception.message) + parseStacktrace(exception.stacktrace)
     }

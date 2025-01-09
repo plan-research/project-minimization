@@ -1,6 +1,7 @@
 package execution
 
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
+import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.execution.exception.KotlincException
 import org.plan.research.minimization.plugin.getExceptionComparator
 import org.plan.research.minimization.plugin.model.exception.ExceptionComparator
@@ -53,7 +54,7 @@ class StacktraceComparatorTest: JavaCodeInsightFixtureTestCase() {
             message = message2,
         )
 
-        return stacktraceComparator.areEquals(exception1, exception2)
+        return runBlocking { stacktraceComparator.areEquals(exception1, exception2) }
     }
 
     private fun parseStacktraceAndMessage(input: String): Pair<String, String> {

@@ -8,9 +8,11 @@ import org.plan.research.minimization.plugin.getExceptionComparator
 import org.plan.research.minimization.plugin.getHierarchyCollectionStrategy
 import org.plan.research.minimization.plugin.hierarchy.DeletablePsiElementHierarchyGenerator
 import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
+import org.plan.research.minimization.plugin.logging.LoggingPropertyCheckingListener
 import org.plan.research.minimization.plugin.logging.statLogger
 import org.plan.research.minimization.plugin.model.*
 import org.plan.research.minimization.plugin.psi.PsiUtils
+import org.plan.research.minimization.plugin.psi.withImportRefCounter
 
 import arrow.core.Either
 import arrow.core.getOrElse
@@ -75,6 +77,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
                 .getExceptionComparator(),
             lens,
             lightContext,
+            listOfNotNull(LoggingPropertyCheckingListener.create<PsiChildrenIndexDDItem>("body-replacement")),
         ).getOrElse {
             logger.error { "Property checker creation failed. Aborted" }
             raise(MinimizationError.PropertyCheckerFailed)
@@ -92,7 +95,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
             }
     }.logResult("Function Body Replacement")
 
-    private suspend fun<T : PsiChildrenPathIndex> List<PsiDDItem<T>>.logPsiElements(context: IJDDContext) {
+    private suspend fun <T : PsiChildrenPathIndex> List<PsiDDItem<T>>.logPsiElements(context: IJDDContext) {
         if (!logger.isTraceEnabled) {
             return
         }
@@ -116,11 +119,11 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
                 "DDAlgorithm: ${declarationLevelStage.ddAlgorithm}"
         }
 
-        val lightContext = context.asLightContext()
+        val lightContext = context.asLightContext().withImportRefCounter()
 
         val ddAlgorithm = declarationLevelStage.ddAlgorithm.getDDAlgorithm()
         val hierarchicalDD = HierarchicalDD(ddAlgorithm)
-        val hierarchy = DeletablePsiElementHierarchyGenerator()
+        val hierarchy = DeletablePsiElementHierarchyGenerator(declarationLevelStage.depthThreshold)
             .produce(context)
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
 

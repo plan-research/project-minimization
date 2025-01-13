@@ -15,7 +15,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-typealias CondensedV = CondensedVertex<TestNode>
+typealias CondensedV = CondensedVertex<TestNode, TestEdge>
 typealias CondensedE = CondensedEdge<TestNode, TestEdge>
 typealias CondensedG = CondensedGraph<TestNode, TestEdge>
 
@@ -94,7 +94,8 @@ class StrongConnectivityTest {
         for (vertice in possibleVertices) {
             assertFalse(
                 message = "Adding $vertice to $component left it strongly connected => That's not a maximum component"
-            ) { this.isStronglyConnected(originalGraph, CondensedV(component.underlyingVertexes + vertice)) }
+            ) {
+                this.isStronglyConnected(originalGraph, CondensedV(component.underlyingVertexes + vertice, emptyList())) }
         }
     }
     private fun CondensedG.allVerticesInComponents(originalGraph: TestGraph) {

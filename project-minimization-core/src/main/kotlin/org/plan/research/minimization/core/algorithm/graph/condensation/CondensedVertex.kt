@@ -5,5 +5,5 @@ import org.plan.research.minimization.core.model.graph.GraphEdge
 
 data class CondensedVertex<V : DDItem, E : GraphEdge<V>>(
     val underlyingVertexes: List<V>,
-    val edgesInCondensed: List<E>
+    val edgesInCondensed: List<E>,
 ) : DDItem

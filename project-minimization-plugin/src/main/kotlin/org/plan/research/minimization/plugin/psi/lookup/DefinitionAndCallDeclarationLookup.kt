@@ -7,6 +7,7 @@ import org.jetbrains.kotlin.analysis.api.resolution.calls
 import org.jetbrains.kotlin.analysis.api.resolution.singleCallOrNull
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
 import org.jetbrains.kotlin.analysis.api.symbols.psi
+import org.jetbrains.kotlin.analysis.api.symbols.psiSafe
 import org.jetbrains.kotlin.analysis.api.symbols.sourcePsi
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.idea.references.mainReference
@@ -24,7 +25,7 @@ object DefinitionAndCallDeclarationLookup {
         ref
             .mainReference
             .resolveToSymbols()
-            .map { it.psi<PsiElement>()}
+            .mapNotNull { it.psiSafe<PsiElement>()}
             .filter { it.language == KotlinLanguage.INSTANCE }
     }
 
@@ -33,7 +34,7 @@ object DefinitionAndCallDeclarationLookup {
         callInfo
             ?.calls
             ?.filterIsInstance<KaCallableMemberCall<*, *>>()
-            ?.mapNotNull { it.symbol.psi() }
+            ?.mapNotNull { it.symbol.psiSafe() }
             ?: emptyList()
     }
 }

@@ -8,7 +8,7 @@ import org.plan.research.minimization.plugin.psi.lookup.TypeDeclarationLookup
 
 object KotlinElementLookup {
     @RequiresReadLock
-    fun lookupType(element: PsiElement): PsiElement? = TypeDeclarationLookup.getSymbolTypeDeclarations(element)
+    fun lookupType(element: PsiElement): List<PsiElement> = TypeDeclarationLookup.getSymbolTypeDeclarations(element)
 
     @RequiresReadLock
     fun lookupDefinition(element: PsiElement): List<PsiElement> = DefinitionAndCallDeclarationLookup

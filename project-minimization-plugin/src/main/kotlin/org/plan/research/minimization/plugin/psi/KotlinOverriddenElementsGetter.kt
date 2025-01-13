@@ -2,6 +2,7 @@ package org.plan.research.minimization.plugin.psi
 
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.symbols.psi
+import org.jetbrains.kotlin.analysis.api.symbols.psiSafe
 import org.jetbrains.kotlin.analysis.api.symbols.sourcePsi
 import org.jetbrains.kotlin.analysis.api.types.symbol
 import org.jetbrains.kotlin.psi.KtClass
@@ -23,7 +24,7 @@ object KotlinOverriddenElementsGetter {
         val symbol = element.symbol
         symbol
             .directlyOverriddenSymbols
-            .map { it.psi<KtElement>() }
+            .mapNotNull { it.psiSafe<KtElement>() }
             .toList()
     }
 
@@ -31,7 +32,7 @@ object KotlinOverriddenElementsGetter {
         val symbol = element.symbol
         symbol
             .directlyOverriddenSymbols
-            .map { it.psi<KtElement>() }
+            .mapNotNull { it.psiSafe<KtElement>() }
             .toList()
     }
 
@@ -39,14 +40,14 @@ object KotlinOverriddenElementsGetter {
         val symbol = element.symbol
         symbol
             .directlyOverriddenSymbols
-            .map { it.psi<KtElement>() }
+            .mapNotNull { it.psiSafe<KtElement>() }
             .toList()
     }
     private fun getOverriddenClass(element: KtClass) = analyze(element) {
         val symbol = element.classSymbol
         symbol
             ?.superTypes
-            ?.mapNotNull { it.symbol?.psi<KtElement>() }
+            ?.mapNotNull { it.symbol?.psiSafe<KtElement>() }
             ?.toList()
             ?: emptyList()
     }

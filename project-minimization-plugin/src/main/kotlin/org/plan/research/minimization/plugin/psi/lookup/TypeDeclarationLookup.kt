@@ -2,21 +2,17 @@ package org.plan.research.minimization.plugin.psi.lookup
 
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiWhiteSpace
-import com.intellij.util.concurrency.annotations.RequiresReadLock
+import mu.KotlinLogging
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.symbols.*
 import org.jetbrains.kotlin.analysis.api.types.KaType
+import org.jetbrains.kotlin.analysis.api.types.abbreviationOrSelf
 import org.jetbrains.kotlin.analysis.api.types.symbol
-import org.jetbrains.kotlin.idea.intentions.ImportAllMembersIntention.Holder.importReceiverMembers
-import org.jetbrains.kotlin.idea.references.canBeResolvedViaImport
-import org.jetbrains.kotlin.idea.search.ExpectActualUtils.actualsForExpected
-import org.jetbrains.kotlin.idea.search.ExpectActualUtils.expectedDeclarationIfAny
 import org.jetbrains.kotlin.psi.*
 
 internal object TypeDeclarationLookup {
-    @RequiresReadLock
-    fun getSymbolTypeDeclarations(symbol: PsiElement): PsiElement? {
-        if (symbol.containingFile !is KtFile) return null
+    fun getSymbolTypeDeclarations(symbol: PsiElement): List<PsiElement> {
+        if (symbol.containingFile !is KtFile) return emptyList()
 
         return when (symbol) {
             is PsiWhiteSpace -> {
@@ -25,7 +21,7 @@ internal object TypeDeclarationLookup {
                 if (lBraceElement?.text == "{") {
                     (lBraceElement.parent as? KtFunctionLiteral)?.let { return getFunctionalLiteralTarget(it) }
                 }
-                null
+                emptyList()
             }
 
             is KtFunctionLiteral -> getFunctionalLiteralTarget(symbol)
@@ -34,47 +30,47 @@ internal object TypeDeclarationLookup {
                 if (declaration is KtCallableDeclaration && declaration.receiverTypeReference == symbol) {
                     // Navigate to function receiver type, works with the help of KotlinTargetElementEvaluator for the 'this' in extension declaration
                     declaration.getTypeDeclarationFromCallable { callableSymbol -> callableSymbol.receiverType }
-                } else null
+                } else emptyList()
             }
+            is KtParameter -> emptyList()
 
             is KtCallableDeclaration -> symbol.getTypeDeclarationFromCallable { callableSymbol -> callableSymbol.returnType }
             is KtClassOrObject -> getClassTypeDeclaration(symbol)
             is KtTypeAlias -> getTypeAliasDeclaration(symbol)
-            else -> null
+            else -> emptyList()
         }
     }
-
-    private fun getFunctionalLiteralTarget(symbol: KtFunctionLiteral): PsiElement? {
-        return symbol.getTypeDeclarationFromCallable { callableSymbol ->
+    private fun getFunctionalLiteralTarget(symbol: KtFunctionLiteral): List<PsiElement> =
+        symbol.getTypeDeclarationFromCallable { callableSymbol ->
             (callableSymbol as? KaFunctionSymbol)?.valueParameters?.firstOrNull()?.returnType
                 ?: callableSymbol.receiverType
+        } + symbol.getParametersTypeDeclarationsFromCallable { callableSymbol ->
+            (callableSymbol as? KaFunctionSymbol)?.valueParameters?.drop(1)?.map { it.returnType } ?: emptyList()
         }
-    }
 
-    @RequiresReadLock
-    private fun getClassTypeDeclaration(symbol: KtClassOrObject): PsiElement? {
+    private fun getClassTypeDeclaration(symbol: KtClassOrObject): List<PsiElement> =
         analyze(symbol) {
-            return (symbol.symbol as? KaNamedClassSymbol)?.psi()
+            listOfNotNull((symbol.symbol as? KaNamedClassSymbol)?.psi)
         }
-    }
 
-    @RequiresReadLock
-    private fun getTypeAliasDeclaration(symbol: KtTypeAlias): PsiElement? {
+
+    private fun getTypeAliasDeclaration(symbol: KtTypeAlias): List<PsiElement> =
         analyze(symbol) {
-            val typeAliasSymbol = symbol.symbol
-            return (typeAliasSymbol.expandedType.expandedSymbol as? KaNamedClassSymbol)?.psi()
+            val typeAliasSymbol = symbol.symbol as? KaTypeAliasSymbol
+            listOfNotNull((typeAliasSymbol?.expandedType?.expandedSymbol as? KaNamedClassSymbol)?.psi)
         }
-    }
-    @RequiresReadLock
-    private fun KtCallableDeclaration.getTypeDeclarationFromCallable(typeFromSymbol: (KaCallableSymbol) -> KaType?): PsiElement? {
+
+    private fun KtCallableDeclaration.getTypeDeclarationFromCallable(typeFromSymbol: (KaCallableSymbol) -> KaType?): List<PsiElement> =
         analyze(this) {
-            val symbol = symbol as? KaCallableSymbol ?: return null
-            val type = typeFromSymbol(symbol) ?: return null
-            val targetSymbol = type.upperBoundIfFlexible().abbreviationOrSelf.symbol ?: return null
-            return targetSymbol.psi()
+            val symbol = symbol as? KaCallableSymbol ?: return emptyList()
+            val type = typeFromSymbol(symbol) ?: return emptyList()
+            val targetSymbol = type.upperBoundIfFlexible().abbreviationOrSelf.symbol ?: return emptyList()
+            listOfNotNull(targetSymbol.psi)
         }
-    }
-
-    private val KaType.abbreviationOrSelf: KaType
-        get() = abbreviatedType ?: this
+    private fun KtCallableDeclaration.getParametersTypeDeclarationsFromCallable(typeFromSymbol: (KaCallableSymbol) -> List<KaType?>): List<PsiElement> =
+        analyze(this) {
+            val symbol = symbol as? KaCallableSymbol ?: return emptyList()
+            val types = typeFromSymbol(symbol)
+            types.mapNotNull { it?.upperBoundIfFlexible()?.abbreviationOrSelf?.symbol?.psi }
+        }
 }

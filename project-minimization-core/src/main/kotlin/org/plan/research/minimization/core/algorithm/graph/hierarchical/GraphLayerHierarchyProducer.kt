@@ -19,16 +19,17 @@ abstract class GraphLayerHierarchyProducer<V, E, G, C>(
     private val graphPropertyTesterWithGraph: PropertyTesterWithGraph<C, V, E, G>,
 ) : HierarchicalDDGenerator<C, V> where V : DDItem, E : GraphEdge<V>, G : Graph<V, E, G>, C : DDContextWithLevel<C> {
     private val tester = LayerToCut()
-    protected abstract fun generateFirstGraphLayer(context: C): Option<GraphLayer>
-    protected abstract fun generateNextGraphLayer(minimizationResult: DDAlgorithmResult<C, V>): Option<GraphLayer>
-
+    protected abstract suspend fun generateFirstGraphLayer(context: C): Option<GraphLayer>
+    protected abstract suspend fun generateNextGraphLayer(minimizationResult: DDAlgorithmResult<C, V>): Option<GraphLayer>
     final override suspend fun generateFirstLevel(context: C) = option {
         val layer = generateFirstGraphLayer(context).bind()
+        layerToCutTransformer.setCurrentLayer(layer.layer)
         HDDLevel(context = layer.context, items = layer.layer, propertyTester = tester)
     }
 
     final override suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<C, V>) = option {
         val layer = generateNextGraphLayer(minimizationResult).bind()
+        layerToCutTransformer.setCurrentLayer(layer.layer)
         HDDLevel(context = layer.context, items = layer.layer, propertyTester = tester)
     }
 

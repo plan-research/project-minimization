@@ -7,5 +7,6 @@ import org.plan.research.minimization.core.model.graph.GraphCut
 import org.plan.research.minimization.core.model.graph.GraphEdge
 
 interface LayerToCutTransformer<V, E, G, C> where V : DDItem, E : GraphEdge<V>, G : Graph<V, E, G>, C : DDContextWithLevel<C> {
-    fun transform(layer: List<V>, context: C): GraphCut<V>
+    suspend fun transform(layer: List<V>, context: C): GraphCut<V>
+    suspend fun setCurrentLayer(layer: List<V>) // FIXME: This is a very temporary solution to make things work (from Russian: govno)
 }

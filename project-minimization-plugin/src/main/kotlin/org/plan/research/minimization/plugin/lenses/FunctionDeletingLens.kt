@@ -21,7 +21,7 @@ import java.nio.file.Path
 import kotlin.collections.set
 import kotlin.io.path.relativeTo
 
-class FunctionDeletingLens : BasePsiLens<PsiStubDDItem, KtStub>() {
+abstract class FunctionDeletingLens : BasePsiLens<PsiStubDDItem, KtStub>() {
     private val logger = KotlinLogging.logger {}
     override fun focusOnPsiElement(
         item: PsiStubDDItem,
@@ -113,9 +113,9 @@ class FunctionDeletingLens : BasePsiLens<PsiStubDDItem, KtStub>() {
         }
     }
 
-    private suspend fun List<KtElement>.processElements(initialCounter: PsiImportRefCounter) =
+    private suspend fun List<KtElement>.processElements(context: IJDDContext, initialCounter: PsiImportRefCounter) =
         fold(initialCounter) { currentCounter, psiElement ->
-            currentCounter.decreaseCounterBasedOnKtElement(psiElement)
+            currentCounter.decreaseCounterBasedOnKtElement(context, psiElement)
         }
 
     private suspend fun IJDDContext.processRefs(ktFile: KtFile, currentRefs: List<KtElement>): PsiImportRefCounter {
@@ -124,7 +124,7 @@ class FunctionDeletingLens : BasePsiLens<PsiStubDDItem, KtStub>() {
         val counterForCurrentFile = importRefCounter[ktFile.getLocalPath(this)]
             .getOrNull()
             ?: error("Couldn't find a ref counter for localPath=${ktFile.getLocalPath(this)}")
-        val modifiedCounter = currentRefs.processElements(counterForCurrentFile)
+        val modifiedCounter = currentRefs.processElements(this, counterForCurrentFile)
         removeUnusedImports(ktFile, modifiedCounter)
         return modifiedCounter.purgeUnusedImports()
     }

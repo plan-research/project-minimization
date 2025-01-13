@@ -23,6 +23,7 @@ import arrow.core.raise.ensureNotNull
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.guessProjectDir
 import mu.KotlinLogging
+import org.plan.research.minimization.plugin.lenses.LinearFunctionDeletingLens
 
 import java.nio.file.Path
 
@@ -38,7 +39,7 @@ class DeletablePsiElementHierarchyGenerator(private val depthThreshold: Int) : P
             .create<PsiStubDDItem>(
                 project.service<BuildExceptionProviderService>(),
                 exceptionComparator.withLogging(),
-                FunctionDeletingLens(),
+                LinearFunctionDeletingLens(),
                 fromContext,
                 listOfNotNull(LoggingPropertyCheckingListener.create<PsiStubDDItem>("instance-level")),
             )

@@ -8,6 +8,7 @@ import org.plan.research.minimization.core.model.graph.GraphEdge
 import org.plan.research.minimization.core.model.graph.GraphWithAdjacencyList
 
 import arrow.core.filterOption
+import arrow.core.getOrElse
 import arrow.core.getOrNone
 import arrow.core.raise.option
 
@@ -26,7 +27,7 @@ object StrongConnectivityCondensation {
         private val currentComponents = mutableListOf<MutableList<V>>()
 
         override suspend fun onComplete(graph: TransposedGraph<V, E, G>): CondensedGraph<V, E> {
-            val vertices = currentComponents.map { CondensedVertex(it) }
+            val vertices = currentComponents.map { CondensedVertex(it, graph.originalGraph.edgesForComponent(it)) }
             val vertexToComponent = vertices
                 .flatMap { component -> component.underlyingVertexes.map { it to component } }
                 .toMap()
@@ -53,6 +54,11 @@ object StrongConnectivityCondensation {
                 vertices = vertices,
                 edges = edges,
             )
+        }
+
+        private fun G.edgesForComponent(component: List<V>): List<E> {
+            val componentSet = component.toSet()
+            return component.flatMap { edgesFrom(it).getOrElse(::emptyList).filter {it.to in componentSet} }
         }
 
         override suspend fun onNewVisitedComponent(

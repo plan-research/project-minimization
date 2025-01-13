@@ -15,7 +15,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-typealias CondensedV = CondensedVertex<TestNode>
+typealias CondensedV = CondensedVertex<TestNode, TestEdge>
 typealias CondensedE = CondensedEdge<TestNode, TestEdge>
 typealias CondensedG = CondensedGraph<TestNode, TestEdge>
 

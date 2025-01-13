@@ -21,6 +21,7 @@ import mu.KotlinLogging
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.plan.research.minimization.plugin.psi.KDocRemover
 
 @Service(Service.Level.PROJECT)
 class MinimizationService(project: Project, private val coroutineScope: CoroutineScope) {
@@ -142,6 +143,13 @@ class MinimizationService(project: Project, private val coroutineScope: Coroutin
     }
 
     private suspend fun postProcess(context: HeavyIJDDContext) {
+        val kDocRemover = KDocRemover()
+        try {
+            kDocRemover.removeKDocs(context)
+        } catch (e: Throwable) {
+            logger.error(e) { "Error happened on removing the KDocs completely" }
+
+        }
         val importCleaner = PsiImportCleaner()
         try {
             importCleaner.cleanAllImports(context)

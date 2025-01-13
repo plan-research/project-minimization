@@ -11,13 +11,12 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtNamedFunction
-import org.plan.research.minimization.plugin.lenses.FunctionDeletingLens
+import org.plan.research.minimization.plugin.lenses.LinearFunctionDeletingLens
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.PsiStubDDItem
 import org.plan.research.minimization.plugin.psi.stub.KtStub
 import org.plan.research.minimization.plugin.psi.stub.KtFunctionStub
-import org.plan.research.minimization.plugin.psi.KtSourceImportRefCounter
 import org.plan.research.minimization.plugin.psi.withImportRefCounter
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import org.plan.research.minimization.plugin.services.ProjectCloningService
@@ -25,7 +24,7 @@ import kotlin.io.path.exists
 import kotlin.test.assertIs
 
 class FunctionDeletingLensTest : PsiLensTestBase<PsiStubDDItem, KtStub>() {
-    override fun getLens() = FunctionDeletingLens()
+    override fun getLens() = LinearFunctionDeletingLens()
     override suspend fun getAllItems(context: IJDDContext): List<PsiStubDDItem> {
         configureModules(context.indexProject)
         return service<MinimizationPsiManagerService>()
@@ -154,6 +153,18 @@ class FunctionDeletingLensTest : PsiLensTestBase<PsiStubDDItem, KtStub>() {
         val items = allItems.filter { it.childrenPath.size == 1 }
         runBlocking {
             doTest(context, items, "project-overridden-multiple-files-result")
+        }
+    }
+
+    fun testDeletingNonReceiver() {
+        myFixture.copyDirectoryToProject("project-import-receiver", ".")
+        val context = runBlocking { LightIJDDContext(project).withImportRefCounter() }
+        kotlin.test.assertNotNull(context.importRefCounter)
+        assertIs<LightIJDDContext>(context)
+        val allItems = runBlocking { getAllItems(context) }
+        val items = allItems.filter { it.childrenPath.size == 1 && it.childrenPath.singleOrNull()?.let {it is KtFunctionStub && it.name == "y"} == true }
+        runBlocking {
+            doTest(context, items, "project-import-receiver-result")
         }
     }
 }

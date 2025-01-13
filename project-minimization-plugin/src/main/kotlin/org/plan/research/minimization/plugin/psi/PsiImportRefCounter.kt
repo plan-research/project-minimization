@@ -5,6 +5,7 @@ package org.plan.research.minimization.plugin.psi
 import org.plan.research.minimization.plugin.psi.imports.UsedReferencesCollector
 
 import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.smartReadAction
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.psi.KtElement
@@ -15,16 +16,17 @@ import org.jetbrains.kotlin.resolve.ImportPath
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.toPersistentMap
+import org.plan.research.minimization.plugin.model.IJDDContext
 
 class PsiImportRefCounter private constructor(private val counter: PersistentMap<ImportPath, Int>) {
-    suspend fun decreaseCounterBasedOnKtElement(element: KtElement): PsiImportRefCounter {
+    suspend fun decreaseCounterBasedOnKtElement(context: IJDDContext, element: KtElement): PsiImportRefCounter {
         val ktFile = readAction { element.containingKtFile }
-        val usedReferences = readAction {
+        val usedReferences = smartReadAction(context.indexProject) {
             analyze(element) {
                 UsedReferencesCollector(ktFile).run { collectUsedReferencesRecursivelyFrom(element) }
             }
         }
-        return PsiImportRefCounter(readAction {
+        return PsiImportRefCounter(smartReadAction(context.indexProject) {
             counter.mutate { obj ->
                 usedReferences.processImportDirectives(
                     ktFile.importDirectives,

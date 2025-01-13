@@ -29,24 +29,25 @@ class KtSourceImportRefCounter private constructor(private val refs: PersistentM
 
     companion object {
         suspend fun create(context: IJDDContext) = option {
-            val vfs = smartReadAction(context.indexProject) {
-                service<MinimizationPsiManagerService>().findAllKotlinFilesInIndexProject(context)
+            smartReadAction(context.indexProject) {
+                val vfs = service<MinimizationPsiManagerService>().findAllKotlinFilesInIndexProject(context)
+                val ktFiles = vfs
+                    .toList()
+                    .map { it.toPsiFile(context.indexProject) }
+                    .filterIsInstance<KtFile>()
+                val projectDir = context.projectDir.toNioPathOrNull()
+                ensureNotNull(projectDir)
+                val psiRefCounters = ktFiles
+                    .mapNotNull {
+                        val localPath =
+                            it.virtualFile.toNioPathOrNull()?.relativeTo(projectDir) ?: return@mapNotNull null
+                        localPath to PsiImportRefCounter.create(it)
+                    }
+                    .toList()
+                    .associate { it }
+                    .toPersistentHashMap()
+                KtSourceImportRefCounter(psiRefCounters)
             }
-            val ktFiles = vfs
-                .toList()
-                .map { readAction { it.toPsiFile(context.indexProject) } }
-                .filterIsInstance<KtFile>()
-            val projectDir = context.projectDir.toNioPathOrNull()
-            ensureNotNull(projectDir)
-            val psiRefCounters = ktFiles
-                .mapNotNull {
-                    val localPath = it.virtualFile.toNioPathOrNull()?.relativeTo(projectDir) ?: return@mapNotNull null
-                    localPath to smartReadAction(context.indexProject) { PsiImportRefCounter.create(it) }
-                }
-                .toList()
-                .associate { it }
-                .toPersistentHashMap()
-            KtSourceImportRefCounter(psiRefCounters)
         }
     }
 }

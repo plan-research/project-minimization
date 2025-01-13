@@ -21,10 +21,11 @@ import com.intellij.platform.util.progress.reportSequentialProgress
  */
 sealed class IJDDContext(
     val originalProject: Project,
-    val currentLevel: List<IJDDItem>?,
+    override val currentLevel: List<IJDDItem>?,
     val progressReporter: SequentialProgressReporter?,
     val importRefCounter: KtSourceImportRefCounter?,
 ) : DDContext {
+) : DDContextWithLevel<IJDDContext> {
     abstract val projectDir: VirtualFile
     abstract val indexProject: Project
     val indexProjectDir: VirtualFile by lazy { indexProject.guessProjectDir()!! }
@@ -86,6 +87,8 @@ class HeavyIJDDContext(
     ): HeavyIJDDContext = copy(project, currentLevel, progressReporter, importRefCounter)
 
     override fun toString(): String = "HeavyIJDDContext(project=$projectDir)"
+    override fun withCurrentLevel(currentLevel: List<DDItem>): HeavyIJDDContext =
+        copy(currentLevel = currentLevel as List<IJDDItem>?)
 }
 
 /**
@@ -125,6 +128,9 @@ class LightIJDDContext(
         progressReporter: SequentialProgressReporter?,
         importRefCounter: KtSourceImportRefCounter?,
     ): LightIJDDContext = copy(projectDir, currentLevel, progressReporter, importRefCounter)
+
+    override fun withCurrentLevel(currentLevel: List<DDItem>): LightIJDDContext =
+         copy(currentLevel = currentLevel as List<IJDDItem>?)
 
     override fun toString(): String = "LightIJDDContext(project=$projectDir, indexProject=$indexProjectDir)"
 }

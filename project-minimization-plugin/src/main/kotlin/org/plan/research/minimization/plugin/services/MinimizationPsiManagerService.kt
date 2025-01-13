@@ -14,8 +14,9 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectFileIndex
+import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.patterns.PlatformPatterns.virtualFile
+import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.psi.PsiElement
 import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
@@ -69,11 +70,23 @@ class MinimizationPsiManagerService {
         context: IJDDContext,
         compressOverridden: Boolean = true
     ): List<PsiStubDDItem> = smartReadAction(context.indexProject) {
-        val nonStructuredItems = findPsiInKotlinFiles(context, PsiStubDDItem.DELETABLE_PSI_JAVA_CLASSES)
+        if (compressOverridden) {
+            findDeletablePsiItemsCompressed(context)
+        } else findDeletablePsiItemsWithoutCompression(context).map { it.second }
+    }
+
+    @RequiresReadLock
+    private fun findDeletablePsiItemsWithoutCompression(context: IJDDContext): List<Pair<KtExpression, PsiStubDDItem>> =
+        findPsiInKotlinFiles(context, PsiStubDDItem.DELETABLE_PSI_JAVA_CLASSES)
             .mapNotNull { psiElement ->
                 PsiUtils.buildDeletablePsiItem(context, psiElement).getOrNull()?.let { psiElement to it }
-            } + getPrimaryConstructorProperties(context)
-        if (!compressOverridden) return@smartReadAction nonStructuredItems.map(Pair<*, PsiStubDDItem>::second)
+            }
+
+    @RequiresReadLock
+    private fun findDeletablePsiItemsCompressed(
+        context: IJDDContext,
+    ): List<PsiStubDDItem> {
+        val nonStructuredItems = findDeletablePsiItemsWithoutCompression(context)
 
         val dsu = PsiDSU<KtElement, PsiStubDDItem>(nonStructuredItems) { lhs, rhs ->
             lhs.childrenPath.size
@@ -81,7 +94,7 @@ class MinimizationPsiManagerService {
                 .takeIf { it != 0 }
                 ?: lhs.childrenPath.compareTo(rhs.childrenPath)
         }
-        dsu.transformItems(context, nonStructuredItems)
+        return dsu.transformItems(context, nonStructuredItems)
     }
 
     suspend fun buildDeletablePsiGraph(context: IJDDContext): InstanceLevelGraph {
@@ -130,8 +143,26 @@ class MinimizationPsiManagerService {
         }
         val scope = GlobalSearchScopes.directoriesScope(context.indexProject, true, *rootFiles.toTypedArray())
             .intersectWith(SourcesScope(context.indexProject))
-        return FileTypeIndex.getFiles(KotlinFileType.INSTANCE, scope).toList()
+//        return FileTypeIndex.getFiles(KotlinFileType.INSTANCE, scope).toList()
+        return myVirtualFileTraverse(rootFiles)
     }
+
+    @RequiresReadLock
+    private fun myVirtualFileTraverse(roots: List<VirtualFile>): List<VirtualFile> = buildSet<VirtualFile> {
+        roots.forEach { root ->
+            VfsUtilCore.visitChildrenRecursively(root, object : VirtualFileVisitor<Unit>() {
+                override fun visitFileEx(file: VirtualFile): Result {
+                    if (file.isDirectory) {
+                        return CONTINUE
+                    }
+                    if (file.extension == KotlinFileType.EXTENSION) {
+                        add(file)
+                    }
+                    return CONTINUE
+                }
+            })
+        }
+    }.toList()
 
     @RequiresReadLock
     private fun <T : PsiElement> findPsiInKotlinFiles(

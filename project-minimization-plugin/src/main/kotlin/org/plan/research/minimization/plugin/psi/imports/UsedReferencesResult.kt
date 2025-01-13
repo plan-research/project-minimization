@@ -14,12 +14,12 @@ class UsedReferencesResult internal constructor(
     usedDeclarationsList: Map<FqName, List<Name>>,
     unresolvedNamesList: List<Name>,
 ) {
-    private val unresolvedNames = unresolvedNamesList.groupBy({ it }).mapValues { it.value.size }
+    private val unresolvedNames = unresolvedNamesList.groupBy { it }.mapValues { it.value.size }
     private val usedDeclarations = usedDeclarationsList
         .mapValues {
             it
                 .value
-                .groupBy({ it })
+                .groupBy { it }
                 .mapValues { it.value.size }
         }
 
@@ -44,7 +44,7 @@ class UsedReferencesResult internal constructor(
                 !isFromCurrentPackage || isAliasedImport
             }
         // if references has been x.y.z then we need an import like x.y.*
-        val importRequiresStar = referencesEntities.keys.requiresStarImport(explicitImports)
+        val importRequiresStar = referencesEntities.requiresStarImport(explicitImports)
         for (import in existingImports) {
             val importPath = import.importPath ?: continue
             val unresolvedUsedTimes = unresolvedNames[importPath.importedName] ?: 0
@@ -62,11 +62,14 @@ class UsedReferencesResult internal constructor(
         }
     }
 
-    private fun Iterable<FqName>.requiresStarImport(explicitImports: Set<FqName>) =
+    private fun Map<FqName, Map<Name, Int>>.requiresStarImport(explicitImports: Set<FqName>) =
         asSequence()
-            .filterNot { it in explicitImports }
-            .mapNotNull { it.parentOrNull() }
-            .filterNot { it.isRoot }
-            .groupBy({ it })
-            .mapValues { it.value.size }
+            .filterNot { it.key in explicitImports }
+            .mapNotNull { (key, map) ->
+                val modifiedKey = key.parentOrNull() ?: return@mapNotNull null
+                modifiedKey to map.values.sum()
+            }
+            .filterNot { it.first.isRoot }
+            .groupBy { it.first }
+            .mapValues { it.value.sumOf { it.second } }
 }

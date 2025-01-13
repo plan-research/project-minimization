@@ -94,7 +94,8 @@ class StrongConnectivityTest {
         for (vertice in possibleVertices) {
             assertFalse(
                 message = "Adding $vertice to $component left it strongly connected => That's not a maximum component"
-            ) { this.isStronglyConnected(originalGraph, CondensedV(component.underlyingVertexes + vertice)) }
+            ) {
+                this.isStronglyConnected(originalGraph, CondensedV(component.underlyingVertexes + vertice, emptyList())) }
         }
     }
     private fun CondensedG.allVerticesInComponents(originalGraph: TestGraph) {

@@ -4,7 +4,6 @@ import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 
 import arrow.core.raise.option
-import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.vfs.toNioPathOrNull

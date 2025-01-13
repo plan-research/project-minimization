@@ -62,6 +62,7 @@ class UsedReferencesResult internal constructor(
         }
     }
 
+    @Suppress("TYPE_ALIAS")
     private fun Map<FqName, Map<Name, Int>>.requiresStarImport(explicitImports: Set<FqName>) =
         asSequence()
             .filterNot { it.key in explicitImports }

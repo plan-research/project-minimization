@@ -2,6 +2,7 @@
 
 package org.plan.research.minimization.plugin.psi
 
+import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.psi.imports.UsedReferencesCollector
 
 import com.intellij.openapi.application.readAction
@@ -16,7 +17,6 @@ import org.jetbrains.kotlin.resolve.ImportPath
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.toPersistentMap
-import org.plan.research.minimization.plugin.model.IJDDContext
 
 class PsiImportRefCounter private constructor(private val counter: PersistentMap<ImportPath, Int>) {
     suspend fun decreaseCounterBasedOnKtElement(context: IJDDContext, element: KtElement): PsiImportRefCounter {

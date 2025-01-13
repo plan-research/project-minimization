@@ -70,13 +70,13 @@ sealed interface KotlincException : CompilationException {
         ) = transformation.transform(this, context)
 
         override fun equals(other: Any?): Boolean {
-            if (other !is GeneralKotlincException) return false
+            if (other !is GeneralKotlincException) {
+                return false
+            }
             return message == other.message && severity == other.severity
         }
 
-        override fun hashCode(): Int {
-            return Objects.hash(message, severity)
-        }
+        override fun hashCode(): Int = Objects.hash(message, severity)
     }
     @Serializable
     data class KspException(

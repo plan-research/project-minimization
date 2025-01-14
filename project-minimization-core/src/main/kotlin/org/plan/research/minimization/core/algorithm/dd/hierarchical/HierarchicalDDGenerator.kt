@@ -30,3 +30,16 @@ interface HierarchicalDDGenerator<M : Monad, T : DDItem> {
     context(M)
     suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<T>): Option<HDDLevel<M, T>>
 }
+
+data class ReversedHDDLevel<M : Monad, T : DDItem>(
+    val items: List<T>,
+    val propertyTester: ReversedPropertyTester<M, T>,
+)
+
+interface ReversedHierarchicalDDGenerator<M : Monad, T : DDItem> {
+    context(M)
+    suspend fun generateFirstLevel(): Option<ReversedHDDLevel<M, T>>
+
+    context(M)
+    suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<T>): Option<ReversedHDDLevel<M, T>>
+}

@@ -1,6 +1,5 @@
 package org.plan.research.minimization.plugin.model.context
 
-import org.plan.research.minimization.plugin.model.item.IJDDItem
 import org.plan.research.minimization.plugin.psi.KtSourceImportRefCounter
 
 import com.intellij.openapi.project.Project
@@ -14,12 +13,10 @@ import com.intellij.platform.util.progress.SequentialProgressReporter
 class HeavyIJDDContext(
     val project: Project,
     originalProject: Project = project,
-    currentLevel: List<IJDDItem>? = null,
     progressReporter: SequentialProgressReporter? = null,
     importRefCounter: KtSourceImportRefCounter? = null,
 ) : IJDDContext(
     originalProject,
-    currentLevel,
     progressReporter,
     importRefCounter,
 ) {
@@ -29,28 +26,24 @@ class HeavyIJDDContext(
     fun asLightContext(): LightIJDDContext = LightIJDDContext(
         projectDir, indexProject = project,
         originalProject = originalProject,
-        currentLevel, progressReporter,
-        importRefCounter,
+        progressReporter, importRefCounter,
     )
 
     fun copy(
         project: Project,
-        currentLevel: List<IJDDItem>? = this.currentLevel,
         progressReporter: SequentialProgressReporter? = this.progressReporter,
         importRefCounter: KtSourceImportRefCounter? = this.importRefCounter,
     ): HeavyIJDDContext = HeavyIJDDContext(
         project,
         originalProject,
-        currentLevel,
         progressReporter,
         importRefCounter,
     )
 
     override fun copy(
-        currentLevel: List<IJDDItem>?,
         progressReporter: SequentialProgressReporter?,
         importRefCounter: KtSourceImportRefCounter?,
-    ): HeavyIJDDContext = copy(project, currentLevel, progressReporter, importRefCounter)
+    ): HeavyIJDDContext = copy(project, progressReporter, importRefCounter)
 
     override fun toString(): String = "HeavyIJDDContext(project=$projectDir)"
 }

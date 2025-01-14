@@ -1,6 +1,5 @@
 package org.plan.research.minimization.plugin
 
-import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.impl.DDMin
 import org.plan.research.minimization.core.algorithm.dd.impl.ProbabilisticDD
 import org.plan.research.minimization.plugin.execution.DumbCompiler
@@ -33,6 +32,8 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import org.plan.research.minimization.core.algorithm.dd.ReversedDDAlgorithm
+import org.plan.research.minimization.core.algorithm.dd.impl.asReversed
 
 object PathSerializer : KSerializer<Path> {
     override val descriptor: SerialDescriptor =
@@ -53,11 +54,11 @@ fun SnapshotStrategy.getSnapshotManager(project: Project): SnapshotManager =
         SnapshotStrategy.PROJECT_CLONING -> ProjectCloningSnapshotManager(project)
     }
 
-fun DDStrategy.getDDAlgorithm(): DDAlgorithm =
+fun DDStrategy.getDDAlgorithm(): ReversedDDAlgorithm =
     when (this) {
         DDStrategy.DD_MIN -> DDMin()
         DDStrategy.PROBABILISTIC_DD -> ProbabilisticDD()
-    }.withLog()
+    }.withLog().asReversed()
 
 fun CompilationStrategy.getCompilationStrategy(): BuildExceptionProvider =
     when (this) {

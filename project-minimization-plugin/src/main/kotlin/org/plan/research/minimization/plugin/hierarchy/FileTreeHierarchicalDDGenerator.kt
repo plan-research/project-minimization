@@ -1,7 +1,6 @@
 package org.plan.research.minimization.plugin.hierarchy
 
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
-import org.plan.research.minimization.core.algorithm.dd.hierarchical.HDDLevel
 import org.plan.research.minimization.plugin.model.IJHierarchicalDDGenerator
 import org.plan.research.minimization.plugin.model.IJPropertyTester
 import org.plan.research.minimization.plugin.model.context.IJDDContext
@@ -15,6 +14,7 @@ import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.util.progress.SequentialProgressReporter
+import org.plan.research.minimization.core.algorithm.dd.hierarchical.ReversedHDDLevel
 
 import java.nio.file.Path
 
@@ -42,12 +42,7 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
 
             reporter?.updateProgress(level)
 
-            updateContext {
-                @Suppress("UNCHECKED_CAST")
-                it.copy(currentLevel = level) as C
-            }
-
-            HDDLevel(level, propertyTester)
+            ReversedHDDLevel(level, propertyTester)
         }
 
     context(IJDDContextMonad<C>)
@@ -64,12 +59,7 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
 
             reporter?.updateProgress(nextFiles)
 
-            updateContext {
-                @Suppress("UNCHECKED_CAST")
-                it.copy(currentLevel = nextFiles) as C
-            }
-
-            HDDLevel(nextFiles, propertyTester)
+            ReversedHDDLevel(nextFiles, propertyTester)
         }
 
     /**

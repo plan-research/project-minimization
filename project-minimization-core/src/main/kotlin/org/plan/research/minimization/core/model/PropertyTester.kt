@@ -19,6 +19,11 @@ interface PropertyTester<M : Monad, T : DDItem> {
     suspend fun test(items: List<T>): PropertyTestResult
 }
 
+interface ReversedPropertyTester<M : Monad, T : DDItem> {
+    context(M)
+    suspend fun test(itemsToDelete: List<T>): PropertyTestResult
+}
+
 sealed interface PropertyTesterError {
     data object NoProperty : PropertyTesterError
     data object UnknownProperty : PropertyTesterError

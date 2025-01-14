@@ -1,6 +1,5 @@
 package org.plan.research.minimization.plugin.services
 
-import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDD
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.getDDAlgorithm
@@ -30,6 +29,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import mu.KotlinLogging
+import org.plan.research.minimization.core.algorithm.dd.hierarchical.ReversedHierarchicalDD
 
 @Service(Service.Level.PROJECT)
 class MinimizationStageExecutorService(private val project: Project) : MinimizationStageExecutor {
@@ -45,7 +45,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         val lightContext = context.asLightContext()
 
         val baseAlgorithm = fileLevelStage.ddAlgorithm.getDDAlgorithm()
-        val hierarchicalDD = HierarchicalDD(baseAlgorithm)
+        val hierarchicalDD = ReversedHierarchicalDD(baseAlgorithm)
 
         logger.info { "Initialise file hierarchy" }
         val hierarchy = FileTreeHierarchyGenerator()
@@ -88,7 +88,6 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
 
         firstLevel.logPsiElements(lightContext)
         lightContext
-            .copy(currentLevel = firstLevel)
             .runMonadWithProgress {
                 ddAlgorithm.minimize(
                     firstLevel,
@@ -123,7 +122,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         val lightContext = context.asLightContext().withImportRefCounter()
 
         val ddAlgorithm = declarationLevelStage.ddAlgorithm.getDDAlgorithm()
-        val hierarchicalDD = HierarchicalDD(ddAlgorithm)
+        val hierarchicalDD = ReversedHierarchicalDD(ddAlgorithm)
         val hierarchy = DeletablePsiElementHierarchyGenerator(declarationLevelStage.depthThreshold)
             .produce(lightContext)
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }

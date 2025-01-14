@@ -17,3 +17,11 @@ interface DDAlgorithm {
         propertyTester: PropertyTester<M, T>,
     ): DDAlgorithmResult<T>
 }
+
+interface ReversedDDAlgorithm {
+    context(M)
+    suspend fun <M : Monad, T : DDItem> minimize(
+        items: List<T>,
+        propertyTester: ReversedPropertyTester<M, T>,
+    ): DDAlgorithmResult<T>
+}

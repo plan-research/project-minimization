@@ -138,8 +138,7 @@ class MinimizationService(private val project: Project, private val coroutineSco
                     ?: raise(MinimizationError.OpeningFailed)
                 HeavyIJDDContext(
                     openedProject, context.originalProject,
-                    context.currentLevel, context.progressReporter,
-                    context.importRefCounter,
+                    context.progressReporter, context.importRefCounter,
                 )
             }
         }

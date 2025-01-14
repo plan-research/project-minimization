@@ -26,21 +26,16 @@ abstract class BasePsiLens<B : IJDDContext, I, T> :
 
     context(IJDDContextMonad<C>)
     final override suspend fun <C : B> focusOn(
-        items: List<I>,
+        itemsToDelete: List<I>,
     ) {
-        val currentLevel = context.currentLevel as? List<I>
-        if (context.currentLevel == null || currentLevel == null) {
-            logger.warn { "Some item from current level are not PsiWithBodyDDItem. The wrong lens is used. " }
-            return
-        }
         logger.info { "Built a trie for the current context" }
-        val items = items as? List<I>
+        val items = itemsToDelete as? List<I>
         items ?: run {
             logger.warn { "Some items from $items are not PsiDDItem. The wrong lens is used. " }
             return
         }
         logFocusedItems(items, context)
-        val levelDiff = (currentLevel.toSet() - items.toSet())
+        val levelDiff = itemsToDelete
             .flatMap { transformSelectedElements(it, context) }
             .groupBy(PsiDDItem<T>::localPath)
 

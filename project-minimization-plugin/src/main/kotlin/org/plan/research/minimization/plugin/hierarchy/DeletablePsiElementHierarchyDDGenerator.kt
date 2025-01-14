@@ -1,7 +1,6 @@
 package org.plan.research.minimization.plugin.hierarchy
 
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
-import org.plan.research.minimization.core.algorithm.dd.hierarchical.HDDLevel
 import org.plan.research.minimization.plugin.model.IJHierarchicalDDGenerator
 import org.plan.research.minimization.plugin.model.IJPropertyTester
 import org.plan.research.minimization.plugin.model.context.IJDDContext
@@ -14,6 +13,7 @@ import org.plan.research.minimization.plugin.psi.stub.KtStub
 import arrow.core.None
 import arrow.core.raise.option
 import com.intellij.platform.util.progress.SequentialProgressReporter
+import org.plan.research.minimization.core.algorithm.dd.hierarchical.ReversedHDDLevel
 
 import java.nio.file.Path
 
@@ -34,11 +34,7 @@ class DeletablePsiElementHierarchyDDGenerator<C : IJDDContext>(
             .cache()
             .map(DeletableNextItemInfo::item)
 
-        updateContext {
-            @Suppress("UNCHECKED_CAST")
-            it.copy(currentLevel = firstLevelItems) as C
-        }
-        HDDLevel(firstLevelItems, propertyChecker)
+        ReversedHDDLevel(firstLevelItems, propertyChecker)
     }
 
     context(IJDDContextMonad<C>)
@@ -51,11 +47,7 @@ class DeletablePsiElementHierarchyDDGenerator<C : IJDDContext>(
             context.progressReporter?.let { nextNodesInTrie.reportProgress(it) }
             val nextItems = nextNodesInTrie.map(DeletableNextItemInfo::item)
 
-            updateContext {
-                @Suppress("UNCHECKED_CAST")
-                it.copy(currentLevel = nextItems) as C
-            }
-            HDDLevel(nextItems, propertyChecker)
+            ReversedHDDLevel(nextItems, propertyChecker)
         }
 
     private fun Collection<StubCompressingPsiTrie>.cache() = flatMap { it.getNextItems() }

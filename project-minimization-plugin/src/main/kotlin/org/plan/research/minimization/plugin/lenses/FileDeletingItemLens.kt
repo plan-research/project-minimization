@@ -9,15 +9,9 @@ import com.intellij.openapi.application.writeAction
 
 class FileDeletingItemLens : ProjectItemLens<IJDDContext, ProjectFileDDItem> {
     context(IJDDContextMonad<C>)
-    override suspend fun <C : IJDDContext> focusOn(items: List<ProjectFileDDItem>) {
-        val targetFiles = context
-            .currentLevel
-            ?.minus(items.toSet())
-            ?.filterIsInstance<ProjectFileDDItem>()
-            ?: return
-
+    override suspend fun <C : IJDDContext> focusOn(itemsToDelete: List<ProjectFileDDItem>) {
         writeAction {
-            targetFiles.forEach { item ->
+            itemsToDelete.forEach { item ->
                 item.getVirtualFile(context)?.delete(this)
             }
         }

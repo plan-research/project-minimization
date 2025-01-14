@@ -9,11 +9,11 @@ import org.plan.research.minimization.plugin.model.item.IJDDItem
  */
 interface ProjectItemLens<in B : IJDDContext, I : IJDDItem> {
     /**
-     * Focus on the [items].
+     * Focus on the [itemsToDelete].
      * The focusing process might require making changes to the context, so it returns a (modified) context
      *
-     * @param items items to focus on
+     * @param itemsToDelete items to focus on
      */
     context(IJDDContextMonad<C>)
-    suspend fun <C : B> focusOn(items: List<I>)
+    suspend fun <C : B> focusOn(itemsToDelete: List<I>)
 }

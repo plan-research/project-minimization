@@ -1,6 +1,5 @@
 package org.plan.research.minimization.plugin.model.context
 
-import org.plan.research.minimization.plugin.model.item.IJDDItem
 import org.plan.research.minimization.plugin.psi.KtSourceImportRefCounter
 
 import com.intellij.openapi.project.Project
@@ -15,12 +14,10 @@ class LightIJDDContext(
     override val projectDir: VirtualFile,
     override val indexProject: Project,
     originalProject: Project = indexProject,
-    currentLevel: List<IJDDItem>? = null,
     progressReporter: SequentialProgressReporter? = null,
     importRefCounter: KtSourceImportRefCounter? = null,
 ) : IJDDContext(
     originalProject,
-    currentLevel,
     progressReporter,
     importRefCounter,
 ) {
@@ -28,23 +25,20 @@ class LightIJDDContext(
 
     fun copy(
         projectDir: VirtualFile,
-        currentLevel: List<IJDDItem>? = this.currentLevel,
         progressReporter: SequentialProgressReporter? = this.progressReporter,
         importRefCounter: KtSourceImportRefCounter? = this.importRefCounter,
     ): LightIJDDContext = LightIJDDContext(
         projectDir,
         indexProject,
         originalProject,
-        currentLevel,
         progressReporter,
         importRefCounter,
     )
 
     override fun copy(
-        currentLevel: List<IJDDItem>?,
         progressReporter: SequentialProgressReporter?,
         importRefCounter: KtSourceImportRefCounter?,
-    ): LightIJDDContext = copy(projectDir, currentLevel, progressReporter, importRefCounter)
+    ): LightIJDDContext = copy(projectDir, progressReporter, importRefCounter)
 
     override fun toString(): String = "LightIJDDContext(project=$projectDir, indexProject=$indexProjectDir)"
 }

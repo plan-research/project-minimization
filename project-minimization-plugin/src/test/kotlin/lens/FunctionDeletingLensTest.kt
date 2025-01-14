@@ -136,8 +136,8 @@ class FunctionDeletingLensTest : PsiLensTestBase<PsiStubDDItem, KtStub>() {
             readAction { assertTrue(psiFile.isValid) }
             val lens = getLens()
             val items = getAllItems(context)
-            cloned = cloned.copy(currentLevel = items).runMonad {
-                lens.focusOn(emptyList())
+            cloned = cloned.runMonad {
+                lens.focusOn(items)
             }
             withContext(Dispatchers.EDT) {
                 PlatformTestUtil.dispatchAllEventsInIdeEventQueue()

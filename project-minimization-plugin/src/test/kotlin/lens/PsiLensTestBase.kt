@@ -35,8 +35,8 @@ abstract class PsiLensTestBase<ITEM, T> :
         val lens = getLens()
         val items = getAllItems(initialContext)
 
-        return cloned.copy(currentLevel = items).runMonad {
-            lens.focusOn(elements)
+        return cloned.runMonad {
+            lens.focusOn(items - elements.toSet())
 
             val files = smartReadAction(context.indexProject) {
                 val fileIndex = ProjectRootManager.getInstance(context.indexProject).fileIndex

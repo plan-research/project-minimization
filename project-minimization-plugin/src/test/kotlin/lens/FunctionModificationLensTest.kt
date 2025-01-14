@@ -105,8 +105,8 @@ class FunctionModificationLensTest : PsiLensTestBase<PsiChildrenIndexDDItem, Int
         configureModules(cloned.indexProject)
         val lens = FunctionModificationLens()
         val items = psiGetterService.findAllPsiWithBodyItems(cloned)
-        return cloned.copy(currentLevel = items).runMonad {
-            lens.focusOn(elements)
+        return cloned.runMonad {
+            lens.focusOn(items - elements.toSet())
 
             val files = smartReadAction(context.indexProject) {
                 val fileIndex = ProjectRootManager.getInstance(context.indexProject).fileIndex

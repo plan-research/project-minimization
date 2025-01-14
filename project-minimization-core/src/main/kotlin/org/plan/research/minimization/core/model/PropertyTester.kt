@@ -12,10 +12,9 @@ typealias PropertyTestResult = Either<PropertyTesterError, Unit>
  * The purpose of the tester is to determine whether the given items
  * satisfy a specific property relevant to the context of a delta debugging process.
  *
- * @param C The type of context that provides information relevant to the delta debugging process.
  * @param T The type of items being analyzed and manipulated in the delta debugging process.
  */
-interface PropertyTester<M : DDContextMonad<C>, C : DDContext, T : DDItem> {
+interface PropertyTester<M : Monad, T : DDItem> {
     context(M)
     suspend fun test(items: List<T>): PropertyTestResult
 }

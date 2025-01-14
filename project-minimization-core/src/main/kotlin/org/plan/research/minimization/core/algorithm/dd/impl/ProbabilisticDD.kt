@@ -2,16 +2,13 @@ package org.plan.research.minimization.core.algorithm.dd.impl
 
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
-import org.plan.research.minimization.core.model.DDContext
-import org.plan.research.minimization.core.model.DDContextMonad
-import org.plan.research.minimization.core.model.DDItem
-import org.plan.research.minimization.core.model.PropertyTester
 
 import java.util.*
 
 import kotlin.collections.ArrayDeque
 import kotlin.math.exp
 import kotlinx.coroutines.yield
+import org.plan.research.minimization.core.model.*
 
 /**
  * Probabilistic Delta Debugging.
@@ -21,9 +18,9 @@ import kotlinx.coroutines.yield
 @Suppress("MAGIC_NUMBER", "FLOAT_IN_ACCURATE_CALCULATIONS")
 class ProbabilisticDD : DDAlgorithm {
     context(M)
-    override suspend fun <M : DDContextMonad<C>, C : DDContext, T : DDItem> minimize(
+    override suspend fun <M : Monad, T : DDItem> minimize(
         items: List<T>,
-        propertyTester: PropertyTester<M, C, T>,
+        propertyTester: PropertyTester<M, T>,
     ): DDAlgorithmResult<T> {
         val buffer = ArrayDeque<T>()
         val probs = IdentityHashMap<T, Double>()

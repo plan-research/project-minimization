@@ -12,11 +12,9 @@ import kotlin.test.assertContentEquals
 abstract class DDAlgorithmTestBase {
     abstract fun createAlgorithm(): DDAlgorithm
 
-    data object EmptyDDContext : DDContext
     data class SomeDDItem(val value: Int) : DDItem
-    object EmptyMonad : DDContextMonad<EmptyDDContext>(EmptyDDContext)
 
-    class SimpleTester(private val target: Set<SomeDDItem>) : PropertyTester<EmptyMonad, EmptyDDContext, SomeDDItem> {
+    class SimpleTester(private val target: Set<SomeDDItem>) : PropertyTester<EmptyMonad, SomeDDItem> {
         context(EmptyMonad)
         override suspend fun test(
             items: List<SomeDDItem>
@@ -28,7 +26,7 @@ abstract class DDAlgorithmTestBase {
     class ComplexTester(
         private val target: Set<SomeDDItem>,
         private val badItems: Set<SomeDDItem>,
-    ) : PropertyTester<EmptyMonad, EmptyDDContext, SomeDDItem> {
+    ) : PropertyTester<EmptyMonad, SomeDDItem> {
         context(EmptyMonad)
         override suspend fun test(
             items: List<SomeDDItem>

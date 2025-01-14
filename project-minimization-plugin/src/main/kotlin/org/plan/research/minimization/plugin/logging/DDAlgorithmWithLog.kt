@@ -2,12 +2,11 @@ package org.plan.research.minimization.plugin.logging
 
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
-import org.plan.research.minimization.core.model.DDContext
-import org.plan.research.minimization.core.model.DDContextMonad
 import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.PropertyTester
 
 import mu.KotlinLogging
+import org.plan.research.minimization.core.model.Monad
 
 class DDAlgorithmWithLog(
     private val innerDDAlgorithm: DDAlgorithm,
@@ -15,15 +14,14 @@ class DDAlgorithmWithLog(
     private val logger = KotlinLogging.logger {}
 
     context(M)
-    override suspend fun <M : DDContextMonad<C>, C : DDContext, T : DDItem> minimize(
+    override suspend fun <M : Monad, T : DDItem> minimize(
         items: List<T>,
-        propertyTester: PropertyTester<M, C, T>,
+        propertyTester: PropertyTester<M, T>,
     ): DDAlgorithmResult<T> {
         val result: DDAlgorithmResult<T>
 
         logger.info {
             "Start minimization algorithm \n" +
-                "Context - $context, \n" +
                 "propertyTester - $propertyTester"
         }
         if (logger.isTraceEnabled) {

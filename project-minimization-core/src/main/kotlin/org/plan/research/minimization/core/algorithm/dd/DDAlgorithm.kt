@@ -1,9 +1,6 @@
 package org.plan.research.minimization.core.algorithm.dd
 
-import org.plan.research.minimization.core.model.DDContext
-import org.plan.research.minimization.core.model.DDContextMonad
-import org.plan.research.minimization.core.model.DDItem
-import org.plan.research.minimization.core.model.PropertyTester
+import org.plan.research.minimization.core.model.*
 
 typealias DDAlgorithmResult<T> = List<T>
 
@@ -15,8 +12,8 @@ typealias DDAlgorithmResult<T> = List<T>
  */
 interface DDAlgorithm {
     context(M)
-    suspend fun <M : DDContextMonad<C>, C : DDContext, T : DDItem> minimize(
+    suspend fun <M : Monad, T : DDItem> minimize(
         items: List<T>,
-        propertyTester: PropertyTester<M, C, T>,
+        propertyTester: PropertyTester<M, T>,
     ): DDAlgorithmResult<T>
 }

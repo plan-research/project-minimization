@@ -5,4 +5,4 @@ import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
 import org.plan.research.minimization.plugin.model.item.IJDDItem
 
-interface IJHierarchicalDDGenerator<C : IJDDContext, T : IJDDItem> : HierarchicalDDGenerator<IJDDContextMonad<C>, C, T>
+interface IJHierarchicalDDGenerator<C : IJDDContext, T : IJDDItem> : HierarchicalDDGenerator<IJDDContextMonad<C>, T>

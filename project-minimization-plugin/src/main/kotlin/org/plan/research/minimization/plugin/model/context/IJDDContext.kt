@@ -1,6 +1,5 @@
 package org.plan.research.minimization.plugin.model.context
 
-import org.plan.research.minimization.core.model.DDContext
 import org.plan.research.minimization.plugin.model.item.IJDDItem
 import org.plan.research.minimization.plugin.psi.KtSourceImportRefCounter
 
@@ -25,7 +24,7 @@ sealed class IJDDContext(
     val currentLevel: List<IJDDItem>?,
     val progressReporter: SequentialProgressReporter?,
     val importRefCounter: KtSourceImportRefCounter?,
-) : DDContext {
+) {
     abstract val projectDir: VirtualFile
     abstract val indexProject: Project
     val indexProjectDir: VirtualFile by lazy { indexProject.guessProjectDir()!! }

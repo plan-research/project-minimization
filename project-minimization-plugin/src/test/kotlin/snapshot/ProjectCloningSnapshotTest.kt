@@ -1,5 +1,7 @@
 package snapshot
 
+import HeavyTestContext
+import LightTestContext
 import TestWithContext
 import TestWithHeavyContext
 import TestWithLightContext
@@ -15,9 +17,7 @@ import getPathContentPair
 import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.getAllNestedElements
-import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.context.LightIJDDContext
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 import org.plan.research.minimization.plugin.snapshot.ProjectCloningSnapshotManager
 import runMonad
@@ -149,10 +149,10 @@ abstract class ProjectCloningSnapshotTest<C : IJDDContext> : ProjectCloningBaseT
 }
 
 class ProjectCloningSnapshotHeavyTest :
-    ProjectCloningSnapshotTest<HeavyIJDDContext>(),
-    TestWithContext<HeavyIJDDContext> by TestWithHeavyContext()
+    ProjectCloningSnapshotTest<HeavyTestContext>(),
+    TestWithContext<HeavyTestContext> by TestWithHeavyContext()
 
 
 class ProjectCloningSnapshotLightTest :
-    ProjectCloningSnapshotTest<LightIJDDContext>(),
-    TestWithContext<LightIJDDContext> by TestWithLightContext()
+    ProjectCloningSnapshotTest<LightTestContext>(),
+    TestWithContext<LightTestContext> by TestWithLightContext()

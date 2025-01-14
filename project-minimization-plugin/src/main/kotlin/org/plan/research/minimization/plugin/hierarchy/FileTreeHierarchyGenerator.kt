@@ -16,8 +16,8 @@ import arrow.core.getOrElse
 import arrow.core.raise.either
 import com.intellij.openapi.components.service
 
-class FileTreeHierarchyGenerator : ProjectHierarchyProducer<IJDDContext, ProjectFileDDItem> {
-    override suspend fun <C : IJDDContext> produce(
+class FileTreeHierarchyGenerator<C : IJDDContext> : ProjectHierarchyProducer<C, ProjectFileDDItem> {
+    override suspend fun produce(
         context: C,
     ): ProjectHierarchyProducerResult<C, ProjectFileDDItem> = either {
         val project = context.originalProject

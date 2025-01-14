@@ -8,8 +8,8 @@ import arrow.core.Either
 
 typealias ProjectHierarchyProducerResult<C, T> = Either<HierarchyBuildError, IJHierarchicalDDGenerator<C, T>>
 
-interface ProjectHierarchyProducer<B : IJDDContext, T : IJDDItem> {
-    suspend fun <C : B> produce(
+interface ProjectHierarchyProducer<C : IJDDContext, T : IJDDItem> {
+    suspend fun produce(
         context: C,
     ): ProjectHierarchyProducerResult<C, T>
 }

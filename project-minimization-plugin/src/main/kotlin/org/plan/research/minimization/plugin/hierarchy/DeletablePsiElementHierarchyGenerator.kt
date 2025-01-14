@@ -5,7 +5,7 @@ import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoRootFo
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.execution.comparable.withLogging
 import org.plan.research.minimization.plugin.getExceptionComparator
-import org.plan.research.minimization.plugin.lenses.FunctionDeletingLens
+import org.plan.research.minimization.plugin.lenses.DeclarationDeletingLens
 import org.plan.research.minimization.plugin.logging.LoggingPropertyCheckingListener
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducerResult
@@ -23,13 +23,17 @@ import arrow.core.raise.ensureNotNull
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.guessProjectDir
 import mu.KotlinLogging
+import org.plan.research.minimization.plugin.model.context.WithImportRefCounterContext
 
 import java.nio.file.Path
 
-class DeletablePsiElementHierarchyGenerator(private val depthThreshold: Int) : ProjectHierarchyProducer<IJDDContext, PsiStubDDItem> {
+class DeletablePsiElementHierarchyGenerator<C>(private val depthThreshold: Int) :
+    ProjectHierarchyProducer<C, PsiStubDDItem> where C : IJDDContext, C : WithImportRefCounterContext<C> {
     private val logger = KotlinLogging.logger { }
 
-    override suspend fun <C : IJDDContext> produce(context: C): ProjectHierarchyProducerResult<C, PsiStubDDItem> = either {
+    override suspend fun produce(
+        context: C,
+    ): ProjectHierarchyProducerResult<C, PsiStubDDItem> = either {
         val project = context.originalProject
         ensureNotNull(project.guessProjectDir()) { NoRootFound }
 
@@ -39,7 +43,7 @@ class DeletablePsiElementHierarchyGenerator(private val depthThreshold: Int) : P
             .create(
                 project.service<BuildExceptionProviderService>(),
                 exceptionComparator.withLogging(),
-                FunctionDeletingLens(),
+                DeclarationDeletingLens(),
                 context,
                 listOfNotNull(LoggingPropertyCheckingListener.create("instance-level")),
             )

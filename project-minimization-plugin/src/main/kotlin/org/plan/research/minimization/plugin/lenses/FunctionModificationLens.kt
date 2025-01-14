@@ -12,7 +12,7 @@ import com.intellij.psi.PsiElement
  * It ensures that relevant function elements
  * are marked, processed, and reset appropriately within the given context.
  */
-class FunctionModificationLens : BasePsiLens<IJDDContext, PsiChildrenIndexDDItem, IntChildrenIndex>() {
-    override fun focusOnPsiElement(item: PsiChildrenIndexDDItem, psiElement: PsiElement, context: IJDDContext) =
+class FunctionModificationLens<C : IJDDContext> : BasePsiLens<C, PsiChildrenIndexDDItem, IntChildrenIndex>() {
+    override fun focusOnPsiElement(item: PsiChildrenIndexDDItem, psiElement: PsiElement, context: C) =
         PsiBodyReplacer(context).transform(item, psiElement)
 }

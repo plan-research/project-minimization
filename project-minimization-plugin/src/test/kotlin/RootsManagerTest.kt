@@ -8,9 +8,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.PsiTestUtil
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import kotlinx.coroutines.runBlocking
-import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.context.LightIJDDContext
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.services.RootsManagerService
 import kotlin.io.path.div
@@ -412,5 +410,5 @@ abstract class RootsManagerTest<C : IJDDContext> : JavaCodeInsightFixtureTestCas
     }
 }
 
-class RootsManagerLightTest : RootsManagerTest<LightIJDDContext>(), TestWithContext<LightIJDDContext> by TestWithLightContext()
-class RootsManagerHeavyTest : RootsManagerTest<HeavyIJDDContext>(), TestWithContext<HeavyIJDDContext> by TestWithHeavyContext()
+class RootsManagerLightTest : RootsManagerTest<LightTestContext>(), TestWithContext<LightTestContext> by TestWithLightContext()
+class RootsManagerHeavyTest : RootsManagerTest<HeavyTestContext>(), TestWithContext<HeavyTestContext> by TestWithHeavyContext()

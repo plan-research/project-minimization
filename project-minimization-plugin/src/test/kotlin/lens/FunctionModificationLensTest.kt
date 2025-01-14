@@ -1,5 +1,6 @@
 package lens
 
+import LightTestContext
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.application.writeAction
@@ -15,23 +16,20 @@ import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
 import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
-import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.item.index.IntChildrenIndex
-import org.plan.research.minimization.plugin.model.context.LightIJDDContext
 import org.plan.research.minimization.plugin.model.item.PsiChildrenIndexDDItem
+import org.plan.research.minimization.plugin.model.item.index.IntChildrenIndex
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 import runMonad
-import kotlin.collections.toTypedArray
 import kotlin.io.path.relativeTo
 
-class FunctionModificationLensTest : PsiLensTestBase<PsiChildrenIndexDDItem, IntChildrenIndex>() {
+class FunctionModificationLensTest : PsiLensTestBase<LightTestContext, PsiChildrenIndexDDItem, IntChildrenIndex>() {
     override fun getTestDataPath(): String {
         return "src/test/resources/testData/function-modification"
     }
 
-    override fun getLens() = FunctionModificationLens()
-    override suspend fun getAllItems(context: IJDDContext): List<PsiChildrenIndexDDItem> {
+    override fun getLens() = FunctionModificationLens<LightTestContext>()
+    override suspend fun getAllItems(context: LightTestContext): List<PsiChildrenIndexDDItem> {
         configureModules(context.indexProject)
         return service<MinimizationPsiManagerService>().findAllPsiWithBodyItems(context)
     }
@@ -39,13 +37,13 @@ class FunctionModificationLensTest : PsiLensTestBase<PsiChildrenIndexDDItem, Int
     fun testProjectSimple() {
         myFixture.copyDirectoryToProject("project-simple", ".")
         configureModules(project)
-        val context = LightIJDDContext(project)
+        val context = LightTestContext(project)
         runBlocking { doTest(context, emptyList(), "project-simple-modified") }
     }
 
     fun testMultipleFilesProject() {
         val root = myFixture.copyDirectoryToProject("project-multiple-files", ".")
-        val context = LightIJDDContext(project)
+        val context = LightTestContext(project)
         configureModules(project)
         runBlocking {
             val elementsA = getAllElements(context, root.findFile("a.kt")!!)
@@ -70,7 +68,7 @@ class FunctionModificationLensTest : PsiLensTestBase<PsiChildrenIndexDDItem, Int
     fun testMultiStageProject() {
         val root = myFixture.copyDirectoryToProject("project-multi-stage", ".")
         configureModules(project)
-        val context = LightIJDDContext(project)
+        val context = LightTestContext(project)
         runBlocking {
             val elementsA = getAllElements(context, root.findFile("a.kt")!!)
             val elementsB = getAllElements(context, root.findFile("b.kt")!!)
@@ -94,16 +92,16 @@ class FunctionModificationLensTest : PsiLensTestBase<PsiChildrenIndexDDItem, Int
     }
 
     override suspend fun doTest(
-        initialContext: LightIJDDContext,
+        initialContext: LightTestContext,
         elements: List<PsiChildrenIndexDDItem>,
         expectedFolder: String
-    ): LightIJDDContext {
+    ): LightTestContext {
         val projectCloningService = project.service<ProjectCloningService>()
         val psiGetterService = service<MinimizationPsiManagerService>()
-        val cloned = projectCloningService.clone(initialContext)
+        val cloned = projectCloningService.clone(initialContext) as LightTestContext
         kotlin.test.assertNotNull(cloned)
         configureModules(cloned.indexProject)
-        val lens = FunctionModificationLens()
+        val lens = getLens()
         val items = psiGetterService.findAllPsiWithBodyItems(cloned)
         return cloned.runMonad {
             lens.focusOn(items - elements.toSet())
@@ -129,7 +127,7 @@ class FunctionModificationLensTest : PsiLensTestBase<PsiChildrenIndexDDItem, Int
         }
     }
 
-    override suspend fun getAllElements(context: IJDDContext, vfs: VirtualFile): List<PsiChildrenIndexDDItem> {
+    override suspend fun getAllElements(context: LightTestContext, vfs: VirtualFile): List<PsiChildrenIndexDDItem> {
         configureModules(context.indexProject)
         val service = service<MinimizationPsiManagerService>()
         val elements = service.findAllPsiWithBodyItems(context)

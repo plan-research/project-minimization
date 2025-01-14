@@ -1,5 +1,6 @@
 package hierarchy.file
 
+import LightTestContext
 import arrow.core.Either
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.guessProjectDir
@@ -15,8 +16,6 @@ import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import org.plan.research.minimization.core.model.lift
 import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchicalDDGenerator
 import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchyGenerator
-import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.context.LightIJDDContext
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import runMonadWithEmptyProgress
@@ -33,11 +32,11 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
         project.service<MinimizationPluginSettings>().stateObservable.compilationStrategy.set(CompilationStrategy.DUMB)
     }
 
-    private val fileTreeHierarchyGenerator = FileTreeHierarchyGenerator()
+    private val fileTreeHierarchyGenerator = FileTreeHierarchyGenerator<LightTestContext>()
 
     fun testWithEmptyProject() {
         val project = myFixture.project
-        LightIJDDContext(project).runMonadWithEmptyProgress {
+        LightTestContext(project).runMonadWithEmptyProgress {
             val generator = generateHierarchicalDDGenerator(lift { context })
 
             val firstLevel = runWithModalProgressBlocking(project, "") {
@@ -62,7 +61,7 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
         val psiManager = PsiManager.getInstance(project)
         val projectRootPsi = psiManager.findDirectory(projectRoot)!!
         assertEquals(1, getPsiDepth(psiFile) - getPsiDepth(projectRootPsi))
-        LightIJDDContext(project).runMonadWithEmptyProgress {
+        LightTestContext(project).runMonadWithEmptyProgress {
             val generator = generateHierarchicalDDGenerator(lift { context })
 
             val firstLevel = runWithModalProgressBlocking(project, "") {
@@ -99,7 +98,7 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
         val projectRoot = project.guessProjectDir()!!
         val psiManager = PsiManager.getInstance(project)
         val projectRootPsi = psiManager.findDirectory(projectRoot)!!
-        LightIJDDContext(project).runMonadWithEmptyProgress {
+        LightTestContext(project).runMonadWithEmptyProgress {
             assertEquals(12, getPsiDepth(psiFile) - getPsiDepth(projectRootPsi))
 
             val generator = generateHierarchicalDDGenerator(lift { context })
@@ -152,9 +151,9 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
 
     private fun getPsiDepth(element: PsiElement?): Int = if (element == null) 0 else getPsiDepth(element.parent) + 1
 
-    private fun <C : IJDDContext> generateHierarchicalDDGenerator(context: C): FileTreeHierarchicalDDGenerator<C> {
+    private fun generateHierarchicalDDGenerator(context: LightTestContext): FileTreeHierarchicalDDGenerator<LightTestContext> {
         val ddGenerator = runWithModalProgressBlocking(project, "") { fileTreeHierarchyGenerator.produce(context) }
-        assertIs<Either.Right<FileTreeHierarchicalDDGenerator<C>>>(ddGenerator)
+        assertIs<Either.Right<FileTreeHierarchicalDDGenerator<LightTestContext>>>(ddGenerator)
         val generator = ddGenerator.value
         return generator
     }

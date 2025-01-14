@@ -1,7 +1,6 @@
 package org.plan.research.minimization.plugin.model
 
 import org.plan.research.minimization.plugin.errors.MinimizationError
-import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.state.DDStrategy
 
@@ -9,6 +8,7 @@ import arrow.core.Either
 import arrow.optics.optics
 import com.intellij.util.xmlb.annotations.Property
 import com.intellij.util.xmlb.annotations.Tag
+import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 
 typealias MinimizationResult = Either<MinimizationError, IJDDContext>
 
@@ -17,17 +17,17 @@ typealias MinimizationResult = Either<MinimizationError, IJDDContext>
  */
 interface MinimizationStageExecutor {
     suspend fun executeFileLevelStage(
-        context: HeavyIJDDContext,
+        context: HeavyIJDDContext<*>,
         fileLevelStage: FileLevelStage,
     ): MinimizationResult
 
     suspend fun executeFunctionLevelStage(
-        context: HeavyIJDDContext,
+        context: HeavyIJDDContext<*>,
         functionLevelStage: FunctionLevelStage,
     ): MinimizationResult
 
     suspend fun executeDeclarationLevelStage(
-        context: HeavyIJDDContext,
+        context: HeavyIJDDContext<*>,
         declarationLevelStage: DeclarationLevelStage,
     ): MinimizationResult
 }
@@ -42,7 +42,7 @@ sealed interface MinimizationStage {
     val name: String
 
     suspend fun apply(
-        context: HeavyIJDDContext,
+        context: HeavyIJDDContext<*>,
         executor: MinimizationStageExecutor,
     ): MinimizationResult
 }
@@ -61,7 +61,7 @@ data class FileLevelStage(
 ) : MinimizationStage {
     override val name: String = "File-Level Minimization"
 
-    override suspend fun apply(context: HeavyIJDDContext, executor: MinimizationStageExecutor) =
+    override suspend fun apply(context: HeavyIJDDContext<*>, executor: MinimizationStageExecutor) =
         executor.executeFileLevelStage(context, this)
 
     companion object
@@ -75,7 +75,7 @@ data class FunctionLevelStage(
     override val name: String = "Body Replacement Algorithm"
 
     override suspend fun apply(
-        context: HeavyIJDDContext,
+        context: HeavyIJDDContext<*>,
         executor: MinimizationStageExecutor,
     ): MinimizationResult = executor.executeFunctionLevelStage(context, this)
 
@@ -91,7 +91,7 @@ data class DeclarationLevelStage(
     override val name: String = "Instance-level Minimization"
 
     override suspend fun apply(
-        context: HeavyIJDDContext,
+        context: HeavyIJDDContext<*>,
         executor: MinimizationStageExecutor,
     ): MinimizationResult = executor.executeDeclarationLevelStage(context, this)
 

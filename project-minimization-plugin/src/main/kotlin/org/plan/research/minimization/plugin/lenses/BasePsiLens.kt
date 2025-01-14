@@ -20,12 +20,12 @@ import java.nio.file.Path
 /**
  * An abstract class for the PSI element focusing lens
  */
-abstract class BasePsiLens<B : IJDDContext, I, T> :
-    ProjectItemLens<B, I> where I : PsiDDItem<T>, T : Comparable<T>, T : PsiChildrenPathIndex {
+abstract class BasePsiLens<C, I, T> :
+    ProjectItemLens<C, I> where C : IJDDContext, I : PsiDDItem<T>, T : Comparable<T>, T : PsiChildrenPathIndex {
     private val logger = KotlinLogging.logger {}
 
     context(IJDDContextMonad<C>)
-    final override suspend fun <C : B> focusOn(
+    final override suspend fun focusOn(
         itemsToDelete: List<I>,
     ) {
         logger.info { "Built a trie for the current context" }
@@ -44,9 +44,9 @@ abstract class BasePsiLens<B : IJDDContext, I, T> :
         logger.info { "Focusing complete" }
     }
 
-    protected open fun transformSelectedElements(item: I, context: B): List<I> = listOf(item)
+    protected open fun transformSelectedElements(item: I, context: C): List<I> = listOf(item)
 
-    private suspend fun logFocusedItems(items: List<I>, context: B) {
+    private suspend fun logFocusedItems(items: List<I>, context: C) {
         if (!logger.isTraceEnabled) {
             return
         }
@@ -59,16 +59,16 @@ abstract class BasePsiLens<B : IJDDContext, I, T> :
     }
 
     context(IJDDContextMonad<C>)
-    protected open suspend fun <C : B> useTrie(trie: PsiTrie<I, T>, ktFile: KtFile) {
+    protected open suspend fun useTrie(trie: PsiTrie<I, T>, ktFile: KtFile) {
         PsiUtils.performPsiChangesAndSave(context, ktFile) {
             trie.processMarkedElements(ktFile) { item, psiElement -> focusOnPsiElement(item, psiElement, context) }
         }
     }
 
-    protected abstract fun focusOnPsiElement(item: I, psiElement: PsiElement, context: B)
+    protected abstract fun focusOnPsiElement(item: I, psiElement: PsiElement, context: C)
 
     context(IJDDContextMonad<C>)
-    private suspend fun <C : B> focusOnInsideFile(
+    private suspend fun focusOnInsideFile(
         focusItems: List<I>,
         relativePath: Path,
     ) {

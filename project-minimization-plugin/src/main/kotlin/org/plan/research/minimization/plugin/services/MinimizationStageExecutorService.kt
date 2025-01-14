@@ -13,13 +13,10 @@ import org.plan.research.minimization.plugin.model.DeclarationLevelStage
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.MinimizationStageExecutor
-import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
-import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 import org.plan.research.minimization.plugin.model.item.PsiDDItem
 import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
 import org.plan.research.minimization.plugin.psi.PsiUtils
-import org.plan.research.minimization.plugin.psi.withImportRefCounter
 
 import arrow.core.Either
 import arrow.core.getOrElse
@@ -30,27 +27,32 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import mu.KotlinLogging
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.ReversedHierarchicalDD
+import org.plan.research.minimization.plugin.model.context.*
+import org.plan.research.minimization.plugin.model.context.impl.DeclarationLevelStageContext
+import org.plan.research.minimization.plugin.model.context.impl.FileLevelStageContext
+import org.plan.research.minimization.plugin.model.context.impl.FunctionLevelStageContext
 import org.plan.research.minimization.plugin.model.monad.WithProgressMonadT
 import org.plan.research.minimization.plugin.model.monad.withProgress
+import org.plan.research.minimization.plugin.psi.KtSourceImportRefCounter
 
 @Service(Service.Level.PROJECT)
 class MinimizationStageExecutorService(private val project: Project) : MinimizationStageExecutor {
     private val logger = KotlinLogging.logger {}
 
-    override suspend fun executeFileLevelStage(context: HeavyIJDDContext, fileLevelStage: FileLevelStage) = either {
+    override suspend fun executeFileLevelStage(context: HeavyIJDDContext<*>, fileLevelStage: FileLevelStage) = either {
         logger.info { "Start File level stage" }
         statLogger.info {
             "File level stage settings, " +
                     "DDAlgorithm: ${fileLevelStage.ddAlgorithm}"
         }
 
-        val lightContext = context.asLightContext()
+        val lightContext = FileLevelStageContext(context.projectDir, context.project, context.originalProject)
 
         val baseAlgorithm = fileLevelStage.ddAlgorithm.getDDAlgorithm()
         val hierarchicalDD = ReversedHierarchicalDD(baseAlgorithm)
 
         logger.info { "Initialise file hierarchy" }
-        val hierarchy = FileTreeHierarchyGenerator()
+        val hierarchy = FileTreeHierarchyGenerator<FileLevelStageContext>()
             .produce(lightContext)
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
 
@@ -61,7 +63,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
     }.logResult("File")
 
     override suspend fun executeFunctionLevelStage(
-        context: HeavyIJDDContext,
+        context: HeavyIJDDContext<*>,
         functionLevelStage: FunctionLevelStage,
     ) = either {
         logger.info { "Start Function level stage" }
@@ -69,10 +71,10 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
             "Function level stage settings. DDAlgorithm: ${functionLevelStage.ddAlgorithm}"
         }
 
-        val lightContext = context.asLightContext()
+        val lightContext = FunctionLevelStageContext(context.projectDir, context.project, context.originalProject)
 
         val ddAlgorithm = functionLevelStage.ddAlgorithm.getDDAlgorithm()
-        val lens = FunctionModificationLens()
+        val lens = FunctionModificationLens<FunctionLevelStageContext>()
         val firstLevel = service<MinimizationPsiManagerService>()
             .findAllPsiWithBodyItems(lightContext)
         val propertyChecker = SameExceptionPropertyTester.create(
@@ -111,7 +113,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
     }
 
     override suspend fun executeDeclarationLevelStage(
-        context: HeavyIJDDContext,
+        context: HeavyIJDDContext<*>,
         declarationLevelStage: DeclarationLevelStage,
     ) = either {
         logger.info { "Start Function deleting stage" }
@@ -120,11 +122,18 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
                     "DDAlgorithm: ${declarationLevelStage.ddAlgorithm}"
         }
 
-        val lightContext = context.asLightContext().withImportRefCounter()
+        val importRefCounter = KtSourceImportRefCounter.create(context).getOrElse {
+            raise(MinimizationError.AnalysisFailed)
+        }
+
+        val lightContext = DeclarationLevelStageContext(
+            context.projectDir, context.project,
+            context.originalProject, importRefCounter,
+        )
 
         val ddAlgorithm = declarationLevelStage.ddAlgorithm.getDDAlgorithm()
         val hierarchicalDD = ReversedHierarchicalDD(ddAlgorithm)
-        val hierarchy = DeletablePsiElementHierarchyGenerator(declarationLevelStage.depthThreshold)
+        val hierarchy = DeletablePsiElementHierarchyGenerator<DeclarationLevelStageContext>(declarationLevelStage.depthThreshold)
             .produce(lightContext)
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
 

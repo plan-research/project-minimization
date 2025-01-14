@@ -74,7 +74,7 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
     // TODO: JBRes-2103 Resource Management
     private suspend fun closeProject(context: IJDDContext) {
         withContext<Unit>(NonCancellable) {
-            if (context is HeavyIJDDContext) {
+            if (context is HeavyIJDDContext<*>) {
                 ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(context.project)
             } else {
                 // avoid unnecessary project deletion, bad design (poebat' for now)

@@ -1,6 +1,5 @@
 package org.plan.research.minimization.plugin.psi
 
-import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 
 import arrow.core.raise.option
@@ -17,6 +16,7 @@ import kotlin.io.path.relativeTo
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.toPersistentHashMap
+import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 
 class KtSourceImportRefCounter private constructor(private val refs: PersistentMap<Path, PsiImportRefCounter>) {
     operator fun get(path: Path) = option {
@@ -27,7 +27,7 @@ class KtSourceImportRefCounter private constructor(private val refs: PersistentM
     fun performAction(action: MutableMap<Path, PsiImportRefCounter>.() -> Unit): KtSourceImportRefCounter = KtSourceImportRefCounter(refs.mutate(action))
 
     companion object {
-        suspend fun create(context: IJDDContext) = option {
+        suspend fun create(context: HeavyIJDDContext<*>) = option {
             val vfs = smartReadAction(context.indexProject) {
                 service<MinimizationPsiManagerService>().findAllKotlinFilesInIndexProject(context)
             }
@@ -49,7 +49,3 @@ class KtSourceImportRefCounter private constructor(private val refs: PersistentM
         }
     }
 }
-
-suspend fun IJDDContext.withImportRefCounter() = copy(
-    importRefCounter = importRefCounter ?: KtSourceImportRefCounter.create(this).getOrNull(),
-)

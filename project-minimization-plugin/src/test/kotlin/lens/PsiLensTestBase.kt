@@ -9,28 +9,27 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.toNioPathOrNull
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.plan.research.minimization.plugin.lenses.BasePsiLens
-import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.context.LightIJDDContext
-import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
 import org.plan.research.minimization.plugin.model.item.PsiDDItem
+import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 import runMonad
 import kotlin.io.path.relativeTo
 
-abstract class PsiLensTestBase<ITEM, T> :
+abstract class PsiLensTestBase<C : LightIJDDContext<C>, ITEM, T> :
     AbstractAnalysisKotlinTest() where ITEM : PsiDDItem<T>, T : PsiChildrenPathIndex, T : Comparable<T> {
     override fun runInDispatchThread(): Boolean = false
 
-    protected abstract fun getLens(): BasePsiLens<IJDDContext, ITEM, T>
-    protected abstract suspend fun getAllItems(context: IJDDContext): List<ITEM>
+    protected abstract fun getLens(): BasePsiLens<C, ITEM, T>
+    protected abstract suspend fun getAllItems(context: C): List<ITEM>
 
     protected open suspend fun doTest(
-        initialContext: LightIJDDContext,
+        initialContext: C,
         elements: List<ITEM>,
         expectedFolder: String
-    ): LightIJDDContext {
+    ): C {
         val projectCloningService = project.service<ProjectCloningService>()
-        val cloned = projectCloningService.clone(initialContext)
+        val cloned = projectCloningService.clone(initialContext) as C
         kotlin.test.assertNotNull(cloned)
         val lens = getLens()
         val items = getAllItems(initialContext)
@@ -59,7 +58,7 @@ abstract class PsiLensTestBase<ITEM, T> :
         }
     }
 
-    protected open suspend fun getAllElements(context: IJDDContext, vfs: VirtualFile): List<ITEM> {
+    protected open suspend fun getAllElements(context: C, vfs: VirtualFile): List<ITEM> {
         val elements = getAllItems(context)
         val vfsRelativePath = context.projectDir.toNioPath().relativize(vfs.toNioPath())
         return elements.filter { it.localPath == vfsRelativePath }

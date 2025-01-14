@@ -44,18 +44,18 @@ class ProjectCloningService(private val rootProject: Project) {
 
     suspend fun clone(context: IJDDContext): IJDDContext? =
         when (context) {
-            is HeavyIJDDContext -> clone(context)
-            is LightIJDDContext -> clone(context)
+            is HeavyIJDDContext<*> -> clone(context)
+            is LightIJDDContext<*> -> clone(context)
         }
 
-    suspend fun clone(context: LightIJDDContext): LightIJDDContext? {
+    suspend fun clone(context: LightIJDDContext<*>): LightIJDDContext<*>? {
         val clonedPath = cloneProjectImpl(context.projectDir)
         val clonedProjectDir = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(clonedPath) ?: return null
         clonedProjectDir.refresh(false, true)
         return context.copy(projectDir = clonedProjectDir)
     }
 
-    suspend fun clone(context: HeavyIJDDContext): HeavyIJDDContext? {
+    suspend fun clone(context: HeavyIJDDContext<*>): HeavyIJDDContext<*>? {
         val clonedPath = cloneProjectImpl(context.projectDir)
         val clonedProject = openingService.openProject(clonedPath) ?: return null
         return context.copy(project = clonedProject)

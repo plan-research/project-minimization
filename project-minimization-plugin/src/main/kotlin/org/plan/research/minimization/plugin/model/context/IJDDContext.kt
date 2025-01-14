@@ -1,7 +1,5 @@
 package org.plan.research.minimization.plugin.model.context
 
-import org.plan.research.minimization.plugin.psi.KtSourceImportRefCounter
-
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFile
@@ -16,13 +14,8 @@ import com.intellij.openapi.vfs.VirtualFile
  */
 sealed class IJDDContext(
     val originalProject: Project,
-    val importRefCounter: KtSourceImportRefCounter?,
 ) {
     abstract val projectDir: VirtualFile
     abstract val indexProject: Project
     val indexProjectDir: VirtualFile by lazy { indexProject.guessProjectDir()!! }
-
-    abstract fun copy(
-        importRefCounter: KtSourceImportRefCounter? = this.importRefCounter,
-    ): IJDDContext
 }

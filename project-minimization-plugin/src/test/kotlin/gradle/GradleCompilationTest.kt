@@ -1,5 +1,7 @@
 package gradle
 
+import HeavyTestContext
+import LightTestContext
 import TestWithContext
 import TestWithHeavyContext
 import TestWithLightContext
@@ -14,7 +16,6 @@ import org.plan.research.minimization.plugin.execution.transformer.PathRelativiz
 import org.plan.research.minimization.plugin.model.CompilationResult
 import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.context.LightIJDDContext
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
@@ -215,7 +216,7 @@ abstract class GradleCompilationTest<C : IJDDContext> : GradleProjectBaseTest(),
         checkGradle: Boolean = true,
         linkProject: Boolean = true,
     ): CompilationResult = runBlocking {
-        if (context is HeavyIJDDContext) {
+        if (context is HeavyIJDDContext<*>) {
             if (linkProject) importGradleProject(context.project)
             if (checkGradle) assertGradleLoaded(context.project)
         }
@@ -229,9 +230,9 @@ abstract class GradleCompilationTest<C : IJDDContext> : GradleProjectBaseTest(),
 }
 
 class GradleCompilationHeavyTest :
-    GradleCompilationTest<HeavyIJDDContext>(),
-    TestWithContext<HeavyIJDDContext> by TestWithHeavyContext()
+    GradleCompilationTest<HeavyTestContext>(),
+    TestWithContext<HeavyTestContext> by TestWithHeavyContext()
 
 class GradleCompilationLightTest :
-    GradleCompilationTest<LightIJDDContext>(),
-    TestWithContext<LightIJDDContext> by TestWithLightContext()
+    GradleCompilationTest<LightTestContext>(),
+    TestWithContext<LightTestContext> by TestWithLightContext()

@@ -27,6 +27,7 @@ import mu.KotlinLogging
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.plan.research.minimization.plugin.model.context.impl.DefaultProjectContext
 
 @Service(Service.Level.PROJECT)
 class MinimizationService(private val project: Project, private val coroutineScope: CoroutineScope) {
@@ -40,7 +41,7 @@ class MinimizationService(private val project: Project, private val coroutineSco
     private val openingService = service<ProjectOpeningService>()
     private val logger = KotlinLogging.logger {}
 
-    fun minimizeProject(onComplete: suspend (HeavyIJDDContext) -> Unit = { }) {
+    fun minimizeProject(onComplete: suspend (HeavyIJDDContext<*>) -> Unit = { }) {
         coroutineScope.launch {
             settings.withFrozenState {
                 withBackgroundProgress(project, "Minimizing project") {
@@ -50,10 +51,10 @@ class MinimizationService(private val project: Project, private val coroutineSco
         }
     }
 
-    private suspend fun minimizeProjectImpl(): Either<MinimizationError, HeavyIJDDContext> = withLoggingFolder {
+    private suspend fun minimizeProjectImpl(): Either<MinimizationError, HeavyIJDDContext<*>> = withLoggingFolder {
         either {
             logger.info { "Start Project minimization" }
-            var context = HeavyIJDDContext(project)
+            var context: HeavyIJDDContext<*> = DefaultProjectContext(project)
 
             reportSequentialProgress(stages.size) { reporter ->
                 context = cloneProject(context, reporter)
@@ -74,10 +75,10 @@ class MinimizationService(private val project: Project, private val coroutineSco
     }
 
     private suspend fun Raise<MinimizationError>.processStage(
-        context: HeavyIJDDContext,
+        context: HeavyIJDDContext<*>,
         stage: MinimizationStage,
         reporter: SequentialProgressReporter,
-    ): HeavyIJDDContext {
+    ): HeavyIJDDContext<*> {
         val newContext = reporter.itemStep("Minimization step: ${stage.name}") {
             stage.apply(context, executor).bind()
         }
@@ -104,9 +105,9 @@ class MinimizationService(private val project: Project, private val coroutineSco
     }
 
     private suspend fun Raise<MinimizationError>.cloneProject(
-        context: HeavyIJDDContext,
+        context: HeavyIJDDContext<*>,
         reporter: SequentialProgressReporter,
-    ): HeavyIJDDContext {
+    ): HeavyIJDDContext<*> {
         logger.info { "Clonning project..." }
         val result = reporter.indeterminateStep("Clonning project") {
             projectCloning.clone(context) ?: raise(MinimizationError.CloningFailed)
@@ -125,21 +126,18 @@ class MinimizationService(private val project: Project, private val coroutineSco
     }
 
     private suspend fun Raise<MinimizationError>.makeHeavy(
-        oldContext: HeavyIJDDContext,
+        oldContext: HeavyIJDDContext<*>,
         context: IJDDContext,
-    ): HeavyIJDDContext {
+    ): HeavyIJDDContext<*> {
         if (oldContext.projectDir == context.projectDir) {
             return oldContext
         }
         val newContext = when (context) {
-            is HeavyIJDDContext -> context
-            is LightIJDDContext -> {
+            is HeavyIJDDContext<*> -> context
+            is LightIJDDContext<*> -> {
                 val openedProject = openingService.openProject(context.projectDir.toNioPath())
                     ?: raise(MinimizationError.OpeningFailed)
-                HeavyIJDDContext(
-                    openedProject, context.originalProject,
-                    context.importRefCounter,
-                )
+                DefaultProjectContext(openedProject, context.originalProject)
             }
         }
 
@@ -149,7 +147,7 @@ class MinimizationService(private val project: Project, private val coroutineSco
         return newContext
     }
 
-    private suspend fun postProcess(context: HeavyIJDDContext) {
+    private suspend fun postProcess(context: HeavyIJDDContext<*>) {
         val importCleaner = PsiImportCleaner()
         try {
             importCleaner.cleanAllImports(context)

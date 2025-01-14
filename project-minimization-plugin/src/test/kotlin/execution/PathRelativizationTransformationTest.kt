@@ -1,5 +1,6 @@
 package execution
 
+import HeavyTestContext
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.ProjectManager
@@ -11,7 +12,6 @@ import org.plan.research.minimization.plugin.execution.exception.KotlincErrorSev
 import org.plan.research.minimization.plugin.execution.exception.KotlincException
 import org.plan.research.minimization.plugin.execution.transformer.PathRelativizationTransformation
 import org.plan.research.minimization.plugin.model.CaretPosition
-import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 import org.plan.research.minimization.plugin.services.ProjectOpeningService
 
@@ -28,7 +28,7 @@ class PathRelativizationTransformationTest : JavaCodeInsightFixtureTestCase() {
         val project = myFixture.project
         val projectLocation = project.guessProjectDir()!!.toNioPath()
         val transformation = PathRelativizationTransformation()
-        val context = HeavyIJDDContext(project)
+        val context = HeavyTestContext(project)
 
         val genericKotlinError = KotlincException.GeneralKotlincException(
             position = CaretPosition(
@@ -72,7 +72,7 @@ class PathRelativizationTransformationTest : JavaCodeInsightFixtureTestCase() {
         val project = myFixture.project
         val projectLocation = project.guessProjectDir()!!.toNioPath()
         val transformation = PathRelativizationTransformation()
-        val context = HeavyIJDDContext(project)
+        val context = HeavyTestContext(project)
 
         val rootException = KotlincException.BackendCompilerException(
             position = CaretPosition(
@@ -113,7 +113,7 @@ class PathRelativizationTransformationTest : JavaCodeInsightFixtureTestCase() {
         val project = myFixture.project
         val projectLocation = project.guessProjectDir()!!.toNioPath()
         val transformation = PathRelativizationTransformation()
-        val context = HeavyIJDDContext(project)
+        val context = HeavyTestContext(project)
 
         val rootException = KotlincException.GenericInternalCompilerException(
             stacktrace = "some tracktrace",

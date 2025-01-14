@@ -1,5 +1,6 @@
 package hierarchy.file
 
+import HeavyTestContext
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.ex.ProjectManagerEx
@@ -11,7 +12,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.execution.DumbCompiler
 import org.plan.research.minimization.plugin.model.FileLevelStage
-import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.model.state.DDStrategy
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
@@ -65,7 +65,7 @@ class FileLevelStageTest : JavaCodeInsightFixtureTestCase() {
         val stage = FileLevelStage(
             DDStrategy.PROBABILISTIC_DD
         )
-        val context = HeavyIJDDContext(project)
+        val context = HeavyTestContext(project)
 
         val targetFiles = if (targetPaths == null) {
             project.getAllFiles()

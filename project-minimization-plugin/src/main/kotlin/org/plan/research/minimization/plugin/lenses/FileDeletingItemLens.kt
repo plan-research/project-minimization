@@ -7,9 +7,9 @@ import org.plan.research.minimization.plugin.model.item.ProjectFileDDItem
 
 import com.intellij.openapi.application.writeAction
 
-class FileDeletingItemLens : ProjectItemLens<IJDDContext, ProjectFileDDItem> {
+class FileDeletingItemLens<C : IJDDContext> : ProjectItemLens<C, ProjectFileDDItem> {
     context(IJDDContextMonad<C>)
-    override suspend fun <C : IJDDContext> focusOn(itemsToDelete: List<ProjectFileDDItem>) {
+    override suspend fun focusOn(itemsToDelete: List<ProjectFileDDItem>) {
         writeAction {
             itemsToDelete.forEach { item ->
                 item.getVirtualFile(context)?.delete(this)

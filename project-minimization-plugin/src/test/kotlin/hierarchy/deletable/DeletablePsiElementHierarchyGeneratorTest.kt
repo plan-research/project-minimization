@@ -4,12 +4,17 @@ import AbstractAnalysisKotlinTest
 import arrow.core.None
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.core.model.lift
 import org.plan.research.minimization.plugin.hierarchy.DeletablePsiElementHierarchyGenerator
 import org.plan.research.minimization.plugin.model.context.LightIJDDContext
+import org.plan.research.minimization.plugin.model.context.WithImportRefCounterContext
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem.NonOverriddenPsiStubDDItem
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
+import org.plan.research.minimization.plugin.psi.KtSourceImportRefCounter
 import org.plan.research.minimization.plugin.psi.stub.KtClassBodyStub
 import org.plan.research.minimization.plugin.psi.stub.KtClassStub
 import org.plan.research.minimization.plugin.psi.stub.KtFunctionStub
@@ -18,6 +23,25 @@ import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import runMonadWithEmptyProgress
 import kotlin.test.assertIs
+
+class TestContext(
+    projectDir: VirtualFile,
+    indexProject: Project,
+    originalProject: Project,
+) : LightIJDDContext<TestContext>(projectDir, indexProject, originalProject),
+    WithImportRefCounterContext<TestContext> {
+
+    override val importRefCounter: KtSourceImportRefCounter
+        get() = TODO()
+
+    constructor(project: Project) : this(project.guessProjectDir()!!, project, project)
+
+    override fun copy(projectDir: VirtualFile): TestContext =
+        TestContext(projectDir, indexProject, originalProject)
+
+    override fun copy(importRefCounter: KtSourceImportRefCounter): TestContext =
+        TestContext(projectDir, indexProject, originalProject)
+}
 
 class DeletablePsiElementHierarchyGeneratorTest : AbstractAnalysisKotlinTest() {
     override fun getTestDataPath() = "src/test/resources/testData/deletablePsiHierarchy"
@@ -29,10 +53,10 @@ class DeletablePsiElementHierarchyGeneratorTest : AbstractAnalysisKotlinTest() {
 
     fun testSingleLevel() {
         myFixture.copyDirectoryToProject("single-level", ".")
-        LightIJDDContext(project).runMonadWithEmptyProgress {
+        TestContext(project).runMonadWithEmptyProgress {
             val items = runBlocking { service<MinimizationPsiManagerService>().findDeletablePsiItems(lift { context }) }
             assertSize(2, items)
-            val hierarchy = runBlocking { DeletablePsiElementHierarchyGenerator(10).produce(lift { context }).getOrNull() }
+            val hierarchy = runBlocking { DeletablePsiElementHierarchyGenerator<TestContext>(10).produce(lift { context }).getOrNull() }
             kotlin.test.assertNotNull(hierarchy)
             val level = runBlocking { hierarchy.generateFirstLevel().getOrNull()!! }
             assertSize(2, level.items)
@@ -64,10 +88,10 @@ class DeletablePsiElementHierarchyGeneratorTest : AbstractAnalysisKotlinTest() {
     fun testMultipleLevels() {
         myFixture.copyDirectoryToProject("two-levels", ".")
 
-        LightIJDDContext(project).runMonadWithEmptyProgress {
+        TestContext(project).runMonadWithEmptyProgress {
             val items = runBlocking { service<MinimizationPsiManagerService>().findDeletablePsiItems(lift { context }) }
             assertSize(4, items)
-            val hierarchy = runBlocking { DeletablePsiElementHierarchyGenerator(10).produce(lift { context }).getOrNull() }
+            val hierarchy = runBlocking { DeletablePsiElementHierarchyGenerator<TestContext>(10).produce(lift { context }).getOrNull() }
             kotlin.test.assertNotNull(hierarchy)
             val level = runBlocking { hierarchy.generateFirstLevel().getOrNull()!! }
             assertSize(2, level.items)
@@ -128,10 +152,10 @@ class DeletablePsiElementHierarchyGeneratorTest : AbstractAnalysisKotlinTest() {
     fun testTwoLevelsWithThreshold() {
         myFixture.copyDirectoryToProject("two-levels", ".")
 
-        LightIJDDContext(project).runMonadWithEmptyProgress {
+        TestContext(project).runMonadWithEmptyProgress {
             val items = runBlocking { service<MinimizationPsiManagerService>().findDeletablePsiItems(lift { context }) }
             assertSize(4, items)
-            val hierarchy = runBlocking { DeletablePsiElementHierarchyGenerator(1).produce(lift { context }).getOrNull() }
+            val hierarchy = runBlocking { DeletablePsiElementHierarchyGenerator<TestContext>(1).produce(lift { context }).getOrNull() }
             kotlin.test.assertNotNull(hierarchy)
             val level = runBlocking { hierarchy.generateFirstLevel().getOrNull()!! }
             assertSize(2, level.items)

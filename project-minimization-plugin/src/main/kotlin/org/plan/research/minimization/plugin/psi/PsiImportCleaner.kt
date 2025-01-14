@@ -1,6 +1,5 @@
 package org.plan.research.minimization.plugin.psi
 
-import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 
 import com.intellij.openapi.application.smartReadAction
@@ -16,12 +15,13 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 
 class PsiImportCleaner {
     private val processorPermits = Runtime.getRuntime().availableProcessors() * 2
     private val importOptimizer = KotlinFirImportOptimizer()
 
-    private suspend fun cleanImports(context: HeavyIJDDContext, psiFile: KtFile) {
+    private suspend fun cleanImports(context: HeavyIJDDContext<*>, psiFile: KtFile) {
         val replaceAction = smartReadAction(context.indexProject) { importOptimizer.processFile(psiFile) }
 
         PsiUtils.performPsiChangesAndSave(context, psiFile, "Cleaning imports in ${psiFile.name}") {
@@ -30,7 +30,7 @@ class PsiImportCleaner {
     }
 
     private suspend fun processFiles(
-        context: HeavyIJDDContext,
+        context: HeavyIJDDContext<*>,
         reporter: ProgressReporter,
         files: List<VirtualFile>,
     ) = coroutineScope {
@@ -50,7 +50,7 @@ class PsiImportCleaner {
         }
     }
 
-    suspend fun cleanAllImports(context: HeavyIJDDContext) {
+    suspend fun cleanAllImports(context: HeavyIJDDContext<*>) {
         val files = service<MinimizationPsiManagerService>().findAllKotlinFilesInIndexProject(context)
 
         withBackgroundProgress(context.indexProject, "Cleaning imports in all files") {

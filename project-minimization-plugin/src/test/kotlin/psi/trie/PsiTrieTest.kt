@@ -1,12 +1,12 @@
 package psi.trie
 
+import LightTestContext
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.service
 import com.intellij.psi.PsiElement
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.psi.*
 import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.context.LightIJDDContext
 import org.plan.research.minimization.plugin.model.item.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.model.item.index.IntChildrenIndex
 import org.plan.research.minimization.plugin.psi.PsiUtils
@@ -84,7 +84,7 @@ class PsiTrieTest : PsiTrieTestBase<PsiChildrenIndexDDItem, IntChildrenIndex>() 
         psiFile: KtFile,
         filter: (PsiElement) -> Boolean,
     ) = runBlocking {
-        val context = LightIJDDContext(project)
+        val context = LightTestContext(project)
         val selectedPsi = selectElements(context) { readAction { filter(PsiUtils.getPsiElementFromItem(context, it)!!) } }
         super.doTest(psiFile, selectedPsi) { _, it ->
             assertTrue(filter(it))

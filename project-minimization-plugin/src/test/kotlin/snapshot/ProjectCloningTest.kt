@@ -1,5 +1,7 @@
 package snapshot
 
+import HeavyTestContext
+import LightTestContext
 import PathContent
 import TestWithContext
 import TestWithHeavyContext
@@ -8,9 +10,7 @@ import com.intellij.openapi.components.service
 import getAllFiles
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertNotEquals
-import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.context.LightIJDDContext
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 
 @Suppress("UNCHECKED_CAST")
@@ -92,9 +92,9 @@ abstract class ProjectCloningTest<C : IJDDContext> : ProjectCloningBaseTest(), T
 }
 
 class ProjectCloningLightTest :
-    ProjectCloningTest<LightIJDDContext>(),
-    TestWithContext<LightIJDDContext> by TestWithLightContext()
+    ProjectCloningTest<LightTestContext>(),
+    TestWithContext<LightTestContext> by TestWithLightContext()
 
 class ProjectCloningHeavyTest :
-    ProjectCloningTest<HeavyIJDDContext>(),
-    TestWithContext<HeavyIJDDContext> by TestWithHeavyContext()
+    ProjectCloningTest<HeavyTestContext>(),
+    TestWithContext<HeavyTestContext> by TestWithHeavyContext()

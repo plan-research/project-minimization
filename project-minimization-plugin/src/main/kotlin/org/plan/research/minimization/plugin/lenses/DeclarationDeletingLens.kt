@@ -16,17 +16,19 @@ import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.idea.util.isComma
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
+import org.plan.research.minimization.plugin.model.context.WithImportRefCounterContext
 
 import java.nio.file.Path
 
 import kotlin.io.path.relativeTo
 
-class FunctionDeletingLens : BasePsiLens<IJDDContext, PsiStubDDItem, KtStub>() {
+class DeclarationDeletingLens<C> :
+    BasePsiLens<C, PsiStubDDItem, KtStub>() where C : IJDDContext, C : WithImportRefCounterContext<C> {
     private val logger = KotlinLogging.logger {}
     override fun focusOnPsiElement(
         item: PsiStubDDItem,
         psiElement: PsiElement,
-        context: IJDDContext,
+        context: C,
     ) {
         val nextSibling = psiElement.nextSibling
         psiElement.delete()
@@ -36,7 +38,7 @@ class FunctionDeletingLens : BasePsiLens<IJDDContext, PsiStubDDItem, KtStub>() {
     }
 
     context(IJDDContextMonad<C>)
-    override suspend fun <C : IJDDContext> useTrie(
+    override suspend fun useTrie(
         trie: PsiTrie<PsiStubDDItem, KtStub>,
         ktFile: KtFile,
     ) {
@@ -61,12 +63,10 @@ class FunctionDeletingLens : BasePsiLens<IJDDContext, PsiStubDDItem, KtStub>() {
 
         val modifiedCounter = context.processRefs(ktFile, terminalElements)
         updateContext {
-            @Suppress("UNCHECKED_CAST")
             it.copy(
-                importRefCounter = it
-                    .importRefCounter!!  // <- 100% true
+                importRefCounter = it.importRefCounter
                     .performAction { put(localPath, modifiedCounter) },
-            ) as C
+            )
         }
     }
 
@@ -88,15 +88,15 @@ class FunctionDeletingLens : BasePsiLens<IJDDContext, PsiStubDDItem, KtStub>() {
         }
     }
 
-    override fun transformSelectedElements(item: PsiStubDDItem, context: IJDDContext): List<PsiStubDDItem> =
+    override fun transformSelectedElements(item: PsiStubDDItem, context: C): List<PsiStubDDItem> =
         item.childrenElements + item
 
-    private fun KtFile.getLocalPath(context: IJDDContext): Path {
+    private fun KtFile.getLocalPath(context: C): Path {
         val rootPath = context.projectDir.toNioPath()
         return this.virtualFile.toNioPath().relativeTo(rootPath)
     }
 
-    private suspend fun IJDDContext.getTerminalElements(
+    private suspend fun C.getTerminalElements(
         ktFile: KtFile,
         trie: PsiTrie<PsiStubDDItem, KtStub>,
     ) = readAction {
@@ -106,7 +106,7 @@ class FunctionDeletingLens : BasePsiLens<IJDDContext, PsiStubDDItem, KtStub>() {
         }.filterIsInstance<KtElement>()
     }
 
-    private suspend fun IJDDContext.removeUnusedImports(
+    private suspend fun C.removeUnusedImports(
         ktFile: KtFile,
         refCounter: PsiImportRefCounter,
     ) {
@@ -121,9 +121,7 @@ class FunctionDeletingLens : BasePsiLens<IJDDContext, PsiStubDDItem, KtStub>() {
             currentCounter.decreaseCounterBasedOnKtElement(psiElement)
         }
 
-    private suspend fun IJDDContext.processRefs(ktFile: KtFile, currentRefs: List<KtElement>): PsiImportRefCounter {
-        requireNotNull(importRefCounter) { "The ref counter couldn't be null in the FunctionDeletingLens" }
-
+    private suspend fun C.processRefs(ktFile: KtFile, currentRefs: List<KtElement>): PsiImportRefCounter {
         val counterForCurrentFile = importRefCounter[ktFile.getLocalPath(this)]
             .getOrNull()
             ?: error("Couldn't find a ref counter for localPath=${ktFile.getLocalPath(this)}")
@@ -132,8 +130,7 @@ class FunctionDeletingLens : BasePsiLens<IJDDContext, PsiStubDDItem, KtStub>() {
         return modifiedCounter.purgeUnusedImports()
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun <C : IJDDContext> C.copyWithout(localPath: Path) = copy(
-        importRefCounter = importRefCounter?.performAction { remove(localPath) },
-    ) as C
+    private fun C.copyWithout(localPath: Path) = copy(
+        importRefCounter = importRefCounter.performAction { remove(localPath) },
+    )
 }

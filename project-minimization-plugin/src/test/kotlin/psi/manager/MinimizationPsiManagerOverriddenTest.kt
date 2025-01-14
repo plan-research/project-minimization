@@ -1,5 +1,6 @@
 package psi.manager
 
+import LightTestContext
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.service
 import kotlinx.coroutines.runBlocking
@@ -8,7 +9,6 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedDeclaration
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtProperty
-import org.plan.research.minimization.plugin.model.context.LightIJDDContext
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
@@ -17,7 +17,7 @@ import kotlin.test.assertIs
 class MinimizationPsiManagerOverriddenTest : MinimizationPsiManagerTestBase() {
     fun testInheritance() {
         val service = service<MinimizationPsiManagerService>()
-        val context = LightIJDDContext(project)
+        val context = LightTestContext(project)
         val psiFile = myFixture.configureByFile("inheritance.kt")
         configureModules(project)
         assertIs<KtFile>(psiFile)
@@ -48,7 +48,7 @@ class MinimizationPsiManagerOverriddenTest : MinimizationPsiManagerTestBase() {
 
     fun testComplexInheritance() {
         val service = service<MinimizationPsiManagerService>()
-        val context = LightIJDDContext(project)
+        val context = LightTestContext(project)
         val psiFile = myFixture.configureByFile("complex-inheritance.kt")
         configureModules(project)
         assertIs<KtFile>(psiFile)
@@ -87,7 +87,7 @@ class MinimizationPsiManagerOverriddenTest : MinimizationPsiManagerTestBase() {
 
     fun testOverriddenPropertiesAndMethods() {
         val service = service<MinimizationPsiManagerService>()
-        val context = LightIJDDContext(project)
+        val context = LightTestContext(project)
         val psiFile = myFixture.configureByFile("inheritance-methods-properties.kt")
         configureModules(project)
         assertIs<KtFile>(psiFile)

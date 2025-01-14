@@ -5,7 +5,7 @@ import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoRootFo
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.execution.comparable.withLogging
 import org.plan.research.minimization.plugin.getExceptionComparator
-import org.plan.research.minimization.plugin.lenses.FunctionDeletingLens
+import org.plan.research.minimization.plugin.lenses.LinearFunctionDeletingLens
 import org.plan.research.minimization.plugin.logging.LoggingPropertyCheckingListener
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
@@ -38,7 +38,7 @@ class DeletablePsiElementHierarchyGenerator(private val depthThreshold: Int) : P
             .create<PsiStubDDItem>(
                 project.service<BuildExceptionProviderService>(),
                 exceptionComparator.withLogging(),
-                FunctionDeletingLens(),
+                LinearFunctionDeletingLens(),
                 fromContext,
                 listOfNotNull(LoggingPropertyCheckingListener.create<PsiStubDDItem>("instance-level")),
             )

@@ -27,17 +27,16 @@ abstract class BasePsiLens<I, T> :
         items: List<I>,
         currentContext: IJDDContext,
     ): IJDDContext {
-        val currentLevel = currentContext.currentLevel as? List<I>
-        if (currentContext.currentLevel == null || currentLevel == null) {
+        val currentLevel = currentLevel(currentContext) ?: run {
             logger.warn { "Some item from current level are not PsiWithBodyDDItem. The wrong lens is used. " }
             return currentContext
         }
-        logger.info { "Built a trie for the current context" }
-        val items = items as? List<I>
-        items ?: run {
-            logger.warn { "Some items from $items are not PsiDDItem. The wrong lens is used. " }
+        val currentContext = prepareContext(currentContext, items) ?: run {
+            logger.error { "Can't prepare the context. Giving up focusing." }
             return currentContext
         }
+        logger.info { "Built a trie for the current context" }
+        val items = items
         logFocusedItems(items, currentContext)
         val levelDiff = (currentLevel.toSet() - items.toSet())
             .flatMap { transformSelectedElements(it, currentContext) }
@@ -50,6 +49,7 @@ abstract class BasePsiLens<I, T> :
     }
 
     protected open fun transformSelectedElements(item: I, context: IJDDContext): List<I> = listOf(item)
+    protected open fun prepareContext(context: IJDDContext, items: List<I>): IJDDContext? = context
 
     private suspend fun logFocusedItems(items: List<I>, context: IJDDContext) {
         if (!logger.isTraceEnabled) {
@@ -95,4 +95,6 @@ abstract class BasePsiLens<I, T> :
         logger.trace { "Processing all focused elements in $relativePath" }
         return useTrie(trie, currentContext, psiFile)
     }
+
+    protected abstract fun currentLevel(context: IJDDContext): List<I>?
 }

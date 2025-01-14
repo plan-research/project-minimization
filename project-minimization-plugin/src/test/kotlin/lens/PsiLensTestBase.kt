@@ -36,7 +36,7 @@ abstract class PsiLensTestBase<ITEM, T> :
         var cloned = projectCloningService.clone(context)
         kotlin.test.assertNotNull(cloned)
         val lens = getLens()
-        val items = getAllItems(context)
+        val items = getAllItems(cloned)
         cloned = lens.focusOn(elements, cloned.copy(currentLevel = items)) as LightIJDDContext
 
         val files = smartReadAction(cloned.indexProject) {

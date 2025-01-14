@@ -14,6 +14,7 @@ import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtParameterList
 import org.jetbrains.kotlin.psi.KtPrimaryConstructor
 import org.jetbrains.kotlin.psi.KtProperty
+import org.jetbrains.kotlin.psi.KtTypeAlias
 
 abstract class KtStub : PsiChildrenPathIndex, Comparable<KtStub> {
     abstract val name: String?
@@ -46,6 +47,7 @@ abstract class KtStub : PsiChildrenPathIndex, Comparable<KtStub> {
                 is KtPrimaryConstructor -> KtPrimaryConstructorStub
                 is KtParameter -> KtParameterStub.create(element)
                 is KtParameterList -> KtParameterListStub
+                is KtTypeAlias -> KtTypeAliasStub.create(element)
                 else -> raise(None)
             }
         }

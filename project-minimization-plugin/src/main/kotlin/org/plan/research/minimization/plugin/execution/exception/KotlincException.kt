@@ -4,6 +4,7 @@ import org.plan.research.minimization.plugin.model.CaretPosition
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.CompilationException
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
+import java.util.Objects
 
 import kotlinx.serialization.Serializable
 
@@ -67,6 +68,15 @@ sealed interface KotlincException : CompilationException {
             transformation: ExceptionTransformation,
             context: IJDDContext,
         ) = transformation.transform(this, context)
+
+        override fun equals(other: Any?): Boolean {
+            if (other !is GeneralKotlincException) {
+                return false
+            }
+            return message == other.message && severity == other.severity
+        }
+
+        override fun hashCode(): Int = Objects.hash(message, severity)
     }
     @Serializable
     data class KspException(

@@ -19,6 +19,7 @@ class LoggingPropertyCheckingListener<T : IJDDItem>(folderSuffix: String) : Prop
     private val logLocation = Path(ExecutionDiscriminator.loggingFolder.get(), "property-checking-log-$folderSuffix")
     private val entries = mutableMapOf<String, LogStage>()
     private val logger = KotlinLogging.logger { }
+    private var iteration = 0
 
     init {
         logLocation.createDirectories()
@@ -70,7 +71,7 @@ class LoggingPropertyCheckingListener<T : IJDDItem>(folderSuffix: String) : Prop
         )
     }
 
-    private fun fileById(id: String) = logLocation.resolve("$id.json")
+    private fun fileById(id: String) = logLocation.resolve("${iteration++}.json")
 
     @Serializable
     private sealed interface LogStage {

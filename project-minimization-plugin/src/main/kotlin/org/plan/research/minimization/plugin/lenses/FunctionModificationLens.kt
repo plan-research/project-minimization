@@ -21,4 +21,6 @@ class FunctionModificationLens : BasePsiLens<PsiChildrenIndexDDItem, IntChildren
         psiFile: KtFile,
         context: IJDDContext,
     ): String = "Replacing bodies of PSI elements from ${psiFile.name}"
+
+    override fun currentLevel(context: IJDDContext): List<PsiChildrenIndexDDItem> = context.currentLevel as List<PsiChildrenIndexDDItem>
 }

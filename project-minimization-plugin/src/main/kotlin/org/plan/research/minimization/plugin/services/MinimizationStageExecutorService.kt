@@ -15,7 +15,7 @@ import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.MinimizationStageExecutor
 import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
+import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 import org.plan.research.minimization.plugin.model.item.PsiDDItem
 import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
 import org.plan.research.minimization.plugin.psi.PsiUtils
@@ -30,6 +30,8 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import mu.KotlinLogging
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.ReversedHierarchicalDD
+import org.plan.research.minimization.plugin.model.monad.WithProgressMonadT
+import org.plan.research.minimization.plugin.model.monad.withProgress
 
 @Service(Service.Level.PROJECT)
 class MinimizationStageExecutorService(private val project: Project) : MinimizationStageExecutor {
@@ -39,7 +41,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         logger.info { "Start File level stage" }
         statLogger.info {
             "File level stage settings, " +
-                "DDAlgorithm: ${fileLevelStage.ddAlgorithm}"
+                    "DDAlgorithm: ${fileLevelStage.ddAlgorithm}"
         }
 
         val lightContext = context.asLightContext()
@@ -87,13 +89,12 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         }
 
         firstLevel.logPsiElements(lightContext)
-        lightContext
-            .runMonadWithProgress {
-                ddAlgorithm.minimize(
-                    firstLevel,
-                    propertyChecker,
-                )
-            }
+        lightContext.runMonad {
+            ddAlgorithm.minimize(
+                firstLevel,
+                propertyChecker,
+            )
+        }
     }.logResult("Function Body Replacement")
 
     private suspend fun <T : PsiChildrenPathIndex> List<PsiDDItem<T>>.logPsiElements(context: IJDDContext) {
@@ -105,7 +106,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         }
         logger.trace {
             "Starting DD Algorithm with following elements:\n" +
-                text.joinToString("\n") { "\t- $it" }
+                    text.joinToString("\n") { "\t- $it" }
         }
     }
 
@@ -116,7 +117,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         logger.info { "Start Function deleting stage" }
         statLogger.info {
             "Function deleting stage settings, " +
-                "DDAlgorithm: ${declarationLevelStage.ddAlgorithm}"
+                    "DDAlgorithm: ${declarationLevelStage.ddAlgorithm}"
         }
 
         val lightContext = context.asLightContext().withImportRefCounter()
@@ -141,13 +142,15 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         logger.error { "$stageName level stage failed with error: $error" }
     }
 
-    @Suppress("UNCHECKED_CAST")
     private suspend inline fun <C : IJDDContext> C.runMonadWithProgress(
-        crossinline action: suspend context(IJDDContextMonad<C>) () -> Unit,
-    ): C =
-        withProgress {
-            val monad = IJDDContextMonad(it as C)
-            action(monad)
-            monad.context
-        } as C
+        action: context(WithProgressMonadT<IJDDContextMonad<C>>) () -> Unit,
+    ): C = runMonad { withProgress(action) }
+
+    private inline fun <C : IJDDContext> C.runMonad(
+        action: context(IJDDContextMonad<C>) () -> Unit,
+    ): C {
+        val monad = IJDDContextMonad(this)
+        action(monad)
+        return monad.context
+    }
 }

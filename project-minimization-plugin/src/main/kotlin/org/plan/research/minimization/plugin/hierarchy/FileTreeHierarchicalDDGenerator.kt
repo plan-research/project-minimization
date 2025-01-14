@@ -4,7 +4,7 @@ import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.plugin.model.IJHierarchicalDDGenerator
 import org.plan.research.minimization.plugin.model.IJPropertyTester
 import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
+import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 import org.plan.research.minimization.plugin.model.item.ProjectFileDDItem
 import org.plan.research.minimization.plugin.services.RootsManagerService
 
@@ -15,6 +15,9 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.util.progress.SequentialProgressReporter
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.ReversedHDDLevel
+import org.plan.research.minimization.core.model.Monad
+import org.plan.research.minimization.core.model.lift
+import org.plan.research.minimization.plugin.model.monad.WithProgressMonadT
 
 import java.nio.file.Path
 
@@ -24,40 +27,42 @@ import kotlin.io.path.relativeTo
 class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
     private val propertyTester: IJPropertyTester<C, ProjectFileDDItem>,
 ) : IJHierarchicalDDGenerator<C, ProjectFileDDItem> {
-    private var reporter: ProgressReporter? = null
+    private lateinit var reporter: ProgressReporter<IJDDContextMonad<C>>
 
-    context(IJDDContextMonad<C>)
+    context(WithProgressMonadT<IJDDContextMonad<C>>)
     override suspend fun generateFirstLevel() =
         option {
-            val level = smartReadAction(context.indexProject) {
-                val rootManager = service<RootsManagerService>()
-                val roots = rootManager.findPossibleRoots(context)
+            val level = lift {
+                smartReadAction(context.indexProject) {
+                    val rootManager = service<RootsManagerService>()
+                    val roots = rootManager.findPossibleRoots(context)
 
-                context.progressReporter?.let {
-                    reporter = ProgressReporter(it, context, roots)
+                    reporter = ProgressReporter(context, roots)
+
+                    roots.map { ProjectFileDDItem(it) }
                 }
-
-                roots.map { ProjectFileDDItem(it) }
             }
 
-            reporter?.updateProgress(level)
+            reporter.updateProgress(level)
 
             ReversedHDDLevel(level, propertyTester)
         }
 
-    context(IJDDContextMonad<C>)
+    context(WithProgressMonadT<IJDDContextMonad<C>>)
     override suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<ProjectFileDDItem>) =
         option {
-            val nextFiles = minimizationResult.flatMap {
-                val vf = it.getVirtualFile(context) ?: return@flatMap emptyList()
-                readAction { vf.children }
-                    .map { file ->
-                        ProjectFileDDItem.create(context, file)
-                    }
+            val nextFiles = lift {
+                minimizationResult.flatMap {
+                    val vf = it.getVirtualFile(context) ?: return@flatMap emptyList()
+                    readAction { vf.children }
+                        .map { file ->
+                            ProjectFileDDItem.create(context, file)
+                        }
+                }
             }
             ensure(nextFiles.isNotEmpty())
 
-            reporter?.updateProgress(nextFiles)
+            reporter.updateProgress(nextFiles)
 
             ReversedHDDLevel(nextFiles, propertyTester)
         }
@@ -73,13 +78,14 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
      * @property reporter An instance of [SequentialProgressReporter] used for updating the progress.
      * @constructor Creates a new instance of [ProgressReporter] based on the given root path and the array of root files.
      */
-    private class ProgressReporter(val reporter: SequentialProgressReporter, context: IJDDContext, roots: List<Path>) {
+    context(WithProgressMonadT<M>)
+    private class ProgressReporter<M : Monad>(context: IJDDContext, roots: List<Path>) {
         @Volatile
         private var currentLevel = 0
         private val levelMaxDepths = HashMap<Path, Int>()
 
         init {
-            reporter.nextStep(1)
+            nextStep(1)
             computeLevels(context, roots)
         }
 
@@ -122,7 +128,7 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
         fun updateProgress(level: List<ProjectFileDDItem>) {
             currentLevel += 1
             val maxDepth = level.maxOf { levelMaxDepths[it.localPath]!! }
-            reporter.nextStep((100 * currentLevel) / maxDepth)
+            nextStep((100 * currentLevel) / maxDepth)
         }
 
         private data class StackEntry(val file: VirtualFile, val level: Int, var nextChildIndex: Int = 0)

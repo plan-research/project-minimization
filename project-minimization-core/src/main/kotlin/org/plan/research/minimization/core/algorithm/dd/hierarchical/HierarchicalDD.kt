@@ -8,6 +8,8 @@ import arrow.core.getOrElse
 import kotlinx.coroutines.yield
 import org.plan.research.minimization.core.algorithm.dd.ReversedDDAlgorithm
 import org.plan.research.minimization.core.model.Monad
+import org.plan.research.minimization.core.model.MonadT
+import org.plan.research.minimization.core.model.lift
 
 /**
  * The `HierarchicalDD` class provides a wrapper around a base delta debugging algorithm to facilitate
@@ -20,11 +22,13 @@ import org.plan.research.minimization.core.model.Monad
  */
 class HierarchicalDD(private val baseDDAlgorithm: DDAlgorithm) {
     context(M)
-    suspend fun <M : Monad, T : DDItem> minimize(generator: HierarchicalDDGenerator<M, T>) {
+    suspend fun <M : MonadT<M2>, M2 : Monad, T : DDItem> minimize(generator: HierarchicalDDGenerator<M, M2, T>) {
         var level = generator.generateFirstLevel().getOrElse { return }
         while (true) {
             yield()
-            val minimizedLevel = baseDDAlgorithm.minimize(level.items, level.propertyTester)
+            val minimizedLevel = lift {
+                baseDDAlgorithm.minimize(level.items, level.propertyTester)
+            }
             level = generator.generateNextLevel(minimizedLevel).getOrElse { return }
         }
     }
@@ -32,11 +36,13 @@ class HierarchicalDD(private val baseDDAlgorithm: DDAlgorithm) {
 
 class ReversedHierarchicalDD(private val baseDDAlgorithm: ReversedDDAlgorithm) {
     context(M)
-    suspend fun <M : Monad, T : DDItem> minimize(generator: ReversedHierarchicalDDGenerator<M, T>) {
+    suspend fun <M : MonadT<M2>, M2: Monad, T : DDItem> minimize(generator: ReversedHierarchicalDDGenerator<M, M2, T>) {
         var level = generator.generateFirstLevel().getOrElse { return }
         while (true) {
             yield()
-            val minimizedLevel = baseDDAlgorithm.minimize(level.items, level.propertyTester)
+            val minimizedLevel = lift {
+                baseDDAlgorithm.minimize(level.items, level.propertyTester)
+            }
             level = generator.generateNextLevel(minimizedLevel).getOrElse { return }
         }
     }

@@ -2,7 +2,7 @@ package org.plan.research.minimization.plugin.model.snapshot
 
 import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
+import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 
 import arrow.core.Either
 import arrow.core.raise.Raise

@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.lenses
 
 import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
+import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
 import org.plan.research.minimization.plugin.psi.PsiImportRefCounter
 import org.plan.research.minimization.plugin.psi.PsiUtils

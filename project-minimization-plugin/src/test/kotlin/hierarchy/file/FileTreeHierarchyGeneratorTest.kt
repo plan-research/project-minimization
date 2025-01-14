@@ -12,13 +12,14 @@ import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.testFramework.UsefulTestCase
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
+import org.plan.research.minimization.core.model.lift
 import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchicalDDGenerator
 import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchyGenerator
 import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.context.LightIJDDContext
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
-import runMonad
+import runMonadWithEmptyProgress
 import kotlin.io.path.name
 import kotlin.test.assertIs
 
@@ -36,8 +37,8 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
 
     fun testWithEmptyProject() {
         val project = myFixture.project
-        LightIJDDContext(project).runMonad {
-            val generator = generateHierarchicalDDGenerator(context)
+        LightIJDDContext(project).runMonadWithEmptyProgress {
+            val generator = generateHierarchicalDDGenerator(lift { context })
 
             val firstLevel = runWithModalProgressBlocking(project, "") {
                 generator.generateFirstLevel().getOrNull()
@@ -61,8 +62,8 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
         val psiManager = PsiManager.getInstance(project)
         val projectRootPsi = psiManager.findDirectory(projectRoot)!!
         assertEquals(1, getPsiDepth(psiFile) - getPsiDepth(projectRootPsi))
-        LightIJDDContext(project).runMonad {
-            val generator = generateHierarchicalDDGenerator(context)
+        LightIJDDContext(project).runMonadWithEmptyProgress {
+            val generator = generateHierarchicalDDGenerator(lift { context })
 
             val firstLevel = runWithModalProgressBlocking(project, "") {
                 generator.generateFirstLevel().getOrNull()
@@ -98,10 +99,10 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
         val projectRoot = project.guessProjectDir()!!
         val psiManager = PsiManager.getInstance(project)
         val projectRootPsi = psiManager.findDirectory(projectRoot)!!
-        LightIJDDContext(project).runMonad {
+        LightIJDDContext(project).runMonadWithEmptyProgress {
             assertEquals(12, getPsiDepth(psiFile) - getPsiDepth(projectRootPsi))
 
-            val generator = generateHierarchicalDDGenerator(context)
+            val generator = generateHierarchicalDDGenerator(lift { context })
             var currentLevel =
                 runWithModalProgressBlocking(project, "") { generator.generateFirstLevel().getOrNull() }!!
             assertSize(1, currentLevel.items)
@@ -121,14 +122,14 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
             for (i in 0..9) {
                 assertSize(2, currentLevel.items)
                 val directory =
-                    currentLevel.items.map { it.getVirtualFile(context)!! }.filter { it.isDirectory }
-                val file = currentLevel.items.map { it.getVirtualFile(context)!! }.filter { it.isFile }
+                    currentLevel.items.map { it.getVirtualFile(lift { context })!! }.filter { it.isDirectory }
+                val file = currentLevel.items.map { it.getVirtualFile(lift { context })!! }.filter { it.isFile }
                 assertSize(1, directory)
                 assertSize(1, file)
                 assertEquals("$i.txt", file.first().name)
                 assertEquals("$i", directory.first().name)
                 val nextElements =
-                    currentLevel.items.filterNot { it.getVirtualFile(context)!!.isDirectory }
+                    currentLevel.items.filterNot { it.getVirtualFile(lift { context })!!.isDirectory }
                 val nextLevelWithoutDirectory =
                     runWithModalProgressBlocking(project, "") { generator.generateNextLevel(nextElements).getOrNull() }
                 assertNull(nextLevelWithoutDirectory)

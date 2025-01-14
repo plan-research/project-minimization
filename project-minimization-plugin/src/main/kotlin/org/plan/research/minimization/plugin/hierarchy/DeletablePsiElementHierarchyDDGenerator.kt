@@ -4,7 +4,7 @@ import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.plugin.model.IJHierarchicalDDGenerator
 import org.plan.research.minimization.plugin.model.IJPropertyTester
 import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
+import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
 import org.plan.research.minimization.plugin.psi.CompressingPsiItemTrie.NextPsiDDItemInfo
 import org.plan.research.minimization.plugin.psi.StubCompressingPsiTrie
@@ -12,8 +12,9 @@ import org.plan.research.minimization.plugin.psi.stub.KtStub
 
 import arrow.core.None
 import arrow.core.raise.option
-import com.intellij.platform.util.progress.SequentialProgressReporter
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.ReversedHDDLevel
+import org.plan.research.minimization.core.model.Monad
+import org.plan.research.minimization.plugin.model.monad.WithProgressMonadT
 
 import java.nio.file.Path
 
@@ -26,9 +27,9 @@ class DeletablePsiElementHierarchyDDGenerator<C : IJDDContext>(
     private val cache: MutableMap<PsiStubDDItem, StubCompressingPsiTrie> = mutableMapOf()
     private val maximumTrieDepth = perFileTries.maxOf { (_, trie) -> trie.maxDepth }
 
-    context(IJDDContextMonad<C>)
+    context(WithProgressMonadT<IJDDContextMonad<C>>)
     override suspend fun generateFirstLevel() = option {
-        context.progressReporter?.nextStep(1)  // Initial step of the progress bar
+        nextStep(1)  // Initial step of the progress bar
 
         val firstLevelItems = perFileTries.values
             .cache()
@@ -37,14 +38,14 @@ class DeletablePsiElementHierarchyDDGenerator<C : IJDDContext>(
         ReversedHDDLevel(firstLevelItems, propertyChecker)
     }
 
-    context(IJDDContextMonad<C>)
+    context(WithProgressMonadT<IJDDContextMonad<C>>)
     override suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<PsiStubDDItem>) =
         option {
             val nextNodesInTrie = minimizationResult
                 .map { cache[it] ?: raise(None) }
                 .cache()
             ensure(nextNodesInTrie.isNotEmpty())
-            context.progressReporter?.let { nextNodesInTrie.reportProgress(it) }
+            nextNodesInTrie.reportProgress()
             val nextItems = nextNodesInTrie.map(DeletableNextItemInfo::item)
 
             ReversedHDDLevel(nextItems, propertyChecker)
@@ -53,9 +54,10 @@ class DeletablePsiElementHierarchyDDGenerator<C : IJDDContext>(
     private fun Collection<StubCompressingPsiTrie>.cache() = flatMap { it.getNextItems() }
         .onEach { (trieNode, item) -> cache[item] = trieNode }
 
+    context(WithProgressMonadT<M>)
     @Suppress("MAGIC_NUMBER")
-    private fun List<DeletableNextItemInfo>.reportProgress(reporter: SequentialProgressReporter) {
+    private fun <M : Monad> List<DeletableNextItemInfo>.reportProgress() {
         val currentLevel = first().depth  // should be equal across all nodes
-        reporter.nextStep((100 * currentLevel) / maximumTrieDepth)
+        nextStep((100 * currentLevel) / maximumTrieDepth)
     }
 }

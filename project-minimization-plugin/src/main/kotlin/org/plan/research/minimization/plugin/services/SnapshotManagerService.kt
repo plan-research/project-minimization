@@ -2,7 +2,7 @@ package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.plugin.getSnapshotManager
 import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.context.IJDDContextMonad
+import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.model.snapshot.TransactionAction
 import org.plan.research.minimization.plugin.model.snapshot.TransactionResult

@@ -8,6 +8,13 @@ import java.util.Objects
 
 import kotlinx.serialization.Serializable
 
+val KotlincException.positionOrNull: CaretPosition?
+    get() = when (this) {
+        is KotlincException.BackendCompilerException -> this.position
+        is KotlincException.GeneralKotlincException -> this.position
+        else -> null
+    }
+
 @Serializable
 sealed interface KotlincException : CompilationException {
     override suspend fun apply(
@@ -35,24 +42,6 @@ sealed interface KotlincException : CompilationException {
     }
 
     /**
-     * Represents a generic internal compiler exception that occurs within the Kotlin compiler.
-     * It could be a frontend / backend (linker, etc.) / tooling exception that doesn't have `CompilerException` type
-     *
-     * @property stacktrace A string representing the stacktrace of the exception.
-     * @property message A string representing a human-readable message describing the exception.
-     */
-    @Serializable
-    data class GenericInternalCompilerException(
-        val stacktrace: String?,
-        val message: String,
-    ) : KotlincException {
-        override suspend fun apply(
-            transformation: ExceptionTransformation,
-            context: IJDDContext,
-        ) = transformation.transform(this, context)
-    }
-
-    /**
      * A data class that represents a general compilation error from kotlin compiler e.g., syntax errors or just expected exceptions
      * @property position a position where the exception occurred
      * @property message a human-readable description of the problem (without position and severity)
@@ -70,13 +59,31 @@ sealed interface KotlincException : CompilationException {
         ) = transformation.transform(this, context)
 
         override fun equals(other: Any?): Boolean {
-            if (other !is GeneralKotlincException) return false
+            if (other !is GeneralKotlincException) {
+                return false
+            }
             return message == other.message && severity == other.severity
         }
 
-        override fun hashCode(): Int {
-            return Objects.hash(message, severity)
-        }
+        override fun hashCode(): Int = Objects.hash(message, severity)
+    }
+
+    /**
+     * Represents a generic internal compiler exception that occurs within the Kotlin compiler.
+     * It could be a frontend / backend (linker, etc.) / tooling exception that doesn't have `CompilerException` type
+     *
+     * @property stacktrace A string representing the stacktrace of the exception.
+     * @property message A string representing a human-readable message describing the exception.
+     */
+    @Serializable
+    data class GenericInternalCompilerException(
+        val stacktrace: String?,
+        val message: String,
+    ) : KotlincException {
+        override suspend fun apply(
+            transformation: ExceptionTransformation,
+            context: IJDDContext,
+        ) = transformation.transform(this, context)
     }
     @Serializable
     data class KspException(
@@ -90,10 +97,3 @@ sealed interface KotlincException : CompilationException {
         ) = transformation.transform(this, context)
     }
 }
-
-val KotlincException.positionOrNull: CaretPosition?
-    get() = when (this) {
-        is KotlincException.BackendCompilerException -> this.position
-        is KotlincException.GeneralKotlincException -> this.position
-        else -> null
-    }

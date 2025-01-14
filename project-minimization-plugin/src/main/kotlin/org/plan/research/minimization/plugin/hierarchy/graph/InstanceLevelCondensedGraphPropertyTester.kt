@@ -1,15 +1,5 @@
 package org.plan.research.minimization.plugin.hierarchy.graph
 
-import com.intellij.util.io.createDirectories
-import guru.nidi.graphviz.attribute.Attributes
-import guru.nidi.graphviz.attribute.Color
-import guru.nidi.graphviz.attribute.ForNode
-import guru.nidi.graphviz.engine.Engine
-import guru.nidi.graphviz.engine.Format
-import guru.nidi.graphviz.engine.Graphviz
-import guru.nidi.graphviz.graph
-import guru.nidi.graphviz.model.MutableGraph
-import mu.KotlinLogging
 import org.plan.research.minimization.core.model.PropertyTestResult
 import org.plan.research.minimization.core.model.PropertyTester
 import org.plan.research.minimization.core.model.PropertyTesterWithGraph
@@ -22,6 +12,17 @@ import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelEdg
 import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelGraph
 import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelNode
 import org.plan.research.minimization.plugin.psi.graph.InstanceLevelGraph
+
+import com.intellij.util.io.createDirectories
+import guru.nidi.graphviz.attribute.Attributes
+import guru.nidi.graphviz.attribute.Color
+import guru.nidi.graphviz.attribute.ForNode
+import guru.nidi.graphviz.engine.Format
+import guru.nidi.graphviz.engine.Graphviz
+import guru.nidi.graphviz.graph
+import guru.nidi.graphviz.model.MutableGraph
+import mu.KotlinLogging
+
 import kotlin.io.path.Path
 import kotlin.io.path.exists
 import kotlin.io.path.writeText
@@ -37,11 +38,11 @@ private typealias NodeAttributes = Array<Attributes<out ForNode>>
  */
 class InstanceLevelCondensedGraphPropertyTester(val backingPropertyTester: PropertyTester<IJDDContext, PsiStubDDItem>) :
     PropertyTesterWithGraph<
-            IJDDContext,
-            CondensedInstanceLevelNode,
-            CondensedInstanceLevelEdge,
-            CondensedInstanceLevelGraph
-            > {
+IJDDContext,
+CondensedInstanceLevelNode,
+CondensedInstanceLevelEdge,
+CondensedInstanceLevelGraph
+> {
     /**
      * A logging location for the saved condensed graph. The graph dumps are used for the debugging.
      */
@@ -59,19 +60,19 @@ class InstanceLevelCondensedGraphPropertyTester(val backingPropertyTester: Prope
 
     override suspend fun test(
         context: IJDDContext,
-        cut: GraphCut<CondensedInstanceLevelNode>
+        cut: GraphCut<CondensedInstanceLevelNode>,
     ): PropertyTestResult<IJDDContext> {
         return backingPropertyTester.test(
             context,
-            cut.selectedVertices.flatMap { it.underlyingVertexes }
+            cut.selectedVertices.flatMap { it.underlyingVertexes },
         )
-//            .also {
-//                val graph =
-//                    requireNotNull(context.graph) { "To use graph algorithms graph should be set and condensed graph should exists" }
-                  // FIXME: add a settings flag to enable it
-//                logger.debug { "Testing iteration=$iteration, result=$it" }
-//                graph.dump(cut)
-//            }
+        // .also {
+        // val graph =
+        // requireNotNull(context.graph) { "To use graph algorithms graph should be set and condensed graph should exists" }
+        // FIXME: add a settings flag to enable it
+        // logger.debug { "Testing iteration=$iteration, result=$it" }
+        // graph.dump(cut)
+        // }
     }
 
     @Suppress("unused")
@@ -86,25 +87,25 @@ class InstanceLevelCondensedGraphPropertyTester(val backingPropertyTester: Prope
                 when (it) {
                     in cutVertices -> Color.RED
                     else -> Color.BLACK
-                }
+                },
             )
         }
         val instanceLevelGraph = InstanceLevelGraph(
             vertices.flatMap { it.underlyingVertexes },
-            edges.flatMap { it.originalEdges } + vertices.flatMap { it.edgesInCondensed }
+            edges.flatMap { it.originalEdges } + vertices.flatMap { it.edgesInCondensed },
         )
         val representation = GraphToImageDumper.dumpGraph(
             instanceLevelGraph,
             stringify = stringifyFunction,
-            nodeAttributes = nodeAttributes
+            nodeAttributes = nodeAttributes,
         )
         val clusters = addClusters(stringifyFunction, nodeAttributes)
         val representationWithClusters = representation.toMutable().add(clusters.map { it.setCluster(true) })
 
         val projectRoot = loggingLocation
-        val graphViz = Graphviz.fromGraph(representationWithClusters).height(5000).width(5000)
-        projectRoot.resolve("${iteration}.dot").writeText(representationWithClusters.toString())
-        graphViz.render(Format.SVG).toFile(projectRoot.resolve("${iteration}.svg").toFile())
+        val graphViz = Graphviz.fromGraph(representationWithClusters).height(DUMP_IMAGE_HEIGHT).width(DUMP_IMAGE_WIDTH)
+        projectRoot.resolve("$iteration.dot").writeText(representationWithClusters.toString())
+        graphViz.render(Format.SVG).toFile(projectRoot.resolve("$iteration.svg").toFile())
         iteration++
     }
 
@@ -113,10 +114,14 @@ class InstanceLevelCondensedGraphPropertyTester(val backingPropertyTester: Prope
         nodeAttributes: (PsiStubDDItem) -> NodeAttributes,
     ): List<MutableGraph> = vertices
         .mapIndexed { idx, it ->
-            graph("cluster_${idx}") {
+            graph("cluster_$idx") {
                 it.underlyingVertexes.forEach {
                     stringify(it).get(*nodeAttributes(it))
                 }
             }
         }
+    companion object {
+        private const val DUMP_IMAGE_HEIGHT = 5000
+        private const val DUMP_IMAGE_WIDTH = 5000
+    }
 }

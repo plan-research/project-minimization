@@ -4,11 +4,9 @@ import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
 import org.jetbrains.kotlin.analysis.api.resolution.calls
-import org.jetbrains.kotlin.analysis.api.resolution.singleCallOrNull
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
 import org.jetbrains.kotlin.analysis.api.symbols.psi
 import org.jetbrains.kotlin.analysis.api.symbols.psiSafe
-import org.jetbrains.kotlin.analysis.api.symbols.sourcePsi
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.idea.references.mainReference
 import org.jetbrains.kotlin.psi.KtCallExpression
@@ -16,7 +14,7 @@ import org.jetbrains.kotlin.psi.KtReferenceExpression
 
 object DefinitionAndCallDeclarationLookup {
     fun getReferenceDeclaration(element: PsiElement): List<PsiElement> = when (element) {
-//        is KtCallExpression -> getCallInfo(element)
+        // is KtCallExpression -> getCallInfo(element)
         is KtReferenceExpression -> getReference(element)
         else -> emptyList()
     }
@@ -25,7 +23,7 @@ object DefinitionAndCallDeclarationLookup {
         ref
             .mainReference
             .resolveToSymbols()
-            .mapNotNull { it.psiSafe<PsiElement>()}
+            .mapNotNull { it.psiSafe<PsiElement>() }
             .filter { it.language == KotlinLanguage.INSTANCE }
     }
 

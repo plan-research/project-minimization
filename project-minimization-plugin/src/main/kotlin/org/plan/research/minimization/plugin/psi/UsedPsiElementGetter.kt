@@ -26,10 +26,9 @@ class UsedPsiElementGetter(private val insideFunction: Boolean) : KtVisitorVoid(
 
     override fun visitClass(klass: KtClass) = Unit
     override fun visitObjectDeclaration(declaration: KtObjectDeclaration) = Unit
-    override fun visitNamedFunction(function: KtNamedFunction) = if (function.name == null) // If that is anonymous function like return `fun () {}`
-        super.visitNamedFunction(function)
-    else
+    override fun visitNamedFunction(function: KtNamedFunction) = function.name?.let {
         Unit
+    } ?: super.visitNamedFunction(function)
 
     override fun visitProperty(property: KtProperty) = if (insideFunction) super.visitProperty(property) else Unit
     override fun visitDotQualifiedExpression(expression: KtDotQualifiedExpression) {
@@ -39,7 +38,7 @@ class UsedPsiElementGetter(private val insideFunction: Boolean) : KtVisitorVoid(
     override fun visitKtElement(element: KtElement) {
         super.visitKtElement(element)
         collectedReferences.addAll(
-            KotlinElementLookup.lookupEverything(element)
+            KotlinElementLookup.lookupEverything(element),
         )
         element.acceptChildren(this)
     }

@@ -1,5 +1,9 @@
 package org.plan.research.minimization.plugin.services
 
+import org.plan.research.minimization.core.utils.graph.GraphToImageDumper
+import org.plan.research.minimization.plugin.model.HeavyIJDDContext
+import org.plan.research.minimization.plugin.psi.graph.PsiIJEdge
+
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -8,11 +12,9 @@ import guru.nidi.graphviz.attribute.Color
 import guru.nidi.graphviz.attribute.Style
 import guru.nidi.graphviz.engine.Format
 import guru.nidi.graphviz.engine.Graphviz
+
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import org.plan.research.minimization.core.utils.graph.GraphToImageDumper
-import org.plan.research.minimization.plugin.model.HeavyIJDDContext
-import org.plan.research.minimization.plugin.psi.graph.PsiIJEdge
 
 @Service(Service.Level.PROJECT)
 class TestGraphService(private val project: Project, private val coroutineScope: CoroutineScope) {
@@ -29,7 +31,7 @@ class TestGraphService(private val project: Project, private val coroutineScope:
                     is PsiIJEdge.Overload -> arrayOf(Style.DASHED)
                     is PsiIJEdge.ObligatoryOverride -> arrayOf(Style.DASHED, Color.RED)
                 }
-            }
+            },
         )
         val projectRoot = project.guessProjectDir()!!.toNioPath()
         val graphViz = Graphviz.fromGraph(representation)

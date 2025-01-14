@@ -1,13 +1,14 @@
 package org.plan.research.minimization.plugin.psi
 
-import com.intellij.psi.PsiElement
-import com.intellij.util.concurrency.annotations.RequiresReadLock
-import org.jetbrains.kotlin.psi.KtPrimaryConstructor
-import org.jetbrains.kotlin.psi.KtSecondaryConstructor
 import org.plan.research.minimization.plugin.psi.lookup.AbstractOverriddenLookup
 import org.plan.research.minimization.plugin.psi.lookup.DefinitionAndCallDeclarationLookup
 import org.plan.research.minimization.plugin.psi.lookup.ExpectDeclarationLookup
 import org.plan.research.minimization.plugin.psi.lookup.TypeDeclarationLookup
+
+import com.intellij.psi.PsiElement
+import com.intellij.util.concurrency.annotations.RequiresReadLock
+import org.jetbrains.kotlin.psi.KtPrimaryConstructor
+import org.jetbrains.kotlin.psi.KtSecondaryConstructor
 
 object KotlinElementLookup {
     @RequiresReadLock
@@ -36,10 +37,9 @@ object KotlinElementLookup {
     @RequiresReadLock
     fun lookupObligatoryOverrides(element: PsiElement) = AbstractOverriddenLookup.lookupDirectlyOverridden(element)
 
-
     private fun PsiElement.propagateToConstructor() = when (this) {
-        is KtPrimaryConstructor -> parent // KtPrimaryConstructor -> KtClass
-        is KtSecondaryConstructor -> parent.parent // KtSecondaryConstructor -> KtClassBody -> KtClass
+        is KtPrimaryConstructor -> parent  // KtPrimaryConstructor -> KtClass
+        is KtSecondaryConstructor -> parent.parent  // KtSecondaryConstructor -> KtClassBody -> KtClass
         else -> this
 
     }

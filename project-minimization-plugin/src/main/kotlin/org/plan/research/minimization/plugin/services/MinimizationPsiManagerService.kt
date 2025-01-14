@@ -3,9 +3,12 @@ package org.plan.research.minimization.plugin.services
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.model.PsiStubDDItem
+import org.plan.research.minimization.plugin.psi.KotlinElementLookup
 import org.plan.research.minimization.plugin.psi.KotlinOverriddenElementsGetter
 import org.plan.research.minimization.plugin.psi.PsiDSU
 import org.plan.research.minimization.plugin.psi.PsiUtils
+import org.plan.research.minimization.plugin.psi.graph.InstanceLevelGraph
+import org.plan.research.minimization.plugin.psi.graph.PsiIJEdge
 
 import arrow.core.compareTo
 import com.intellij.openapi.application.smartReadAction
@@ -28,13 +31,9 @@ import org.jetbrains.kotlin.config.SourceKotlinRootType
 import org.jetbrains.kotlin.config.TestSourceKotlinRootType
 import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.psi.KtElement
-import org.jetbrains.kotlin.psi.KtExpression
-
 import org.jetbrains.kotlin.psi.KtPrimaryConstructor
 import org.jetbrains.kotlin.psi.KtValVarKeywordOwner
-import org.plan.research.minimization.plugin.psi.KotlinElementLookup
-import org.plan.research.minimization.plugin.psi.graph.PsiIJEdge
-import org.plan.research.minimization.plugin.psi.graph.InstanceLevelGraph
+
 import kotlin.collections.singleOrNull
 import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
@@ -69,15 +68,17 @@ class MinimizationPsiManagerService {
      */
     suspend fun findDeletablePsiItems(
         context: IJDDContext,
-        compressOverridden: Boolean = true
+        compressOverridden: Boolean = true,
     ): List<PsiStubDDItem> = smartReadAction(context.indexProject) {
         if (compressOverridden) {
             findDeletablePsiItemsCompressed(context)
-        } else findDeletablePsiItemsWithoutCompression(context).map { it.second }
+        } else {
+            findDeletablePsiItemsWithoutCompression(context).map { it.second }
+        }
     }
 
     @RequiresReadLock
-    private fun findDeletablePsiItemsWithoutCompression(context: IJDDContext): List<Pair<KtExpression, PsiStubDDItem>> =
+    private fun findDeletablePsiItemsWithoutCompression(context: IJDDContext) =
         findPsiInKotlinFiles(context, PsiStubDDItem.DELETABLE_PSI_JAVA_CLASSES)
             .mapNotNull { psiElement ->
                 PsiUtils.buildDeletablePsiItem(context, psiElement).getOrNull()?.let { psiElement to it }
@@ -105,50 +106,50 @@ class MinimizationPsiManagerService {
      * @param context The minimization context containing information about the current project and relevant properties.
      * @return An instance of [InstanceLevelGraph] containing the vertices (deletable PSI items) and edges (connections between them).
      */
-    suspend fun buildDeletablePsiGraph(context: IJDDContext): InstanceLevelGraph {
-        return smartReadAction(context.indexProject) {
-            val nodes = findDeletablePsiItemsWithoutCompression(context)
-            val psiCache = nodes.associate { it.first to it.second }
-            // TODO: Add file hierarchy?
-//            val filesNodes = nodes
-//                .map { (item) -> PsiStubDDItem.NonOverriddenPsiStubDDItem(item.localPath, emptyList()) }
-//            val fileEdges = nodes.zip(filesNodes).map { (from, fileNode) -> IJEdge.PSITreeEdge(from.first, fileNode) }
-            val psiEdges = nodes.flatMap { (_, from) ->
-                PsiUtils
-                    .findAllParentElements(context, from)
-                    .map { PsiIJEdge.PSITreeEdge(from, it) }
-            }
-            val overloadEdges = nodes.flatMap { (element, from) ->
-                KotlinOverriddenElementsGetter
-                    .getOverriddenElements(element)
-                    .asSequence()
-                    .filter { it.isFromContext(context) }
-                    .mapNotNull(psiCache::get)
-                    .map { PsiIJEdge.Overload(from, it) }
-            }
-            val usageEdges = nodes.flatMap { (element, from) ->
-                PsiUtils.collectUsages(element)
-                    .asSequence()
-                    .filter { it.isFromContext(context) }
-                    .mapNotNull(psiCache::get)
-                    .map { PsiIJEdge.UsageInPSIElement(from, it) }
-            }
-            val obligatoryOverride = nodes.flatMap { (element, from) ->
-                KotlinElementLookup.lookupObligatoryOverrides(element)
-                    .asSequence()
-                    .filter { it.isFromContext(context) }
-                    .mapNotNull(psiCache::get)
-                    .map { PsiIJEdge.ObligatoryOverride(from, it) }
-            }
-            InstanceLevelGraph(
-                vertices = nodes.map(Pair<*, PsiStubDDItem>::second) /*+ filesNodes.distinct()*/,
-                edges = psiEdges + overloadEdges + usageEdges + obligatoryOverride/*+ fileEdges*/
-            )
+    suspend fun buildDeletablePsiGraph(context: IJDDContext): InstanceLevelGraph = smartReadAction(context.indexProject) {
+        val nodes = findDeletablePsiItemsWithoutCompression(context)
+        val psiCache = nodes.associate { it.first to it.second }
+        // TODO: Add file hierarchy?
+        // val filesNodes = nodes
+        // .map { (item) -> PsiStubDDItem.NonOverriddenPsiStubDDItem(item.localPath, emptyList()) }
+        // val fileEdges = nodes.zip(filesNodes).map { (from, fileNode) -> IJEdge.PSITreeEdge(from.first, fileNode) }
+        val psiEdges = nodes.flatMap { (_, from) ->
+            PsiUtils
+                .findAllParentElements(context, from)
+                .map { PsiIJEdge.PSITreeEdge(from, it) }
         }
+        val overloadEdges = nodes.flatMap { (element, from) ->
+            KotlinOverriddenElementsGetter
+                .getOverriddenElements(element)
+                .asSequence()
+                .filter { it.isFromContext(context) }
+                .mapNotNull(psiCache::get)
+                .map { PsiIJEdge.Overload(from, it) }
+        }
+        val usageEdges = nodes.flatMap { (element, from) ->
+            PsiUtils.collectUsages(element)
+                .asSequence()
+                .filter { it.isFromContext(context) }
+                .mapNotNull(psiCache::get)
+                .map { PsiIJEdge.UsageInPSIElement(from, it) }
+        }
+        val obligatoryOverride = nodes.flatMap { (element, from) ->
+            KotlinElementLookup.lookupObligatoryOverrides(element)
+                .asSequence()
+                .filter { it.isFromContext(context) }
+                .mapNotNull(psiCache::get)
+                .map { PsiIJEdge.ObligatoryOverride(from, it) }
+        }
+        InstanceLevelGraph(
+            vertices = nodes.map(Pair<*, PsiStubDDItem>::second),
+            edges = psiEdges + overloadEdges + usageEdges + obligatoryOverride,
+        )
     }
 
     /**
      * Finds all kotlin files inside the given context that are in the source roots
+     *
+     * @param context
      */
     @RequiresReadLock
     fun findAllKotlinFilesInIndexProject(context: IJDDContext): List<VirtualFile> {
@@ -161,7 +162,7 @@ class MinimizationPsiManagerService {
         }
         val scope = GlobalSearchScopes.directoriesScope(context.indexProject, true, *rootFiles.toTypedArray())
             .intersectWith(SourcesScope(context.indexProject))
-//        return FileTypeIndex.getFiles(KotlinFileType.INSTANCE, scope).toList()
+        // return FileTypeIndex.getFiles(KotlinFileType.INSTANCE, scope).toList()
         return myVirtualFileTraverse(rootFiles)
     }
 
@@ -263,7 +264,6 @@ class MinimizationPsiManagerService {
         containingFile?.virtualFile?.let {
             ProjectFileIndex.getInstance(context.indexProject).isInProject(it)
         } == true
-
 
     private class SourcesScope(project: Project) : GlobalSearchScope(project) {
         private val index = ProjectFileIndex.getInstance(project)

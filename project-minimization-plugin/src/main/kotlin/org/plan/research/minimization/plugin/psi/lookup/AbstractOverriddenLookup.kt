@@ -28,7 +28,7 @@ object AbstractOverriddenLookup {
         analyze(this) {
             val overrides = (this@getIfObligatoryImplementation.symbol as? KaCallableSymbol)
                 ?.allOverriddenSymbols
-                ?.mapNotNull { it.psiSafe<KtCallableDeclaration>() } // FIXME: No place for Java
+                ?.mapNotNull { it.psiSafe<KtCallableDeclaration>() }  // FIXME: No place for Java
                 ?.toList()
                 ?: return null
             this@getIfObligatoryImplementation

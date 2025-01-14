@@ -44,8 +44,8 @@
                 class="org.plan.research.minimization.plugin.MinimizeProjectAction" text="Minimize Project">
             <add-to-group group-id="CodeMenu" anchor="first"/>
         </action>
-        <action id="org.plan.research.minimization.plugin.testActions.DumpDeletablePsiGraphAction"
-                class="org.plan.research.minimization.plugin.testActions.DumpDeletablePsiGraphAction"
+        <action id="org.plan.research.minimization.plugin.test.actions.DumpDeletablePsiGraphAction"
+                class="org.plan.research.minimization.plugin.test.actions.DumpDeletablePsiGraphAction"
                 text="Dump Instance-Level Graph" description="Dumps instance-level graph"
                 internal="true"/>
     </actions>

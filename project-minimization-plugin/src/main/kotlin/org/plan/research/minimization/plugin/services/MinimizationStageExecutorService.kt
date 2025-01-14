@@ -1,6 +1,7 @@
 package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDD
+import org.plan.research.minimization.core.algorithm.dd.withZeroTesting
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.execution.DebugPropertyCheckingListener
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
@@ -8,6 +9,7 @@ import org.plan.research.minimization.plugin.getDDAlgorithm
 import org.plan.research.minimization.plugin.getExceptionComparator
 import org.plan.research.minimization.plugin.getHierarchyCollectionStrategy
 import org.plan.research.minimization.plugin.hierarchy.DeletablePsiElementHierarchyGenerator
+import org.plan.research.minimization.plugin.hierarchy.graph.InstanceLevelLayerHierarchyBuilder
 import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
 import org.plan.research.minimization.plugin.logging.statLogger
 import org.plan.research.minimization.plugin.model.*
@@ -22,8 +24,6 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import mu.KotlinLogging
-import org.plan.research.minimization.core.algorithm.dd.withZeroTesting
-import org.plan.research.minimization.plugin.hierarchy.graph.InstanceLevelLayerHierarchyBuilder
 
 @Service(Service.Level.PROJECT)
 class MinimizationStageExecutorService(private val project: Project) : MinimizationStageExecutor {
@@ -133,9 +133,9 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
 
     override suspend fun executeDeclarationGraphStage(
         context: HeavyIJDDContext,
-        declarationGraphStage: DeclarationGraphStage
+        declarationGraphStage: DeclarationGraphStage,
     ) = either {
-        logger.info { "Start Function Deleting Graph stage"}
+        logger.info { "Start Function Deleting Graph stage" }
         statLogger.info {
             "Function deleting Graph stage settings, " +
                 "DDAlgorithm: ${declarationGraphStage.ddAlgorithm}"

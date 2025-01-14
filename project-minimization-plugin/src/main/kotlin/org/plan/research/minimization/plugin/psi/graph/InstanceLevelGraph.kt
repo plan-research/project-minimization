@@ -8,17 +8,17 @@ import org.plan.research.minimization.core.model.graph.GraphWithAdjacencyList
 import org.plan.research.minimization.core.utils.graph.GraphToImageDumper
 import org.plan.research.minimization.plugin.model.PsiStubDDItem
 
-
 typealias CondensedInstanceLevelGraph = CondensedGraph<PsiStubDDItem, PsiIJEdge>
 typealias CondensedInstanceLevelNode = CondensedVertex<PsiStubDDItem, PsiIJEdge>
 typealias CondensedInstanceLevelEdge = CondensedEdge<PsiStubDDItem, PsiIJEdge>
+private typealias CondensedInstanceLevelAdjacencyList = Map<PsiStubDDItem, List<PsiIJEdge>>
 
 data class InstanceLevelGraph(
     override val vertices: List<PsiStubDDItem>,
-    override val edges: List<PsiIJEdge>
+    override val edges: List<PsiIJEdge>,
 ) :
     GraphWithAdjacencyList<PsiStubDDItem, PsiIJEdge, InstanceLevelGraph>() {
-    private val reverseAdjacencyList: Map<PsiStubDDItem, List<PsiIJEdge>> = edges.groupBy { it.to }
+    private val reverseAdjacencyList: CondensedInstanceLevelAdjacencyList = edges.groupBy { it.to }
     override fun inDegreeOf(vertex: PsiStubDDItem) = reverseAdjacencyList[vertex]?.size ?: 0
     override fun toString(): String =
         GraphToImageDumper.dumpGraph(this, stringify = { it.childrenPath.last().toString() }).toString()

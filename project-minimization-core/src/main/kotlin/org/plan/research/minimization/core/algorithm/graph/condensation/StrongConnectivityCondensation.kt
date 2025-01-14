@@ -58,7 +58,7 @@ object StrongConnectivityCondensation {
 
         private fun G.edgesForComponent(component: List<V>): List<E> {
             val componentSet = component.toSet()
-            return component.flatMap { edgesFrom(it).getOrElse(::emptyList).filter {it.to in componentSet} }
+            return component.flatMap { edgesFrom(it).getOrElse(::emptyList).filter { it.to in componentSet } }
         }
 
         override suspend fun onNewVisitedComponent(

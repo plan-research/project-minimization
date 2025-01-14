@@ -6,6 +6,7 @@ import org.plan.research.minimization.plugin.execution.DebugPropertyCheckingList
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.execution.comparable.withLogging
 import org.plan.research.minimization.plugin.getExceptionComparator
+import org.plan.research.minimization.plugin.lenses.LinearFunctionDeletingLens
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducerResult
@@ -22,7 +23,6 @@ import arrow.core.raise.ensureNotNull
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.guessProjectDir
 import mu.KotlinLogging
-import org.plan.research.minimization.plugin.lenses.LinearFunctionDeletingLens
 
 import java.nio.file.Path
 

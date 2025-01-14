@@ -1,11 +1,11 @@
 package org.plan.research.minimization.core.algorithm.graph.hierarchical
 
+import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDDGenerator
 import org.plan.research.minimization.core.model.DDContextWithLevel
 import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.graph.Graph
 import org.plan.research.minimization.core.model.graph.GraphCut
 import org.plan.research.minimization.core.model.graph.GraphEdge
-import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDDGenerator
 
 /**
  * Interface that defines the transformation of a hierarchical graph layer

@@ -1,8 +1,5 @@
 package org.plan.research.minimization.plugin.hierarchy.graph
 
-import arrow.core.getOrElse
-import arrow.core.raise.option
-import com.intellij.openapi.components.service
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.algorithm.graph.condensation.StrongConnectivityCondensation
 import org.plan.research.minimization.core.algorithm.graph.hierarchical.GraphLayerHierarchyProducer
@@ -13,6 +10,10 @@ import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelEdg
 import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelGraph
 import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelNode
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
+
+import arrow.core.getOrElse
+import arrow.core.raise.option
+import com.intellij.openapi.components.service
 
 private typealias AlgorithmResult = DDAlgorithmResult<IJDDContext, CondensedInstanceLevelNode>
 
@@ -34,9 +35,9 @@ private typealias AlgorithmResult = DDAlgorithmResult<IJDDContext, CondensedInst
  */
 class InstanceLevelLayerHierarchyProducer(propertyTester: PropertyTester<IJDDContext, PsiStubDDItem>) :
     GraphLayerHierarchyProducer<CondensedInstanceLevelNode, CondensedInstanceLevelEdge, CondensedInstanceLevelGraph, IJDDContext>(
-        layerToCutTransformer = IJLayerToCutTransformer,
-        graphPropertyTester = InstanceLevelCondensedGraphPropertyTester(propertyTester)
-    ) {
+    layerToCutTransformer = IjLayerToCutTransformer,
+    graphPropertyTester = InstanceLevelCondensedGraphPropertyTester(propertyTester),
+) {
     private val inactiveElements: MutableMap<CondensedInstanceLevelNode, Int> = mutableMapOf()
     override suspend fun generateFirstGraphLayer(context: IJDDContext) = option {
         val graph = service<MinimizationPsiManagerService>().buildDeletablePsiGraph(context)
@@ -48,8 +49,8 @@ class InstanceLevelLayerHierarchyProducer(propertyTester: PropertyTester<IJDDCon
             layer = layer,
             context = context.copy(
                 graph = condensedGraph,
-                currentLevel = graph.vertices // `currentLevel` actually is not used. However, algorithms require it to work correctly, so we set it
-            )
+                currentLevel = graph.vertices,  // `currentLevel` actually is not used. However, algorithms require it to work correctly, so we set it
+            ),
         )
     }
 
@@ -97,7 +98,7 @@ class InstanceLevelLayerHierarchyProducer(propertyTester: PropertyTester<IJDDCon
             ensure(nextElements.isNotEmpty())
             GraphLayer(
                 layer = nextElements,
-                context = copy()
+                context = copy(),
             )
         }
 }

@@ -3,7 +3,6 @@ package org.plan.research.minimization.plugin.psi
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.symbols.psi
 import org.jetbrains.kotlin.analysis.api.symbols.psiSafe
-import org.jetbrains.kotlin.analysis.api.symbols.sourcePsi
 import org.jetbrains.kotlin.analysis.api.types.symbol
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtElement
@@ -15,7 +14,7 @@ object KotlinOverriddenElementsGetter {
     fun getOverriddenElements(element: KtElement): List<KtElement> = when (element) {
         is KtNamedFunction -> getOverriddenFunction(element)
         is KtProperty -> getOverriddenProperties(element)
-        is KtClass -> getOverriddenClass(element) // JBRes-2212
+        is KtClass -> getOverriddenClass(element)  // JBRes-2212
         is KtParameter -> getOverriddenParameters(element)
         else -> emptyList()
     }

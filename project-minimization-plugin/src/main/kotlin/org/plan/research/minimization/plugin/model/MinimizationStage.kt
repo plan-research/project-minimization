@@ -100,6 +100,6 @@ data class DeclarationGraphStage(
 
     override suspend fun apply(
         context: HeavyIJDDContext,
-        executor: MinimizationStageExecutor
+        executor: MinimizationStageExecutor,
     ): Either<MinimizationError, IJDDContext> = executor.executeDeclarationGraphStage(context, this)
 }

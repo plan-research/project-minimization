@@ -33,6 +33,8 @@ abstract class GraphLayerHierarchyProducer<V, E, G, C>(
 
     /**
      * An extension of [HierarchicalDDGenerator.generateFirstLevel] to produce an initial graph layer.
+     *
+     * @param context
      */
     protected abstract suspend fun generateFirstGraphLayer(context: C): Option<GraphLayer>
 
@@ -41,6 +43,8 @@ abstract class GraphLayerHierarchyProducer<V, E, G, C>(
      * of [HierarchicalDDGenerator.generateNextLevel] to produce a next graph layer using [minimizationResult].
      *
      * **Invariant: the graph will be changed on the focusing stage, but not during the producing the new layer**
+     *
+     * @param minimizationResult
      */
     protected abstract suspend fun generateNextGraphLayer(minimizationResult: DDAlgorithmResult<C, V>): Option<GraphLayer>
     final override suspend fun generateFirstLevel(context: C) = option {

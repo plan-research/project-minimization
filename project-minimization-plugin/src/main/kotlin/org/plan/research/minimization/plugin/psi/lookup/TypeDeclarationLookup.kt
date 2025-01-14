@@ -2,7 +2,6 @@ package org.plan.research.minimization.plugin.psi.lookup
 
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiWhiteSpace
-import mu.KotlinLogging
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.symbols.*
 import org.jetbrains.kotlin.analysis.api.types.KaType
@@ -12,7 +11,9 @@ import org.jetbrains.kotlin.psi.*
 
 internal object TypeDeclarationLookup {
     fun getSymbolTypeDeclarations(symbol: PsiElement): List<PsiElement> {
-        if (symbol.containingFile !is KtFile) return emptyList()
+        if (symbol.containingFile !is KtFile) {
+            return emptyList()
+        }
 
         return when (symbol) {
             is PsiWhiteSpace -> {
@@ -30,7 +31,9 @@ internal object TypeDeclarationLookup {
                 if (declaration is KtCallableDeclaration && declaration.receiverTypeReference == symbol) {
                     // Navigate to function receiver type, works with the help of KotlinTargetElementEvaluator for the 'this' in extension declaration
                     declaration.getTypeDeclarationFromCallable { callableSymbol -> callableSymbol.receiverType }
-                } else emptyList()
+                } else {
+                    emptyList()
+                }
             }
             is KtParameter -> emptyList()
 
@@ -53,7 +56,6 @@ internal object TypeDeclarationLookup {
             listOfNotNull((symbol.symbol as? KaNamedClassSymbol)?.psi)
         }
 
-
     private fun getTypeAliasDeclaration(symbol: KtTypeAlias): List<PsiElement> =
         analyze(symbol) {
             val typeAliasSymbol = symbol.symbol as? KaTypeAliasSymbol
@@ -71,6 +73,9 @@ internal object TypeDeclarationLookup {
         analyze(this) {
             val symbol = symbol as? KaCallableSymbol ?: return emptyList()
             val types = typeFromSymbol(symbol)
-            types.mapNotNull { it?.upperBoundIfFlexible()?.abbreviationOrSelf?.symbol?.psi }
+            types.mapNotNull {
+                it?.upperBoundIfFlexible()?.abbreviationOrSelf?.symbol
+                    ?.psi
+            }
         }
 }

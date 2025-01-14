@@ -1,15 +1,15 @@
 package org.plan.research.minimization.plugin.model
 
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.guessProjectDir
-import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.platform.util.progress.SequentialProgressReporter
-import com.intellij.platform.util.progress.reportSequentialProgress
 import org.plan.research.minimization.core.model.DDContextWithLevel
 import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.plugin.psi.KtSourceImportRefCounter
 import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelGraph
 
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.platform.util.progress.SequentialProgressReporter
+import com.intellij.platform.util.progress.reportSequentialProgress
 
 @Suppress("KDOC_EXTRA_PROPERTY", "KDOC_NO_CLASS_BODY_PROPERTIES_IN_HEADER")
 /**
@@ -26,7 +26,8 @@ sealed class IJDDContext(
     override val currentLevel: List<IJDDItem>?,
     val progressReporter: SequentialProgressReporter?,
     val importRefCounter: KtSourceImportRefCounter?,
-    val graph: CondensedInstanceLevelGraph?, // FIXME: Add graph context
+    val graph: CondensedInstanceLevelGraph?,
+    // FIXME: Add graph context
 ) : DDContextWithLevel<IJDDContext> {
     abstract val projectDir: VirtualFile
     abstract val indexProject: Project
@@ -143,7 +144,7 @@ class LightIJDDContext(
     ): LightIJDDContext = copy(projectDir, currentLevel, progressReporter, importRefCounter, graph)
 
     override fun withCurrentLevel(currentLevel: List<DDItem>): LightIJDDContext =
-         copy(currentLevel = currentLevel as List<IJDDItem>?)
+        copy(currentLevel = currentLevel as List<IJDDItem>?)
 
     override fun toString(): String = "LightIJDDContext(project=$projectDir, indexProject=$indexProjectDir)"
 }

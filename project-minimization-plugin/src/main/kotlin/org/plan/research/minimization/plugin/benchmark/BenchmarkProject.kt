@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 data class BenchmarkProject(
     val name: String,
     val path: String,
-    @SerialName("reproduce") val reproduceScriptPath: String,
+    @SerialName("reproduce") val reproduceScript: String,
     val buildSystem: BuildSystemDescriptor,
     val kotlinVersion: String,
     val modules: ProjectModulesType,

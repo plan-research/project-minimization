@@ -21,7 +21,6 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.findFile
 import com.intellij.openapi.vfs.readText
-import com.intellij.openapi.vfs.toNioPathOrNull
 import com.intellij.platform.ide.progress.withBackgroundProgress
 import com.intellij.platform.util.progress.reportSequentialProgress
 
@@ -98,7 +97,7 @@ class BenchmarkService(private val rootProject: Project, private val cs: Corouti
             val minimizationService = openedProject.service<MinimizationService>()
 
             val result = suspendCancellableCoroutine { cont ->
-                minimizationService.minimizeProject(openedProject) { context -> cont.resume(context) }
+                minimizationService.minimizeProject { context -> cont.resume(context) }
             }
 
             return result.project
@@ -115,12 +114,7 @@ class BenchmarkService(private val rootProject: Project, private val cs: Corouti
         }
     }
 
-    private fun loadReproduceScript(project: BenchmarkProject): String? {
-        val root = rootProject.guessProjectDir()?.toNioPathOrNull() ?: return null
-        val reproduceScript = root.resolve(Path(project.reproduceScriptPath))
-        val content = reproduceScript.readText()
-        return getGradleBuildTask(content)
-    }
+    private fun loadReproduceScript(project: BenchmarkProject): String? = getGradleBuildTask(project.reproduceScript)
 
     /**
      * Function to transform a reproducing script into Gradle's task name.

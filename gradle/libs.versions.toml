@@ -8,8 +8,10 @@ ksp = "2.1.0-1.0.29"
 logging = "2.1.21"
 logback = "1.2.11"
 diktat = "2.0.0"
+kaml = "0.59.0"
 kotlinx-immutable-collections = "0.3.8"
 kotlinx-serialization = "1.7.3"
+
 
 [libraries]
 diktat-gradle-plugin = { module = "com.saveourtool.diktat:diktat-gradle-plugin", version.ref = "diktat" }
@@ -22,6 +24,7 @@ arrow-ksp-plugin = { module = "io.arrow-kt:arrow-optics-ksp-plugin", version.ref
 kotlin-logging = { module = "io.github.microutils:kotlin-logging-jvm", version.ref = "logging" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 kotlinx-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "kotlinx-immutable-collections" }
+kaml = { module = "com.charleskorn.kaml:kaml", version.ref = "kaml" }
 kotlinx-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 
 [plugins]

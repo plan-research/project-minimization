@@ -58,8 +58,8 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         context: HeavyIJDDContext,
         functionLevelStage: FunctionLevelStage,
     ) = either {
-        logger.info { "Start Function level stage" }
-        statLogger.info { "Start Function level stage" }
+        logger.info { "Start Function Body Replacement level stage" }
+        statLogger.info { "Start Function Body Replacement level stage" }
         statLogger.info {
             "Function level stage settings. DDAlgorithm: ${functionLevelStage.ddAlgorithm}"
         }
@@ -112,8 +112,8 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         context: HeavyIJDDContext,
         declarationLevelStage: DeclarationLevelStage,
     ) = either {
-        logger.info { "Start Function deleting stage" }
-        statLogger.info { "Start Function deleting stage" }
+        logger.info { "Start Function deleting level stage" }
+        statLogger.info { "Start Function deleting level stage" }
         statLogger.info {
             "Function deleting stage settings, " +
                 "DDAlgorithm: ${declarationLevelStage.ddAlgorithm}"

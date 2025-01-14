@@ -1,21 +1,31 @@
 package org.plan.research.minimization.plugin.psi.graph
 
-import arrow.core.Option
-import arrow.core.getOrNone
+import org.plan.research.minimization.core.algorithm.graph.condensation.CondensedEdge
+import org.plan.research.minimization.core.algorithm.graph.condensation.CondensedGraph
+import org.plan.research.minimization.core.algorithm.graph.condensation.CondensedVertex
+import org.plan.research.minimization.core.model.graph.GraphCut
 import org.plan.research.minimization.core.model.graph.GraphWithAdjacencyList
 import org.plan.research.minimization.core.utils.graph.GraphToImageDumper
 import org.plan.research.minimization.plugin.model.PsiStubDDItem
 
+
+typealias CondensedInstanceLevelGraph = CondensedGraph<PsiStubDDItem, PsiIJEdge>
+typealias CondensedInstanceLevelNode = CondensedVertex<PsiStubDDItem, PsiIJEdge>
+typealias CondensedInstanceLevelEdge = CondensedEdge<PsiStubDDItem, PsiIJEdge>
+
 data class InstanceLevelGraph(
     override val vertices: List<PsiStubDDItem>,
-    val edges: Collection<IJEdge>
+    override val edges: List<PsiIJEdge>
 ) :
-    GraphWithAdjacencyList<PsiStubDDItem, IJEdge>() {
-    private val adjacencyList: Map<PsiStubDDItem, List<IJEdge>> = edges.groupBy { it.from }
-    private val reverseAdjacencyList: Map<PsiStubDDItem, List<IJEdge>> = edges.groupBy { it.to }
+    GraphWithAdjacencyList<PsiStubDDItem, PsiIJEdge, InstanceLevelGraph>() {
+    private val reverseAdjacencyList: Map<PsiStubDDItem, List<PsiIJEdge>> = edges.groupBy { it.to }
     override fun inDegreeOf(vertex: PsiStubDDItem) = reverseAdjacencyList[vertex]?.size ?: 0
-    override fun outDegreeOf(vertex: PsiStubDDItem) = adjacencyList[vertex]?.size ?: 0
-    override fun edgesFrom(vertex: PsiStubDDItem) = adjacencyList.getOrNone(vertex)
     override fun toString(): String =
         GraphToImageDumper.dumpGraph(this, stringify = { it.childrenPath.last().toString() }).toString()
+
+    override fun induce(cut: GraphCut<PsiStubDDItem>): InstanceLevelGraph {
+        val filteredVertices = cut.selectedVertices
+        val filteredEdges = edges.filter { it.from in filteredVertices && it.to in filteredVertices }
+        return InstanceLevelGraph(filteredVertices, filteredEdges)
+    }
 }

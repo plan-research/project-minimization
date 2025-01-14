@@ -1,13 +1,15 @@
 package org.plan.research.minimization.plugin.model
 
-import org.plan.research.minimization.core.model.DDContext
-import org.plan.research.minimization.plugin.psi.KtSourceImportRefCounter
-
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.util.progress.SequentialProgressReporter
 import com.intellij.platform.util.progress.reportSequentialProgress
+import org.plan.research.minimization.core.model.DDContextWithLevel
+import org.plan.research.minimization.core.model.DDItem
+import org.plan.research.minimization.plugin.psi.KtSourceImportRefCounter
+import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelGraph
+
 
 @Suppress("KDOC_EXTRA_PROPERTY", "KDOC_NO_CLASS_BODY_PROPERTIES_IN_HEADER")
 /**
@@ -24,7 +26,7 @@ sealed class IJDDContext(
     override val currentLevel: List<IJDDItem>?,
     val progressReporter: SequentialProgressReporter?,
     val importRefCounter: KtSourceImportRefCounter?,
-) : DDContext {
+    val graph: CondensedInstanceLevelGraph?, // FIXME: Add graph context
 ) : DDContextWithLevel<IJDDContext> {
     abstract val projectDir: VirtualFile
     abstract val indexProject: Project
@@ -34,6 +36,7 @@ sealed class IJDDContext(
         currentLevel: List<IJDDItem>? = this.currentLevel,
         progressReporter: SequentialProgressReporter? = this.progressReporter,
         importRefCounter: KtSourceImportRefCounter? = this.importRefCounter,
+        graph: CondensedInstanceLevelGraph? = this.graph,
     ): IJDDContext
 
     suspend fun withProgress(action: suspend (IJDDContext) -> IJDDContext): IJDDContext =
@@ -52,11 +55,13 @@ class HeavyIJDDContext(
     currentLevel: List<IJDDItem>? = null,
     progressReporter: SequentialProgressReporter? = null,
     importRefCounter: KtSourceImportRefCounter? = null,
+    graph: CondensedInstanceLevelGraph? = null,
 ) : IJDDContext(
     originalProject,
     currentLevel,
     progressReporter,
     importRefCounter,
+    graph,
 ) {
     override val projectDir: VirtualFile by lazy { project.guessProjectDir()!! }
     override val indexProject: Project = project
@@ -64,7 +69,7 @@ class HeavyIJDDContext(
     fun asLightContext(): LightIJDDContext = LightIJDDContext(
         projectDir, indexProject = project,
         originalProject = originalProject,
-        currentLevel, progressReporter,
+        currentLevel, progressReporter, importRefCounter, graph,
     )
 
     fun copy(
@@ -72,19 +77,22 @@ class HeavyIJDDContext(
         currentLevel: List<IJDDItem>? = this.currentLevel,
         progressReporter: SequentialProgressReporter? = this.progressReporter,
         importRefCounter: KtSourceImportRefCounter? = this.importRefCounter,
+        graph: CondensedInstanceLevelGraph? = this.graph,
     ): HeavyIJDDContext = HeavyIJDDContext(
         project,
         originalProject,
         currentLevel,
         progressReporter,
         importRefCounter,
+        graph,
     )
 
     override fun copy(
         currentLevel: List<IJDDItem>?,
         progressReporter: SequentialProgressReporter?,
         importRefCounter: KtSourceImportRefCounter?,
-    ): HeavyIJDDContext = copy(project, currentLevel, progressReporter, importRefCounter)
+        graph: CondensedInstanceLevelGraph?,
+    ): HeavyIJDDContext = copy(project, currentLevel, progressReporter, importRefCounter, graph)
 
     override fun toString(): String = "HeavyIJDDContext(project=$projectDir)"
     override fun withCurrentLevel(currentLevel: List<DDItem>): HeavyIJDDContext =
@@ -101,11 +109,13 @@ class LightIJDDContext(
     currentLevel: List<IJDDItem>? = null,
     progressReporter: SequentialProgressReporter? = null,
     importRefCounter: KtSourceImportRefCounter? = null,
+    graph: CondensedInstanceLevelGraph? = null,
 ) : IJDDContext(
     originalProject,
     currentLevel,
     progressReporter,
     importRefCounter,
+    graph,
 ) {
     constructor(project: Project) : this(project.guessProjectDir()!!, project)
 
@@ -114,6 +124,7 @@ class LightIJDDContext(
         currentLevel: List<IJDDItem>? = this.currentLevel,
         progressReporter: SequentialProgressReporter? = this.progressReporter,
         importRefCounter: KtSourceImportRefCounter? = this.importRefCounter,
+        graph: CondensedInstanceLevelGraph? = this.graph,
     ): LightIJDDContext = LightIJDDContext(
         projectDir,
         indexProject,
@@ -121,13 +132,15 @@ class LightIJDDContext(
         currentLevel,
         progressReporter,
         importRefCounter,
+        graph,
     )
 
     override fun copy(
         currentLevel: List<IJDDItem>?,
         progressReporter: SequentialProgressReporter?,
         importRefCounter: KtSourceImportRefCounter?,
-    ): LightIJDDContext = copy(projectDir, currentLevel, progressReporter, importRefCounter)
+        graph: CondensedInstanceLevelGraph?,
+    ): LightIJDDContext = copy(projectDir, currentLevel, progressReporter, importRefCounter, graph)
 
     override fun withCurrentLevel(currentLevel: List<DDItem>): LightIJDDContext =
          copy(currentLevel = currentLevel as List<IJDDItem>?)

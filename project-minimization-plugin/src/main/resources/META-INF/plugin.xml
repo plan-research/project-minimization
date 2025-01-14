@@ -46,6 +46,7 @@
         </action>
         <action id="org.plan.research.minimization.plugin.testActions.DumpDeletablePsiGraphAction"
                 class="org.plan.research.minimization.plugin.testActions.DumpDeletablePsiGraphAction"
-                text="Dump Instance-level Graph" description="Dumps instance-level graph"/>
+                text="Dump Instance-Level Graph" description="Dumps instance-level graph"
+                internal="true"/>
     </actions>
 </idea-plugin>

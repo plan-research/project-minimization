@@ -4,6 +4,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
+import guru.nidi.graphviz.attribute.Color
 import guru.nidi.graphviz.attribute.Style
 import guru.nidi.graphviz.engine.Format
 import guru.nidi.graphviz.engine.Graphviz
@@ -11,7 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.plan.research.minimization.core.utils.graph.GraphToImageDumper
 import org.plan.research.minimization.plugin.model.HeavyIJDDContext
-import org.plan.research.minimization.plugin.psi.graph.IJEdge
+import org.plan.research.minimization.plugin.psi.graph.PsiIJEdge
 
 @Service(Service.Level.PROJECT)
 class TestGraphService(private val project: Project, private val coroutineScope: CoroutineScope) {
@@ -20,12 +21,13 @@ class TestGraphService(private val project: Project, private val coroutineScope:
             .buildDeletablePsiGraph(HeavyIJDDContext(project))
         val representation = GraphToImageDumper.dumpGraph(
             graph,
-            stringify = { it.childrenPath.lastOrNull()?.toString() ?: "File(localPath=${it.localPath})" },
+            stringify = { it.toString() },
             edgeAttributes = { from, edge ->
                 when (edge) {
-                    is IJEdge.PSITreeEdge -> arrayOf(Style.SOLID)
-                    is IJEdge.UsageInPSIElement -> arrayOf(Style.DOTTED)
-                    is IJEdge.Overload -> arrayOf(Style.DASHED)
+                    is PsiIJEdge.PSITreeEdge -> arrayOf(Style.SOLID)
+                    is PsiIJEdge.UsageInPSIElement -> arrayOf(Style.DOTTED)
+                    is PsiIJEdge.Overload -> arrayOf(Style.DASHED)
+                    is PsiIJEdge.ObligatoryOverride -> arrayOf(Style.DASHED, Color.RED)
                 }
             }
         )

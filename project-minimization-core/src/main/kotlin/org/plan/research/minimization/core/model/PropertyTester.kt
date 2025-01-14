@@ -22,6 +22,16 @@ typealias PropertyTestResult<C> = Either<PropertyTesterError, C>
 interface PropertyTester<C : DDContext, T : DDItem> {
     suspend fun test(context: C, items: List<T>): PropertyTestResult<C>
 }
+
+/**
+ * An interface that tests a specific property of a graph using a given context and a graph cut.
+ *
+ * @param V The type of the vertices in the graph
+ * @param E The type of the edges in the graph
+ * @param G The type of the graph.
+ * Represents the structure to be
+ *          tested.
+ */
 interface PropertyTesterWithGraph<C : DDContextWithLevel<C>, V : DDItem, E : GraphEdge<V>, G : Graph<V, E, G>> {
     suspend fun test(context: C, cut: GraphCut<V>): PropertyTestResult<C>
 }

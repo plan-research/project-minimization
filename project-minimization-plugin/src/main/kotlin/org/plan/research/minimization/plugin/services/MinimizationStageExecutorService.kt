@@ -22,6 +22,8 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import mu.KotlinLogging
+import org.plan.research.minimization.core.algorithm.dd.withZeroTesting
+import org.plan.research.minimization.plugin.hierarchy.graph.InstanceLevelLayerHierarchyBuilder
 
 @Service(Service.Level.PROJECT)
 class MinimizationStageExecutorService(private val project: Project) : MinimizationStageExecutor {
@@ -110,7 +112,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         context: HeavyIJDDContext,
         declarationLevelStage: DeclarationLevelStage,
     ) = either {
-        logger.info { "Start Function deleting stage" }
+        logger.info { "Start Function Deleting stage" }
         statLogger.info {
             "Function deleting stage settings, " +
                 "DDAlgorithm: ${declarationLevelStage.ddAlgorithm}"
@@ -128,6 +130,29 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
             hierarchicalDD.minimize(it, hierarchy)
         }
     }.logResult("Function Deleting")
+
+    override suspend fun executeDeclarationGraphStage(
+        context: HeavyIJDDContext,
+        declarationGraphStage: DeclarationGraphStage
+    ) = either {
+        logger.info { "Start Function Deleting Graph stage"}
+        statLogger.info {
+            "Function deleting Graph stage settings, " +
+                "DDAlgorithm: ${declarationGraphStage.ddAlgorithm}"
+        }
+
+        val lightContext = context.asLightContext().withImportRefCounter()
+
+        val ddAlgorithm = declarationGraphStage.ddAlgorithm.getDDAlgorithm().withZeroTesting()
+        val hierarchicalDD = HierarchicalDD(ddAlgorithm)
+        val hierarchy = InstanceLevelLayerHierarchyBuilder()
+            .produce(context)
+            .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
+
+        lightContext.withProgress {
+            hierarchicalDD.minimize(it, hierarchy)
+        }
+    }.logResult("Function Deleting Graph")
 
     private fun <A, B> Either<A, B>.logResult(stageName: String) = onRight {
         logger.info { "End $stageName level stage" }

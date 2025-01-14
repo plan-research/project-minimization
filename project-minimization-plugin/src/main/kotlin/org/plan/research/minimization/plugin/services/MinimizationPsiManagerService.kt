@@ -18,7 +18,6 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.psi.PsiElement
-import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.GlobalSearchScopes
 import com.intellij.psi.util.PsiTreeUtil
@@ -33,7 +32,8 @@ import org.jetbrains.kotlin.psi.KtExpression
 
 import org.jetbrains.kotlin.psi.KtPrimaryConstructor
 import org.jetbrains.kotlin.psi.KtValVarKeywordOwner
-import org.plan.research.minimization.plugin.psi.graph.IJEdge
+import org.plan.research.minimization.plugin.psi.KotlinElementLookup
+import org.plan.research.minimization.plugin.psi.graph.PsiIJEdge
 import org.plan.research.minimization.plugin.psi.graph.InstanceLevelGraph
 import kotlin.collections.singleOrNull
 import kotlin.io.path.pathString
@@ -64,6 +64,7 @@ class MinimizationPsiManagerService {
      *  That means that they could be represented via [org.plan.research.minimization.plugin.psi.stub.KtStub]
      *
      * @param context The context for the minimization process containing the current project and relevant properties.
+     * @param compressOverridden If set to true, then all overridden elements will be compressed to one element
      * @return A list of deletable PSI items found in the Kotlin files of the project.
      */
     suspend fun findDeletablePsiItems(
@@ -97,41 +98,58 @@ class MinimizationPsiManagerService {
         return dsu.transformItems(context, nonStructuredItems)
     }
 
+    /**
+     * Builds an instance-level graph representing the deletable PSI (Program Structure Interface) elements
+     * and their relationships within the given context.
+     *
+     * @param context The minimization context containing information about the current project and relevant properties.
+     * @return An instance of [InstanceLevelGraph] containing the vertices (deletable PSI items) and edges (connections between them).
+     */
     suspend fun buildDeletablePsiGraph(context: IJDDContext): InstanceLevelGraph {
-        val nodes = findDeletablePsiItems(context, compressOverridden = false)
         return smartReadAction(context.indexProject) {
-            val nodes = nodes.map { it to PsiUtils.getPsiElementFromItem(context, it)!! }
-            val psiCache = nodes.associate { it.second to it.first }
-            val filesNodes = nodes
-                .map { (item) -> PsiStubDDItem.NonOverriddenPsiStubDDItem(item.localPath, emptyList()) }
-            val fileEdges = nodes.zip(filesNodes).map { (from, fileNode) -> IJEdge.PSITreeEdge(from.first, fileNode) }
-            val psiEdges = nodes.flatMap { (from) ->
+            val nodes = findDeletablePsiItemsWithoutCompression(context)
+            val psiCache = nodes.associate { it.first to it.second }
+            // TODO: Add file hierarchy?
+//            val filesNodes = nodes
+//                .map { (item) -> PsiStubDDItem.NonOverriddenPsiStubDDItem(item.localPath, emptyList()) }
+//            val fileEdges = nodes.zip(filesNodes).map { (from, fileNode) -> IJEdge.PSITreeEdge(from.first, fileNode) }
+            val psiEdges = nodes.flatMap { (_, from) ->
                 PsiUtils
                     .findAllParentElements(context, from)
-                    .map { IJEdge.PSITreeEdge(from, it) }
+                    .map { PsiIJEdge.PSITreeEdge(from, it) }
             }
-            val overloadEdges = nodes.flatMap { (from, element) ->
+            val overloadEdges = nodes.flatMap { (element, from) ->
                 KotlinOverriddenElementsGetter
                     .getOverriddenElements(element)
                     .asSequence()
                     .filter { it.isFromContext(context) }
                     .mapNotNull(psiCache::get)
-                    .map { IJEdge.Overload(from, it) }
+                    .map { PsiIJEdge.Overload(from, it) }
             }
-            val usageEdges = nodes.flatMap { (from, element) ->
+            val usageEdges = nodes.flatMap { (element, from) ->
                 PsiUtils.collectUsages(element)
                     .asSequence()
                     .filter { it.isFromContext(context) }
                     .mapNotNull(psiCache::get)
-                    .map { IJEdge.UsageInPSIElement(from, it) }
+                    .map { PsiIJEdge.UsageInPSIElement(from, it) }
+            }
+            val obligatoryOverride = nodes.flatMap { (element, from) ->
+                KotlinElementLookup.lookupObligatoryOverrides(element)
+                    .asSequence()
+                    .filter { it.isFromContext(context) }
+                    .mapNotNull(psiCache::get)
+                    .map { PsiIJEdge.ObligatoryOverride(from, it) }
             }
             InstanceLevelGraph(
-                vertices = nodes.map(Pair<PsiStubDDItem, *>::first) + filesNodes.distinct(),
-                edges = psiEdges + overloadEdges + usageEdges + fileEdges
+                vertices = nodes.map(Pair<*, PsiStubDDItem>::second) /*+ filesNodes.distinct()*/,
+                edges = psiEdges + overloadEdges + usageEdges + obligatoryOverride/*+ fileEdges*/
             )
         }
     }
 
+    /**
+     * Finds all kotlin files inside the given context that are in the source roots
+     */
     @RequiresReadLock
     fun findAllKotlinFilesInIndexProject(context: IJDDContext): List<VirtualFile> {
         val roots = service<RootsManagerService>().findPossibleRoots(context)

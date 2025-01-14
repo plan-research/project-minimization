@@ -11,10 +11,10 @@ import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtProperty
 
 object KotlinOverriddenElementsGetter {
-    fun getOverriddenElements(element: KtElement): List<KtElement> = when (element) {
+    fun getOverriddenElements(element: KtElement, includeClass: Boolean = true): List<KtElement> = when (element) {
         is KtNamedFunction -> getOverriddenFunction(element)
         is KtProperty -> getOverriddenProperties(element)
-        is KtClass -> getOverriddenClass(element)  // JBRes-2212
+        is KtClass -> getOverriddenClass(element).takeIf { includeClass} ?: emptyList()
         is KtParameter -> getOverriddenParameters(element)
         else -> emptyList()
     }

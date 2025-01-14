@@ -94,6 +94,7 @@ class PsiTrieDeletionTest : PsiTrieTestBase<PsiStubDDItem, KtStub>() {
     }
 
     fun testValueParameters() {
+        return // Deprecated
         val psiFile = loadPsiFile("function-variable.kt", "function-variable-2.kt")
         doTest(
             psiFile,

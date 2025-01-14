@@ -228,7 +228,7 @@ class MinimizationPsiManagerService {
     ): List<PsiStubDDItem> {
         items.forEach { (element) ->
             KotlinOverriddenElementsGetter
-                .getOverriddenElements(element)
+                .getOverriddenElements(element, includeClass = false)
                 .filter { it.isFromContext(context) }
                 .forEach { union(element, it) }
         }

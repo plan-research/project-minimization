@@ -43,6 +43,8 @@ class TestContext(
     override fun copy(projectDir: VirtualFile): TestContext =
         TestContext(projectDir, indexProject, originalProject, importRefCounter)
 
+    override fun getThis(): TestContext = this
+
     override fun copy(importRefCounter: KtSourceImportRefCounter): TestContext =
         TestContext(projectDir, indexProject, originalProject, importRefCounter)
 }

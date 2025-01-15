@@ -10,11 +10,10 @@ import com.intellij.openapi.components.service
 import getAllFiles
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertNotEquals
-import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 
-@Suppress("UNCHECKED_CAST")
-abstract class ProjectCloningTest<C : IJDDContext> : ProjectCloningBaseTest(), TestWithContext<C> {
+abstract class ProjectCloningTest<C : IJDDContextBase<C>> : ProjectCloningBaseTest(), TestWithContext<C> {
     fun testOneFileProject() {
         myFixture.configureByFile("oneFileProject.txt")
         doFullCloningTest()

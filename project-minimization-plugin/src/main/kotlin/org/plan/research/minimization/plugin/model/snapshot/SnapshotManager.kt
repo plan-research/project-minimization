@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.model.snapshot
 
 import org.plan.research.minimization.plugin.errors.SnapshotError
-import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
 import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 
 import arrow.core.Either
@@ -21,7 +21,7 @@ interface SnapshotManager {
      * @return Either a `SnapshotError` if the transaction fails, or the updated `IJDDContext` if the transaction succeeds.
      */
     context(IJDDContextMonad<C>)
-    suspend fun <T, C : IJDDContext> transaction(
+    suspend fun <T, C : IJDDContextBase<C>> transaction(
         action: TransactionAction<T, C>,
     ): TransactionResult<T>
 }

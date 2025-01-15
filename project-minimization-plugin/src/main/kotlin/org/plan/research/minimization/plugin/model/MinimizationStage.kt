@@ -2,7 +2,7 @@ package org.plan.research.minimization.plugin.model
 
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
-import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
 import org.plan.research.minimization.plugin.model.state.DDStrategy
 
 import arrow.core.Either
@@ -10,7 +10,7 @@ import arrow.optics.optics
 import com.intellij.util.xmlb.annotations.Property
 import com.intellij.util.xmlb.annotations.Tag
 
-typealias MinimizationResult = Either<MinimizationError, IJDDContext>
+typealias MinimizationResult = Either<MinimizationError, IJDDContextBase<*>>
 
 /**
  * Interface representing an executor responsible for handling various stages of the minimization process.

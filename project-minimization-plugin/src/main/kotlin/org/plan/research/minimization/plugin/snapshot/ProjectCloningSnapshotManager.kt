@@ -3,8 +3,7 @@ package org.plan.research.minimization.plugin.snapshot
 import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.errors.SnapshotError.*
 import org.plan.research.minimization.plugin.logging.statLogger
-import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
-import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.*
 import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.model.snapshot.TransactionAction
@@ -31,6 +30,20 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
     private val projectCloning = rootProject.service<ProjectCloningService>()
     private val generalLogger = KotlinLogging.logger {}
 
+    private object ProjectCloseTransformer : IJDDContextTransformer<Unit> {
+        override suspend fun <C : LightIJDDContext<C>> transformLight(context: C) {
+            if (context.projectDir != context.indexProjectDir) {
+                writeAction {
+                    context.projectDir.run { delete(fileSystem) }
+                }
+            }
+        }
+
+        override suspend fun <C : HeavyIJDDContext<C>> transformHeavy(context: C) {
+            ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(context.project)
+        }
+    }
+
     /**
      * Executes a transaction within the provided context,
      * typically involving project cloning and rollback upon failures.
@@ -44,14 +57,13 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
      * @return Either a `SnapshotError` encapsulating the error in case of failure, or the updated `IJDDContext` in case of success.
      */
     context(IJDDContextMonad<C>)
-    override suspend fun <T, C : IJDDContext> transaction(
+    override suspend fun <T, C : IJDDContextBase<C>> transaction(
         action: TransactionAction<T, C>,
     ): TransactionResult<T> = either {
         statLogger.info { "Snapshot manager start's transaction" }
         generalLogger.info { "Snapshot manager start's transaction" }
 
-        @Suppress("UNCHECKED_CAST")
-        val clonedContext = projectCloning.clone(context) as? C
+        val clonedContext = context.clone(projectCloning)
             ?: raise(TransactionCreationFailed("Failed to create project"))
         val subMonad = createSubMonad(clonedContext)
 
@@ -72,18 +84,9 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
     }.onLeft { it.log() }
 
     // TODO: JBRes-2103 Resource Management
-    private suspend fun closeProject(context: IJDDContext) {
-        withContext<Unit>(NonCancellable) {
-            if (context is HeavyIJDDContext<*>) {
-                ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(context.project)
-            } else {
-                // avoid unnecessary project deletion, bad design (poebat' for now)
-                if (context.projectDir != context.indexProjectDir) {
-                    writeAction {
-                        context.projectDir.run { delete(fileSystem) }
-                    }
-                }
-            }
+    private suspend fun closeProject(context: IJDDContextBase<*>) {
+        withContext(NonCancellable) {
+            context.transform(ProjectCloseTransformer)
         }
     }
 

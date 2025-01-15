@@ -8,14 +8,14 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.PsiTestUtil
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import kotlinx.coroutines.runBlocking
-import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.services.RootsManagerService
 import kotlin.io.path.div
 import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
 
-abstract class RootsManagerTest<C : IJDDContext> : JavaCodeInsightFixtureTestCase(), TestWithContext<C> {
+abstract class RootsManagerTest<C : IJDDContextBase<C>> : JavaCodeInsightFixtureTestCase(), TestWithContext<C> {
 
     override fun runInDispatchThread(): Boolean = false
 

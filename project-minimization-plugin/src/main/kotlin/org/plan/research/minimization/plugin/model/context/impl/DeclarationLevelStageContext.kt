@@ -17,6 +17,8 @@ WithImportRefCounterContext<DeclarationLevelStageContext> {
     override fun copy(projectDir: VirtualFile): DeclarationLevelStageContext =
         DeclarationLevelStageContext(projectDir, indexProject, originalProject, importRefCounter)
 
+    override fun getThis(): DeclarationLevelStageContext = this
+
     override fun copy(importRefCounter: KtSourceImportRefCounter): DeclarationLevelStageContext =
         DeclarationLevelStageContext(projectDir, indexProject, originalProject, importRefCounter)
 }

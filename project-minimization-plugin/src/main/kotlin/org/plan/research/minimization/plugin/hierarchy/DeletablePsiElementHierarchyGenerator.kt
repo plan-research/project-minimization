@@ -10,6 +10,7 @@ import org.plan.research.minimization.plugin.logging.LoggingPropertyCheckingList
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducerResult
 import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
 import org.plan.research.minimization.plugin.model.context.WithImportRefCounterContext
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
 import org.plan.research.minimization.plugin.psi.CompressingPsiItemTrie
@@ -28,7 +29,7 @@ import mu.KotlinLogging
 import java.nio.file.Path
 
 class DeletablePsiElementHierarchyGenerator<C>(private val depthThreshold: Int) :
-    ProjectHierarchyProducer<C, PsiStubDDItem> where C : IJDDContext, C : WithImportRefCounterContext<C> {
+    ProjectHierarchyProducer<C, PsiStubDDItem> where C : IJDDContextBase<C>, C : WithImportRefCounterContext<C> {
     private val logger = KotlinLogging.logger { }
 
     override suspend fun produce(

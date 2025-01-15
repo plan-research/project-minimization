@@ -17,15 +17,14 @@ import getPathContentPair
 import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.getAllNestedElements
-import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 import org.plan.research.minimization.plugin.snapshot.ProjectCloningSnapshotManager
 import runMonad
 import kotlin.io.path.Path
 import kotlin.io.path.relativeTo
 
-@Suppress("UNCHECKED_CAST")
-abstract class ProjectCloningSnapshotTest<C : IJDDContext> : ProjectCloningBaseTest(), TestWithContext<C> {
+abstract class ProjectCloningSnapshotTest<C : IJDDContextBase<C>> : ProjectCloningBaseTest(), TestWithContext<C> {
     fun testOneFileProjectPartialCloning() {
         val file = myFixture.configureByFile("oneFileProject.txt")
         doPartialCloningTest(
@@ -100,7 +99,7 @@ abstract class ProjectCloningSnapshotTest<C : IJDDContext> : ProjectCloningBaseT
         }
         val clonedFiles = clonedProject.projectDir.getAllFiles(clonedProject.projectDir.toNioPath())
         assertEquals(originalFiles, clonedFiles)
-        deleteContext(clonedProject as C)
+        deleteContext(clonedProject)
     }
 
     fun testAbortedTransaction() {

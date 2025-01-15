@@ -12,4 +12,6 @@ class FileLevelStageContext(
 ) : LightIJDDContext<FileLevelStageContext>(projectDir, indexProject, originalProject) {
     override fun copy(projectDir: VirtualFile): FileLevelStageContext =
         FileLevelStageContext(projectDir, indexProject, originalProject)
+
+    override fun getThis(): FileLevelStageContext = this
 }

@@ -9,4 +9,6 @@ class DefaultProjectContext(
     originalProject: Project = project,
 ) : HeavyIJDDContext<DefaultProjectContext>(project, originalProject) {
     override fun copy(project: Project): DefaultProjectContext = DefaultProjectContext(project, originalProject)
+
+    override fun getThis(): DefaultProjectContext = this
 }

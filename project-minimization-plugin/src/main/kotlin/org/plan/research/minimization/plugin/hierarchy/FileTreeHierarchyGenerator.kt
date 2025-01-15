@@ -7,7 +7,7 @@ import org.plan.research.minimization.plugin.lenses.FileDeletingItemLens
 import org.plan.research.minimization.plugin.logging.LoggingPropertyCheckingListener
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducerResult
-import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
 import org.plan.research.minimization.plugin.model.item.ProjectFileDDItem
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
@@ -16,7 +16,7 @@ import arrow.core.getOrElse
 import arrow.core.raise.either
 import com.intellij.openapi.components.service
 
-class FileTreeHierarchyGenerator<C : IJDDContext> : ProjectHierarchyProducer<C, ProjectFileDDItem> {
+class FileTreeHierarchyGenerator<C : IJDDContextBase<C>> : ProjectHierarchyProducer<C, ProjectFileDDItem> {
     override suspend fun produce(
         context: C,
     ): ProjectHierarchyProducerResult<C, ProjectFileDDItem> = either {

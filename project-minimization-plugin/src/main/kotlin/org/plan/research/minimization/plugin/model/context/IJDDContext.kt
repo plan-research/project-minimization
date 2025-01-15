@@ -12,10 +12,73 @@ import com.intellij.openapi.vfs.VirtualFile
  * @property indexProject The project that can be used for indexes or for progress reporting purposes
  * @constructor projectDir The directory of the current project to be minimized.
  */
-sealed class IJDDContext(
-    val originalProject: Project,
-) {
-    abstract val projectDir: VirtualFile
-    abstract val indexProject: Project
-    val indexProjectDir: VirtualFile by lazy { indexProject.guessProjectDir()!! }
+interface IJDDContext {
+    val originalProject: Project
+    val projectDir: VirtualFile
+    val indexProject: Project
+    val indexProjectDir: VirtualFile
+}
+
+sealed class IJDDContextBase<C : IJDDContextBase<C>>(
+    override val originalProject: Project,
+) : IJDDContext {
+    override val indexProjectDir by lazy { indexProject.guessProjectDir()!! }
+
+    abstract suspend fun <T> transform(transformer: IJDDContextTransformer<T>): T
+
+    abstract suspend fun clone(cloner: IJDDContextCloner): C?
+}
+
+/**
+ * This context represents a project as an opened IntelliJ IDEA project.
+ */
+abstract class HeavyIJDDContext<C : HeavyIJDDContext<C>>(
+    val project: Project,
+    originalProject: Project,
+) : IJDDContextBase<C>(originalProject) {
+    override val projectDir: VirtualFile by lazy { project.guessProjectDir()!! }
+    override val indexProject: Project = project
+
+    abstract fun copy(project: Project): C
+
+    protected abstract fun getThis(): C
+
+    override suspend fun <T> transform(transformer: IJDDContextTransformer<T>): T =
+        transformer.transformHeavy(getThis())
+
+    override suspend fun clone(cloner: IJDDContextCloner): C? =
+        cloner.cloneHeavy(getThis())
+
+    override fun toString(): String = "HeavyIJDDContext(project=$projectDir)"
+}
+
+/**
+ * This context represents a project as a usual project in the file system.
+ */
+abstract class LightIJDDContext<C : LightIJDDContext<C>>(
+    override val projectDir: VirtualFile,
+    override val indexProject: Project,
+    originalProject: Project,
+) : IJDDContextBase<C>(originalProject) {
+    abstract fun copy(projectDir: VirtualFile): C
+
+    protected abstract fun getThis(): C
+
+    override suspend fun <T> transform(transformer: IJDDContextTransformer<T>): T =
+        transformer.transformLight(getThis())
+
+    override suspend fun clone(cloner: IJDDContextCloner): C? =
+        cloner.cloneLight(getThis())
+
+    override fun toString(): String = "LightIJDDContext(project=$projectDir, indexProject=$indexProjectDir)"
+}
+
+interface IJDDContextTransformer<T> {
+    suspend fun <C : LightIJDDContext<C>> transformLight(context: C): T
+    suspend fun <C : HeavyIJDDContext<C>> transformHeavy(context: C): T
+}
+
+interface IJDDContextCloner {
+    suspend fun <C : LightIJDDContext<C>> cloneLight(context: C): C?
+    suspend fun <C : HeavyIJDDContext<C>> cloneHeavy(context: C): C?
 }

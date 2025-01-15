@@ -22,8 +22,7 @@ import java.nio.file.Path
 
 import kotlin.io.path.relativeTo
 
-class DeclarationDeletingLens<C> :
-    BasePsiLens<C, PsiStubDDItem, KtStub>() where C : IJDDContext, C : WithImportRefCounterContext<C> {
+class DeclarationDeletingLens<C : WithImportRefCounterContext<C>> : BasePsiLens<C, PsiStubDDItem, KtStub>() {
     private val logger = KotlinLogging.logger {}
     override fun focusOnPsiElement(
         item: PsiStubDDItem,

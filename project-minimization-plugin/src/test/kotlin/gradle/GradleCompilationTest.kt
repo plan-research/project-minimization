@@ -16,6 +16,7 @@ import org.plan.research.minimization.plugin.execution.transformer.PathRelativiz
 import org.plan.research.minimization.plugin.model.CompilationResult
 import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
@@ -25,8 +26,7 @@ import kotlin.io.path.name
 import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 
-@Suppress("UNCHECKED_CAST")
-abstract class GradleCompilationTest<C : IJDDContext> : GradleProjectBaseTest(), TestWithContext<C> {
+abstract class GradleCompilationTest<C : IJDDContextBase<C>> : GradleProjectBaseTest(), TestWithContext<C> {
     override fun setUp() {
         super.setUp()
         project.service<MinimizationPluginSettings>()
@@ -188,7 +188,7 @@ abstract class GradleCompilationTest<C : IJDDContext> : GradleProjectBaseTest(),
         }
         assertEquals(transformedResults[0], transformedResults[1])
 
-        deleteContext(snapshot as C)
+        deleteContext(snapshot)
     }
 
     fun testAnalysisProject() {

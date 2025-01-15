@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.plugin.getSnapshotManager
-import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
 import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.model.snapshot.TransactionAction
@@ -20,7 +20,7 @@ class SnapshotManagerService(private val rootProject: Project) : SnapshotManager
         .observe { it.getSnapshotManager(rootProject) }
 
     context(IJDDContextMonad<C>)
-    override suspend fun <T, C : IJDDContext> transaction(
+    override suspend fun <T, C : IJDDContextBase<C>> transaction(
         action: TransactionAction<T, C>,
     ): TransactionResult<T> = underlyingObject.transaction(action)
 }

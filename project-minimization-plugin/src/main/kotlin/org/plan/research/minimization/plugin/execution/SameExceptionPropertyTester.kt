@@ -8,6 +8,7 @@ import org.plan.research.minimization.plugin.model.BuildExceptionProvider
 import org.plan.research.minimization.plugin.model.IJPropertyTester
 import org.plan.research.minimization.plugin.model.ProjectItemLens
 import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
 import org.plan.research.minimization.plugin.model.exception.CompilationException
 import org.plan.research.minimization.plugin.model.exception.ExceptionComparator
 import org.plan.research.minimization.plugin.model.item.IJDDItem
@@ -26,7 +27,7 @@ private typealias Listeners<T> = List<SameExceptionPropertyTester.PropertyChecki
 /**
  * A property tester for Delta Debugging algorithm that leverages different compilation strategies
  */
-class SameExceptionPropertyTester<C : IJDDContext, T : IJDDItem> private constructor(
+class SameExceptionPropertyTester<C : IJDDContextBase<C>, T : IJDDItem> private constructor(
     rootProject: Project,
     private val buildExceptionProvider: BuildExceptionProvider,
     private val comparator: ExceptionComparator,
@@ -89,7 +90,7 @@ class SameExceptionPropertyTester<C : IJDDContext, T : IJDDItem> private constru
     companion object {
         private val logger = KotlinLogging.logger {}
 
-        suspend fun <C : IJDDContext, T : IJDDItem> create(
+        suspend fun <C : IJDDContextBase<C>, T : IJDDItem> create(
             compilerPropertyChecker: BuildExceptionProvider,
             exceptionComparator: ExceptionComparator,
             lens: ProjectItemLens<C, T>,

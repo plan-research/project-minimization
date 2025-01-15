@@ -6,10 +6,10 @@ import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
-import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
 import org.plan.research.minimization.plugin.model.context.LightIJDDContext
 
-interface TestWithContext<C : IJDDContext> {
+interface TestWithContext<C : IJDDContextBase<C>> {
     fun createContext(project: Project): C
     fun deleteContext(context: C)
 }
@@ -23,6 +23,8 @@ class LightTestContext(
 
     override fun copy(projectDir: VirtualFile): LightTestContext =
         LightTestContext(projectDir, indexProject, originalProject)
+
+    override fun getThis(): LightTestContext = this
 }
 
 class TestWithLightContext : TestWithContext<LightTestContext> {
@@ -36,6 +38,8 @@ class HeavyTestContext(
 ) : HeavyIJDDContext<HeavyTestContext>(project, originalProject) {
     override fun copy(project: Project): HeavyTestContext =
         HeavyTestContext(project, originalProject)
+
+    override fun getThis(): HeavyTestContext = this
 }
 
 class TestWithHeavyContext : TestWithContext<HeavyTestContext> {

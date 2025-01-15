@@ -2,7 +2,8 @@ package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.plugin.getCurrentTimeString
 import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
-import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
+import org.plan.research.minimization.plugin.model.context.IJDDContextCloner
 import org.plan.research.minimization.plugin.model.context.LightIJDDContext
 
 import com.intellij.openapi.application.readAction
@@ -29,7 +30,7 @@ import kotlinx.coroutines.withContext
  * @param rootProject The root project used as a source of services
  */
 @Service(Service.Level.PROJECT)
-class ProjectCloningService(private val rootProject: Project) {
+class ProjectCloningService(private val rootProject: Project) : IJDDContextCloner {
     private val openingService = service<ProjectOpeningService>()
     private val logsDirectoryName by rootProject
         .service<MinimizationPluginSettings>()
@@ -42,20 +43,14 @@ class ProjectCloningService(private val rootProject: Project) {
         .temporaryProjectLocation
         .observe { it }
 
-    suspend fun clone(context: IJDDContext): IJDDContext? =
-        when (context) {
-            is HeavyIJDDContext<*> -> clone(context)
-            is LightIJDDContext<*> -> clone(context)
-        }
-
-    suspend fun clone(context: LightIJDDContext<*>): LightIJDDContext<*>? {
+    override suspend fun <C : LightIJDDContext<C>> cloneLight(context: C): C? {
         val clonedPath = cloneProjectImpl(context.projectDir)
         val clonedProjectDir = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(clonedPath) ?: return null
         clonedProjectDir.refresh(false, true)
         return context.copy(projectDir = clonedProjectDir)
     }
 
-    suspend fun clone(context: HeavyIJDDContext<*>): HeavyIJDDContext<*>? {
+    override suspend fun <C : HeavyIJDDContext<C>> cloneHeavy(context: C): C? {
         val clonedPath = cloneProjectImpl(context.projectDir)
         val clonedProject = openingService.openProject(clonedPath) ?: return null
         return context.copy(project = clonedProject)
@@ -113,4 +108,7 @@ class ProjectCloningService(private val rootProject: Project) {
             }
         }
     }
+
+    suspend fun <C : IJDDContextBase<C>> clone(context: C): C? =
+        context.clone(this)
 }

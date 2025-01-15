@@ -115,16 +115,16 @@ class DeclarationDeletingLens<C : WithImportRefCounterContext<C>> : BasePsiLens<
         }
     }
 
-    private suspend fun List<KtElement>.processElements(initialCounter: PsiImportRefCounter) =
+    private suspend fun List<KtElement>.processElements(context: IJDDContext, initialCounter: PsiImportRefCounter) =
         fold(initialCounter) { currentCounter, psiElement ->
-            currentCounter.decreaseCounterBasedOnKtElement(psiElement)
+            currentCounter.decreaseCounterBasedOnKtElement(context, psiElement)
         }
 
     private suspend fun C.processRefs(ktFile: KtFile, currentRefs: List<KtElement>): PsiImportRefCounter {
         val counterForCurrentFile = importRefCounter[ktFile.getLocalPath(this)]
             .getOrNull()
             ?: error("Couldn't find a ref counter for localPath=${ktFile.getLocalPath(this)}")
-        val modifiedCounter = currentRefs.processElements(counterForCurrentFile)
+        val modifiedCounter = currentRefs.processElements(this, counterForCurrentFile)
         removeUnusedImports(ktFile, modifiedCounter)
         return modifiedCounter.purgeUnusedImports()
     }

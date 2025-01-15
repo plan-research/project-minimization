@@ -19,6 +19,7 @@ class LoggingPropertyCheckingListener<T : IJDDItem>(folderSuffix: String) : Prop
     private val logLocation = Path(ExecutionDiscriminator.loggingFolder.get(), "property-checking-log-$folderSuffix")
     private val entries = mutableMapOf<String, LogStage>()
     private val logger = KotlinLogging.logger { }
+    private var iteration = 0
 
     init {
         logLocation.createDirectories()
@@ -60,7 +61,7 @@ class LoggingPropertyCheckingListener<T : IJDDItem>(folderSuffix: String) : Prop
         val id = context.projectDir.name
         val entry = entries[id] as? LogStage.BeforeFocus
             ?: logger.error { "No entry found for $id on successful compilation" }.let { return }
-        fileById(context.projectDir.name).writeText(
+        fileById("${++iteration}-${context.projectDir.name}").writeText(
             json.encodeToString(
                 LogStage.SuccessfulCompilation(
                     entry.items,

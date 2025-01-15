@@ -201,4 +201,18 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
             doTest(context, items, "project-overridden-multiple-files-result")
         }
     }
+
+    fun testDeletingNonReceiver() {
+        myFixture.copyDirectoryToProject("project-import-receiver", ".")
+        val importRefCounter = runBlocking {
+            KtSourceImportRefCounter.create(HeavyTestContext(project)).getOrNull()
+        }
+        kotlin.test.assertNotNull(importRefCounter)
+        val context = TestContext(project, importRefCounter)
+        val allItems = runBlocking { getAllItems(context) }
+        val items = allItems.filter { it.childrenPath.size == 1 && it.childrenPath.singleOrNull()?.let {it is KtFunctionStub && it.name == "y"} == true }
+        runBlocking {
+            doTest(context, items, "project-import-receiver-result")
+        }
+    }
 }

@@ -17,6 +17,7 @@ sealed interface PsiStubDDItem : PsiDDItem<KtStub> {
             KtNamedFunction::class.java,
             KtClass::class.java,
             KtObjectDeclaration::class.java,
+            KtTypeAlias::class.java,
         )
         val DELETABLE_PSI_JAVA_CLASSES: List<ClassKtExpression> =
             DELETABLE_PSI_INSIDE_FUNCTION_CLASSES + listOf(

@@ -29,12 +29,8 @@ abstract class BasePsiLens<C, I, T> :
         itemsToDelete: List<I>,
     ) {
         logger.info { "Built a trie for the current context" }
-        val items = itemsToDelete as? List<I>
-        items ?: run {
-            logger.warn { "Some items from $items are not PsiDDItem. The wrong lens is used. " }
-            return
-        }
-        logFocusedItems(items, context)
+        logFocusedItems(itemsToDelete, context)
+        prepare(itemsToDelete)
         val levelDiff = itemsToDelete
             .flatMap { transformSelectedElements(it, context) }
             .groupBy(PsiDDItem<T>::localPath)
@@ -45,6 +41,10 @@ abstract class BasePsiLens<C, I, T> :
     }
 
     protected open fun transformSelectedElements(item: I, context: C): List<I> = listOf(item)
+
+    context(IJDDContextMonad<C>)
+    @Suppress("EMPTY_BLOCK_STRUCTURE_ERROR")
+    protected open fun prepare(itemsToDelete: List<I>) { }
 
     private suspend fun logFocusedItems(items: List<I>, context: C) {
         if (!logger.isTraceEnabled) {

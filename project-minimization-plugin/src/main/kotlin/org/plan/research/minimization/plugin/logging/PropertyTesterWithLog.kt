@@ -3,8 +3,8 @@ package org.plan.research.minimization.plugin.logging
 import org.plan.research.minimization.core.model.PropertyTestResult
 import org.plan.research.minimization.plugin.model.IJPropertyTester
 import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 import org.plan.research.minimization.plugin.model.item.IJDDItem
+import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 
 import mu.KotlinLogging
 

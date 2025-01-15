@@ -1,7 +1,8 @@
 package org.plan.research.minimization.plugin.model.context.impl
 
-import com.intellij.openapi.project.Project
 import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
+
+import com.intellij.openapi.project.Project
 
 class DefaultProjectContext(
     project: Project,

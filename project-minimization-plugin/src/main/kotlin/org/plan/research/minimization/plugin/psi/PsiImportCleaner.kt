@@ -1,5 +1,6 @@
 package org.plan.research.minimization.plugin.psi
 
+import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 
 import com.intellij.openapi.application.smartReadAction
@@ -15,7 +16,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
-import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 
 class PsiImportCleaner {
     private val processorPermits = Runtime.getRuntime().availableProcessors() * 2

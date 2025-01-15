@@ -1,9 +1,9 @@
 package org.plan.research.minimization.core.algorithm.dd.hierarchical
 
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
+import org.plan.research.minimization.core.model.*
 
 import arrow.core.Option
-import org.plan.research.minimization.core.model.*
 
 /**
  * Represents a level in a hierarchical delta debugging process.
@@ -36,6 +36,7 @@ data class ReversedHDDLevel<M : Monad, T : DDItem>(
     val propertyTester: ReversedPropertyTester<M, T>,
 )
 
+@Suppress("TYPE_ALIAS")
 interface ReversedHierarchicalDDGenerator<M : MonadT<M2>, M2 : Monad, T : DDItem> {
     context(M)
     suspend fun generateFirstLevel(): Option<ReversedHDDLevel<M2, T>>

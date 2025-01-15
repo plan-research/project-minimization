@@ -10,6 +10,7 @@ import org.plan.research.minimization.plugin.logging.LoggingPropertyCheckingList
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducerResult
 import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.WithImportRefCounterContext
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
 import org.plan.research.minimization.plugin.psi.CompressingPsiItemTrie
 import org.plan.research.minimization.plugin.psi.StubCompressingPsiTrie
@@ -23,7 +24,6 @@ import arrow.core.raise.ensureNotNull
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.guessProjectDir
 import mu.KotlinLogging
-import org.plan.research.minimization.plugin.model.context.WithImportRefCounterContext
 
 import java.nio.file.Path
 

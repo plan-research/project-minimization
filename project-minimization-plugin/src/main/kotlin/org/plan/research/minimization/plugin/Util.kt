@@ -1,7 +1,9 @@
 package org.plan.research.minimization.plugin
 
+import org.plan.research.minimization.core.algorithm.dd.ReversedDDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.impl.DDMin
 import org.plan.research.minimization.core.algorithm.dd.impl.ProbabilisticDD
+import org.plan.research.minimization.core.algorithm.dd.impl.asReversed
 import org.plan.research.minimization.plugin.execution.DumbCompiler
 import org.plan.research.minimization.plugin.execution.comparable.SimpleExceptionComparator
 import org.plan.research.minimization.plugin.execution.comparable.StacktraceExceptionComparator
@@ -32,8 +34,6 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import org.plan.research.minimization.core.algorithm.dd.ReversedDDAlgorithm
-import org.plan.research.minimization.core.algorithm.dd.impl.asReversed
 
 object PathSerializer : KSerializer<Path> {
     override val descriptor: SerialDescriptor =

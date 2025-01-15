@@ -1,6 +1,7 @@
 package org.plan.research.minimization.plugin.model
 
 import org.plan.research.minimization.plugin.errors.MinimizationError
+import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.state.DDStrategy
 
@@ -8,7 +9,6 @@ import arrow.core.Either
 import arrow.optics.optics
 import com.intellij.util.xmlb.annotations.Property
 import com.intellij.util.xmlb.annotations.Tag
-import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 
 typealias MinimizationResult = Either<MinimizationError, IJDDContext>
 

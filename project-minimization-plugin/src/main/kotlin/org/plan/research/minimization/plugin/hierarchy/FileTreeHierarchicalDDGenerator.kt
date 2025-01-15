@@ -1,11 +1,13 @@
 package org.plan.research.minimization.plugin.hierarchy
 
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
+import org.plan.research.minimization.core.algorithm.dd.hierarchical.ReversedHDDLevel
+import org.plan.research.minimization.core.model.lift
 import org.plan.research.minimization.plugin.model.IJHierarchicalDDGenerator
 import org.plan.research.minimization.plugin.model.IJPropertyTester
 import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 import org.plan.research.minimization.plugin.model.item.ProjectFileDDItem
+import org.plan.research.minimization.plugin.model.monad.IJContextWithProgressMonad
 import org.plan.research.minimization.plugin.services.RootsManagerService
 
 import arrow.core.raise.option
@@ -13,11 +15,6 @@ import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.platform.util.progress.SequentialProgressReporter
-import org.plan.research.minimization.core.algorithm.dd.hierarchical.ReversedHDDLevel
-import org.plan.research.minimization.core.model.Monad
-import org.plan.research.minimization.core.model.lift
-import org.plan.research.minimization.plugin.model.monad.WithProgressMonadT
 
 import java.nio.file.Path
 
@@ -27,9 +24,9 @@ import kotlin.io.path.relativeTo
 class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
     private val propertyTester: IJPropertyTester<C, ProjectFileDDItem>,
 ) : IJHierarchicalDDGenerator<C, ProjectFileDDItem> {
-    private lateinit var reporter: ProgressReporter<IJDDContextMonad<C>>
+    private lateinit var reporter: ProgressReporter
 
-    context(WithProgressMonadT<IJDDContextMonad<C>>)
+    context(IJContextWithProgressMonad<C>)
     override suspend fun generateFirstLevel() =
         option {
             val level = lift {
@@ -48,7 +45,7 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
             ReversedHDDLevel(level, propertyTester)
         }
 
-    context(WithProgressMonadT<IJDDContextMonad<C>>)
+    context(IJContextWithProgressMonad<C>)
     override suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<ProjectFileDDItem>) =
         option {
             val nextFiles = lift {
@@ -75,11 +72,10 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
      *
      * @param context The context of the project.
      * @param roots An array of VirtualFile representing the starting points to compute levels.
-     * @property reporter An instance of [SequentialProgressReporter] used for updating the progress.
      * @constructor Creates a new instance of [ProgressReporter] based on the given root path and the array of root files.
      */
-    context(WithProgressMonadT<M>)
-    private class ProgressReporter<M : Monad>(context: IJDDContext, roots: List<Path>) {
+    context(IJContextWithProgressMonad<C>)
+    private inner class ProgressReporter(context: C, roots: List<Path>) {
         @Volatile
         private var currentLevel = 0
         private val levelMaxDepths = HashMap<Path, Int>()
@@ -96,7 +92,7 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
          * @param context The context of the project.
          * @param roots An array of VirtualFile representing the starting points to compute levels.
          */
-        private fun computeLevels(context: IJDDContext, roots: List<Path>) {
+        private fun computeLevels(context: C, roots: List<Path>) {
             val stack = mutableListOf<StackEntry>()
             roots.forEach { root ->
                 context.projectDir.findFileByRelativePath(root.pathString)?.let {
@@ -130,7 +126,7 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
             val maxDepth = level.maxOf { levelMaxDepths[it.localPath]!! }
             nextStep((100 * currentLevel) / maxDepth)
         }
-
-        private data class StackEntry(val file: VirtualFile, val level: Int, var nextChildIndex: Int = 0)
     }
+
+    private data class StackEntry(val file: VirtualFile, val level: Int, var nextChildIndex: Int = 0)
 }

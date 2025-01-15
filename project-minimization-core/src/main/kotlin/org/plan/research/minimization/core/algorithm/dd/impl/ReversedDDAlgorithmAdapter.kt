@@ -7,11 +7,19 @@ import org.plan.research.minimization.core.model.*
 import java.util.*
 
 class ReversedDDAlgorithmAdapter(private val ddAlgorithm: DDAlgorithm) : ReversedDDAlgorithm {
+    context(M)
+    override suspend fun <M : Monad, T : DDItem> minimize(
+        items: List<T>,
+        propertyTester: ReversedPropertyTester<M, T>,
+    ): DDAlgorithmResult<T> {
+        val adapter = PropertyTesterAdapter(propertyTester, items)
+        return ddAlgorithm.minimize(items, adapter)
+    }
     private class PropertyTesterAdapter<M : Monad, T : DDItem>(
         private val tester: ReversedPropertyTester<M, T>,
         currentItems: List<T>,
     ) : PropertyTester<M, T> {
-        private val currentItems = IdentityHashMap(currentItems.associateWith { })
+        private val currentItems = IdentityHashMap(currentItems.associateWith { Unit })
 
         context(M)
         override suspend fun test(items: List<T>): PropertyTestResult {
@@ -20,15 +28,6 @@ class ReversedDDAlgorithmAdapter(private val ddAlgorithm: DDAlgorithm) : Reverse
                 itemsToDelete.forEach { currentItems.remove(it) }
             }
         }
-    }
-
-    context(M)
-    override suspend fun <M : Monad, T : DDItem> minimize(
-        items: List<T>,
-        propertyTester: ReversedPropertyTester<M, T>,
-    ): DDAlgorithmResult<T> {
-        val adapter = PropertyTesterAdapter(propertyTester, items)
-        return ddAlgorithm.minimize(items, adapter)
     }
 }
 

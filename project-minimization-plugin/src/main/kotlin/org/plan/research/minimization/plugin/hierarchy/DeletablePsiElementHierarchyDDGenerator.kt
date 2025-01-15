@@ -1,20 +1,20 @@
 package org.plan.research.minimization.plugin.hierarchy
 
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
+import org.plan.research.minimization.core.algorithm.dd.hierarchical.ReversedHDDLevel
+import org.plan.research.minimization.core.model.Monad
 import org.plan.research.minimization.plugin.model.IJHierarchicalDDGenerator
 import org.plan.research.minimization.plugin.model.IJPropertyTester
 import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
+import org.plan.research.minimization.plugin.model.monad.IJContextWithProgressMonad
+import org.plan.research.minimization.plugin.model.monad.WithProgressMonadT
 import org.plan.research.minimization.plugin.psi.CompressingPsiItemTrie.NextPsiDDItemInfo
 import org.plan.research.minimization.plugin.psi.StubCompressingPsiTrie
 import org.plan.research.minimization.plugin.psi.stub.KtStub
 
 import arrow.core.None
 import arrow.core.raise.option
-import org.plan.research.minimization.core.algorithm.dd.hierarchical.ReversedHDDLevel
-import org.plan.research.minimization.core.model.Monad
-import org.plan.research.minimization.plugin.model.monad.WithProgressMonadT
 
 import java.nio.file.Path
 
@@ -27,7 +27,7 @@ class DeletablePsiElementHierarchyDDGenerator<C : IJDDContext>(
     private val cache: MutableMap<PsiStubDDItem, StubCompressingPsiTrie> = mutableMapOf()
     private val maximumTrieDepth = perFileTries.maxOf { (_, trie) -> trie.maxDepth }
 
-    context(WithProgressMonadT<IJDDContextMonad<C>>)
+    context(IJContextWithProgressMonad<C>)
     override suspend fun generateFirstLevel() = option {
         nextStep(1)  // Initial step of the progress bar
 
@@ -38,7 +38,7 @@ class DeletablePsiElementHierarchyDDGenerator<C : IJDDContext>(
         ReversedHDDLevel(firstLevelItems, propertyChecker)
     }
 
-    context(WithProgressMonadT<IJDDContextMonad<C>>)
+    context(IJContextWithProgressMonad<C>)
     override suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<PsiStubDDItem>) =
         option {
             val nextNodesInTrie = minimizationResult

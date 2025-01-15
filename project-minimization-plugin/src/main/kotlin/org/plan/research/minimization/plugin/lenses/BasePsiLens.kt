@@ -2,9 +2,9 @@ package org.plan.research.minimization.plugin.lenses
 
 import org.plan.research.minimization.plugin.model.ProjectItemLens
 import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 import org.plan.research.minimization.plugin.model.item.PsiDDItem
 import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
+import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.psi.trie.PsiTrie
 

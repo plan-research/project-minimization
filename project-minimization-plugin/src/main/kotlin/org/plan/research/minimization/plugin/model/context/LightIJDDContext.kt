@@ -11,7 +11,6 @@ abstract class LightIJDDContext<C : LightIJDDContext<C>>(
     override val indexProject: Project,
     originalProject: Project,
 ) : IJDDContext(originalProject) {
-
     abstract fun copy(projectDir: VirtualFile): C
 
     override fun toString(): String = "LightIJDDContext(project=$projectDir, indexProject=$indexProjectDir)"

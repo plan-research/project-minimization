@@ -7,6 +7,7 @@ import org.plan.research.minimization.plugin.model.MinimizationStage
 import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.context.LightIJDDContext
+import org.plan.research.minimization.plugin.model.context.impl.DefaultProjectContext
 import org.plan.research.minimization.plugin.psi.PsiImportCleaner
 
 import arrow.core.Either
@@ -27,7 +28,8 @@ import mu.KotlinLogging
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import org.plan.research.minimization.plugin.model.context.impl.DefaultProjectContext
+
+typealias MinimizationResult = Either<MinimizationError, HeavyIJDDContext<*>>
 
 @Service(Service.Level.PROJECT)
 class MinimizationService(private val project: Project, private val coroutineScope: CoroutineScope) {
@@ -51,7 +53,7 @@ class MinimizationService(private val project: Project, private val coroutineSco
         }
     }
 
-    private suspend fun minimizeProjectImpl(): Either<MinimizationError, HeavyIJDDContext<*>> = withLoggingFolder {
+    private suspend fun minimizeProjectImpl(): MinimizationResult = withLoggingFolder {
         either {
             logger.info { "Start Project minimization" }
             var context: HeavyIJDDContext<*> = DefaultProjectContext(project)

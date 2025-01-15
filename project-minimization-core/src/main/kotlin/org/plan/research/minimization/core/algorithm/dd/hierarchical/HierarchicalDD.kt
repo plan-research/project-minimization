@@ -1,15 +1,15 @@
 package org.plan.research.minimization.core.algorithm.dd.hierarchical
 
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
+import org.plan.research.minimization.core.algorithm.dd.ReversedDDAlgorithm
 import org.plan.research.minimization.core.model.DDItem
+import org.plan.research.minimization.core.model.Monad
+import org.plan.research.minimization.core.model.MonadT
+import org.plan.research.minimization.core.model.lift
 
 import arrow.core.getOrElse
 
 import kotlinx.coroutines.yield
-import org.plan.research.minimization.core.algorithm.dd.ReversedDDAlgorithm
-import org.plan.research.minimization.core.model.Monad
-import org.plan.research.minimization.core.model.MonadT
-import org.plan.research.minimization.core.model.lift
 
 /**
  * The `HierarchicalDD` class provides a wrapper around a base delta debugging algorithm to facilitate
@@ -36,7 +36,7 @@ class HierarchicalDD(private val baseDDAlgorithm: DDAlgorithm) {
 
 class ReversedHierarchicalDD(private val baseDDAlgorithm: ReversedDDAlgorithm) {
     context(M)
-    suspend fun <M : MonadT<M2>, M2: Monad, T : DDItem> minimize(generator: ReversedHierarchicalDDGenerator<M, M2, T>) {
+    suspend fun <M : MonadT<M2>, M2 : Monad, T : DDItem> minimize(generator: ReversedHierarchicalDDGenerator<M, M2, T>) {
         var level = generator.generateFirstLevel().getOrElse { return }
         while (true) {
             yield()

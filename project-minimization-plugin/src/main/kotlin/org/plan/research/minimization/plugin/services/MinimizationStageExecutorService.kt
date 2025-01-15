@@ -1,5 +1,6 @@
 package org.plan.research.minimization.plugin.services
 
+import org.plan.research.minimization.core.algorithm.dd.hierarchical.ReversedHierarchicalDD
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.getDDAlgorithm
@@ -13,9 +14,14 @@ import org.plan.research.minimization.plugin.model.DeclarationLevelStage
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.FunctionLevelStage
 import org.plan.research.minimization.plugin.model.MinimizationStageExecutor
-import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
+import org.plan.research.minimization.plugin.model.context.*
+import org.plan.research.minimization.plugin.model.context.impl.DeclarationLevelStageContext
+import org.plan.research.minimization.plugin.model.context.impl.FileLevelStageContext
+import org.plan.research.minimization.plugin.model.context.impl.FunctionLevelStageContext
 import org.plan.research.minimization.plugin.model.item.PsiDDItem
 import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
+import org.plan.research.minimization.plugin.model.monad.*
+import org.plan.research.minimization.plugin.psi.KtSourceImportRefCounter
 import org.plan.research.minimization.plugin.psi.PsiUtils
 
 import arrow.core.Either
@@ -26,14 +32,6 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import mu.KotlinLogging
-import org.plan.research.minimization.core.algorithm.dd.hierarchical.ReversedHierarchicalDD
-import org.plan.research.minimization.plugin.model.context.*
-import org.plan.research.minimization.plugin.model.context.impl.DeclarationLevelStageContext
-import org.plan.research.minimization.plugin.model.context.impl.FileLevelStageContext
-import org.plan.research.minimization.plugin.model.context.impl.FunctionLevelStageContext
-import org.plan.research.minimization.plugin.model.monad.WithProgressMonadT
-import org.plan.research.minimization.plugin.model.monad.withProgress
-import org.plan.research.minimization.plugin.psi.KtSourceImportRefCounter
 
 @Service(Service.Level.PROJECT)
 class MinimizationStageExecutorService(private val project: Project) : MinimizationStageExecutor {
@@ -43,7 +41,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         logger.info { "Start File level stage" }
         statLogger.info {
             "File level stage settings, " +
-                    "DDAlgorithm: ${fileLevelStage.ddAlgorithm}"
+                "DDAlgorithm: ${fileLevelStage.ddAlgorithm}"
         }
 
         val lightContext = FileLevelStageContext(context.projectDir, context.project, context.originalProject)
@@ -108,7 +106,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         }
         logger.trace {
             "Starting DD Algorithm with following elements:\n" +
-                    text.joinToString("\n") { "\t- $it" }
+                text.joinToString("\n") { "\t- $it" }
         }
     }
 
@@ -119,7 +117,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         logger.info { "Start Function deleting stage" }
         statLogger.info {
             "Function deleting stage settings, " +
-                    "DDAlgorithm: ${declarationLevelStage.ddAlgorithm}"
+                "DDAlgorithm: ${declarationLevelStage.ddAlgorithm}"
         }
 
         val importRefCounter = KtSourceImportRefCounter.create(context).getOrElse {
@@ -152,7 +150,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
     }
 
     private suspend inline fun <C : IJDDContext> C.runMonadWithProgress(
-        action: context(WithProgressMonadT<IJDDContextMonad<C>>) () -> Unit,
+        action: IJContextWithProgressMonadF<C, Unit>,
     ): C = runMonad { withProgress(action) }
 
     private inline fun <C : IJDDContext> C.runMonad(

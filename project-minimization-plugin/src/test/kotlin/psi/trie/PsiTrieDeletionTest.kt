@@ -2,6 +2,7 @@ package psi.trie
 
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.service
+import com.intellij.openapi.project.guessProjectDir
 import com.intellij.psi.PsiElement
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.idea.util.isComma
@@ -10,14 +11,16 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtProperty
-import org.jetbrains.plugins.groovy.lang.psi.util.isWhiteSpaceOrNewLine
+import org.jetbrains.kotlin.psi.KtTypeAlias
+import org.jetbrains.kotlin.psi.KtTypeParameterList
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.PsiStubDDItem
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.psi.stub.KtStub
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
-import kotlin.test.assertIs
+import kotlin.io.path.pathString
+import kotlin.io.path.relativeTo
 
 class PsiTrieDeletionTest : PsiTrieTestBase<PsiStubDDItem, KtStub>() {
     fun testFunctions() {
@@ -102,6 +105,60 @@ class PsiTrieDeletionTest : PsiTrieTestBase<PsiStubDDItem, KtStub>() {
         ) { runBlocking { readAction { (it is KtParameter && it.name == "x") } } }
     }
 
+    fun testTypeAlias() {
+        val psiFile = loadPsiFile("type-alias.kt", "type-alias-1.kt")
+        doTest(
+            psiFile,
+            "type-alias_1.kt"
+        ) { runBlocking { readAction { it is KtTypeAlias } } }
+    }
+
+    fun testTypeAlias2() {
+        val psiFile = loadPsiFile("type-alias.kt", "type-alias-2.kt")
+        doTest(
+            psiFile,
+            "type-alias_2.kt"
+        ) {
+            runBlocking {
+                readAction {
+                    it is KtTypeAlias &&
+                            (it.children.find { it is KtTypeParameterList } as? KtTypeParameterList)
+                                ?.parameters
+                                ?.isNotEmpty() != true
+                }
+            }
+        }
+
+    }
+    fun testTypeAlias3() {
+        val psiFile = loadPsiFile("type-alias.kt", "type-alias-3.kt")
+        val names = setOf(
+            "B", "D", "F", "G2"
+        )
+        doTest(
+            psiFile,
+            "type-alias_3.kt"
+        ) {
+            runBlocking {
+                readAction { it is KtTypeAlias && it.name !in names }
+            }
+        }
+    }
+    fun testTypeAlias4() {
+        val psiFile = loadPsiFile("type-alias.kt", "type-alias-4.kt")
+        val names = setOf(
+            "B", "D", "F", "G2"
+        )
+        doTest(
+            psiFile,
+            "type-alias_4.kt"
+        ) {
+            runBlocking {
+                readAction { it is KtTypeAlias && it.name in names }
+            }
+        }
+    }
+
     private fun doTest(
         psiFile: KtFile,
         expectedFile: String,
@@ -116,14 +173,16 @@ class PsiTrieDeletionTest : PsiTrieTestBase<PsiStubDDItem, KtStub>() {
                 nextSibling.delete()
             }
         }
-        val expectedFile = myFixture.configureByFile("deletion-results/$expectedFile")
-        assertIs<KtFile>(expectedFile)
-        readAction {
-            kotlin.test.assertEquals(
-                expectedFile.text,
-                psiFile.text
-            )
-        }
+        val path = psiFile.containingFile.virtualFile.toNioPath().relativeTo(project.guessProjectDir()!!.toNioPath())
+        myFixture.checkResultByFile(path.pathString, "deletion-results/$expectedFile", true)
+//        val expectedFile = myFixture.configureByFile("deletion-results/$expectedFile")
+//        assertIs<KtFile>(expectedFile)
+//        readAction {
+//            kotlin.test.assertEquals(
+//                expectedFile.text,
+//                psiFile.text
+//            )
+//        }
     }
 
     private fun PsiStubDDItem.psi(context: IJDDContext) =

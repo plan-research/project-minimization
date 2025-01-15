@@ -5,6 +5,8 @@ import com.intellij.psi.PsiWhiteSpace
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.symbols.*
 import org.jetbrains.kotlin.analysis.api.types.KaType
+import org.jetbrains.kotlin.analysis.api.types.KaTypeParameterType
+import org.jetbrains.kotlin.analysis.api.types.KaUsualClassType
 import org.jetbrains.kotlin.analysis.api.types.abbreviationOrSelf
 import org.jetbrains.kotlin.analysis.api.types.symbol
 import org.jetbrains.kotlin.psi.*
@@ -35,7 +37,6 @@ internal object TypeDeclarationLookup {
                     emptyList()
                 }
             }
-            is KtParameter -> emptyList()
 
             is KtCallableDeclaration -> symbol.getTypeDeclarationFromCallable { callableSymbol -> callableSymbol.returnType }
             is KtClassOrObject -> getClassTypeDeclaration(symbol)
@@ -43,6 +44,7 @@ internal object TypeDeclarationLookup {
             else -> emptyList()
         }
     }
+
     private fun getFunctionalLiteralTarget(symbol: KtFunctionLiteral): List<PsiElement> =
         symbol.getTypeDeclarationFromCallable { callableSymbol ->
             (callableSymbol as? KaFunctionSymbol)?.valueParameters?.firstOrNull()?.returnType
@@ -63,12 +65,17 @@ internal object TypeDeclarationLookup {
         }
 
     private fun KtCallableDeclaration.getTypeDeclarationFromCallable(typeFromSymbol: (KaCallableSymbol) -> KaType?): List<PsiElement> =
-        analyze(this) {
-            val symbol = symbol as? KaCallableSymbol ?: return emptyList()
-            val type = typeFromSymbol(symbol) ?: return emptyList()
-            val targetSymbol = type.upperBoundIfFlexible().abbreviationOrSelf.symbol ?: return emptyList()
-            listOfNotNull(targetSymbol.psi)
+        if (this is KtParameter && this.isFunctionTypeParameter) {
+            emptyList()
+        } else {
+            analyze(this) {
+                val symbol = symbol as? KaCallableSymbol ?: return emptyList()
+                val type = typeFromSymbol(symbol) ?: return emptyList()
+                val targetSymbol = type.upperBoundIfFlexible().abbreviationOrSelf.getSymbol() ?: return emptyList()
+                listOfNotNull(targetSymbol.psi)
+            }
         }
+
     private fun KtCallableDeclaration.getParametersTypeDeclarationsFromCallable(typeFromSymbol: (KaCallableSymbol) -> List<KaType?>): List<PsiElement> =
         analyze(this) {
             val symbol = symbol as? KaCallableSymbol ?: return emptyList()
@@ -78,4 +85,10 @@ internal object TypeDeclarationLookup {
                     ?.psi
             }
         }
+
+    private fun KaType.getSymbol(): KaSymbol? = when (this) {
+        is KaTypeParameterType -> symbol
+        is KaUsualClassType -> symbol
+        else -> symbol
+    }
 }

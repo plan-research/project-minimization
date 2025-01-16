@@ -1,5 +1,6 @@
 package psi.trie
 
+import LightTestContext
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.service
 import com.intellij.psi.PsiElement
@@ -9,10 +10,9 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.IntChildrenIndex
-import org.plan.research.minimization.plugin.model.LightIJDDContext
-import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.item.index.IntChildrenIndex
+import org.plan.research.minimization.plugin.model.item.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.psi.PsiBodyReplacer
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
@@ -81,7 +81,7 @@ class PsiTrieModificationTest : PsiTrieTestBase<PsiChildrenIndexDDItem, IntChild
         filter: (PsiElement) -> Boolean,
     ) = runBlocking {
         configureModules(project)
-        val context = LightIJDDContext(project)
+        val context = LightTestContext(project)
         val selectedPsi =
             selectElements(context) { readAction { filter(PsiUtils.getPsiElementFromItem(context, it)!!) } }
         val psiBodyReplacer = PsiBodyReplacer(context)

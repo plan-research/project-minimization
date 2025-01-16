@@ -2,8 +2,8 @@ package org.plan.research.minimization.plugin.execution
 
 import org.plan.research.minimization.plugin.apply
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.exception.CompilationResult
+import org.plan.research.minimization.plugin.model.CompilationResult
+import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
 
 class BuildExceptionProviderWithTransformations(

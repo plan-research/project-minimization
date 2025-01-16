@@ -1,10 +1,10 @@
 package psi.manager
 
+import LightTestContext
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.service
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.psi.*
-import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import kotlin.test.assertIs
@@ -19,7 +19,7 @@ class MinimizationPsiManagerGettingTest : MinimizationPsiManagerTestBase() {
         val service = service<MinimizationPsiManagerService>()
         val psiFile = myFixture.configureByFile("functions.kt")
         assertIs<KtFile>(psiFile)
-        val context = LightIJDDContext(project)
+        val context = LightTestContext(project)
         val elements = runBlocking {
             service.findAllPsiWithBodyItems(context)
         }
@@ -49,7 +49,7 @@ class MinimizationPsiManagerGettingTest : MinimizationPsiManagerTestBase() {
         val service = service<MinimizationPsiManagerService>()
         val psiFile = myFixture.configureByFile("lambda.kt")
         assertIs<KtFile>(psiFile)
-        val context = LightIJDDContext(project)
+        val context = LightTestContext(project)
         val elements = runBlocking {
             service.findAllPsiWithBodyItems(context)
         }
@@ -70,7 +70,7 @@ class MinimizationPsiManagerGettingTest : MinimizationPsiManagerTestBase() {
         val service = service<MinimizationPsiManagerService>()
         val psiFile = myFixture.configureByFile("lambda-as-default.kt")
         assertIs<KtFile>(psiFile)
-        val context = LightIJDDContext(project)
+        val context = LightTestContext(project)
         val elements = runBlocking {
             service.findAllPsiWithBodyItems(context)
         }
@@ -89,7 +89,7 @@ class MinimizationPsiManagerGettingTest : MinimizationPsiManagerTestBase() {
         val service = service<MinimizationPsiManagerService>()
         val psiFile = myFixture.configureByFile("simple-class.kt")
         assertIs<KtFile>(psiFile)
-        val context = LightIJDDContext(project)
+        val context = LightTestContext(project)
         val elements = runBlocking {
             service.findAllPsiWithBodyItems(context)
         }
@@ -131,7 +131,7 @@ class MinimizationPsiManagerGettingTest : MinimizationPsiManagerTestBase() {
         val service = service<MinimizationPsiManagerService>()
         val psiFile = myFixture.configureByFile("complex-class.kt")
         assertIs<KtFile>(psiFile)
-        val context = LightIJDDContext(project)
+        val context = LightTestContext(project)
         val elements = runBlocking {
             service.findAllPsiWithBodyItems(context)
         }

@@ -1,24 +1,19 @@
 package org.plan.research.minimization.plugin.lenses
 
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.ProjectFileDDItem
 import org.plan.research.minimization.plugin.model.ProjectItemLens
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.item.ProjectFileDDItem
+import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 
 import com.intellij.openapi.application.writeAction
 
-class FileDeletingItemLens : ProjectItemLens<ProjectFileDDItem> {
-    override suspend fun focusOn(items: List<ProjectFileDDItem>, currentContext: IJDDContext): IJDDContext {
-        val targetFiles = currentContext
-            .currentLevel
-            ?.minus(items.toSet())
-            ?.filterIsInstance<ProjectFileDDItem>()
-            ?: return currentContext
-
+class FileDeletingItemLens<C : IJDDContext> : ProjectItemLens<C, ProjectFileDDItem> {
+    context(IJDDContextMonad<C>)
+    override suspend fun focusOn(itemsToDelete: List<ProjectFileDDItem>) {
         writeAction {
-            targetFiles.forEach { item ->
-                item.getVirtualFile(currentContext)?.delete(this)
+            itemsToDelete.forEach { item ->
+                item.getVirtualFile(context)?.delete(this)
             }
         }
-        return currentContext
     }
 }

@@ -1,6 +1,6 @@
 package lens
 
-import lens.PsiLensTestBase
+import LightTestContext
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.application.writeAction
@@ -16,26 +16,20 @@ import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
 import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
-import org.plan.research.minimization.plugin.model.HeavyIJDDContext
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.IntChildrenIndex
-import org.plan.research.minimization.plugin.model.LightIJDDContext
-import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
-import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
-import org.plan.research.minimization.plugin.model.PsiDDItem
-import org.plan.research.minimization.plugin.psi.PsiUtils
+import org.plan.research.minimization.plugin.model.item.PsiChildrenIndexDDItem
+import org.plan.research.minimization.plugin.model.item.index.IntChildrenIndex
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import org.plan.research.minimization.plugin.services.ProjectCloningService
-import kotlin.collections.toTypedArray
+import runMonad
 import kotlin.io.path.relativeTo
 
-class FunctionModificationLensTest : PsiLensTestBase<PsiChildrenIndexDDItem, IntChildrenIndex>() {
+class FunctionModificationLensTest : PsiLensTestBase<LightTestContext, PsiChildrenIndexDDItem, IntChildrenIndex>() {
     override fun getTestDataPath(): String {
         return "src/test/resources/testData/function-modification"
     }
 
-    override fun getLens() = FunctionModificationLens()
-    override suspend fun getAllItems(context: IJDDContext): List<PsiChildrenIndexDDItem> {
+    override fun getLens() = FunctionModificationLens<LightTestContext>()
+    override suspend fun getAllItems(context: LightTestContext): List<PsiChildrenIndexDDItem> {
         configureModules(context.indexProject)
         return service<MinimizationPsiManagerService>().findAllPsiWithBodyItems(context)
     }
@@ -43,13 +37,13 @@ class FunctionModificationLensTest : PsiLensTestBase<PsiChildrenIndexDDItem, Int
     fun testProjectSimple() {
         myFixture.copyDirectoryToProject("project-simple", ".")
         configureModules(project)
-        val context = LightIJDDContext(project)
+        val context = LightTestContext(project)
         runBlocking { doTest(context, emptyList(), "project-simple-modified") }
     }
 
     fun testMultipleFilesProject() {
         val root = myFixture.copyDirectoryToProject("project-multiple-files", ".")
-        val context = LightIJDDContext(project)
+        val context = LightTestContext(project)
         configureModules(project)
         runBlocking {
             val elementsA = getAllElements(context, root.findFile("a.kt")!!)
@@ -74,7 +68,7 @@ class FunctionModificationLensTest : PsiLensTestBase<PsiChildrenIndexDDItem, Int
     fun testMultiStageProject() {
         val root = myFixture.copyDirectoryToProject("project-multi-stage", ".")
         configureModules(project)
-        val context = LightIJDDContext(project)
+        val context = LightTestContext(project)
         runBlocking {
             val elementsA = getAllElements(context, root.findFile("a.kt")!!)
             val elementsB = getAllElements(context, root.findFile("b.kt")!!)
@@ -98,42 +92,42 @@ class FunctionModificationLensTest : PsiLensTestBase<PsiChildrenIndexDDItem, Int
     }
 
     override suspend fun doTest(
-        context: LightIJDDContext,
+        initialContext: LightTestContext,
         elements: List<PsiChildrenIndexDDItem>,
         expectedFolder: String
-    ): LightIJDDContext {
+    ): LightTestContext {
         val projectCloningService = project.service<ProjectCloningService>()
         val psiGetterService = service<MinimizationPsiManagerService>()
-        var cloned = projectCloningService.clone(context)
+        val cloned = projectCloningService.clone(initialContext) as LightTestContext
         kotlin.test.assertNotNull(cloned)
         configureModules(cloned.indexProject)
-        val lens = FunctionModificationLens()
+        val lens = getLens()
         val items = psiGetterService.findAllPsiWithBodyItems(cloned)
-        cloned = cloned.copy(currentLevel = items)
-        lens.focusOn(elements, cloned)
+        return cloned.runMonad {
+            lens.focusOn(items - elements.toSet())
 
-        val files = smartReadAction(cloned.indexProject) {
-            val fileIndex = ProjectRootManager.getInstance(cloned.indexProject).fileIndex
-            buildList { fileIndex.iterateContentUnderDirectory(cloned.projectDir) { fileOrDir -> add(fileOrDir); true } }
-        }
-        val projectRoot = cloned.projectDir.toNioPath()
-
-        files.mapNotNull { smartReadAction(cloned.indexProject) { it.toPsiFile(cloned.indexProject) } }
-            .forEach { file ->
-                val relativePath = file.virtualFile.toNioPathOrNull()!!.relativeTo(projectRoot)
-                val expectedPsiFile = myFixture.configureByFile("$expectedFolder/$relativePath")
-                readAction {
-                    kotlin.test.assertEquals(
-                        expectedPsiFile.text,
-                        file.text,
-                        "File $relativePath is not equal. Expected:\n${expectedPsiFile.text}\nActual:\n${file.text}\n"
-                    )
-                }
+            val files = smartReadAction(context.indexProject) {
+                val fileIndex = ProjectRootManager.getInstance(context.indexProject).fileIndex
+                buildList { fileIndex.iterateContentUnderDirectory(context.projectDir) { fileOrDir -> add(fileOrDir); true } }
             }
-        return cloned
+            val projectRoot = context.projectDir.toNioPath()
+
+            files.mapNotNull { smartReadAction(context.indexProject) { it.toPsiFile(context.indexProject) } }
+                .forEach { file ->
+                    val relativePath = file.virtualFile.toNioPathOrNull()!!.relativeTo(projectRoot)
+                    val expectedPsiFile = myFixture.configureByFile("$expectedFolder/$relativePath")
+                    readAction {
+                        kotlin.test.assertEquals(
+                            expectedPsiFile.text,
+                            file.text,
+                            "File $relativePath is not equal. Expected:\n${expectedPsiFile.text}\nActual:\n${file.text}\n"
+                        )
+                    }
+                }
+        }
     }
 
-    override suspend fun getAllElements(context: IJDDContext, vfs: VirtualFile): List<PsiChildrenIndexDDItem> {
+    override suspend fun getAllElements(context: LightTestContext, vfs: VirtualFile): List<PsiChildrenIndexDDItem> {
         configureModules(context.indexProject)
         val service = service<MinimizationPsiManagerService>()
         val elements = service.findAllPsiWithBodyItems(context)

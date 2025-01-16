@@ -3,15 +3,15 @@ package org.plan.research.minimization.plugin.services
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.getCurrentTimeString
 import org.plan.research.minimization.plugin.logging.ExecutionDiscriminator
-import org.plan.research.minimization.plugin.model.HeavyIJDDContext
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.MinimizationStage
+import org.plan.research.minimization.plugin.model.context.*
+import org.plan.research.minimization.plugin.model.context.impl.DefaultProjectContext
 import org.plan.research.minimization.plugin.psi.PsiImportCleaner
 
 import arrow.core.Either
 import arrow.core.raise.Raise
 import arrow.core.raise.either
+import arrow.core.right
 import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -28,6 +28,8 @@ import mu.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
+typealias MinimizationResult = Either<MinimizationError, HeavyIJDDContext<*>>
+
 @Service(Service.Level.PROJECT)
 class MinimizationService(private val project: Project, private val coroutineScope: CoroutineScope) {
     private val settings = project.service<MinimizationPluginSettings>()
@@ -39,8 +41,9 @@ class MinimizationService(private val project: Project, private val coroutineSco
     private val projectCloning = project.service<ProjectCloningService>()
     private val openingService = service<ProjectOpeningService>()
     private val logger = KotlinLogging.logger {}
+    private val heavyTransformer = HeavyTransformer()
 
-    fun minimizeProject(onComplete: suspend (HeavyIJDDContext) -> Unit = { }) {
+    fun minimizeProject(onComplete: suspend (HeavyIJDDContext<*>) -> Unit = { }) {
         coroutineScope.launch {
             settings.withFrozenState {
                 withBackgroundProgress(project, "Minimizing project") {
@@ -50,10 +53,10 @@ class MinimizationService(private val project: Project, private val coroutineSco
         }
     }
 
-    private suspend fun minimizeProjectImpl(): Either<MinimizationError, HeavyIJDDContext> = withLoggingFolder {
+    private suspend fun minimizeProjectImpl(): MinimizationResult = withLoggingFolder {
         either {
             logger.info { "Start Project minimization" }
-            var context = HeavyIJDDContext(project)
+            var context: HeavyIJDDContext<*> = DefaultProjectContext(project)
 
             reportSequentialProgress(stages.size) { reporter ->
                 context = cloneProject(context, reporter)
@@ -74,10 +77,10 @@ class MinimizationService(private val project: Project, private val coroutineSco
     }
 
     private suspend fun Raise<MinimizationError>.processStage(
-        context: HeavyIJDDContext,
+        context: HeavyIJDDContext<*>,
         stage: MinimizationStage,
         reporter: SequentialProgressReporter,
-    ): HeavyIJDDContext {
+    ): HeavyIJDDContext<*> {
         val newContext = reporter.itemStep("Minimization step: ${stage.name}") {
             stage.apply(context, executor).bind()
         }
@@ -104,12 +107,12 @@ class MinimizationService(private val project: Project, private val coroutineSco
     }
 
     private suspend fun Raise<MinimizationError>.cloneProject(
-        context: HeavyIJDDContext,
+        context: HeavyIJDDContext<*>,
         reporter: SequentialProgressReporter,
-    ): HeavyIJDDContext {
+    ): HeavyIJDDContext<*> {
         logger.info { "Clonning project..." }
         val result = reporter.indeterminateStep("Clonning project") {
-            projectCloning.clone(context) ?: raise(MinimizationError.CloningFailed)
+            context.clone(projectCloning) ?: raise(MinimizationError.CloningFailed)
         }
         logger.info { "Project clone end" }
         logger.info { "Wait for indexing" }
@@ -125,24 +128,13 @@ class MinimizationService(private val project: Project, private val coroutineSco
     }
 
     private suspend fun Raise<MinimizationError>.makeHeavy(
-        oldContext: HeavyIJDDContext,
-        context: IJDDContext,
-    ): HeavyIJDDContext {
+        oldContext: HeavyIJDDContext<*>,
+        context: IJDDContextBase<*>,
+    ): HeavyIJDDContext<*> {
         if (oldContext.projectDir == context.projectDir) {
             return oldContext
         }
-        val newContext = when (context) {
-            is HeavyIJDDContext -> context
-            is LightIJDDContext -> {
-                val openedProject = openingService.openProject(context.projectDir.toNioPath())
-                    ?: raise(MinimizationError.OpeningFailed)
-                HeavyIJDDContext(
-                    openedProject, context.originalProject,
-                    context.currentLevel, context.progressReporter,
-                    context.importRefCounter,
-                )
-            }
-        }
+        val newContext = context.transform(heavyTransformer).bind()
 
         // TODO: JBRes-2103 Resource Management
         ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(oldContext.project)
@@ -150,7 +142,7 @@ class MinimizationService(private val project: Project, private val coroutineSco
         return newContext
     }
 
-    private suspend fun postProcess(context: HeavyIJDDContext) {
+    private suspend fun postProcess(context: HeavyIJDDContext<*>) {
         val importCleaner = PsiImportCleaner()
         try {
             importCleaner.cleanAllImports(context)
@@ -169,5 +161,16 @@ class MinimizationService(private val project: Project, private val coroutineSco
         val executionId = "execution-$time"
 
         return ExecutionDiscriminator.withLoggingFolder(logsBaseDir, executionId, block)
+    }
+
+    private inner class HeavyTransformer : IJDDContextTransformer<MinimizationResult> {
+        override suspend fun transformLight(context: LightIJDDContext<*>) = either {
+            val openedProject = openingService.openProject(context.projectDir.toNioPath())
+                ?: raise(MinimizationError.OpeningFailed)
+            DefaultProjectContext(openedProject, context.originalProject)
+        }
+
+        override suspend fun transformHeavy(context: HeavyIJDDContext<*>) =
+            context.right()
     }
 }

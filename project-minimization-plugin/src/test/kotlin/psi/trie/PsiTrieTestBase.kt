@@ -1,20 +1,19 @@
 package psi.trie
 
+import LightTestContext
 import AbstractAnalysisKotlinTest
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.psi.PsiElement
 import com.intellij.testFramework.PlatformTestUtil
-import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.psi.KtFile
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.LightIJDDContext
-import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
-import org.plan.research.minimization.plugin.model.PsiDDItem
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
+import org.plan.research.minimization.plugin.model.item.PsiDDItem
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.psi.trie.PsiTrie
 import kotlin.test.assertIs
@@ -39,7 +38,7 @@ abstract class PsiTrieTestBase<ITEM, T> : AbstractAnalysisKotlinTest() where ITE
         selectedPsi: List<ITEM>,
         psiProcessor: (ITEM, PsiElement) -> Unit
     ) {
-        val context = LightIJDDContext(project)
+        val context = LightTestContext(project)
         val diffPsi = selectedPsi.groupBy { it.localPath }
         for ((_, elements) in diffPsi) {
             val trie = PsiTrie.create(elements)

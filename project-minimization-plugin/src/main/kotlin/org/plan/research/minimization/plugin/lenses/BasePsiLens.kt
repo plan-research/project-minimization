@@ -1,13 +1,13 @@
 package org.plan.research.minimization.plugin.lenses
 
-import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.ProjectItemLens
-import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
-import org.plan.research.minimization.plugin.model.PsiDDItem
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.item.PsiDDItem
+import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
+import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.psi.trie.PsiTrie
 
-import arrow.core.fold
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.vfs.findFile
@@ -20,38 +20,33 @@ import java.nio.file.Path
 /**
  * An abstract class for the PSI element focusing lens
  */
-abstract class BasePsiLens<I, T> :
-    ProjectItemLens<I> where I : PsiDDItem<T>, T : Comparable<T>, T : PsiChildrenPathIndex {
+abstract class BasePsiLens<C, I, T> :
+    ProjectItemLens<C, I> where C : IJDDContext, I : PsiDDItem<T>, T : Comparable<T>, T : PsiChildrenPathIndex {
     private val logger = KotlinLogging.logger {}
+
+    context(IJDDContextMonad<C>)
     final override suspend fun focusOn(
-        items: List<I>,
-        currentContext: IJDDContext,
-    ): IJDDContext {
-        val currentLevel = currentLevel(currentContext) ?: run {
-            logger.warn { "Some item from current level are not PsiWithBodyDDItem. The wrong lens is used. " }
-            return currentContext
-        }
-        val currentContext = prepareContext(currentContext, items) ?: run {
-            logger.error { "Can't prepare the context. Giving up focusing." }
-            return currentContext
-        }
+        itemsToDelete: List<I>,
+    ) {
         logger.info { "Built a trie for the current context" }
-        val items = items
-        logFocusedItems(items, currentContext)
-        val levelDiff = (currentLevel.toSet() - items.toSet())
-            .flatMap { transformSelectedElements(it, currentContext) }
+        logFocusedItems(itemsToDelete, context)
+        prepare(itemsToDelete)
+        val levelDiff = itemsToDelete
+            .flatMap { transformSelectedElements(it, context) }
             .groupBy(PsiDDItem<T>::localPath)
-        val finalContext =
-            levelDiff.fold(currentContext) { context, (path, items) -> focusOnInsideFile(context, items, path) }
+
+        levelDiff.forEach { (path, items) -> focusOnInsideFile(items, path) }
 
         logger.info { "Focusing complete" }
-        return finalContext
     }
 
-    protected open fun transformSelectedElements(item: I, context: IJDDContext): List<I> = listOf(item)
-    protected open fun prepareContext(context: IJDDContext, items: List<I>): IJDDContext? = context
+    protected open fun transformSelectedElements(item: I, context: C): List<I> = listOf(item)
 
-    private suspend fun logFocusedItems(items: List<I>, context: IJDDContext) {
+    context(IJDDContextMonad<C>)
+    @Suppress("EMPTY_BLOCK_STRUCTURE_ERROR")
+    protected open fun prepare(itemsToDelete: List<I>) { }
+
+    private suspend fun logFocusedItems(items: List<I>, context: C) {
         if (!logger.isTraceEnabled) {
             return
         }
@@ -63,38 +58,34 @@ abstract class BasePsiLens<I, T> :
         }
     }
 
-    protected open suspend fun useTrie(trie: PsiTrie<I, T>, context: IJDDContext, ktFile: KtFile): IJDDContext {
+    context(IJDDContextMonad<C>)
+    protected open suspend fun useTrie(trie: PsiTrie<I, T>, ktFile: KtFile) {
         PsiUtils.performPsiChangesAndSave(context, ktFile) {
             trie.processMarkedElements(ktFile) { item, psiElement -> focusOnPsiElement(item, psiElement, context) }
         }
-        return context
     }
 
-    protected abstract fun focusOnPsiElement(item: I, psiElement: PsiElement, context: IJDDContext)
+    protected abstract fun focusOnPsiElement(item: I, psiElement: PsiElement, context: C)
 
-    protected abstract fun getWriteCommandActionName(psiFile: KtFile, context: IJDDContext): String
-
+    context(IJDDContextMonad<C>)
     private suspend fun focusOnInsideFile(
-        currentContext: IJDDContext,
         focusItems: List<I>,
         relativePath: Path,
-    ): IJDDContext {
+    ) {
         val trie = PsiTrie.create(focusItems)
         val virtualFile = readAction {
-            currentContext.projectDir.findFile(relativePath.toString())
+            context.projectDir.findFile(relativePath.toString())
         }
         virtualFile ?: run {
-            logger.error { "The desired path for focused path $relativePath is not found in the project (name=${currentContext.indexProject.name})" }
-            return currentContext
+            logger.error { "The desired path for focused path $relativePath is not found in the project (name=${context.indexProject.name})" }
+            return
         }
-        val psiFile = smartReadAction(currentContext.indexProject) { PsiUtils.getKtFile(currentContext, virtualFile) }
+        val psiFile = smartReadAction(context.indexProject) { PsiUtils.getKtFile(context, virtualFile) }
         psiFile ?: run {
-            logger.error { "The desired path for focused path $relativePath is not a Kotlin file in the project (name=${currentContext.indexProject.name})" }
-            return currentContext
+            logger.error { "The desired path for focused path $relativePath is not a Kotlin file in the project (name=${context.indexProject.name})" }
+            return
         }
         logger.trace { "Processing all focused elements in $relativePath" }
-        return useTrie(trie, currentContext, psiFile)
+        useTrie(trie, psiFile)
     }
-
-    protected abstract fun currentLevel(context: IJDDContext): List<I>?
 }

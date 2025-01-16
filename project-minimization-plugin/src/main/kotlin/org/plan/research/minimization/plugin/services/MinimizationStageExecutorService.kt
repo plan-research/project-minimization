@@ -1,18 +1,28 @@
 package org.plan.research.minimization.plugin.services
 
-import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDD
+import org.plan.research.minimization.core.algorithm.dd.hierarchical.ReversedHierarchicalDD
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.getDDAlgorithm
 import org.plan.research.minimization.plugin.getExceptionComparator
-import org.plan.research.minimization.plugin.getHierarchyCollectionStrategy
 import org.plan.research.minimization.plugin.hierarchy.DeletablePsiElementHierarchyGenerator
+import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchyGenerator
 import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
 import org.plan.research.minimization.plugin.logging.LoggingPropertyCheckingListener
 import org.plan.research.minimization.plugin.logging.statLogger
-import org.plan.research.minimization.plugin.model.*
+import org.plan.research.minimization.plugin.model.DeclarationLevelStage
+import org.plan.research.minimization.plugin.model.FileLevelStage
+import org.plan.research.minimization.plugin.model.FunctionLevelStage
+import org.plan.research.minimization.plugin.model.MinimizationStageExecutor
+import org.plan.research.minimization.plugin.model.context.*
+import org.plan.research.minimization.plugin.model.context.impl.DeclarationLevelStageContext
+import org.plan.research.minimization.plugin.model.context.impl.FileLevelStageContext
+import org.plan.research.minimization.plugin.model.context.impl.FunctionLevelStageContext
+import org.plan.research.minimization.plugin.model.item.PsiDDItem
+import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
+import org.plan.research.minimization.plugin.model.monad.*
+import org.plan.research.minimization.plugin.psi.KtSourceImportRefCounter
 import org.plan.research.minimization.plugin.psi.PsiUtils
-import org.plan.research.minimization.plugin.psi.withImportRefCounter
 
 import arrow.core.Either
 import arrow.core.getOrElse
@@ -27,34 +37,31 @@ import mu.KotlinLogging
 class MinimizationStageExecutorService(private val project: Project) : MinimizationStageExecutor {
     private val logger = KotlinLogging.logger {}
 
-    override suspend fun executeFileLevelStage(context: HeavyIJDDContext, fileLevelStage: FileLevelStage) = either {
+    override suspend fun executeFileLevelStage(context: HeavyIJDDContext<*>, fileLevelStage: FileLevelStage) = either {
         logger.info { "Start File level stage" }
         statLogger.info {
             "File level stage settings, " +
-                "Hierarchy strategy: ${fileLevelStage.hierarchyCollectionStrategy}, " +
                 "DDAlgorithm: ${fileLevelStage.ddAlgorithm}"
         }
 
-        val lightContext = context.asLightContext()
+        val lightContext = FileLevelStageContext(context.projectDir, context.project, context.originalProject)
 
         val baseAlgorithm = fileLevelStage.ddAlgorithm.getDDAlgorithm()
-        val hierarchicalDD = HierarchicalDD(baseAlgorithm)
+        val hierarchicalDD = ReversedHierarchicalDD(baseAlgorithm)
 
         logger.info { "Initialise file hierarchy" }
-        val hierarchy = fileLevelStage
-            .hierarchyCollectionStrategy
-            .getHierarchyCollectionStrategy()
+        val hierarchy = FileTreeHierarchyGenerator<FileLevelStageContext>()
             .produce(lightContext)
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
 
         logger.info { "Minimize" }
-        lightContext.withProgress {
-            hierarchicalDD.minimize(it, hierarchy)
+        lightContext.runMonadWithProgress {
+            hierarchicalDD.minimize(hierarchy)
         }
     }.logResult("File")
 
     override suspend fun executeFunctionLevelStage(
-        context: HeavyIJDDContext,
+        context: HeavyIJDDContext<*>,
         functionLevelStage: FunctionLevelStage,
     ) = either {
         logger.info { "Start Function level stage" }
@@ -62,35 +69,32 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
             "Function level stage settings. DDAlgorithm: ${functionLevelStage.ddAlgorithm}"
         }
 
-        val lightContext = context.asLightContext()
+        val lightContext = FunctionLevelStageContext(context.projectDir, context.project, context.originalProject)
 
         val ddAlgorithm = functionLevelStage.ddAlgorithm.getDDAlgorithm()
-        val lens = FunctionModificationLens()
+        val lens = FunctionModificationLens<FunctionLevelStageContext>()
         val firstLevel = service<MinimizationPsiManagerService>()
             .findAllPsiWithBodyItems(lightContext)
-        val propertyChecker = SameExceptionPropertyTester.create<PsiChildrenIndexDDItem>(
+        val propertyChecker = SameExceptionPropertyTester.create(
             project.service<BuildExceptionProviderService>(),
             project.service<MinimizationPluginSettings>().state
                 .exceptionComparingStrategy
                 .getExceptionComparator(),
             lens,
             lightContext,
-            listOfNotNull(LoggingPropertyCheckingListener.create<PsiChildrenIndexDDItem>("body-replacement")),
+            listOfNotNull(LoggingPropertyCheckingListener.create("body-replacement")),
         ).getOrElse {
             logger.error { "Property checker creation failed. Aborted" }
             raise(MinimizationError.PropertyCheckerFailed)
         }
 
         firstLevel.logPsiElements(lightContext)
-        lightContext
-            .copy(currentLevel = firstLevel)
-            .withProgress {
-                ddAlgorithm.minimize(
-                    it,
-                    firstLevel,
-                    propertyChecker,
-                ).context
-            }
+        lightContext.runMonad {
+            ddAlgorithm.minimize(
+                firstLevel,
+                propertyChecker,
+            )
+        }
     }.logResult("Function Body Replacement")
 
     private suspend fun <T : PsiChildrenPathIndex> List<PsiDDItem<T>>.logPsiElements(context: IJDDContext) {
@@ -107,7 +111,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
     }
 
     override suspend fun executeDeclarationLevelStage(
-        context: HeavyIJDDContext,
+        context: HeavyIJDDContext<*>,
         declarationLevelStage: DeclarationLevelStage,
     ) = either {
         logger.info { "Start Function deleting stage" }
@@ -116,16 +120,23 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
                 "DDAlgorithm: ${declarationLevelStage.ddAlgorithm}"
         }
 
-        val lightContext = context.asLightContext().withImportRefCounter()
+        val importRefCounter = KtSourceImportRefCounter.create(context).getOrElse {
+            raise(MinimizationError.AnalysisFailed)
+        }
+
+        val lightContext = DeclarationLevelStageContext(
+            context.projectDir, context.project,
+            context.originalProject, importRefCounter,
+        )
 
         val ddAlgorithm = declarationLevelStage.ddAlgorithm.getDDAlgorithm()
-        val hierarchicalDD = HierarchicalDD(ddAlgorithm)
-        val hierarchy = DeletablePsiElementHierarchyGenerator(declarationLevelStage.depthThreshold)
-            .produce(context)
+        val hierarchicalDD = ReversedHierarchicalDD(ddAlgorithm)
+        val hierarchy = DeletablePsiElementHierarchyGenerator<DeclarationLevelStageContext>(declarationLevelStage.depthThreshold)
+            .produce(lightContext)
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
 
-        lightContext.withProgress {
-            hierarchicalDD.minimize(it, hierarchy)
+        lightContext.runMonadWithProgress {
+            hierarchicalDD.minimize(hierarchy)
         }
     }.logResult("Function Deleting")
 
@@ -136,5 +147,17 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         logger.info { "End $stageName level stage" }
         statLogger.info { "$stageName level stage result: $error" }
         logger.error { "$stageName level stage failed with error: $error" }
+    }
+
+    private suspend inline fun <C : IJDDContext> C.runMonadWithProgress(
+        action: IJContextWithProgressMonadF<C, Unit>,
+    ): C = runMonad { withProgress(action) }
+
+    private inline fun <C : IJDDContext> C.runMonad(
+        action: context(IJDDContextMonad<C>) () -> Unit,
+    ): C {
+        val monad = IJDDContextMonad(this)
+        action(monad)
+        return monad.context
     }
 }

@@ -1,22 +1,24 @@
 package org.plan.research.minimization.plugin.logging
 
-import org.plan.research.minimization.core.model.DDContext
-import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.PropertyTestResult
-import org.plan.research.minimization.core.model.PropertyTester
+import org.plan.research.minimization.plugin.model.IJPropertyTester
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.item.IJDDItem
+import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 
 import mu.KotlinLogging
 
-class PropertyTesterWithLog<C : DDContext, T : DDItem>(
-    private val innerTester: PropertyTester<C, T>,
-) : PropertyTester<C, T> {
+class PropertyTesterWithLog<C : IJDDContext, T : IJDDItem>(
+    private val innerTester: IJPropertyTester<C, T>,
+) : IJPropertyTester<C, T> {
     private val logger = KotlinLogging.logger {}
 
-    override suspend fun test(context: C, items: List<T>): PropertyTestResult<C> {
-        logger.trace { "Property test number of items - ${items.size}" }
-        logger.trace { "Property test items - $items" }
-        statLogger.info { "Property Test started with size: ${items.size}" }
-        val result = innerTester.test(context, items)
+    context(IJDDContextMonad<C>)
+    override suspend fun test(itemsToDelete: List<T>): PropertyTestResult {
+        logger.trace { "Property test number of items - ${itemsToDelete.size}" }
+        logger.trace { "Property test items - $itemsToDelete" }
+        statLogger.info { "Property Test started with size: ${itemsToDelete.size}" }
+        val result = innerTester.test(itemsToDelete)
         result.fold({ error ->
             logger.debug { "Property Test resulted with error: $error" }
             statLogger.info { "Property Test result: $error" }
@@ -32,5 +34,5 @@ class PropertyTesterWithLog<C : DDContext, T : DDItem>(
     override fun toString(): String = innerTester.toString()
 }
 
-fun <C : DDContext, T : DDItem> PropertyTester<C, T>.withLog(): PropertyTester<C, T> =
+fun <C : IJDDContext, T : IJDDItem> IJPropertyTester<C, T>.withLog(): IJPropertyTester<C, T> =
     PropertyTesterWithLog(this)

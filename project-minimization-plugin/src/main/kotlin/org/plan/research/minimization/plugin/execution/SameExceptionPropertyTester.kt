@@ -1,17 +1,22 @@
 package org.plan.research.minimization.plugin.execution
 
 import org.plan.research.minimization.core.model.PropertyTestResult
-import org.plan.research.minimization.core.model.PropertyTester
 import org.plan.research.minimization.core.model.PropertyTesterError
 import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.logging.withLog
-import org.plan.research.minimization.plugin.logging.withLog
-import org.plan.research.minimization.plugin.model.*
+import org.plan.research.minimization.plugin.model.BuildExceptionProvider
+import org.plan.research.minimization.plugin.model.IJPropertyTester
+import org.plan.research.minimization.plugin.model.ProjectItemLens
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
 import org.plan.research.minimization.plugin.model.exception.CompilationException
 import org.plan.research.minimization.plugin.model.exception.ExceptionComparator
+import org.plan.research.minimization.plugin.model.item.IJDDItem
+import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 import org.plan.research.minimization.plugin.services.SnapshotManagerService
 
 import arrow.core.getOrElse
+import arrow.core.raise.ensure
 import arrow.core.raise.option
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -22,52 +27,45 @@ private typealias Listeners<T> = List<SameExceptionPropertyTester.PropertyChecki
 /**
  * A property tester for Delta Debugging algorithm that leverages different compilation strategies
  */
-class SameExceptionPropertyTester<T : IJDDItem> private constructor(
+class SameExceptionPropertyTester<C : IJDDContextBase<C>, T : IJDDItem> private constructor(
     rootProject: Project,
     private val buildExceptionProvider: BuildExceptionProvider,
     private val comparator: ExceptionComparator,
-    private val lens: ProjectItemLens<T>,
+    private val lens: ProjectItemLens<C, T>,
     private val initialException: CompilationException,
     private val listeners: Listeners<T> = emptyList(),
-) : PropertyTester<IJDDContext, T> {
+) : IJPropertyTester<C, T> {
     private val snapshotManager = rootProject.service<SnapshotManagerService>()
 
     /**
      * Tests whether the context's project has the same compiler exception as the root one
      *
-     * @param context The context containing the current level project to test.
-     * @param items The list of project file items to be tested within the context.
+     * @param itemsToDelete The list of project file items to be tested within the context.
      */
-    override suspend fun test(context: IJDDContext, items: List<T>): PropertyTestResult<IJDDContext> =
-        snapshotManager.transaction(context) { newContext ->
-            context.currentLevel ?: listeners.forEach { it.onEmptyLevel(context) }.let { return@transaction context }
-
-            listeners.forEach { it.beforeFocus(newContext, items) }
-            val focusedContext =
-                lens.focusOn(items, newContext)  // Assume that `newContext` has the same `.currentLevel` as `context`
-            listeners.forEach { it.onSuccessfulFocus(focusedContext) }
+    context(IJDDContextMonad<C>)
+    override suspend fun test(itemsToDelete: List<T>): PropertyTestResult =
+        snapshotManager.transaction {
+            listeners.forEach { it.beforeFocus(context, itemsToDelete) }
+            lens.focusOn(itemsToDelete)
+            listeners.forEach { it.onSuccessfulFocus(context) }
 
             val compilationResult = buildExceptionProvider
-                .checkCompilation(focusedContext)
+                .checkCompilation(context)
                 .getOrElse {
-                    listeners.forEach { it.onSuccessfulCompilation(focusedContext) }
+                    listeners.forEach { it.onSuccessfulCompilation(context) }
                     raise(PropertyTesterError.NoProperty)
                 }
-            listeners.forEach { it.onFailedCompilation(focusedContext, compilationResult) }
+            listeners.forEach { it.onFailedCompilation(context, compilationResult) }
             val compareResult = comparator.areEquals(initialException, compilationResult)
             listeners.forEach {
                 it.onComparedExceptions(
-                    focusedContext,
+                    context,
                     initialException,
                     compilationResult,
                     compareResult,
                 )
             }
-            if (compareResult) {
-                focusedContext
-            } else {
-                raise(PropertyTesterError.UnknownProperty)
-            }
+            ensure(compareResult) { PropertyTesterError.UnknownProperty }
         }.mapLeft {
             when (it) {
                 is SnapshotError.Aborted -> it.reason
@@ -92,15 +90,15 @@ class SameExceptionPropertyTester<T : IJDDItem> private constructor(
     companion object {
         private val logger = KotlinLogging.logger {}
 
-        suspend fun <T : IJDDItem> create(
+        suspend fun <C : IJDDContextBase<C>, T : IJDDItem> create(
             compilerPropertyChecker: BuildExceptionProvider,
             exceptionComparator: ExceptionComparator,
-            lens: ProjectItemLens<T>,
-            context: IJDDContext,
+            lens: ProjectItemLens<C, T>,
+            context: C,
             listeners: Listeners<T> = emptyList(),
         ) = option {
             val initialException = compilerPropertyChecker.checkCompilation(context).getOrNone().bind()
-            SameExceptionPropertyTester<T>(
+            SameExceptionPropertyTester(
                 context.originalProject,
                 compilerPropertyChecker,
                 exceptionComparator,

@@ -2,7 +2,7 @@
 
 package org.plan.research.minimization.plugin.psi
 
-import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.psi.imports.UsedReferencesCollector
 
 import com.intellij.openapi.application.readAction

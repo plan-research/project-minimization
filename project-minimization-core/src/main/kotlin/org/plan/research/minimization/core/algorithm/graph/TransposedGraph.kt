@@ -12,8 +12,6 @@ internal class TransposedGraph<V : DDItem, E : GraphEdge<V>, G : GraphWithAdjace
     override val edges: List<TransposedEdge<V>> = originalGraph.edges.map { TransposedEdge(it.to, it.from) }.toList()
     override fun induce(cut: GraphCut<V>): TransposedGraph<V, E, G> = TransposedGraph(originalGraph.induce(cut))
 
-    @Suppress("TYPE_ALIAS")
-
     override fun inDegreeOf(vertex: V): Int = originalGraph.outDegreeOf(vertex)
 
     internal class TransposedEdge<V : DDItem>(override val from: V, override val to: V) : GraphEdge<V>()

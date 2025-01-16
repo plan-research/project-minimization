@@ -2,9 +2,11 @@
 
 package org.plan.research.minimization.plugin.psi
 
+import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.psi.imports.UsedReferencesCollector
 
 import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.smartReadAction
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.psi.KtElement
@@ -17,14 +19,14 @@ import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.toPersistentMap
 
 class PsiImportRefCounter private constructor(private val counter: PersistentMap<ImportPath, Int>) {
-    suspend fun decreaseCounterBasedOnKtElement(element: KtElement): PsiImportRefCounter {
+    suspend fun decreaseCounterBasedOnKtElement(context: IJDDContext, element: KtElement): PsiImportRefCounter {
         val ktFile = readAction { element.containingKtFile }
-        val usedReferences = readAction {
+        val usedReferences = smartReadAction(context.indexProject) {
             analyze(element) {
                 UsedReferencesCollector(ktFile).run { collectUsedReferencesRecursivelyFrom(element) }
             }
         }
-        return PsiImportRefCounter(readAction {
+        return PsiImportRefCounter(smartReadAction(context.indexProject) {
             counter.mutate { obj ->
                 usedReferences.processImportDirectives(
                     ktFile.importDirectives,
@@ -46,19 +48,16 @@ class PsiImportRefCounter private constructor(private val counter: PersistentMap
     )
 
     companion object {
-        suspend fun create(ktFile: KtFile): PsiImportRefCounter {
-            val usedReferences = readAction {
-                analyze(ktFile) {
-                    UsedReferencesCollector(ktFile).run { collectUsedReferences() }
-                }
+        @RequiresReadLock
+        fun create(ktFile: KtFile): PsiImportRefCounter {
+            val usedReferences = analyze(ktFile) {
+                UsedReferencesCollector(ktFile).run { collectUsedReferences() }
             }
             val counter = mutableMapOf<ImportPath, Int>()
-            readAction {
-                usedReferences.processImportDirectives(
-                    ktFile.importDirectives,
-                    ktFile.packageFqName,
-                ) { importPath, times -> counter.merge(importPath, times, Int::plus) }
-            }
+            usedReferences.processImportDirectives(
+                ktFile.importDirectives,
+                ktFile.packageFqName,
+            ) { importPath, times -> counter.merge(importPath, times, Int::plus) }
             return PsiImportRefCounter(counter.toPersistentMap())
         }
     }

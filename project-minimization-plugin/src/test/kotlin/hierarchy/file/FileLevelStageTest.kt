@@ -1,5 +1,6 @@
 package hierarchy.file
 
+import HeavyTestContext
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.ex.ProjectManagerEx
@@ -11,10 +12,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.execution.DumbCompiler
 import org.plan.research.minimization.plugin.model.FileLevelStage
-import org.plan.research.minimization.plugin.model.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.model.state.DDStrategy
-import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.services.MinimizationStageExecutorService
 import org.plan.research.minimization.plugin.services.ProjectCloningService
@@ -29,10 +28,8 @@ class FileLevelStageTest : JavaCodeInsightFixtureTestCase() {
 
     override fun setUp() {
         super.setUp()
-        var compilationStrategy by project.service<MinimizationPluginSettings>().stateObservable.compilationStrategy.mutable()
-        compilationStrategy = CompilationStrategy.DUMB
-        var transformations by project.service<MinimizationPluginSettings>().stateObservable.minimizationTransformations.mutable()
-        transformations = emptyList()
+        project.service<MinimizationPluginSettings>().stateObservable.compilationStrategy.set(CompilationStrategy.DUMB)
+        project.service<MinimizationPluginSettings>().stateObservable.minimizationTransformations.set(emptyList())
         service<ProjectOpeningService>().isTest = true
     }
 
@@ -66,10 +63,9 @@ class FileLevelStageTest : JavaCodeInsightFixtureTestCase() {
         val project = myFixture.project
         val executor = project.service<MinimizationStageExecutorService>()
         val stage = FileLevelStage(
-            HierarchyCollectionStrategy.FILE_TREE,
             DDStrategy.PROBABILISTIC_DD
         )
-        val context = HeavyIJDDContext(project)
+        val context = HeavyTestContext(project)
 
         val targetFiles = if (targetPaths == null) {
             project.getAllFiles()

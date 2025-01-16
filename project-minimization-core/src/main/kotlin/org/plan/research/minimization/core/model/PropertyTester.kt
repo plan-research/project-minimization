@@ -1,12 +1,10 @@
 package org.plan.research.minimization.core.model
 
-import org.plan.research.minimization.core.model.graph.Graph
 import org.plan.research.minimization.core.model.graph.GraphCut
-import org.plan.research.minimization.core.model.graph.GraphEdge
 
 import arrow.core.Either
 
-typealias PropertyTestResult<C> = Either<PropertyTesterError, C>
+typealias PropertyTestResult = Either<PropertyTesterError, Unit>
 
 /**
  * Interface representing a tester for properties within a delta debugging context.
@@ -16,14 +14,20 @@ typealias PropertyTestResult<C> = Either<PropertyTesterError, C>
  * The purpose of the tester is to determine whether the given items
  * satisfy a specific property relevant to the context of a delta debugging process.
  *
- * @param C The type of context that provides information relevant to the delta debugging process.
  * @param T The type of items being analyzed and manipulated in the delta debugging process.
  */
-interface PropertyTester<C : DDContext, T : DDItem> {
-    suspend fun test(context: C, items: List<T>): PropertyTestResult<C>
+interface PropertyTester<M : Monad, T : DDItem> {
+    context(M)
+    suspend fun test(items: List<T>): PropertyTestResult
 }
-interface PropertyTesterWithGraph<C : DDContextWithLevel<C>, V : DDItem, E : GraphEdge<V>, G : Graph<V, E, G>> {
-    suspend fun test(context: C, cut: GraphCut<V>): PropertyTestResult<C>
+
+interface ReversedPropertyTester<M : Monad, T : DDItem> {
+    context(M)
+    suspend fun test(itemsToDelete: List<T>): PropertyTestResult
+}
+interface PropertyTesterWithGraph<M : Monad, V : DDItem> {
+    context(M)
+    suspend fun test(cut: GraphCut<V>): PropertyTestResult
 }
 
 sealed interface PropertyTesterError {

@@ -1,6 +1,4 @@
 <configuration>
-    <property name="LOG_PATH" value="${idea.log.path}" />
-
     <!-- Appender for console output -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -9,27 +7,29 @@
     </appender>
 
     <!-- Appender for TRACE, DEBUG, INFO, WARN, ERROR -->
-    <appender name="DEBUG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_PATH}/logs.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_PATH}/logs-%d{yyyy-MM-dd}.log</fileNamePattern>
-            <maxHistory>30</maxHistory>
-        </rollingPolicy>
-        <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-        </encoder>
+    <appender name="DEBUG_FILE" class="ch.qos.logback.classic.sift.SiftingAppender">
+        <discriminator class="org.plan.research.minimization.plugin.logging.ExecutionDiscriminator"/>
+        <sift>
+            <appender name="FILE-DEBUG-${executionLogDir}" class="ch.qos.logback.core.FileAppender">
+                <file>${executionLogDir}/logs.log</file>
+                <encoder>
+                    <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+                </encoder>
+            </appender>
+        </sift>
     </appender>
 
     <!-- Appender for STATISTICS logs -->
-    <appender name="STATISTICS_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_PATH}/statistics.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_PATH}/statistics-%d{yyyy-MM-dd}.log</fileNamePattern>
-            <maxHistory>30</maxHistory>
-        </rollingPolicy>
-        <encoder>
-            <pattern>%d{HH:mm:ss.SSS} - %msg%n</pattern>
-        </encoder>
+    <appender name="STATISTICS_FILE" class="ch.qos.logback.classic.sift.SiftingAppender">
+        <discriminator class="org.plan.research.minimization.plugin.logging.ExecutionDiscriminator"/>
+        <sift>
+            <appender name="FILE-STAT-${executionLogDir}" class="ch.qos.logback.core.FileAppender">
+                <file>${executionLogDir}/statistics.log</file>
+                <encoder>
+                    <pattern>%d{HH:mm:ss.SSS} - %msg%n</pattern>
+                </encoder>
+            </appender>
+        </sift>
     </appender>
 
     <!-- Logger for STATISTICS (write only in statistics.log) -->

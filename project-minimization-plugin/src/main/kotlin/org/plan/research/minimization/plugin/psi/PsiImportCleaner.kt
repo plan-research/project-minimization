@@ -1,61 +1,64 @@
 package org.plan.research.minimization.plugin.psi
 
-import org.plan.research.minimization.plugin.model.HeavyIJDDContext
+import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.service
-import org.jetbrains.kotlin.idea.base.codeInsight.KotlinOptimizeImportsFacility
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.platform.ide.progress.withBackgroundProgress
+import com.intellij.platform.util.progress.ProgressReporter
+import com.intellij.platform.util.progress.reportProgress
+import org.jetbrains.kotlin.idea.imports.KotlinFirImportOptimizer
 import org.jetbrains.kotlin.psi.KtFile
 
-class PsiImportCleaner {
-    suspend fun cleanImports(context: HeavyIJDDContext, psiFile: KtFile) {
-        val facility = KotlinOptimizeImportsFacility.getInstance()
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 
-        val optimizedImports = smartReadAction(context.project) {
-            val importData = facility.analyzeImports(psiFile) ?: return@smartReadAction null
-            if (importData.unusedImports.isEmpty()) {
-                return@smartReadAction null
-            }
-            facility.prepareOptimizedImports(psiFile, importData)
-        } ?: return
+class PsiImportCleaner {
+    private val processorPermits = Runtime.getRuntime().availableProcessors() * 2
+    private val importOptimizer = KotlinFirImportOptimizer()
+
+    private suspend fun cleanImports(context: HeavyIJDDContext<*>, psiFile: KtFile) {
+        val replaceAction = smartReadAction(context.indexProject) { importOptimizer.processFile(psiFile) }
 
         PsiUtils.performPsiChangesAndSave(context, psiFile, "Cleaning imports in ${psiFile.name}") {
-            facility.replaceImports(psiFile, optimizedImports)
+            replaceAction.run()
         }
     }
 
-    suspend fun isAnyUnusedImports(context: HeavyIJDDContext, psiFile: KtFile): Boolean {
-        val facility = KotlinOptimizeImportsFacility.getInstance()
-        return smartReadAction(context.project) {
-            facility.analyzeImports(psiFile)?.unusedImports?.isNotEmpty() == true
-        }
-    }
-
-    suspend fun isAnyUnusedImports(context: HeavyIJDDContext): KtFile? {
-        val files = smartReadAction(context.indexProject) {
-            service<MinimizationPsiManagerService>().findAllKotlinFilesInIndexProject(context)
-        }
+    private suspend fun processFiles(
+        context: HeavyIJDDContext<*>,
+        reporter: ProgressReporter,
+        files: List<VirtualFile>,
+    ) = coroutineScope {
+        val semaphore = Semaphore(processorPermits)
         for (file in files) {
-            val ktFile = smartReadAction(context.project) {
-                PsiUtils.getKtFile(context, file)
-            } ?: continue
-            if (isAnyUnusedImports(context, ktFile)) {
-                return ktFile
+            launch {
+                semaphore.withPermit {
+                    reporter.itemStep {
+                        val ktFile = smartReadAction(context.project) {
+                            PsiUtils.getKtFile(context, file)
+                        }
+
+                        ktFile?.let { cleanImports(context, it) }
+                    }
+                }
             }
         }
-        return null
     }
 
-    suspend fun cleanAllImports(context: HeavyIJDDContext) {
+    suspend fun cleanAllImports(context: HeavyIJDDContext<*>) {
         val files = smartReadAction(context.indexProject) {
             service<MinimizationPsiManagerService>().findAllKotlinFilesInIndexProject(context)
         }
-        for (file in files) {
-            val ktFile = smartReadAction(context.project) {
-                PsiUtils.getKtFile(context, file)
-            } ?: continue
-            cleanImports(context, ktFile)
+
+        withBackgroundProgress(context.indexProject, "Cleaning imports in all files") {
+            reportProgress(files.size) { reporter ->
+                processFiles(context, reporter, files)
+            }
         }
     }
 }

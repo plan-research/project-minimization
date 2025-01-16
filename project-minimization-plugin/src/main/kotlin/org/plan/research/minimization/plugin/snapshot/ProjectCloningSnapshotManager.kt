@@ -3,10 +3,10 @@ package org.plan.research.minimization.plugin.snapshot
 import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.errors.SnapshotError.*
 import org.plan.research.minimization.plugin.logging.statLogger
-import org.plan.research.minimization.plugin.model.HeavyIJDDContext
-import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.context.*
+import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
-import org.plan.research.minimization.plugin.model.snapshot.TransactionBody
+import org.plan.research.minimization.plugin.model.snapshot.TransactionAction
 import org.plan.research.minimization.plugin.model.snapshot.TransactionResult
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 
@@ -30,61 +30,63 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
     private val projectCloning = rootProject.service<ProjectCloningService>()
     private val generalLogger = KotlinLogging.logger {}
 
+    private object ProjectCloseTransformer : IJDDContextTransformer<Unit> {
+        override suspend fun transformLight(context: LightIJDDContext<*>) {
+            if (context.projectDir != context.indexProjectDir) {
+                writeAction {
+                    context.projectDir.run { delete(fileSystem) }
+                }
+            }
+        }
+
+        override suspend fun transformHeavy(context: HeavyIJDDContext<*>) {
+            ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(context.project)
+        }
+    }
+
     /**
      * Executes a transaction within the provided context,
      * typically involving project cloning and rollback upon failures.
      *
      * Transaction guarantees that:
      * - Cloned project is closed if a transaction fails.
-     * - If a transaction is successful, the project of the [context] is closed.
+     * - If a transaction is successful, the project of the context is closed.
      *
      * @param T The type parameter indicating the type of any raised error during the transaction.
-     * @param context The `IJDDContext` containing the project and associated data needed to perform the transaction.
      * @param action A suspendable lambda function that takes a new transactional context and returns the updated context.
      * @return Either a `SnapshotError` encapsulating the error in case of failure, or the updated `IJDDContext` in case of success.
      */
-    override suspend fun <T, C : IJDDContext> transaction(
-        context: C,
-        action: suspend TransactionBody<T>.(newContext: C) -> C,
-    ): TransactionResult<T, C> = either {
+    context(IJDDContextMonad<C>)
+    override suspend fun <T, C : IJDDContextBase<C>> transaction(
+        action: TransactionAction<T, C>,
+    ): TransactionResult<T> = either {
         statLogger.info { "Snapshot manager start's transaction" }
         generalLogger.info { "Snapshot manager start's transaction" }
-        val clonedContext = projectCloning.clone(context)
+
+        val clonedContext = context.clone(projectCloning)
             ?: raise(TransactionCreationFailed("Failed to create project"))
+        val subMonad = createSubMonad(clonedContext)
 
         try {
             recover<T, _>(
-                block = {
-                    val transaction = TransactionBody(this@recover)
-                    @Suppress("UNCHECKED_CAST")
-                    transaction.action(clonedContext as C)
-                },
+                block = { action(subMonad, this) },
                 recover = { raise(Aborted(it)) },
                 catch = { raise(TransactionFailed(it)) },
             )
         } catch (e: Throwable) {
-            closeProject(clonedContext)
+            closeProject(subMonad.context)
             throw e
         }
-    }.onRight {
         generalLogger.info { "Transaction completed successfully" }
         statLogger.info { "Transaction result: success" }
         closeProject(context)
+        context = subMonad.context
     }.onLeft { it.log() }
 
     // TODO: JBRes-2103 Resource Management
-    private suspend fun closeProject(context: IJDDContext) {
-        withContext<Unit>(NonCancellable) {
-            if (context is HeavyIJDDContext) {
-                ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(context.project)
-            } else {
-                // avoid unnecessary project deletion, bad design (poebat' for now)
-                if (context.projectDir != context.indexProjectDir) {
-                    writeAction {
-                        context.projectDir.run { delete(fileSystem) }
-                    }
-                }
-            }
+    private suspend fun closeProject(context: IJDDContextBase<*>) {
+        withContext(NonCancellable) {
+            context.transform(ProjectCloseTransformer)
         }
     }
 

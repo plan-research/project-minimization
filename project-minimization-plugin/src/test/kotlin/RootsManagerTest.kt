@@ -8,16 +8,14 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.PsiTestUtil
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import kotlinx.coroutines.runBlocking
-import org.plan.research.minimization.plugin.model.HeavyIJDDContext
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.LightIJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.services.RootsManagerService
 import kotlin.io.path.div
 import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
 
-abstract class RootsManagerTest<C : IJDDContext> : JavaCodeInsightFixtureTestCase(), TestWithContext<C> {
+abstract class RootsManagerTest<C : IJDDContextBase<C>> : JavaCodeInsightFixtureTestCase(), TestWithContext<C> {
 
     override fun runInDispatchThread(): Boolean = false
 
@@ -70,9 +68,10 @@ abstract class RootsManagerTest<C : IJDDContext> : JavaCodeInsightFixtureTestCas
             )
 
             val context = createContext(project)
-            var ignorePaths by context.originalProject.service<MinimizationPluginSettings>().stateObservable.ignorePaths.mutable()
-            ignorePaths = listOf(
-                "contentRoot1/src/main"
+            context.originalProject.service<MinimizationPluginSettings>().stateObservable.ignorePaths.set(
+                listOf(
+                    "contentRoot1/src/main"
+                )
             )
 
             val roots = smartReadAction(project) {
@@ -106,9 +105,10 @@ abstract class RootsManagerTest<C : IJDDContext> : JavaCodeInsightFixtureTestCas
             )
 
             val context = createContext(project)
-            var ignorePaths by context.originalProject.service<MinimizationPluginSettings>().stateObservable.ignorePaths.mutable()
-            ignorePaths = listOf(
-                "contentRoot1"
+            context.originalProject.service<MinimizationPluginSettings>().stateObservable.ignorePaths.set(
+                listOf(
+                    "contentRoot1"
+                )
             )
 
             val roots = smartReadAction(project) {
@@ -189,9 +189,10 @@ abstract class RootsManagerTest<C : IJDDContext> : JavaCodeInsightFixtureTestCas
             )
 
             val context = createContext(project)
-            var ignorePaths by context.originalProject.service<MinimizationPluginSettings>().stateObservable.ignorePaths.mutable()
-            ignorePaths = listOf(
-                "contentRoot1"
+            context.originalProject.service<MinimizationPluginSettings>().stateObservable.ignorePaths.set(
+                listOf(
+                    "contentRoot1"
+                )
             )
 
             val roots = smartReadAction(project) {
@@ -232,9 +233,10 @@ abstract class RootsManagerTest<C : IJDDContext> : JavaCodeInsightFixtureTestCas
             )
 
             val context = createContext(project)
-            var ignorePaths by context.originalProject.service<MinimizationPluginSettings>().stateObservable.ignorePaths.mutable()
-            ignorePaths = listOf(
-                "contentRoot1/src/main"
+            context.originalProject.service<MinimizationPluginSettings>().stateObservable.ignorePaths.set(
+                listOf(
+                    "contentRoot1/src/main"
+                )
             )
 
             val roots = smartReadAction(project) {
@@ -277,9 +279,10 @@ abstract class RootsManagerTest<C : IJDDContext> : JavaCodeInsightFixtureTestCas
             )
 
             val context = createContext(project)
-            var ignorePaths by context.originalProject.service<MinimizationPluginSettings>().stateObservable.ignorePaths.mutable()
-            ignorePaths = listOf(
-                "contentRoot1/contentRoot2/src/main"
+            context.originalProject.service<MinimizationPluginSettings>().stateObservable.ignorePaths.set(
+                listOf(
+                    "contentRoot1/contentRoot2/src/main"
+                )
             )
 
             val roots = smartReadAction(project) {
@@ -322,9 +325,10 @@ abstract class RootsManagerTest<C : IJDDContext> : JavaCodeInsightFixtureTestCas
             )
 
             val context = createContext(project)
-            var ignorePaths by context.originalProject.service<MinimizationPluginSettings>().stateObservable.ignorePaths.mutable()
-            ignorePaths = listOf(
-                "contentRoot1", "contentRoot1/contentRoot2/src/main", "contentRoot1/src/main"
+            context.originalProject.service<MinimizationPluginSettings>().stateObservable.ignorePaths.set(
+                listOf(
+                    "contentRoot1", "contentRoot1/contentRoot2/src/main", "contentRoot1/src/main"
+                )
             )
 
             val roots = smartReadAction(project) {
@@ -365,9 +369,10 @@ abstract class RootsManagerTest<C : IJDDContext> : JavaCodeInsightFixtureTestCas
             )
 
             val context = createContext(project)
-            var ignorePaths by context.originalProject.service<MinimizationPluginSettings>().stateObservable.ignorePaths.mutable()
-            ignorePaths = listOf(
-                "module"
+            context.originalProject.service<MinimizationPluginSettings>().stateObservable.ignorePaths.set(
+                listOf(
+                    "module"
+                )
             )
 
             val roots = smartReadAction(project) {
@@ -405,5 +410,5 @@ abstract class RootsManagerTest<C : IJDDContext> : JavaCodeInsightFixtureTestCas
     }
 }
 
-class RootsManagerLightTest : RootsManagerTest<LightIJDDContext>(), TestWithContext<LightIJDDContext> by TestWithLightContext()
-class RootsManagerHeavyTest : RootsManagerTest<HeavyIJDDContext>(), TestWithContext<HeavyIJDDContext> by TestWithHeavyContext()
+class RootsManagerLightTest : RootsManagerTest<LightTestContext>(), TestWithContext<LightTestContext> by TestWithLightContext()
+class RootsManagerHeavyTest : RootsManagerTest<HeavyTestContext>(), TestWithContext<HeavyTestContext> by TestWithHeavyContext()

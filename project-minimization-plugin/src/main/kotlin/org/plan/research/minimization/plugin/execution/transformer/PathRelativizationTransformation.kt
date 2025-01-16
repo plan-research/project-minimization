@@ -2,7 +2,7 @@ package org.plan.research.minimization.plugin.execution.transformer
 
 import org.plan.research.minimization.plugin.execution.IdeaCompilationException
 import org.plan.research.minimization.plugin.execution.exception.KotlincException.*
-import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
 import org.plan.research.minimization.plugin.settings.MinimizationPluginStateObservable
 
@@ -31,7 +31,7 @@ class PathRelativizationTransformation : ExceptionTransformation {
         })
 
     override suspend fun transform(exception: GeneralKotlincException, context: IJDDContext): GeneralKotlincException {
-        val copiedCursorPosition = exception.position.let { position ->
+        val copiedCursorPosition = exception.position?.let { position ->
             val transformedPath = transformPath(position.filePath, context)
             position.copy(filePath = transformedPath)
         }

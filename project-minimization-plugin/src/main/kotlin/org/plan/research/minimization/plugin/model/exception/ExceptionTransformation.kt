@@ -2,7 +2,7 @@ package org.plan.research.minimization.plugin.model.exception
 
 import org.plan.research.minimization.plugin.execution.IdeaCompilationException
 import org.plan.research.minimization.plugin.execution.exception.KotlincException.*
-import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContext
 
 interface ExceptionTransformation {
     suspend fun transform(exception: IdeaCompilationException, context: IJDDContext): IdeaCompilationException =

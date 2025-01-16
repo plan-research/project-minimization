@@ -163,3 +163,7 @@
   enabled: false
 - name: KDOC_NO_CONSTRUCTOR_PROPERTY
   enabled: false
+- name: NO_CORRESPONDING_PROPERTY
+  enabled: false
+- name: TYPEALIAS_NAME_INCORRECT_CASE
+  enabled: false

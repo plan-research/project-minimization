@@ -3,8 +3,8 @@ package psi.trie
 import generateAllPermutations
 import org.junit.Test
 import org.junit.jupiter.api.assertThrows
-import org.plan.research.minimization.plugin.model.IntChildrenIndex
-import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
+import org.plan.research.minimization.plugin.model.item.index.IntChildrenIndex
+import org.plan.research.minimization.plugin.model.item.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.psi.CompressingPsiItemTrie
 import kotlin.io.path.Path
 import kotlin.test.assertEquals
@@ -127,5 +127,24 @@ class CompressingPsiTrieTest {
         generateAllPermutations(possibleIndexes).forEach { idxs ->
             doTest(idxs.map { items[it] })
         }
+    }
+
+    @Test
+    fun `test distant nodes`() {
+        val paths = listOf(
+            listOf(0, 0),
+            listOf(0, 1)
+        )
+        val items = paths.map {
+            PsiChildrenIndexDDItem(
+                localPath = Path("."),
+                childrenPath = it.map { IntChildrenIndex(it) },
+                renderedType = null
+            )
+        }
+        val trie = CompressingPsiItemTrie.Companion.create(items)
+        val compressed = trie.getNextItems()
+        assertEquals(2, compressed.size)
+        assert(compressed.all { it.depth == 2})
     }
 }

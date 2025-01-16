@@ -1,11 +1,14 @@
 package org.plan.research.minimization.plugin.model.snapshot
 
 import org.plan.research.minimization.plugin.errors.SnapshotError
-import org.plan.research.minimization.plugin.model.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
+import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 
 import arrow.core.Either
+import arrow.core.raise.Raise
 
-typealias TransactionResult<T, C> = Either<SnapshotError<T>, C>
+typealias TransactionResult<T> = Either<SnapshotError<T>, Unit>
+typealias TransactionAction<T, C> = suspend context(IJDDContextMonad<C>, Raise<T>) () -> Unit
 
 /**
  * The `SnapshotManager` interface provides a mechanism to handle transactions within a given context.
@@ -14,12 +17,11 @@ interface SnapshotManager {
     /**
      * Executes a transaction within the provided context.
      *
-     * @param context The context in which the transaction is executed.
      * @param action A suspendable lambda function representing the transaction action to be performed.
      * @return Either a `SnapshotError` if the transaction fails, or the updated `IJDDContext` if the transaction succeeds.
      */
-    suspend fun <T, C : IJDDContext> transaction(
-        context: C,
-        action: suspend TransactionBody<T>.(newContext: C) -> C,
-    ): TransactionResult<T, C>
+    context(IJDDContextMonad<C>)
+    suspend fun <T, C : IJDDContextBase<C>> transaction(
+        action: TransactionAction<T, C>,
+    ): TransactionResult<T>
 }

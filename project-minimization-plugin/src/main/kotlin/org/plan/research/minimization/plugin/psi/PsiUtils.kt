@@ -6,6 +6,7 @@ import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
 import org.plan.research.minimization.plugin.model.PsiDDItem
 import org.plan.research.minimization.plugin.model.PsiStubDDItem
+import org.plan.research.minimization.plugin.psi.graph.PsiIJEdge
 import org.plan.research.minimization.plugin.psi.stub.KtStub
 
 import arrow.core.Option
@@ -35,29 +36,60 @@ private typealias ParentChildPsiProcessor<T> = (PsiElement, PsiElement) -> T
  * The PsiProcessor class provides utilities for fetching PSI elements within a given project.
  */
 object PsiUtils {
+    /**
+     * Collects all dependencies (such as calls, used types, superclasses, and expected elements)
+     * for a PSI tree with root [psiElement].
+     * The function should be only used for **Instance-level** stages,
+     * since [UsedPsiElementGetter] implements an instance-level-specific visitor.
+     *
+     * @param psiElement Root of the PSI tree
+     * @return all referenced PSI elements
+     */
     @RequiresReadLock
     fun collectUsages(psiElement: KtElement): List<PsiElement> = buildList {
         val visitor = UsedPsiElementGetter(psiElement is KtNamedFunction)
         psiElement.acceptChildren(visitor)
         addAll(visitor.usedElements)
     }
+
+    /**
+     * Collects all parent elements of the given [item].
+     * It is used for building [PsiIJEdge.PSITreeEdge] for the instance-level graph.
+     * Thus returned items follow the invariant of [PsiStubDDItem]:
+     * all returned elements are some of the selected PSI nodes.
+     *
+     * @param context Context with the project-related information
+     * @param item Item to collect parents from
+     * @return the list of [PsiStubDDItem], which are the parent elements of [item]
+     */
     @RequiresReadLock
-    fun findAllParentElements(context: IJDDContext, item: PsiStubDDItem): List<PsiStubDDItem> {
+    fun findAllDeletableParentElements(context: IJDDContext, item: PsiStubDDItem): PsiStubDDItem? {
         val currentPath = item.childrenPath.toMutableList()
         val file = context.projectDir.findFileByRelativePath(item.localPath.toString())!!
         val ktFile = getKtFile(context, file)!!
         currentPath.removeLast()
-        return buildList {
-            while (currentPath.isNotEmpty()) {
-                val currentPsi = getElementByFileAndPath(ktFile, currentPath)
-                if (PsiStubDDItem.DELETABLE_PSI_JAVA_CLASSES.any { it.isInstance(currentPsi) }) {
-                    add(PsiStubDDItem.NonOverriddenPsiStubDDItem(item.localPath, currentPath.toList()))
-                }
-                currentPath.removeLast()
+        while (currentPath.isNotEmpty()) {
+            val currentPsi = getElementByFileAndPath(ktFile, currentPath)
+            // if that element has one of the DELETABLE_PSI_JAVA_CLASSES, then it has been collected before
+            if (PsiStubDDItem.DELETABLE_PSI_JAVA_CLASSES.any { it.isInstance(currentPsi) }) {
+                return PsiStubDDItem.NonOverriddenPsiStubDDItem(item.localPath, currentPath.toList())
             }
+            currentPath.removeLast()
         }
+        return null
     }
 
+    /**
+     * Resolves and retrieves a Kotlin PSI element of type [KtExpression] from a given [PsiDDItem].
+     *
+     * This function locates the file corresponding to the given [PsiDDItem] using its [PsiDDItem.localPath].
+     * parses it as a Kotlin file,
+     * and navigates to the specified PSI element within the file following the [PsiDDItem.childrenPath].
+     *
+     * @param context The context of the current computation, providing access to the project directory and related utilities.
+     * @param item The PSI item containing the `localPath` to locate the file and the `childrenPath` to resolve the desired PSI element.
+     * @return The resolved [KtExpression] instance, or `null` if the PSI element cannot be resolved.
+     */
     @RequiresReadLock
     fun <T : PsiChildrenPathIndex> getPsiElementFromItem(context: IJDDContext, item: PsiDDItem<T>): KtExpression? {
         val file = context.projectDir.findFileByRelativePath(item.localPath.toString())!!

@@ -11,6 +11,7 @@ import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.idea.references.mainReference
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtReferenceExpression
+import org.jetbrains.kotlin.psi.KtUserType
 
 object DefinitionAndCallDeclarationLookup {
     fun getReferenceDeclaration(element: PsiElement): List<PsiElement> = when (element) {

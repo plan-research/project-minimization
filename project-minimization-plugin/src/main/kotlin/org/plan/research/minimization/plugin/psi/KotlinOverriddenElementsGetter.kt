@@ -14,7 +14,7 @@ object KotlinOverriddenElementsGetter {
     fun getOverriddenElements(element: KtElement, includeClass: Boolean = true): List<KtElement> = when (element) {
         is KtNamedFunction -> getOverriddenFunction(element)
         is KtProperty -> getOverriddenProperties(element)
-        is KtClass -> getOverriddenClass(element).takeIf { includeClass } ?: emptyList()
+        is KtClass -> getOverriddenClass(element).takeIf { includeClass }.orEmpty()
         is KtParameter -> getOverriddenParameters(element)
         else -> emptyList()
     }

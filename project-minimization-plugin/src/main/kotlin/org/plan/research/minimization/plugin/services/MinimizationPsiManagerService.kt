@@ -113,10 +113,10 @@ class MinimizationPsiManagerService {
         // val filesNodes = nodes
         // .map { (item) -> PsiStubDDItem.NonOverriddenPsiStubDDItem(item.localPath, emptyList()) }
         // val fileEdges = nodes.zip(filesNodes).map { (from, fileNode) -> IJEdge.PSITreeEdge(from.first, fileNode) }
-        val psiEdges = nodes.flatMap { (_, from) ->
+        val psiEdges = nodes.mapNotNull { (_, from) ->
             PsiUtils
-                .findAllParentElements(context, from)
-                .map { PsiIJEdge.PSITreeEdge(from, it) }
+                .findAllDeletableParentElements(context, from)
+                ?.let { PsiIJEdge.PSITreeEdge(from, it) }
         }
         val overloadEdges = nodes.flatMap { (element, from) ->
             KotlinOverriddenElementsGetter
@@ -129,7 +129,7 @@ class MinimizationPsiManagerService {
         val usageEdges = nodes.flatMap { (element, from) ->
             PsiUtils.collectUsages(element)
                 .asSequence()
-                .filter { it.isFromContext(context) }
+                .filter { it.isFromContext(context) && it != element }
                 .mapNotNull(psiCache::get)
                 .map { PsiIJEdge.UsageInPSIElement(from, it) }
         }

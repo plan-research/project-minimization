@@ -12,14 +12,26 @@ import org.jetbrains.kotlin.psi.KtSecondaryConstructor
 
 object KotlinElementLookup {
     @RequiresReadLock
-    fun lookupType(element: PsiElement): List<PsiElement> = TypeDeclarationLookup.getSymbolTypeDeclarations(element)
+    fun lookupType(element: PsiElement): List<PsiElement> = TypeDeclarationLookup
+        .getSymbolTypeDeclarations(element)
+        .map { it.propagateToConstructor() }
 
     @RequiresReadLock
     fun lookupDefinition(element: PsiElement): List<PsiElement> = DefinitionAndCallDeclarationLookup
         .getReferenceDeclaration(element)
+        .map { it.propagateToConstructor() }
 
     @RequiresReadLock
-    fun lookupExpected(element: PsiElement) = ExpectDeclarationLookup.lookupExpect(element)
+    fun lookupExpected(element: PsiElement) = ExpectDeclarationLookup
+        .lookupExpect(element)
+        .map { it.propagateToConstructor() }
+
+    @RequiresReadLock
+    fun lookupObligatoryOverrides(element: PsiElement) =
+        AbstractOverriddenLookup
+            .lookupDirectlyOverridden(element)
+            .map { it.propagateToConstructor() }
+
 
     /**
      * Looks up and combines definitions, type declarations, and expected declarations
@@ -31,11 +43,8 @@ object KotlinElementLookup {
      */
     @RequiresReadLock
     fun lookupEverything(element: PsiElement): List<PsiElement> =
-        (lookupDefinition(element) + lookupType(element) + lookupExpected(element))
-            .map { it.propagateToConstructor() }
+        lookupDefinition(element) + lookupType(element) + lookupExpected(element)
 
-    @RequiresReadLock
-    fun lookupObligatoryOverrides(element: PsiElement) = AbstractOverriddenLookup.lookupDirectlyOverridden(element)
 
     private fun PsiElement.propagateToConstructor() = when (this) {
         is KtPrimaryConstructor -> parent  // KtPrimaryConstructor -> KtClass

@@ -38,7 +38,7 @@ class UsedPsiElementGetter(private val insideFunction: Boolean) : KtVisitorVoid(
     override fun visitKtElement(element: KtElement) {
         super.visitKtElement(element)
         collectedReferences.addAll(
-            KotlinElementLookup.lookupEverything(element),
+            KotlinElementLookup.lookupDefinition(element),
         )
         element.acceptChildren(this)
     }

@@ -41,13 +41,8 @@ abstract class HeavyIJDDContext<C : HeavyIJDDContext<C>>(
 
     abstract fun copy(project: Project): C
 
-    protected abstract fun getThis(): C
-
     override suspend fun <T> transform(transformer: IJDDContextTransformer<T>): T =
-        transformer.transformHeavy(getThis())
-
-    override suspend fun clone(cloner: IJDDContextCloner): C? =
-        cloner.cloneHeavy(getThis())
+        transformer.transformHeavy(this)
 
     override fun toString(): String = "HeavyIJDDContext(project=$projectDir)"
 }
@@ -62,20 +57,15 @@ abstract class LightIJDDContext<C : LightIJDDContext<C>>(
 ) : IJDDContextBase<C>(originalProject) {
     abstract fun copy(projectDir: VirtualFile): C
 
-    protected abstract fun getThis(): C
-
     override suspend fun <T> transform(transformer: IJDDContextTransformer<T>): T =
-        transformer.transformLight(getThis())
-
-    override suspend fun clone(cloner: IJDDContextCloner): C? =
-        cloner.cloneLight(getThis())
+        transformer.transformLight(this)
 
     override fun toString(): String = "LightIJDDContext(project=$projectDir, indexProject=$indexProjectDir)"
 }
 
 interface IJDDContextTransformer<T> {
-    suspend fun <C : LightIJDDContext<C>> transformLight(context: C): T
-    suspend fun <C : HeavyIJDDContext<C>> transformHeavy(context: C): T
+    suspend fun transformLight(context: LightIJDDContext<*>): T
+    suspend fun transformHeavy(context: HeavyIJDDContext<*>): T
 }
 
 interface IJDDContextCloner {

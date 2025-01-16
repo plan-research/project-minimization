@@ -10,6 +10,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.core.model.lift
 import org.plan.research.minimization.plugin.hierarchy.DeletablePsiElementHierarchyGenerator
+import org.plan.research.minimization.plugin.model.context.IJDDContextCloner
 import org.plan.research.minimization.plugin.model.context.LightIJDDContext
 import org.plan.research.minimization.plugin.model.context.WithImportRefCounterContext
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem.NonOverriddenPsiStubDDItem
@@ -39,7 +40,8 @@ class TestContext(
     override fun copy(projectDir: VirtualFile): TestContext =
         TestContext(projectDir, indexProject, originalProject)
 
-    override fun getThis(): TestContext = this
+    override suspend fun clone(cloner: IJDDContextCloner): TestContext? =
+        cloner.cloneLight(this)
 
     override fun copy(importRefCounter: KtSourceImportRefCounter): TestContext =
         TestContext(projectDir, indexProject, originalProject)

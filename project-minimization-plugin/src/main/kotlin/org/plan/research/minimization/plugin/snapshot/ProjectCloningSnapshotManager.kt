@@ -31,7 +31,7 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
     private val generalLogger = KotlinLogging.logger {}
 
     private object ProjectCloseTransformer : IJDDContextTransformer<Unit> {
-        override suspend fun <C : LightIJDDContext<C>> transformLight(context: C) {
+        override suspend fun transformLight(context: LightIJDDContext<*>) {
             if (context.projectDir != context.indexProjectDir) {
                 writeAction {
                     context.projectDir.run { delete(fileSystem) }
@@ -39,7 +39,7 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
             }
         }
 
-        override suspend fun <C : HeavyIJDDContext<C>> transformHeavy(context: C) {
+        override suspend fun transformHeavy(context: HeavyIJDDContext<*>) {
             ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(context.project)
         }
     }

@@ -1,5 +1,6 @@
 package org.plan.research.minimization.plugin.model.context.impl
 
+import org.plan.research.minimization.plugin.model.context.IJDDContextCloner
 import org.plan.research.minimization.plugin.model.context.LightIJDDContext
 
 import com.intellij.openapi.project.Project
@@ -13,5 +14,6 @@ class FunctionLevelStageContext(
     override fun copy(projectDir: VirtualFile): FunctionLevelStageContext =
         FunctionLevelStageContext(projectDir, indexProject, originalProject)
 
-    override fun getThis(): FunctionLevelStageContext = this
+    override suspend fun clone(cloner: IJDDContextCloner): FunctionLevelStageContext? =
+        cloner.cloneLight(this)
 }

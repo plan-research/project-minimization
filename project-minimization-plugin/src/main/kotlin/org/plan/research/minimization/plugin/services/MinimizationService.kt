@@ -164,13 +164,13 @@ class MinimizationService(private val project: Project, private val coroutineSco
     }
 
     private inner class HeavyTransformer : IJDDContextTransformer<MinimizationResult> {
-        override suspend fun <C : LightIJDDContext<C>> transformLight(context: C) = either {
+        override suspend fun transformLight(context: LightIJDDContext<*>) = either {
             val openedProject = openingService.openProject(context.projectDir.toNioPath())
                 ?: raise(MinimizationError.OpeningFailed)
             DefaultProjectContext(openedProject, context.originalProject)
         }
 
-        override suspend fun <C : HeavyIJDDContext<C>> transformHeavy(context: C) =
+        override suspend fun transformHeavy(context: HeavyIJDDContext<*>) =
             context.right()
     }
 }

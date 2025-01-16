@@ -16,6 +16,7 @@ import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.plan.research.minimization.plugin.lenses.DeclarationDeletingLens
+import org.plan.research.minimization.plugin.model.context.IJDDContextCloner
 import org.plan.research.minimization.plugin.model.context.LightIJDDContext
 import org.plan.research.minimization.plugin.model.context.WithImportRefCounterContext
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
@@ -43,7 +44,8 @@ class TestContext(
     override fun copy(projectDir: VirtualFile): TestContext =
         TestContext(projectDir, indexProject, originalProject, importRefCounter)
 
-    override fun getThis(): TestContext = this
+    override suspend fun clone(cloner: IJDDContextCloner): TestContext? =
+        cloner.cloneLight(this)
 
     override fun copy(importRefCounter: KtSourceImportRefCounter): TestContext =
         TestContext(projectDir, indexProject, originalProject, importRefCounter)

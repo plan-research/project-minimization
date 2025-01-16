@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 import org.plan.research.minimization.plugin.model.context.IJDDContextBase
+import org.plan.research.minimization.plugin.model.context.IJDDContextCloner
 import org.plan.research.minimization.plugin.model.context.LightIJDDContext
 
 interface TestWithContext<C : IJDDContextBase<C>> {
@@ -24,7 +25,8 @@ class LightTestContext(
     override fun copy(projectDir: VirtualFile): LightTestContext =
         LightTestContext(projectDir, indexProject, originalProject)
 
-    override fun getThis(): LightTestContext = this
+    override suspend fun clone(cloner: IJDDContextCloner): LightTestContext? =
+        cloner.cloneLight(this)
 }
 
 class TestWithLightContext : TestWithContext<LightTestContext> {
@@ -39,7 +41,8 @@ class HeavyTestContext(
     override fun copy(project: Project): HeavyTestContext =
         HeavyTestContext(project, originalProject)
 
-    override fun getThis(): HeavyTestContext = this
+    override suspend fun clone(cloner: IJDDContextCloner): HeavyTestContext? =
+        cloner.cloneHeavy(this)
 }
 
 class TestWithHeavyContext : TestWithContext<HeavyTestContext> {

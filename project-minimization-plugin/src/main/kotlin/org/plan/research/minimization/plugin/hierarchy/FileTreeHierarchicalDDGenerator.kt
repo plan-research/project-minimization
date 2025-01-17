@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.hierarchy
 
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
-import org.plan.research.minimization.core.algorithm.dd.hierarchical.ReversedHDDLevel
+import org.plan.research.minimization.core.algorithm.dd.hierarchical.HDDLevel
 import org.plan.research.minimization.core.model.lift
 import org.plan.research.minimization.plugin.model.IJHierarchicalDDGenerator
 import org.plan.research.minimization.plugin.model.IJPropertyTester
@@ -42,14 +42,14 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
 
             reporter.updateProgress(level)
 
-            ReversedHDDLevel(level, propertyTester)
+            HDDLevel(level, propertyTester)
         }
 
     context(IJContextWithProgressMonad<C>)
     override suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<ProjectFileDDItem>) =
         option {
             val nextFiles = lift {
-                minimizationResult.flatMap {
+                minimizationResult.survived.flatMap {
                     val vf = it.getVirtualFile(context) ?: return@flatMap emptyList()
                     readAction { vf.children }
                         .map { file ->
@@ -61,7 +61,7 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
 
             reporter.updateProgress(nextFiles)
 
-            ReversedHDDLevel(nextFiles, propertyTester)
+            HDDLevel(nextFiles, propertyTester)
         }
 
     /**

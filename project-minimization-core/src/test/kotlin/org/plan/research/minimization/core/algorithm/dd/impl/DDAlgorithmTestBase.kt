@@ -17,9 +17,10 @@ abstract class DDAlgorithmTestBase {
     class SimpleTester(private val target: Set<SomeDDItem>) : PropertyTester<EmptyMonad, SomeDDItem> {
         context(EmptyMonad)
         override suspend fun test(
-            items: List<SomeDDItem>
+            survivedItems: List<SomeDDItem>,
+            deletedItems: List<SomeDDItem>,
         ): PropertyTestResult = either {
-            ensure(items.count { it in target } == target.size) { PropertyTesterError.NoProperty }
+            ensure(survivedItems.count { it in target } == target.size) { PropertyTesterError.NoProperty }
         }
     }
 
@@ -29,11 +30,12 @@ abstract class DDAlgorithmTestBase {
     ) : PropertyTester<EmptyMonad, SomeDDItem> {
         context(EmptyMonad)
         override suspend fun test(
-            items: List<SomeDDItem>
+            survivedItems: List<SomeDDItem>,
+            deletedItems: List<SomeDDItem>,
         ): PropertyTestResult = either {
-            val badCount = items.count { it in badItems }
+            val badCount = survivedItems.count { it in badItems }
             ensure(badCount == 0 || badCount == badItems.size) { PropertyTesterError.UnknownProperty }
-            ensure(items.count { it in target } == target.size) { PropertyTesterError.NoProperty }
+            ensure(survivedItems.count { it in target } == target.size) { PropertyTesterError.NoProperty }
         }
     }
 
@@ -52,7 +54,7 @@ abstract class DDAlgorithmTestBase {
 
         val propertyTester = SimpleTester(target.toSet())
         val result = EmptyMonad.run { algorithm.minimize(items, propertyTester) }
-        assertContentEquals(result.sortedBy { it.value }, target.sortedBy { it.value })
+        assertContentEquals(result.survived.sortedBy { it.value }, target.sortedBy { it.value })
     }
 
     private suspend fun complexTestWithSize(
@@ -84,10 +86,10 @@ abstract class DDAlgorithmTestBase {
         val propertyTester = ComplexTester(target.toSet(), bad.toSet())
         val result = EmptyMonad.run { algorithm.minimize(items, propertyTester) }
 
-        if (result.size == targetSize) {
-            assertContentEquals(result.sortedBy { it.value }, target.sortedBy { it.value })
+        if (result.survived.size == targetSize) {
+            assertContentEquals(result.survived.sortedBy { it.value }, target.sortedBy { it.value })
         } else {
-            assertContentEquals(result.sortedBy { it.value }, (target + bad).sortedBy { it.value })
+            assertContentEquals(result.survived.sortedBy { it.value }, (target + bad).sortedBy { it.value })
         }
     }
 

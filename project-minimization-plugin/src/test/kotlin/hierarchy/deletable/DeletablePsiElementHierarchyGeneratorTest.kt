@@ -8,6 +8,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.runBlocking
+import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.model.lift
 import org.plan.research.minimization.plugin.hierarchy.DeletablePsiElementHierarchyGenerator
 import org.plan.research.minimization.plugin.model.context.IJDDContextCloner
@@ -84,7 +85,7 @@ class DeletablePsiElementHierarchyGeneratorTest : AbstractAnalysisKotlinTest() {
                     assertEquals(listOf(KtClassStub("B")), stubs)
                 }
             }
-            val nextLevel = runBlocking { hierarchy.generateNextLevel(level.items) }
+            val nextLevel = runBlocking { hierarchy.generateNextLevel(DDAlgorithmResult(level.items, emptyList())) }
             assert(nextLevel.isNone())
         }
     }
@@ -120,7 +121,7 @@ class DeletablePsiElementHierarchyGeneratorTest : AbstractAnalysisKotlinTest() {
                 }
             }
             val nextLevel =
-                runBlocking { hierarchy.generateNextLevel(level.items).getOrNull() }
+                runBlocking { hierarchy.generateNextLevel(DDAlgorithmResult(level.items, emptyList())).getOrNull() }
             assertNotNull(nextLevel)
 
             assertSize(2, nextLevel!!.items)
@@ -149,7 +150,7 @@ class DeletablePsiElementHierarchyGeneratorTest : AbstractAnalysisKotlinTest() {
                 }
             }
             assertTrue(
-                runBlocking { hierarchy.generateNextLevel(nextLevel.items).isNone() }
+                runBlocking { hierarchy.generateNextLevel(DDAlgorithmResult(nextLevel.items, emptyList())).isNone() }
             )
         }
     }
@@ -183,7 +184,7 @@ class DeletablePsiElementHierarchyGeneratorTest : AbstractAnalysisKotlinTest() {
                     assertEquals(listOf(KtClassStub("B")), stubs)
                 }
             }
-            assertIs<None>(runBlocking { hierarchy.generateNextLevel(level.items) })
+            assertIs<None>(runBlocking { hierarchy.generateNextLevel(DDAlgorithmResult(level.items, emptyList())) })
         }
     }
 }

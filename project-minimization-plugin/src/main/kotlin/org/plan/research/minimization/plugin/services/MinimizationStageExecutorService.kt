@@ -1,6 +1,6 @@
 package org.plan.research.minimization.plugin.services
 
-import org.plan.research.minimization.core.algorithm.dd.hierarchical.ReversedHierarchicalDD
+import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDD
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.getDDAlgorithm
@@ -47,7 +47,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         val lightContext = FileLevelStageContext(context.projectDir, context.project, context.originalProject)
 
         val baseAlgorithm = fileLevelStage.ddAlgorithm.getDDAlgorithm()
-        val hierarchicalDD = ReversedHierarchicalDD(baseAlgorithm)
+        val hierarchicalDD = HierarchicalDD(baseAlgorithm)
 
         logger.info { "Initialise file hierarchy" }
         val hierarchy = FileTreeHierarchyGenerator<FileLevelStageContext>()
@@ -130,7 +130,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         )
 
         val ddAlgorithm = declarationLevelStage.ddAlgorithm.getDDAlgorithm()
-        val hierarchicalDD = ReversedHierarchicalDD(ddAlgorithm)
+        val hierarchicalDD = HierarchicalDD(ddAlgorithm)
         val hierarchy = DeletablePsiElementHierarchyGenerator<DeclarationLevelStageContext>(declarationLevelStage.depthThreshold)
             .produce(lightContext)
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }

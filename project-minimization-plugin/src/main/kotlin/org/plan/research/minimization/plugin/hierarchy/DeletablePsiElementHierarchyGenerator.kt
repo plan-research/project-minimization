@@ -5,7 +5,7 @@ import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoRootFo
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.execution.comparable.withLogging
 import org.plan.research.minimization.plugin.getExceptionComparator
-import org.plan.research.minimization.plugin.lenses.LinearFunctionDeletingLens
+import org.plan.research.minimization.plugin.lenses.FunctionDeletingLens
 import org.plan.research.minimization.plugin.logging.LoggingPropertyCheckingListener
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducerResult
@@ -44,7 +44,7 @@ class DeletablePsiElementHierarchyGenerator<C>(private val depthThreshold: Int) 
             .create(
                 project.service<BuildExceptionProviderService>(),
                 exceptionComparator.withLogging(),
-                LinearFunctionDeletingLens(),
+                FunctionDeletingLens(),
                 context,
                 listOfNotNull(LoggingPropertyCheckingListener.create("instance-level")),
             )

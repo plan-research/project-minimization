@@ -5,7 +5,7 @@ import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoRootFo
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.execution.comparable.withLogging
 import org.plan.research.minimization.plugin.getExceptionComparator
-import org.plan.research.minimization.plugin.lenses.GraphFunctionDeletingLens
+import org.plan.research.minimization.plugin.lenses.FunctionDeletingLens
 import org.plan.research.minimization.plugin.logging.LoggingPropertyCheckingListener
 import org.plan.research.minimization.plugin.model.context.IJDDContextBase
 import org.plan.research.minimization.plugin.model.context.WithImportRefCounterContext
@@ -32,7 +32,7 @@ class InstanceLevelLayerHierarchyBuilder<C> where C : WithInstanceLevelGraphCont
             .create(
                 project.service<BuildExceptionProviderService>(),
                 exceptionComparator.withLogging(),
-                GraphFunctionDeletingLens(),
+                FunctionDeletingLens(),
                 fromContext,
                 listOf(LoggingPropertyCheckingListener("instance-level")),
             )

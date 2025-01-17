@@ -60,6 +60,7 @@ CondensedInstanceLevelNode,
     override suspend fun test(
         cut: GraphCut<CondensedInstanceLevelNode>,
     ): PropertyTestResult {
+        updateContext { it.copy(graph = it.graph.induce(cut)) }
         return backingPropertyTester.test(
             cut.selectedVertices.flatMap { it.underlyingVertexes },
         )

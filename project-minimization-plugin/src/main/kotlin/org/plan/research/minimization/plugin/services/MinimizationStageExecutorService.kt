@@ -27,7 +27,6 @@ import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathInd
 import org.plan.research.minimization.plugin.model.monad.*
 import org.plan.research.minimization.plugin.psi.KtSourceImportRefCounter
 import org.plan.research.minimization.plugin.psi.PsiUtils
-import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelNode
 
 import arrow.core.Either
 import arrow.core.getOrElse
@@ -174,7 +173,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
 
         lightContext.runMonadWithProgress {
-            hierarchicalDD.minimize<_, _, CondensedInstanceLevelNode>(hierarchy)
+            hierarchicalDD.minimize(hierarchy)
         }
     }.logResult("Function Deleting Graph")
 

@@ -12,8 +12,8 @@ private class DDAlgorithmWithZeroTesting(private val ddAlgorithm: DDAlgorithm) :
     ): DDAlgorithmResult<T> {
         val result = ddAlgorithm.minimize(items, propertyTester)
 
-        return result.survived.singleOrNull()?.let {
-            propertyTester.test(emptyList(), result.survived).fold(
+        return result.retained.singleOrNull()?.let {
+            propertyTester.test(emptyList(), result.retained).fold(
                 ifLeft = { result },
                 ifRight = { DDAlgorithmResult(emptyList(), items) },
             )

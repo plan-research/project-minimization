@@ -42,7 +42,7 @@ class DeletablePsiElementHierarchyDDGenerator<C : IJDDContext>(
     override suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<PsiStubDDItem>) =
         option {
             val nextNodesInTrie = minimizationResult
-                .survived
+                .retained
                 .map { cache[it] ?: raise(None) }
                 .cache()
             ensure(nextNodesInTrie.isNotEmpty())

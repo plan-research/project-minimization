@@ -42,7 +42,7 @@ class DDAlgorithmWithLog(
             throw e
         }
 
-        statLogger.info { "DDAlgorithm ended with size and ratio: ${result.survived.size}, ${result.survived.size.toDouble() / items.size}" }
+        statLogger.info { "DDAlgorithm ended with size and ratio: ${result.retained.size}, ${result.retained.size.toDouble() / items.size}" }
         logger.info { "End minimization algorithm" }
 
         return result

@@ -17,10 +17,10 @@ abstract class DDAlgorithmTestBase {
     class SimpleTester(private val target: Set<SomeDDItem>) : PropertyTester<EmptyMonad, SomeDDItem> {
         context(EmptyMonad)
         override suspend fun test(
-            survivedItems: List<SomeDDItem>,
+            retainedItems: List<SomeDDItem>,
             deletedItems: List<SomeDDItem>,
         ): PropertyTestResult = either {
-            ensure(survivedItems.count { it in target } == target.size) { PropertyTesterError.NoProperty }
+            ensure(retainedItems.count { it in target } == target.size) { PropertyTesterError.NoProperty }
         }
     }
 
@@ -30,12 +30,12 @@ abstract class DDAlgorithmTestBase {
     ) : PropertyTester<EmptyMonad, SomeDDItem> {
         context(EmptyMonad)
         override suspend fun test(
-            survivedItems: List<SomeDDItem>,
+            retainedItems: List<SomeDDItem>,
             deletedItems: List<SomeDDItem>,
         ): PropertyTestResult = either {
-            val badCount = survivedItems.count { it in badItems }
+            val badCount = retainedItems.count { it in badItems }
             ensure(badCount == 0 || badCount == badItems.size) { PropertyTesterError.UnknownProperty }
-            ensure(survivedItems.count { it in target } == target.size) { PropertyTesterError.NoProperty }
+            ensure(retainedItems.count { it in target } == target.size) { PropertyTesterError.NoProperty }
         }
     }
 
@@ -54,7 +54,7 @@ abstract class DDAlgorithmTestBase {
 
         val propertyTester = SimpleTester(target.toSet())
         val result = EmptyMonad.run { algorithm.minimize(items, propertyTester) }
-        assertContentEquals(result.survived.sortedBy { it.value }, target.sortedBy { it.value })
+        assertContentEquals(result.retained.sortedBy { it.value }, target.sortedBy { it.value })
     }
 
     private suspend fun complexTestWithSize(
@@ -86,10 +86,10 @@ abstract class DDAlgorithmTestBase {
         val propertyTester = ComplexTester(target.toSet(), bad.toSet())
         val result = EmptyMonad.run { algorithm.minimize(items, propertyTester) }
 
-        if (result.survived.size == targetSize) {
-            assertContentEquals(result.survived.sortedBy { it.value }, target.sortedBy { it.value })
+        if (result.retained.size == targetSize) {
+            assertContentEquals(result.retained.sortedBy { it.value }, target.sortedBy { it.value })
         } else {
-            assertContentEquals(result.survived.sortedBy { it.value }, (target + bad).sortedBy { it.value })
+            assertContentEquals(result.retained.sortedBy { it.value }, (target + bad).sortedBy { it.value })
         }
     }
 

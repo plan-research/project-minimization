@@ -2,7 +2,7 @@ package org.plan.research.minimization.core.algorithm.dd
 
 import org.plan.research.minimization.core.model.*
 
-data class DDAlgorithmResult<T>(val survived: List<T>, val deleted: List<T>)
+data class DDAlgorithmResult<T>(val retained: List<T>, val deleted: List<T>)
 
 /**
  * Interface representing a Delta Debugging algorithm used to minimize a set of items.

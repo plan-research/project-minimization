@@ -49,7 +49,7 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
     override suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<ProjectFileDDItem>) =
         option {
             val nextFiles = lift {
-                minimizationResult.survived.flatMap {
+                minimizationResult.retained.flatMap {
                     val vf = it.getVirtualFile(context) ?: return@flatMap emptyList()
                     readAction { vf.children }
                         .map { file ->

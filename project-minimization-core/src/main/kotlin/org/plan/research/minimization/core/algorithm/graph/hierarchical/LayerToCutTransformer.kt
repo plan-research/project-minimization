@@ -6,9 +6,9 @@ import org.plan.research.minimization.core.model.graph.Graph
 import org.plan.research.minimization.core.model.graph.GraphCut
 import org.plan.research.minimization.core.model.graph.GraphEdge
 
-data class LayerToCutResult<V : DDItem>(val survivedCut: GraphCut<V>, val deletedCut: GraphCut<V>)
+data class LayerToCutResult<V : DDItem>(val retainedCut: GraphCut<V>, val deletedCut: GraphCut<V>)
 
 interface LayerToCutTransformer<V, E, G, M> where V : DDItem, E : GraphEdge<V>, G : Graph<V, E, G>, M : Monad {
     context(M)
-    suspend fun transform(survivedLayer: List<V>, deletedLayer: List<V>): LayerToCutResult<V>
+    suspend fun transform(retainedLayer: List<V>, deletedLayer: List<V>): LayerToCutResult<V>
 }

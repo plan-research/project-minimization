@@ -38,7 +38,7 @@ class SameExceptionPropertyTester<C : IJDDContextBase<C>, T : IJDDItem> private 
     private val snapshotManager = rootProject.service<SnapshotManagerService>()
 
     context(IJDDContextMonad<C>)
-    override suspend fun test(survivedItems: List<T>, deletedItems: List<T>): PropertyTestResult =
+    override suspend fun test(retainedItems: List<T>, deletedItems: List<T>): PropertyTestResult =
         snapshotManager.transaction {
             listeners.forEach { it.beforeFocus(context, deletedItems) }
             lens.focusOn(deletedItems)

@@ -14,12 +14,12 @@ class PropertyTesterWithLog<C : IJDDContext, T : IJDDItem>(
     private val logger = KotlinLogging.logger {}
 
     context(IJDDContextMonad<C>)
-    override suspend fun test(survivedItems: List<T>, deletedItems: List<T>): PropertyTestResult {
-        logger.trace { "Property test number of items - survived: ${survivedItems.size}, deleted: ${deletedItems.size}" }
-        logger.trace { "Property test items - survived: $survivedItems" }
+    override suspend fun test(retainedItems: List<T>, deletedItems: List<T>): PropertyTestResult {
+        logger.trace { "Property test number of items - retained: ${retainedItems.size}, deleted: ${deletedItems.size}" }
+        logger.trace { "Property test items - retained: $retainedItems" }
         logger.trace { "Property test items - deleted:  $deletedItems" }
-        statLogger.info { "Property Test started with size - survived: ${survivedItems.size}, deleted: ${deletedItems.size}" }
-        val result = innerTester.test(survivedItems, deletedItems)
+        statLogger.info { "Property Test started with size - retained: ${retainedItems.size}, deleted: ${deletedItems.size}" }
+        val result = innerTester.test(retainedItems, deletedItems)
         result.fold({ error ->
             logger.debug { "Property Test resulted with error: $error" }
             statLogger.info { "Property Test result: $error" }

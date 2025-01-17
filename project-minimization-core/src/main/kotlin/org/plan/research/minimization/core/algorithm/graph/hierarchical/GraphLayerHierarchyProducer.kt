@@ -41,10 +41,11 @@ abstract class GraphLayerHierarchyProducer<V, E, G, M, M2>(
     private inner class LayerToCut : PropertyTester<M2, V> {
         context(M2)
         override suspend fun test(
-            items: List<V>,
+            retainedItems: List<V>,
+            deletedItems: List<V>,
         ): PropertyTestResult {
-            val cut = layerToCutTransformer.transform(items)
-            return graphPropertyTesterWithGraph.test(cut)
+            val (retainedCut, deletedCut) = layerToCutTransformer.transform(retainedItems, deletedItems)
+            return graphPropertyTesterWithGraph.test(retainedCut, deletedCut)
         }
     }
 }

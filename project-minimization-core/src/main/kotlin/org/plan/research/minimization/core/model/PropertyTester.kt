@@ -18,16 +18,12 @@ typealias PropertyTestResult = Either<PropertyTesterError, Unit>
  */
 interface PropertyTester<M : Monad, T : DDItem> {
     context(M)
-    suspend fun test(items: List<T>): PropertyTestResult
+    suspend fun test(retainedItems: List<T>, deletedItems: List<T>): PropertyTestResult
 }
 
-interface ReversedPropertyTester<M : Monad, T : DDItem> {
-    context(M)
-    suspend fun test(itemsToDelete: List<T>): PropertyTestResult
-}
 interface PropertyTesterWithGraph<M : Monad, V : DDItem> {
     context(M)
-    suspend fun test(cut: GraphCut<V>): PropertyTestResult
+    suspend fun test(retainedCut: GraphCut<V>, deletedCut: GraphCut<V>): PropertyTestResult
 }
 
 sealed interface PropertyTesterError {

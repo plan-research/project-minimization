@@ -37,16 +37,11 @@ class SameExceptionPropertyTester<C : IJDDContextBase<C>, T : IJDDItem> private 
 ) : IJPropertyTester<C, T> {
     private val snapshotManager = rootProject.service<SnapshotManagerService>()
 
-    /**
-     * Tests whether the context's project has the same compiler exception as the root one
-     *
-     * @param itemsToDelete The list of project file items to be tested within the context.
-     */
     context(IJDDContextMonad<C>)
-    override suspend fun test(itemsToDelete: List<T>): PropertyTestResult =
+    override suspend fun test(retainedItems: List<T>, deletedItems: List<T>): PropertyTestResult =
         snapshotManager.transaction {
-            listeners.forEach { it.beforeFocus(context, itemsToDelete) }
-            lens.focusOn(itemsToDelete)
+            listeners.forEach { it.beforeFocus(context, deletedItems) }
+            lens.focusOn(deletedItems)
             listeners.forEach { it.onSuccessfulFocus(context) }
 
             val compilationResult = buildExceptionProvider

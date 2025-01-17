@@ -28,6 +28,7 @@ class ProbabilisticDD : DDAlgorithm {
         items.forEach { item -> probs[item] = defaultProb }
         val currentItems = items.toMutableList()
         val excludedItems = mutableListOf<T>()
+        val deletedItems = mutableListOf<T>()
         while (currentItems.size > 1 && probs[currentItems.last()]!! < 1.0) {
             yield()
             var p = 1.0
@@ -40,17 +41,18 @@ class ProbabilisticDD : DDAlgorithm {
                     break
                 }
             }
-            propertyTester.test(currentItems).fold(
+            propertyTester.test(currentItems, excludedItems).fold(
                 ifLeft = {
                     excludedItems.forEach { item -> probs.computeIfPresent(item) { _, v -> v / (1 - p) } }
                     merge(probs, buffer, currentItems, excludedItems)
                 },
                 ifRight = {
+                    deletedItems.addAll(excludedItems)
                     excludedItems.clear()
                 },
             )
         }
-        return currentItems
+        return DDAlgorithmResult(currentItems, deletedItems)
     }
 
     private fun <T> merge(

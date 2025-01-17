@@ -2,7 +2,7 @@ package org.plan.research.minimization.core.algorithm.dd
 
 import org.plan.research.minimization.core.model.*
 
-typealias DDAlgorithmResult<T> = List<T>
+data class DDAlgorithmResult<T>(val retained: List<T>, val deleted: List<T>)
 
 /**
  * Interface representing a Delta Debugging algorithm used to minimize a set of items.
@@ -15,13 +15,5 @@ interface DDAlgorithm {
     suspend fun <M : Monad, T : DDItem> minimize(
         items: List<T>,
         propertyTester: PropertyTester<M, T>,
-    ): DDAlgorithmResult<T>
-}
-
-interface ReversedDDAlgorithm {
-    context(M)
-    suspend fun <M : Monad, T : DDItem> minimize(
-        items: List<T>,
-        propertyTester: ReversedPropertyTester<M, T>,
     ): DDAlgorithmResult<T>
 }

@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.hierarchy
 
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
-import org.plan.research.minimization.core.algorithm.dd.hierarchical.ReversedHDDLevel
+import org.plan.research.minimization.core.algorithm.dd.hierarchical.HDDLevel
 import org.plan.research.minimization.core.model.Monad
 import org.plan.research.minimization.plugin.model.IJHierarchicalDDGenerator
 import org.plan.research.minimization.plugin.model.IJPropertyTester
@@ -35,20 +35,21 @@ class DeletablePsiElementHierarchyDDGenerator<C : IJDDContext>(
             .cache()
             .map(DeletableNextItemInfo::item)
 
-        ReversedHDDLevel(firstLevelItems, propertyChecker)
+        HDDLevel(firstLevelItems, propertyChecker)
     }
 
     context(IJContextWithProgressMonad<C>)
     override suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<PsiStubDDItem>) =
         option {
             val nextNodesInTrie = minimizationResult
+                .retained
                 .map { cache[it] ?: raise(None) }
                 .cache()
             ensure(nextNodesInTrie.isNotEmpty())
             nextNodesInTrie.reportProgress()
             val nextItems = nextNodesInTrie.map(DeletableNextItemInfo::item)
 
-            ReversedHDDLevel(nextItems, propertyChecker)
+            HDDLevel(nextItems, propertyChecker)
         }
 
     private fun Collection<StubCompressingPsiTrie>.cache() = flatMap { it.getNextItems() }

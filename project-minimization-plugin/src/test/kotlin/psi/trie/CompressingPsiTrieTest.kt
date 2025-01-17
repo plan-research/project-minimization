@@ -3,8 +3,8 @@ package psi.trie
 import generateAllPermutations
 import org.junit.Test
 import org.junit.jupiter.api.assertThrows
-import org.plan.research.minimization.plugin.model.IntChildrenIndex
-import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
+import org.plan.research.minimization.plugin.model.item.index.IntChildrenIndex
+import org.plan.research.minimization.plugin.model.item.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.psi.CompressingPsiItemTrie
 import kotlin.io.path.Path
 import kotlin.test.assertEquals

@@ -2,13 +2,14 @@ package org.plan.research.minimization.plugin.hierarchy.graph
 
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoExceptionFound
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoRootFound
-import org.plan.research.minimization.plugin.execution.DebugPropertyCheckingListener
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.execution.comparable.withLogging
 import org.plan.research.minimization.plugin.getExceptionComparator
 import org.plan.research.minimization.plugin.lenses.GraphFunctionDeletingLens
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.PsiStubDDItem
+import org.plan.research.minimization.plugin.logging.LoggingPropertyCheckingListener
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
+import org.plan.research.minimization.plugin.model.context.WithImportRefCounterContext
+import org.plan.research.minimization.plugin.model.context.WithInstanceLevelGraphContext
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 
@@ -19,21 +20,21 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.guessProjectDir
 import mu.KotlinLogging
 
-class InstanceLevelLayerHierarchyBuilder {
+class InstanceLevelLayerHierarchyBuilder<C> where C : WithInstanceLevelGraphContext<C>, C : WithImportRefCounterContext<C>, C : IJDDContextBase<C> {
     private val logger = KotlinLogging.logger { }
-    suspend fun produce(fromContext: IJDDContext) = either {
+    suspend fun produce(fromContext: C) = either {
         val project = fromContext.originalProject
         ensureNotNull(project.guessProjectDir()) { NoRootFound }
 
         val settings = project.service<MinimizationPluginSettings>()
         val exceptionComparator = settings.state.exceptionComparingStrategy.getExceptionComparator()
         val propertyTester = SameExceptionPropertyTester
-            .create<PsiStubDDItem>(
+            .create(
                 project.service<BuildExceptionProviderService>(),
                 exceptionComparator.withLogging(),
                 GraphFunctionDeletingLens(),
                 fromContext,
-                listOf(DebugPropertyCheckingListener("instance-level")),
+                listOf(LoggingPropertyCheckingListener("instance-level")),
             )
             .getOrElse { raise(NoExceptionFound) }
         InstanceLevelLayerHierarchyProducer(propertyTester)

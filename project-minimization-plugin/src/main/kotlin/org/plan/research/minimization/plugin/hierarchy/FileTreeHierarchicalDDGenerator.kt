@@ -1,11 +1,13 @@
 package org.plan.research.minimization.plugin.hierarchy
 
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
-import org.plan.research.minimization.core.algorithm.dd.hierarchical.HDDLevel
-import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDDGenerator
-import org.plan.research.minimization.core.model.PropertyTester
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.ProjectFileDDItem
+import org.plan.research.minimization.core.algorithm.dd.hierarchical.ReversedHDDLevel
+import org.plan.research.minimization.core.model.lift
+import org.plan.research.minimization.plugin.model.IJHierarchicalDDGenerator
+import org.plan.research.minimization.plugin.model.IJPropertyTester
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.item.ProjectFileDDItem
+import org.plan.research.minimization.plugin.model.monad.IJContextWithProgressMonad
 import org.plan.research.minimization.plugin.services.RootsManagerService
 
 import arrow.core.raise.option
@@ -13,48 +15,53 @@ import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.platform.util.progress.SequentialProgressReporter
 
 import java.nio.file.Path
-import kotlin.io.path.pathString
 
+import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
 
-class FileTreeHierarchicalDDGenerator(
-    private val propertyTester: PropertyTester<IJDDContext, ProjectFileDDItem>,
-) : HierarchicalDDGenerator<IJDDContext, ProjectFileDDItem> {
-    private var reporter: ProgressReporter? = null
+class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
+    private val propertyTester: IJPropertyTester<C, ProjectFileDDItem>,
+) : IJHierarchicalDDGenerator<C, ProjectFileDDItem> {
+    private lateinit var reporter: ProgressReporter
 
-    override suspend fun generateFirstLevel(context: IJDDContext) =
+    context(IJContextWithProgressMonad<C>)
+    override suspend fun generateFirstLevel() =
         option {
-            val level = smartReadAction(context.indexProject) {
-                val rootManager = service<RootsManagerService>()
-                val roots = rootManager.findPossibleRoots(context)
+            val level = lift {
+                smartReadAction(context.indexProject) {
+                    val rootManager = service<RootsManagerService>()
+                    val roots = rootManager.findPossibleRoots(context)
 
-                context.progressReporter?.let {
-                    reporter = ProgressReporter(it, context, roots)
+                    reporter = ProgressReporter(context, roots)
+
+                    roots.map { ProjectFileDDItem(it) }
                 }
-
-                roots.map { ProjectFileDDItem(it) }
             }
 
-            reporter?.updateProgress(level)
-            HDDLevel(context.copy(currentLevel = level), level, propertyTester)
+            reporter.updateProgress(level)
+
+            ReversedHDDLevel(level, propertyTester)
         }
 
-    override suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<IJDDContext, ProjectFileDDItem>) =
+    context(IJContextWithProgressMonad<C>)
+    override suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<ProjectFileDDItem>) =
         option {
-            val nextFiles = minimizationResult.items.flatMap {
-                val vf = it.getVirtualFile(minimizationResult.context) ?: return@flatMap emptyList()
-                readAction { vf.children }
-                    .map { file ->
-                        ProjectFileDDItem.create(minimizationResult.context, file)
-                    }
+            val nextFiles = lift {
+                minimizationResult.flatMap {
+                    val vf = it.getVirtualFile(context) ?: return@flatMap emptyList()
+                    readAction { vf.children }
+                        .map { file ->
+                            ProjectFileDDItem.create(context, file)
+                        }
+                }
             }
             ensure(nextFiles.isNotEmpty())
 
-            reporter?.updateProgress(nextFiles)
-            HDDLevel(minimizationResult.context.copy(currentLevel = nextFiles), nextFiles, propertyTester)
+            reporter.updateProgress(nextFiles)
+
+            ReversedHDDLevel(nextFiles, propertyTester)
         }
 
     /**
@@ -65,16 +72,16 @@ class FileTreeHierarchicalDDGenerator(
      *
      * @param context The context of the project.
      * @param roots An array of VirtualFile representing the starting points to compute levels.
-     * @property reporter An instance of [SequentialProgressReporter] used for updating the progress.
      * @constructor Creates a new instance of [ProgressReporter] based on the given root path and the array of root files.
      */
-    private class ProgressReporter(val reporter: SequentialProgressReporter, context: IJDDContext, roots: List<Path>) {
+    context(IJContextWithProgressMonad<C>)
+    private inner class ProgressReporter(context: C, roots: List<Path>) {
         @Volatile
         private var currentLevel = 0
         private val levelMaxDepths = HashMap<Path, Int>()
 
         init {
-            reporter.nextStep(1)
+            nextStep(1)
             computeLevels(context, roots)
         }
 
@@ -85,7 +92,7 @@ class FileTreeHierarchicalDDGenerator(
          * @param context The context of the project.
          * @param roots An array of VirtualFile representing the starting points to compute levels.
          */
-        private fun computeLevels(context: IJDDContext, roots: List<Path>) {
+        private fun computeLevels(context: C, roots: List<Path>) {
             val stack = mutableListOf<StackEntry>()
             roots.forEach { root ->
                 context.projectDir.findFileByRelativePath(root.pathString)?.let {
@@ -117,9 +124,9 @@ class FileTreeHierarchicalDDGenerator(
         fun updateProgress(level: List<ProjectFileDDItem>) {
             currentLevel += 1
             val maxDepth = level.maxOf { levelMaxDepths[it.localPath]!! }
-            reporter.nextStep((100 * currentLevel) / maxDepth)
+            nextStep((100 * currentLevel) / maxDepth)
         }
-
-        private data class StackEntry(val file: VirtualFile, val level: Int, var nextChildIndex: Int = 0)
     }
+
+    private data class StackEntry(val file: VirtualFile, val level: Int, var nextChildIndex: Int = 0)
 }

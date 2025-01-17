@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.core.utils.graph.GraphToImageDumper
-import org.plan.research.minimization.plugin.model.HeavyIJDDContext
+import org.plan.research.minimization.plugin.model.context.impl.DefaultProjectContext
 import org.plan.research.minimization.plugin.psi.graph.PsiIJEdge
 
 import com.intellij.openapi.components.Service
@@ -19,8 +19,9 @@ import kotlinx.coroutines.launch
 @Service(Service.Level.PROJECT)
 class TestGraphService(private val project: Project, private val coroutineScope: CoroutineScope) {
     fun dumpGraph() = coroutineScope.launch {
+        val context = DefaultProjectContext(project)
         val graph = service<MinimizationPsiManagerService>()
-            .buildDeletablePsiGraph(HeavyIJDDContext(project))
+            .buildDeletablePsiGraph(context)
         val representation = GraphToImageDumper.dumpGraph(
             graph,
             stringify = { it.toString() },

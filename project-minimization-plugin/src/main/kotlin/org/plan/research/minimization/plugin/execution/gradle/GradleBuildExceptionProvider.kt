@@ -9,8 +9,8 @@ import org.plan.research.minimization.plugin.execution.exception.ParseKotlincExc
 import org.plan.research.minimization.plugin.execution.gradle.GradleConsoleRunResult.Companion.EXIT_CODE_FAIL
 import org.plan.research.minimization.plugin.execution.gradle.GradleConsoleRunResult.Companion.EXIT_CODE_OK
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.exception.CompilationResult
+import org.plan.research.minimization.plugin.model.CompilationResult
+import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 
 import arrow.core.Either
@@ -149,13 +149,13 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
 
         // Set the Gradle JVM (Java home)
         val gradleJvm = defaultProjectSettings.gradleJvm
-        logger.debug { "Gradle JVM: $gradleJvm" }
+        logger.trace { "Gradle JVM: $gradleJvm" }
         gradleJvm?.let {
             val sdk = ExternalSystemJdkUtil.getJdk(context.indexProject, gradleJvm)
-            logger.debug { "Found sdk: $sdk" }
+            logger.trace { "Found sdk: $sdk" }
             sdk?.let {
                 executionSettings.javaHome = sdk.homePath
-                logger.debug {
+                logger.trace {
                     """
                        Target jvm: ${sdk.name},
                         homePath: ${sdk.homePath},
@@ -168,7 +168,7 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
 
         // Return the configured execution settings
         return executionSettings.also {
-            logger.debug {
+            logger.trace {
                 "Execution gradle settings: $it"
             }
         }
@@ -224,7 +224,7 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
                 .setStandardOutput(std)
                 .setStandardError(err)
                 .setJavaHome(javaHome?.let { File(it) })
-                .withArguments("--no-configuration-cache", "--no-build-cache", "--quiet", *options.toTypedArray())
+                .withArguments(*defaultArguments, *options.toTypedArray())
                 .run(object : ResultHandler<Void> {
                     override fun onComplete(result: Void?) {
                         cont.resume(EXIT_CODE_OK)
@@ -372,5 +372,9 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
             fun fromTask(task: GradleTask) = ExactGradleTask(task)
             fun fromName(name: String) = GeneralGradleTask(name)
         }
+    }
+
+    companion object {
+        val defaultArguments = arrayOf("--no-configuration-cache", "--no-build-cache", "--quiet")
     }
 }

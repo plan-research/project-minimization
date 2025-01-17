@@ -1,21 +1,21 @@
 package org.plan.research.minimization.core.algorithm.dd
 
-import org.plan.research.minimization.core.model.DDContext
 import org.plan.research.minimization.core.model.DDItem
+import org.plan.research.minimization.core.model.Monad
 import org.plan.research.minimization.core.model.PropertyTester
 
 private class DDAlgorithmWithZeroTesting(private val ddAlgorithm: DDAlgorithm) : DDAlgorithm {
-    override suspend fun <C : DDContext, T : DDItem> minimize(
-        context: C,
+    context(M)
+    override suspend fun <M : Monad, T : DDItem> minimize(
         items: List<T>,
-        propertyTester: PropertyTester<C, T>,
-    ): DDAlgorithmResult<C, T> {
-        val result = ddAlgorithm.minimize(context, items, propertyTester)
+        propertyTester: PropertyTester<M, T>,
+    ): DDAlgorithmResult<T> {
+        val result = ddAlgorithm.minimize(items, propertyTester)
 
-        return result.items.singleOrNull()?.let {
-            propertyTester.test(result.context, emptyList()).fold(
+        return result.singleOrNull()?.let {
+            propertyTester.test(emptyList()).fold(
                 ifLeft = { result },
-                ifRight = { updatedContext -> DDAlgorithmResult(updatedContext, emptyList()) },
+                ifRight = { emptyList() },
             )
         } ?: result
     }

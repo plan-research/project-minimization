@@ -1,16 +1,17 @@
 package org.plan.research.minimization.plugin.lenses
 
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.PsiStubDDItem
+import org.plan.research.minimization.plugin.model.context.WithImportRefCounterContext
+import org.plan.research.minimization.plugin.model.context.WithInstanceLevelGraphContext
+import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
+import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 
-class GraphFunctionDeletingLens : FunctionDeletingLens() {
-    override fun currentLevel(context: IJDDContext): List<PsiStubDDItem> =
-        context.graph!!.vertices.flatMap { it.underlyingVertexes }
-
-    override fun prepareContext(context: IJDDContext, items: List<PsiStubDDItem>): IJDDContext? {
-        val graph = context.graph ?: return null
-        val itemsSet = items.toSet()
+class GraphFunctionDeletingLens<C> : FunctionDeletingLens<C>() where C : WithInstanceLevelGraphContext<C>, C : WithImportRefCounterContext<C> {
+    context(IJDDContextMonad<C>)
+    override fun prepare(itemsToDelete: List<PsiStubDDItem>) {
+        super.prepare(itemsToDelete)
+        val graph = context.graph
+        val itemsSet = itemsToDelete.toSet()
         val verticesToDelete = graph.vertices.filter { it.underlyingVertexes.all { it !in itemsSet } }.toSet()  // FIXME
-        return context.copy(graph = graph.withoutNodes(verticesToDelete))
+        updateContext { context.copy(graph = graph.withoutNodes(verticesToDelete)) }
     }
 }

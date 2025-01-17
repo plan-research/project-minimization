@@ -6,7 +6,7 @@ import org.plan.research.minimization.core.algorithm.graph.condensation.Condense
 import org.plan.research.minimization.core.model.graph.GraphCut
 import org.plan.research.minimization.core.model.graph.GraphWithAdjacencyList
 import org.plan.research.minimization.core.utils.graph.GraphToImageDumper
-import org.plan.research.minimization.plugin.model.PsiStubDDItem
+import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
 
 typealias CondensedInstanceLevelGraph = CondensedGraph<PsiStubDDItem, PsiIJEdge>
 typealias CondensedInstanceLevelNode = CondensedVertex<PsiStubDDItem, PsiIJEdge>
@@ -26,6 +26,6 @@ data class InstanceLevelGraph(
     override fun induce(cut: GraphCut<PsiStubDDItem>): InstanceLevelGraph {
         val filteredVertices = cut.selectedVertices
         val filteredEdges = edges.filter { it.from in filteredVertices && it.to in filteredVertices }
-        return InstanceLevelGraph(filteredVertices, filteredEdges)
+        return InstanceLevelGraph(filteredVertices.toList(), filteredEdges)
     }
 }

@@ -1,5 +1,6 @@
 package psi.trie
 
+import LightTestContext
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.guessProjectDir
@@ -13,9 +14,8 @@ import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtTypeAlias
 import org.jetbrains.kotlin.psi.KtTypeParameterList
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.LightIJDDContext
-import org.plan.research.minimization.plugin.model.PsiStubDDItem
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.psi.stub.KtStub
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
@@ -164,7 +164,7 @@ class PsiTrieDeletionTest : PsiTrieTestBase<PsiStubDDItem, KtStub>() {
         expectedFile: String,
         filter: (PsiElement) -> Boolean,
     ) = runBlocking {
-        val context = LightIJDDContext(project)
+        val context = LightTestContext(project)
         val selectedPsi = readAction { runBlocking { selectElements(context) { filter(it.psi(context)!!) } } }
         super.doTest(psiFile, selectedPsi) { _, it ->
             var nextSibling = it.nextSibling
@@ -175,14 +175,6 @@ class PsiTrieDeletionTest : PsiTrieTestBase<PsiStubDDItem, KtStub>() {
         }
         val path = psiFile.containingFile.virtualFile.toNioPath().relativeTo(project.guessProjectDir()!!.toNioPath())
         myFixture.checkResultByFile(path.pathString, "deletion-results/$expectedFile", true)
-//        val expectedFile = myFixture.configureByFile("deletion-results/$expectedFile")
-//        assertIs<KtFile>(expectedFile)
-//        readAction {
-//            kotlin.test.assertEquals(
-//                expectedFile.text,
-//                psiFile.text
-//            )
-//        }
     }
 
     private fun PsiStubDDItem.psi(context: IJDDContext) =

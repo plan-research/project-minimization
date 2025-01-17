@@ -1,8 +1,8 @@
 package org.plan.research.minimization.plugin.services
 
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.PsiChildrenIndexDDItem
-import org.plan.research.minimization.plugin.model.PsiStubDDItem
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.item.PsiChildrenIndexDDItem
+import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
 import org.plan.research.minimization.plugin.psi.KotlinElementLookup
 import org.plan.research.minimization.plugin.psi.KotlinOverriddenElementsGetter
 import org.plan.research.minimization.plugin.psi.PsiDSU

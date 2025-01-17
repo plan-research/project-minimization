@@ -1,19 +1,19 @@
 package psi.manager
 
+import LightTestContext
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.service
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.hasBody
 import org.jetbrains.kotlin.psi.psiUtil.isPrivate
-import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import kotlin.test.assertIs
 
 class MinimizationPsiManagerDeletablePsiTest : MinimizationPsiManagerTestBase() {
     fun testFunctionFunction() {
         val service = service<MinimizationPsiManagerService>()
-        val context = LightIJDDContext(project)
+        val context = LightTestContext(project)
         val psiFile = myFixture.configureByFile("function-function.kt")
         assertIs<KtFile>(psiFile)
         val elements = runBlocking {
@@ -35,7 +35,7 @@ class MinimizationPsiManagerDeletablePsiTest : MinimizationPsiManagerTestBase() 
 
     fun testFunctionVariable() {
         val service = service<MinimizationPsiManagerService>()
-        val context = LightIJDDContext(project)
+        val context = LightTestContext(project)
         val psiFile = myFixture.configureByFile("function-variable.kt")
         assertIs<KtFile>(psiFile)
         val elements = runBlocking {
@@ -72,7 +72,7 @@ class MinimizationPsiManagerDeletablePsiTest : MinimizationPsiManagerTestBase() 
     }
     fun testClassClass() {
         val service = service<MinimizationPsiManagerService>()
-        val context = LightIJDDContext(project)
+        val context = LightTestContext(project)
         val psiFile = myFixture.configureByFile("class-class.kt")
         assertIs<KtFile>(psiFile)
         val elements = runBlocking {

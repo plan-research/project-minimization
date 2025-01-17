@@ -9,9 +9,9 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtTypeAlias
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.LightIJDDContext
-import org.plan.research.minimization.plugin.model.PsiStubDDItem
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.impl.DefaultProjectContext
+import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
 import org.plan.research.minimization.plugin.psi.graph.InstanceLevelGraph
 import org.plan.research.minimization.plugin.psi.graph.PsiIJEdge
 import org.plan.research.minimization.plugin.psi.stub.KtClassStub
@@ -120,7 +120,7 @@ class InstanceLevelGraphCollectionTest : AbstractAnalysisKotlinTest() {
             val psiFile = myFixture.configureByFile(fileName)
             assertIs<KtFile>(psiFile)
             configureModules(myFixture.project)
-            val context = LightIJDDContext(project)
+            val context = DefaultProjectContext(project)
             val graph = service<MinimizationPsiManagerService>().buildDeletablePsiGraph(context)
             graphCheckFunction(graph, context)
         }

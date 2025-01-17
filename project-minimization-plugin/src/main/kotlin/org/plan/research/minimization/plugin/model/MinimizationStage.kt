@@ -1,36 +1,40 @@
 package org.plan.research.minimization.plugin.model
 
 import org.plan.research.minimization.plugin.errors.MinimizationError
+import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
 import org.plan.research.minimization.plugin.model.state.DDStrategy
-import org.plan.research.minimization.plugin.model.state.HierarchyCollectionStrategy
 
 import arrow.core.Either
+import arrow.optics.optics
 import com.intellij.util.xmlb.annotations.Property
 import com.intellij.util.xmlb.annotations.Tag
+
+typealias MinimizationResult = Either<MinimizationError, IJDDContextBase<*>>
 
 /**
  * Interface representing an executor responsible for handling various stages of the minimization process.
  */
 interface MinimizationStageExecutor {
     suspend fun executeFileLevelStage(
-        context: HeavyIJDDContext,
+        context: HeavyIJDDContext<*>,
         fileLevelStage: FileLevelStage,
-    ): Either<MinimizationError, IJDDContext>
+    ): MinimizationResult
 
     suspend fun executeFunctionLevelStage(
-        context: HeavyIJDDContext,
+        context: HeavyIJDDContext<*>,
         functionLevelStage: FunctionLevelStage,
-    ): Either<MinimizationError, IJDDContext>
+    ): MinimizationResult
 
     suspend fun executeDeclarationLevelStage(
-        context: HeavyIJDDContext,
+        context: HeavyIJDDContext<*>,
         declarationLevelStage: DeclarationLevelStage,
-    ): Either<MinimizationError, IJDDContext>
+    ): MinimizationResult
 
     suspend fun executeDeclarationGraphStage(
-        context: HeavyIJDDContext,
+        context: HeavyIJDDContext<*>,
         declarationGraphStage: DeclarationGraphStage,
-    ): Either<MinimizationError, IJDDContext>
+    ): MinimizationResult
 }
 
 /**
@@ -43,9 +47,9 @@ sealed interface MinimizationStage {
     val name: String
 
     suspend fun apply(
-        context: HeavyIJDDContext,
+        context: HeavyIJDDContext<*>,
         executor: MinimizationStageExecutor,
-    ): Either<MinimizationError, IJDDContext>
+    ): MinimizationResult
 }
 
 /**
@@ -53,33 +57,38 @@ sealed interface MinimizationStage {
  *
  * This class configures and applies a hierarchical delta debugging algorithm to minimize a project's file structure.
  *
- * @property hierarchyCollectionStrategy The strategy for collecting file hierarchy within the project.
  * @property ddAlgorithm The delta debugging algorithm to use for minimization.
  */
 @Tag("fileLevelStage")
+@optics
 data class FileLevelStage(
-    @Property val hierarchyCollectionStrategy: HierarchyCollectionStrategy = HierarchyCollectionStrategy.FILE_TREE,
     @Property val ddAlgorithm: DDStrategy = DDStrategy.PROBABILISTIC_DD,
 ) : MinimizationStage {
     override val name: String = "File-Level Minimization"
 
-    override suspend fun apply(context: HeavyIJDDContext, executor: MinimizationStageExecutor) =
+    override suspend fun apply(context: HeavyIJDDContext<*>, executor: MinimizationStageExecutor) =
         executor.executeFileLevelStage(context, this)
+
+    companion object
 }
 
 @Tag("functionLevelStage")
+@optics
 data class FunctionLevelStage(
     @Property val ddAlgorithm: DDStrategy = DDStrategy.PROBABILISTIC_DD,
 ) : MinimizationStage {
     override val name: String = "Body Replacement Algorithm"
 
     override suspend fun apply(
-        context: HeavyIJDDContext,
+        context: HeavyIJDDContext<*>,
         executor: MinimizationStageExecutor,
-    ): Either<MinimizationError, IJDDContext> = executor.executeFunctionLevelStage(context, this)
+    ): MinimizationResult = executor.executeFunctionLevelStage(context, this)
+
+    companion object
 }
 
 @Tag("declarationLevelStage")
+@optics
 data class DeclarationLevelStage(
     @Property val ddAlgorithm: DDStrategy = DDStrategy.PROBABILISTIC_DD,
     @Property val depthThreshold: Int = 2,
@@ -87,19 +96,24 @@ data class DeclarationLevelStage(
     override val name: String = "Instance-level Minimization"
 
     override suspend fun apply(
-        context: HeavyIJDDContext,
+        context: HeavyIJDDContext<*>,
         executor: MinimizationStageExecutor,
-    ): Either<MinimizationError, IJDDContext> = executor.executeDeclarationLevelStage(context, this)
+    ): MinimizationResult = executor.executeDeclarationLevelStage(context, this)
+
+    companion object
 }
 
 @Tag("declarationGraphStage")
+@optics
 data class DeclarationGraphStage(
     @Property val ddAlgorithm: DDStrategy = DDStrategy.PROBABILISTIC_DD,
 ) : MinimizationStage {
     override val name: String = "Declaration Graph Minimization"
 
     override suspend fun apply(
-        context: HeavyIJDDContext,
+        context: HeavyIJDDContext<*>,
         executor: MinimizationStageExecutor,
-    ): Either<MinimizationError, IJDDContext> = executor.executeDeclarationGraphStage(context, this)
+    ): MinimizationResult = executor.executeDeclarationGraphStage(context, this)
+
+    companion object
 }

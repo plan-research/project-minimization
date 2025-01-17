@@ -1,6 +1,6 @@
 package org.plan.research.minimization.plugin.psi
 
-import org.plan.research.minimization.plugin.model.HeavyIJDDContext
+import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 
 import com.intellij.openapi.application.smartReadAction
@@ -23,7 +23,7 @@ class KDocRemover {
     private val processorPermits = Runtime.getRuntime().availableProcessors() * 2
     private val psiManager = service<MinimizationPsiManagerService>()
 
-    suspend fun removeKDocs(from: HeavyIJDDContext) {
+    suspend fun removeKDocs(from: HeavyIJDDContext<*>) {
         val files = smartReadAction(from.indexProject) {
             psiManager.findAllKotlinFilesInIndexProject(from)
         }
@@ -33,7 +33,7 @@ class KDocRemover {
             }
         }
     }
-    private suspend fun HeavyIJDDContext.processFiles(progressReporter: ProgressReporter, files: List<VirtualFile>) = coroutineScope {
+    private suspend fun HeavyIJDDContext<*>.processFiles(progressReporter: ProgressReporter, files: List<VirtualFile>) = coroutineScope {
         val semaphore = Semaphore(processorPermits)
         for (file in files) {
             launch {
@@ -49,7 +49,7 @@ class KDocRemover {
             }
         }
     }
-    private suspend fun HeavyIJDDContext.removeKDocs(file: KtFile) {
+    private suspend fun HeavyIJDDContext<*>.removeKDocs(file: KtFile) {
         val kDocs = smartReadAction(indexProject) {
             PsiTreeUtil.collectElementsOfType(file, KDoc::class.java)
         }

@@ -32,7 +32,6 @@ object KotlinElementLookup {
             .lookupDirectlyOverridden(element)
             .map { it.propagateToConstructor() }
 
-
     /**
      * Looks up and combines definitions, type declarations, and expected declarations
      * related to the given PSI element and propagates constructor to the corresponding classes, if applicable.
@@ -44,7 +43,6 @@ object KotlinElementLookup {
     @RequiresReadLock
     fun lookupEverything(element: PsiElement): List<PsiElement> =
         lookupDefinition(element) + lookupType(element) + lookupExpected(element)
-
 
     private fun PsiElement.propagateToConstructor() = when (this) {
         is KtPrimaryConstructor -> parent  // KtPrimaryConstructor -> KtClass

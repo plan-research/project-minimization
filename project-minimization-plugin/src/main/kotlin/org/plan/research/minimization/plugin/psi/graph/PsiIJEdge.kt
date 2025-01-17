@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.psi.graph
 
 import org.plan.research.minimization.core.model.graph.GraphEdge
-import org.plan.research.minimization.plugin.model.PsiStubDDItem
+import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
 
 sealed class PsiIJEdge : GraphEdge<PsiStubDDItem>() {
     data class Overload(override val from: PsiStubDDItem, override val to: PsiStubDDItem) : PsiIJEdge()

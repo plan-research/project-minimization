@@ -1,18 +1,18 @@
 package org.plan.research.minimization.plugin
 
-import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
+import org.plan.research.minimization.core.algorithm.dd.ReversedDDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.impl.DDMin
 import org.plan.research.minimization.core.algorithm.dd.impl.ProbabilisticDD
+import org.plan.research.minimization.core.algorithm.dd.impl.asReversed
+import org.plan.research.minimization.core.algorithm.dd.withZeroTesting
 import org.plan.research.minimization.plugin.execution.DumbCompiler
 import org.plan.research.minimization.plugin.execution.comparable.SimpleExceptionComparator
 import org.plan.research.minimization.plugin.execution.comparable.StacktraceExceptionComparator
 import org.plan.research.minimization.plugin.execution.gradle.GradleBuildExceptionProvider
 import org.plan.research.minimization.plugin.execution.transformer.PathRelativizationTransformation
-import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchyGenerator
 import org.plan.research.minimization.plugin.logging.withLog
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
+import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.CompilationException
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
 import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
@@ -25,6 +25,8 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 
 import java.nio.file.Path
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 import kotlin.io.path.Path
 import kotlinx.serialization.KSerializer
@@ -53,16 +55,14 @@ fun SnapshotStrategy.getSnapshotManager(project: Project): SnapshotManager =
         SnapshotStrategy.PROJECT_CLONING -> ProjectCloningSnapshotManager(project)
     }
 
-fun HierarchyCollectionStrategy.getHierarchyCollectionStrategy(): ProjectHierarchyProducer<*> =
-    when (this) {
-        HierarchyCollectionStrategy.FILE_TREE -> FileTreeHierarchyGenerator()
-    }
-
-fun DDStrategy.getDDAlgorithm(): DDAlgorithm =
+fun DDStrategy.getDDAlgorithm(isZeroTesting: Boolean = false): ReversedDDAlgorithm =
     when (this) {
         DDStrategy.DD_MIN -> DDMin()
         DDStrategy.PROBABILISTIC_DD -> ProbabilisticDD()
-    }.withLog()
+    }
+        .withLog()
+        .let { if (isZeroTesting) it.withZeroTesting() else it }
+        .asReversed()
 
 fun CompilationStrategy.getCompilationStrategy(): BuildExceptionProvider =
     when (this) {
@@ -97,9 +97,11 @@ fun ExceptionComparingStrategy.getExceptionComparator() = when (this) {
     ExceptionComparingStrategy.STACKTRACE -> StacktraceExceptionComparator(SimpleExceptionComparator())
 }
 
-fun TransformationDescriptors.getExceptionTransformations() = when (this) {
-    TransformationDescriptors.PATH_RELATIVIZATION -> PathRelativizationTransformation()
+fun TransformationDescriptor.getExceptionTransformations() = when (this) {
+    TransformationDescriptor.PATH_RELATIVIZATION -> PathRelativizationTransformation()
 }
 
 suspend fun CompilationException.apply(transformations: List<ExceptionTransformation>, context: IJDDContext) =
     transformations.fold(this) { acc, it -> acc.apply(it, context) }
+
+fun getCurrentTimeString(): String = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))

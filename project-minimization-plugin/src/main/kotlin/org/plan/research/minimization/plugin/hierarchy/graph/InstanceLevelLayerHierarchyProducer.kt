@@ -1,24 +1,26 @@
 package org.plan.research.minimization.plugin.hierarchy.graph
 
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
-import org.plan.research.minimization.core.algorithm.graph.condensation.StrongConnectivityCondensation
-import org.plan.research.minimization.core.algorithm.graph.hierarchical.GraphLayerHierarchyProducer
-import org.plan.research.minimization.core.model.PropertyTester
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.PsiStubDDItem
+import org.plan.research.minimization.core.algorithm.graph.hierarchical.ReversedGraphLayerHierarchyProducer
+import org.plan.research.minimization.core.model.lift
+import org.plan.research.minimization.plugin.model.IJInstanceLevelLayerHierarchyGenerator
+import org.plan.research.minimization.plugin.model.IJPropertyTester
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.WithInstanceLevelGraphContext
+import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
+import org.plan.research.minimization.plugin.model.monad.IJContextWithProgressMonad
+import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelEdge
 import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelGraph
 import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelNode
-import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 
 import arrow.core.getOrElse
 import arrow.core.raise.option
-import com.intellij.openapi.components.service
 
-private typealias AlgorithmResult = DDAlgorithmResult<IJDDContext, CondensedInstanceLevelNode>
+private typealias AlgorithmResult = DDAlgorithmResult<CondensedInstanceLevelNode>
 
 /**
- * A specific implementation of [GraphLayerHierarchyProducer] for producing hierarchical layers
+ * A specific implementation of [ReversedGraphLayerHierarchyProducer] for producing hierarchical layers
  * from a condensed instance-level graph.
  *
  * The implementation of that class is based on some like of reversed breath-first search.
@@ -33,25 +35,20 @@ private typealias AlgorithmResult = DDAlgorithmResult<IJDDContext, CondensedInst
  * @param propertyTester A tester to evaluate properties of items within the context
  * of the delta debugging process, used for identifying elements in layers.
  */
-class InstanceLevelLayerHierarchyProducer(propertyTester: PropertyTester<IJDDContext, PsiStubDDItem>) :
-    GraphLayerHierarchyProducer<CondensedInstanceLevelNode, CondensedInstanceLevelEdge, CondensedInstanceLevelGraph, IJDDContext>(
-    layerToCutTransformer = IjLayerToCutTransformer,
-    graphPropertyTester = InstanceLevelCondensedGraphPropertyTester(propertyTester),
+class InstanceLevelLayerHierarchyProducer<C : WithInstanceLevelGraphContext<C>>(propertyTester: IJPropertyTester<C, PsiStubDDItem>) :
+    IJInstanceLevelLayerHierarchyGenerator<C, CondensedInstanceLevelNode, CondensedInstanceLevelEdge, CondensedInstanceLevelGraph>(
+    InstanceLevelCondensedGraphPropertyTester<C>(propertyTester),
 ) {
     private val inactiveElements: MutableMap<CondensedInstanceLevelNode, Int> = mutableMapOf()
-    override suspend fun generateFirstGraphLayer(context: IJDDContext) = option {
-        val graph = service<MinimizationPsiManagerService>().buildDeletablePsiGraph(context)
-        val condensedGraph = StrongConnectivityCondensation.compressGraph(graph)
-
-        val layer = condensedGraph.sinks
-        ensure(layer.isNotEmpty())
-        GraphLayer(
-            layer = layer,
-            context = context.copy(
-                graph = condensedGraph,
-                currentLevel = graph.vertices,  // `currentLevel` actually is not used. However, algorithms require it to work correctly, so we set it
-            ),
-        )
+    context(IJContextWithProgressMonad<C>)
+    override suspend fun generateFirstGraphLayer() = option {
+        lift {
+            val layer = context.graph.sinks
+            ensure(layer.isNotEmpty())
+            GraphLayer(
+                layer = layer,
+            )
+        }
     }
 
     /**
@@ -65,6 +62,7 @@ class InstanceLevelLayerHierarchyProducer(propertyTester: PropertyTester<IJDDCon
      * * These new active elements are the only possible candidates, since rest vertices hasn't been updated on that level.
      *   Thus, we know that there is some unprocessed edge out of the vertex.
      */
+    context(IJContextWithProgressMonad<C>)
     override suspend fun generateNextGraphLayer(minimizationResult: AlgorithmResult) =
         option {
             minimizationResult
@@ -77,28 +75,36 @@ class InstanceLevelLayerHierarchyProducer(propertyTester: PropertyTester<IJDDCon
     /**
      * This function propagates to inactive elements information about completed active elements
      */
+    context(IJContextWithProgressMonad<C>)
     private fun AlgorithmResult.propagateActive() = option {
-        val graph = ensureNotNull(context.graph)
-        val nextInactiveElements = items
-            .flatMap { graph.edgesTo(it).getOrElse { emptyList() } }
-            .map { it.from }
-            .onEach { inactiveElements.merge(it, 1, Int::plus) }
+        lift {
+            val graph = context.graph
+            val nextInactiveElements = this@propagateActive
+                .flatMap { graph.edgesTo(it).getOrElse { emptyList() } }
+                .map { it.from }
+                .onEach { inactiveElements.merge(it, 1, Int::plus) }
 
-        context to nextInactiveElements.distinct()
+            context to nextInactiveElements.distinct()
+        }
     }
 
     /**
      * The function that processes all processed inactive elements and produces the new layer by choosing the new active elements
      */
+    context(IJContextWithProgressMonad<C>)
     private fun IJDDContext.produceNextLevel(nextInactiveElements: List<CondensedInstanceLevelNode>) =
         option {
-            val graph = ensureNotNull(graph)
-            val nextElements = nextInactiveElements
-                .filter { vertex -> graph.outDegreeOf(vertex) == inactiveElements[vertex] }
-            ensure(nextElements.isNotEmpty())
-            GraphLayer(
-                layer = nextElements,
-                context = copy(),
-            )
+            lift {
+                val graph = context.graph
+                val nextElements = nextInactiveElements
+                    .filter { vertex -> graph.outDegreeOf(vertex) == inactiveElements[vertex] }
+                ensure(nextElements.isNotEmpty())
+                GraphLayer(
+                    layer = nextElements,
+                )
+            }
         }
+
+    context(IJDDContextMonad<C>)
+    override fun graph(): CondensedInstanceLevelGraph = context.graph
 }

@@ -1,5 +1,5 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
- import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.research.code.submissions.clustering.buildutils.configureDiktat
 import org.jetbrains.research.code.submissions.clustering.buildutils.createDiktatTask
 
@@ -9,6 +9,7 @@ version = "1.0-SNAPSHOT"
 plugins {
     java
     kotlin
+    alias(libs.plugins.ksp)
 }
 
 allprojects {
@@ -18,6 +19,7 @@ allprojects {
         apply {
             plugin("java")
             plugin("kotlin")
+            plugin(libs.plugins.ksp.get().pluginId)
         }
     }
 
@@ -29,6 +31,8 @@ allprojects {
         implementation(libs.arrow.core)
         implementation(libs.kotlin.logging)
         implementation(libs.logback.classic)
+        implementation(libs.arrow.optics)
+        ksp(libs.arrow.ksp.plugin)
 
         testImplementation(kotlin("test"))
     }
@@ -59,7 +63,8 @@ allprojects {
             javaParameters = true
             freeCompilerArgs = listOf(
                 "-Xnullability-annotations=@org.jspecify.annotations:strict",
-                "-Xemit-jvm-type-annotations"
+                "-Xemit-jvm-type-annotations",
+                "-Xcontext-receivers"
             )
         }
     }

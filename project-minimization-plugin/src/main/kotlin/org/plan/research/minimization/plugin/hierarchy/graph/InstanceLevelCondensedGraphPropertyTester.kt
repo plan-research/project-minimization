@@ -2,13 +2,13 @@ package org.plan.research.minimization.plugin.hierarchy.graph
 
 import org.plan.research.minimization.core.model.PropertyTestResult
 import org.plan.research.minimization.core.model.PropertyTester
-import org.plan.research.minimization.core.model.PropertyTesterWithGraph
 import org.plan.research.minimization.core.model.graph.GraphCut
 import org.plan.research.minimization.core.utils.graph.GraphToImageDumper
-import org.plan.research.minimization.core.utils.graph.NodeAttributes
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.PsiStubDDItem
-import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelEdge
+import org.plan.research.minimization.plugin.model.IJGraphPropertyTester
+import org.plan.research.minimization.plugin.model.IJPropertyTester
+import org.plan.research.minimization.plugin.model.context.WithInstanceLevelGraphContext
+import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
+import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelGraph
 import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelNode
 import org.plan.research.minimization.plugin.psi.graph.InstanceLevelGraph
@@ -36,13 +36,11 @@ private typealias NodeAttributes = Array<Attributes<out ForNode>>
  *
  * @property backingPropertyTester An instance of [PropertyTester] used for testing linearized graph elements.
  */
-class InstanceLevelCondensedGraphPropertyTester(val backingPropertyTester: PropertyTester<IJDDContext, PsiStubDDItem>) :
-    PropertyTesterWithGraph<
-IJDDContext,
+class InstanceLevelCondensedGraphPropertyTester<C>(val backingPropertyTester: IJPropertyTester<C, PsiStubDDItem>) :
+    IJGraphPropertyTester<
+C,
 CondensedInstanceLevelNode,
-CondensedInstanceLevelEdge,
-CondensedInstanceLevelGraph
-> {
+> where C : WithInstanceLevelGraphContext<C> {
     /**
      * A logging location for the saved condensed graph. The graph dumps are used for the debugging.
      */
@@ -58,12 +56,11 @@ CondensedInstanceLevelGraph
         }
     }
 
+    context(IJDDContextMonad<C>)
     override suspend fun test(
-        context: IJDDContext,
         cut: GraphCut<CondensedInstanceLevelNode>,
-    ): PropertyTestResult<IJDDContext> {
+    ): PropertyTestResult {
         return backingPropertyTester.test(
-            context,
             cut.selectedVertices.flatMap { it.underlyingVertexes },
         )
         // .also {
@@ -120,6 +117,7 @@ CondensedInstanceLevelGraph
                 }
             }
         }
+
     companion object {
         private const val DUMP_IMAGE_HEIGHT = 5000
         private const val DUMP_IMAGE_WIDTH = 5000

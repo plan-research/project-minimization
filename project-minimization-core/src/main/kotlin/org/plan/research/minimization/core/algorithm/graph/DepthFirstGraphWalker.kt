@@ -20,20 +20,20 @@ abstract class DepthFirstGraphWalker<V : DDItem, E : GraphEdge<V>, G : GraphWith
             onUnvisitedNode(graph, startingVertex, data)
         }
     }
+
     suspend fun visitComponent(graph: G, startingVertex: V): R {
         processComponent(graph, startingVertex)
         return onComplete(graph)
     }
+
     protected open suspend fun onUnvisitedNode(graph: G, node: V, data: D) {
         val edgesFrom = graph.edgesFrom(node).getOrElse { return@onUnvisitedNode }
         for (edge in edgesFrom) {
             if (edge.to !in visited) {
                 visited.add(edge.to)
                 onUnvisitedNode(graph, edge.to, data)
-                onPassedEdge(graph, edge, data)
-            } else {
-                onPassedEdge(graph, edge, data)
             }
+            onPassedEdge(graph, edge, data)
         }
     }
 

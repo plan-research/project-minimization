@@ -1,49 +1,75 @@
 package org.plan.research.minimization.plugin.settings
 
-data class MinimizationPluginStateObservable(private val stateGetter: () -> MinimizationPluginState) {
+class MinimizationPluginStateObservable {
+    val state: MinimizationPluginState = MinimizationPluginState()
     var compilationStrategy = StateDelegate(
-        getter = { stateGetter().compilationStrategy },
-        setter = { stateGetter().compilationStrategy = it },
+        getter = { state.compilationStrategy },
+        setter = { state.compilationStrategy = it },
     )
     var gradleTask = StateDelegate(
-        getter = { stateGetter().gradleTask },
-        setter = { stateGetter().gradleTask = it },
+        getter = { state.gradleTask },
+        setter = { state.gradleTask = it },
     )
     var gradleOptions = StateDelegate(
-        getter = { stateGetter().gradleOptions },
-        setter = { stateGetter().gradleOptions = it },
+        getter = { state.gradleOptions },
+        setter = { state.gradleOptions = it },
     )
     var temporaryProjectLocation = StateDelegate(
-        getter = { stateGetter().temporaryProjectLocation },
-        setter = { stateGetter().temporaryProjectLocation = it },
+        getter = { state.temporaryProjectLocation },
+        setter = { state.temporaryProjectLocation = it },
+    )
+    var logsLocation = StateDelegate(
+        getter = { state.logsLocation },
+        setter = { state.logsLocation = it },
     )
     var snapshotStrategy = StateDelegate(
-        getter = { stateGetter().snapshotStrategy },
-        setter = { stateGetter().snapshotStrategy = it },
+        getter = { state.snapshotStrategy },
+        setter = { state.snapshotStrategy = it },
     )
     var exceptionComparingStrategy = StateDelegate(
-        getter = { stateGetter().exceptionComparingStrategy },
-        setter = { stateGetter().exceptionComparingStrategy = it },
+        getter = { state.exceptionComparingStrategy },
+        setter = { state.exceptionComparingStrategy = it },
     )
     var stages = StateDelegate(
-        getter = { stateGetter().stages },
-        setter = { stateGetter().stages = it },
+        getter = { state.stages },
+        setter = { state.stages = it },
     )
     var minimizationTransformations = StateDelegate(
-        getter = { stateGetter().minimizationTransformations },
-        setter = { stateGetter().minimizationTransformations = it },
+        getter = { state.minimizationTransformations },
+        setter = { state.minimizationTransformations = it },
     )
     var ignorePaths = StateDelegate(
-        getter = { stateGetter().ignorePaths },
-        setter = { stateGetter().ignorePaths = it },
+        getter = { state.ignorePaths },
+        setter = { state.ignorePaths = it },
     )
+
+    fun updateState(newState: MinimizationPluginState) {
+        compilationStrategy.set(newState.compilationStrategy)
+        gradleTask.set(newState.gradleTask)
+        gradleOptions.set(newState.gradleOptions)
+        temporaryProjectLocation.set(newState.temporaryProjectLocation)
+        snapshotStrategy.set(newState.snapshotStrategy)
+        exceptionComparingStrategy.set(newState.exceptionComparingStrategy)
+        stages.set(newState.stages)
+        minimizationTransformations.set(newState.minimizationTransformations)
+        ignorePaths.set(newState.ignorePaths)
+    }
 }
 
 class StateDelegate<T>(private val getter: () -> T, private val setter: (T) -> Unit) {
     private val subscribers = mutableListOf<ChangeDelegate<*>>()
 
     fun <V> observe(transform: (T) -> V) = ChangeDelegate(transform).also { subscribers.add(it) }
-    fun mutable() = MutableChangeDelegate()
+
+    fun set(value: T?) {
+        value ?: return
+        setter(value)
+        subscribers.forEach { it.onValueChanged(value) }
+    }
+
+    fun get(): T = getter()
+
+    fun mutate(transform: (T) -> T) = set(transform(getter()))
 
     inner class ChangeDelegate<V>(private val transform: (T) -> V) {
         private var value: V = transform(getter())
@@ -60,13 +86,5 @@ class StateDelegate<T>(private val getter: () -> T, private val setter: (T) -> U
         fun onValueChanged(newValue: T) {
             value = transform(newValue)
         }
-    }
-
-    inner class MutableChangeDelegate {
-        operator fun setValue(thisRef: Any?, property: Any?, value: T) {
-            setter(value)
-            subscribers.forEach { it.onValueChanged(value) }
-        }
-        operator fun getValue(thisRef: Any?, property: Any?): T = getter()
     }
 }

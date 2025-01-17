@@ -8,7 +8,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.indexing.FileBasedIndex
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.idea.KotlinFileType
-import org.plan.research.minimization.plugin.model.HeavyIJDDContext
+import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
+import org.plan.research.minimization.plugin.model.context.impl.DefaultProjectContext
 import org.plan.research.minimization.plugin.psi.KDocRemover
 import kotlin.io.path.Path
 import kotlin.io.path.relativeTo
@@ -22,7 +23,7 @@ class KDocRemoverTest : AbstractAnalysisKotlinTest() {
 
     @Suppress("SameParameterValue")
     private fun doTest(finalPath: String) = runBlocking {
-        val context = HeavyIJDDContext(myFixture.project)
+        val context = DefaultProjectContext(myFixture.project)
         val kDocRemover = KDocRemover()
         kDocRemover.removeKDocs(context)
         val projectFiles = buildList {

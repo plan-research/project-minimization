@@ -1,5 +1,7 @@
 package org.plan.research.minimization.core.model
 
+import org.plan.research.minimization.core.model.graph.GraphCut
+
 import arrow.core.Either
 
 typealias PropertyTestResult = Either<PropertyTesterError, Unit>
@@ -22,6 +24,10 @@ interface PropertyTester<M : Monad, T : DDItem> {
 interface ReversedPropertyTester<M : Monad, T : DDItem> {
     context(M)
     suspend fun test(itemsToDelete: List<T>): PropertyTestResult
+}
+interface PropertyTesterWithGraph<M : Monad, V : DDItem> {
+    context(M)
+    suspend fun test(cut: GraphCut<V>): PropertyTestResult
 }
 
 sealed interface PropertyTesterError {

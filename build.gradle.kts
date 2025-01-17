@@ -1,6 +1,5 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.research.code.submissions.clustering.buildutils.configureDiktat
 import org.jetbrains.research.code.submissions.clustering.buildutils.createDiktatTask
 
@@ -44,12 +43,6 @@ allprojects {
             sourceCompatibility = "21"
             targetCompatibility = "21"
         }
-        withType<KotlinCompile> {
-            compilerOptions {
-                jvmTarget = JvmTarget.JVM_21
-                freeCompilerArgs.add("-Xcontext-receivers")
-            }
-        }
 
         test {
             useJUnitPlatform {
@@ -65,6 +58,15 @@ allprojects {
 
     kotlin {
         jvmToolchain(21)
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_21
+            javaParameters = true
+            freeCompilerArgs = listOf(
+                "-Xnullability-annotations=@org.jspecify.annotations:strict",
+                "-Xemit-jvm-type-annotations",
+                "-Xcontext-receivers"
+            )
+        }
     }
 
     configureDiktat()

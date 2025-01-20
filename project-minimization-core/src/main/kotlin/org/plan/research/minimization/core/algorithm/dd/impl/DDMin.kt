@@ -29,6 +29,7 @@ class DDMin : DDAlgorithm {
         var testSmall = true
 
         var granularity = 2
+        val deletedItems = mutableListOf<T>()
         while (currentItems.size > 1) {
             var reduced = false
             while (!reduced) {
@@ -40,9 +41,10 @@ class DDMin : DDAlgorithm {
                     }
                     if (testSmall) {
                         if (!node.smallChecked) {
-                            val toBreak = propertyTester.test(smallItems)
+                            val toBreak = propertyTester.test(smallItems, currentItems)
                                 .isRight {
                                     granularity = 2
+                                    deletedItems.addAll(currentItems)
                                     smallItems.let {
                                         smallItems = currentItems
                                         currentItems = it
@@ -69,8 +71,9 @@ class DDMin : DDAlgorithm {
                             node.isCheckedAndMark()
                         }
                         if (!node.isCheckedAndMark()) {
-                            val toBreak = propertyTester.test(currentItems).isRight {
+                            val toBreak = propertyTester.test(currentItems, smallItems).isRight {
                                 granularity -= 1
+                                deletedItems.addAll(smallItems)
                                 smallItems.clear()
                                 node.delete()
                                 reduced = true
@@ -90,7 +93,7 @@ class DDMin : DDAlgorithm {
                 if (!reduced) {
                     if (!testSmall || granularity == 2) {
                         if (granularity == currentItems.size) {
-                            return currentItems
+                            return DDAlgorithmResult(currentItems, deletedItems)
                         }
                         granularity = min(granularity * 2, currentItems.size)
                         val next = currentNodes.flatMap { it.initNext() }
@@ -103,7 +106,7 @@ class DDMin : DDAlgorithm {
                 }
             }
         }
-        return currentItems
+        return DDAlgorithmResult(currentItems, deletedItems)
     }
 
     /**

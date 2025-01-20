@@ -1,10 +1,8 @@
 package org.plan.research.minimization.plugin
 
-import org.plan.research.minimization.core.algorithm.dd.ReversedDDAlgorithm
+import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.impl.DDMin
 import org.plan.research.minimization.core.algorithm.dd.impl.ProbabilisticDD
-import org.plan.research.minimization.core.algorithm.dd.impl.asReversed
-import org.plan.research.minimization.core.algorithm.dd.withZeroTesting
 import org.plan.research.minimization.plugin.execution.DumbCompiler
 import org.plan.research.minimization.plugin.execution.comparable.SimpleExceptionComparator
 import org.plan.research.minimization.plugin.execution.comparable.StacktraceExceptionComparator
@@ -55,14 +53,11 @@ fun SnapshotStrategy.getSnapshotManager(project: Project): SnapshotManager =
         SnapshotStrategy.PROJECT_CLONING -> ProjectCloningSnapshotManager(project)
     }
 
-fun DDStrategy.getDDAlgorithm(isZeroTesting: Boolean = false): ReversedDDAlgorithm =
+fun DDStrategy.getDDAlgorithm(): DDAlgorithm =
     when (this) {
         DDStrategy.DD_MIN -> DDMin()
         DDStrategy.PROBABILISTIC_DD -> ProbabilisticDD()
-    }
-        .withLog()
-        .let { if (isZeroTesting) it.withZeroTesting() else it }
-        .asReversed()
+    }.withLog()
 
 fun CompilationStrategy.getCompilationStrategy(): BuildExceptionProvider =
     when (this) {

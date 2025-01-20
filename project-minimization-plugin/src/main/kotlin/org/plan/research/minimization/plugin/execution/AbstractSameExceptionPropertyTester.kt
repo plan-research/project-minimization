@@ -31,13 +31,11 @@ open class AbstractSameExceptionPropertyTester<C : IJDDContextBase<C>, T : IJDDI
 
     /**
      * Tests whether the context's project has the same compiler exception as the root one
-     *
-     * @param itemsToDelete The list of project file items to be tested within the context.
      */
     context(IJDDContextMonad<C>)
-    override suspend fun test(itemsToDelete: List<T>): PropertyTestResult =
+    override suspend fun test(retainedItems: List<T>, deletedItems: List<T>): PropertyTestResult =
         snapshotManager.transaction {
-            focus(itemsToDelete)
+            focus(deletedItems)
             val compilationResult = compile().bind()
             compareResult(compilationResult).bind()
         }.mapLeft {

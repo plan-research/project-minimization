@@ -13,4 +13,5 @@ abstract class GraphWithAdjacencyList<V : DDItem, E : GraphEdge<V>, G : GraphWit
     abstract fun inDegreeOf(vertex: V): Int
     open fun outDegreeOf(vertex: V): Int = edgesFrom(vertex).getOrElse { emptyList() }.size
     open fun edgesFrom(vertex: V) = adjacencyList.getOrNone(vertex)
+    operator fun minus(cut: GraphCut<V>) = GraphCut(vertices.toSet() - cut.selectedVertices)
 }

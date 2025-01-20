@@ -1,6 +1,7 @@
 package org.plan.research.minimization.plugin.services
 
-import org.plan.research.minimization.core.algorithm.dd.hierarchical.ReversedHierarchicalDD
+import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDD
+import org.plan.research.minimization.core.algorithm.dd.withZeroTesting
 import org.plan.research.minimization.core.algorithm.graph.condensation.StrongConnectivityCondensation
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.execution.LinearIjPropertyTester
@@ -51,7 +52,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         val lightContext = FileLevelStageContext(context.projectDir, context.project, context.originalProject)
 
         val baseAlgorithm = fileLevelStage.ddAlgorithm.getDDAlgorithm()
-        val hierarchicalDD = ReversedHierarchicalDD(baseAlgorithm)
+        val hierarchicalDD = HierarchicalDD(baseAlgorithm)
 
         logger.info { "Initialise file hierarchy" }
         val hierarchy = FileTreeHierarchyGenerator<FileLevelStageContext>()
@@ -134,7 +135,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         )
 
         val ddAlgorithm = declarationLevelStage.ddAlgorithm.getDDAlgorithm()
-        val hierarchicalDD = ReversedHierarchicalDD(ddAlgorithm)
+        val hierarchicalDD = HierarchicalDD(ddAlgorithm)
         val hierarchy = DeletablePsiElementHierarchyGenerator<DeclarationLevelStageContext>(declarationLevelStage.depthThreshold)
             .produce(lightContext)
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
@@ -166,8 +167,8 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
             condensedGraph,
         )
 
-        val ddAlgorithm = declarationGraphStage.ddAlgorithm.getDDAlgorithm(isZeroTesting = true)
-        val hierarchicalDD = ReversedHierarchicalDD(ddAlgorithm)
+        val ddAlgorithm = declarationGraphStage.ddAlgorithm.getDDAlgorithm().withZeroTesting()
+        val hierarchicalDD = HierarchicalDD(ddAlgorithm)
         val hierarchy = InstanceLevelLayerHierarchyBuilder<DeclarationGraphLevelStageContext>()
             .produce(lightContext)
             .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }

@@ -13,9 +13,9 @@ import org.plan.research.minimization.core.model.graph.GraphWithAdjacencyList
  * into a corresponding graph cut.
  * These transformations often require a lot of contextual information, thus the context is given
  *
- * The only user of that object is [ReversedGraphLayerHierarchyProducer].
+ * The only user of that object is [GraphLayerHierarchyProducer].
  * The [LayerToCutTransformer] provides middleware between linear
- * [HierarchicalDDGenerator] and cut-based [ReversedGraphLayerHierarchyProducer].
+ * [HierarchicalDDGenerator] and cut-based [GraphLayerHierarchyProducer].
  *
  * **This solution is experimental and could be removed in the future**
  *

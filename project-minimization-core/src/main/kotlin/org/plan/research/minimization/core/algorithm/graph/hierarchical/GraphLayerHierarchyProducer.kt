@@ -1,15 +1,14 @@
 package org.plan.research.minimization.core.algorithm.graph.hierarchical
 
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
+import org.plan.research.minimization.core.algorithm.dd.hierarchical.HDDLevel
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDDGenerator
-import org.plan.research.minimization.core.algorithm.dd.hierarchical.ReversedHDDLevel
-import org.plan.research.minimization.core.algorithm.dd.hierarchical.ReversedHierarchicalDDGenerator
 import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.Monad
 import org.plan.research.minimization.core.model.MonadT
 import org.plan.research.minimization.core.model.PropertyTestResult
-import org.plan.research.minimization.core.model.ReversedPropertyTester
-import org.plan.research.minimization.core.model.ReversedPropertyTesterWithGraph
+import org.plan.research.minimization.core.model.PropertyTester
+import org.plan.research.minimization.core.model.PropertyTesterWithGraph
 import org.plan.research.minimization.core.model.graph.GraphEdge
 import org.plan.research.minimization.core.model.graph.GraphWithAdjacencyList
 
@@ -26,9 +25,9 @@ import arrow.core.raise.option
  * @param E The type of edges.
  * @param G The graph type.
  */
-abstract class ReversedGraphLayerHierarchyProducer<V, E, G, M, M2>(
-    private val graphPropertyTesterWithGraph: ReversedPropertyTesterWithGraph<M2, V>,
-) : ReversedHierarchicalDDGenerator<M, M2, V> where V : DDItem, E : GraphEdge<V>, G : GraphWithAdjacencyList<V, E, G>, M : MonadT<M2>, M2 : Monad {
+abstract class GraphLayerHierarchyProducer<V, E, G, M, M2>(
+    private val graphPropertyTesterWithGraph: PropertyTesterWithGraph<M2, V>,
+) : HierarchicalDDGenerator<M, M2, V> where V : DDItem, E : GraphEdge<V>, G : GraphWithAdjacencyList<V, E, G>, M : MonadT<M2>, M2 : Monad {
     private val layerToCutTransformer = LayerToCutTransformer<V, E, G>()
     private val tester = LayerToCut()
 
@@ -52,25 +51,25 @@ abstract class ReversedGraphLayerHierarchyProducer<V, E, G, M, M2>(
     context(M)
     final override suspend fun generateFirstLevel() = option {
         val layer = generateFirstGraphLayer().bind()
-        ReversedHDDLevel(items = layer.layer, propertyTester = tester)
+        HDDLevel(items = layer.layer, propertyTester = tester)
     }
     context(M)
     final override suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<V>) = option {
         val layer = generateNextGraphLayer(minimizationResult).bind()
-        ReversedHDDLevel(items = layer.layer, propertyTester = tester)
+        HDDLevel(items = layer.layer, propertyTester = tester)
     }
 
     context(M2)
     protected abstract fun graph(): G
 
     protected inner class GraphLayer(val layer: List<V>)
-    private inner class LayerToCut : ReversedPropertyTester<M2, V> {
+    private inner class LayerToCut : PropertyTester<M2, V> {
         context(M2)
-        override suspend fun test(
-            items: List<V>,
-        ): PropertyTestResult {
-            val cut = layerToCutTransformer.transform(graph(), items)
-            return graphPropertyTesterWithGraph.test(cut)
+        override suspend fun test(items: List<V>, deletedItems: List<V>): PropertyTestResult {
+            val graph = graph()
+            val deletedCut = layerToCutTransformer.transform(graph, deletedItems)
+            val retainedCut = graph - deletedCut
+            return graphPropertyTesterWithGraph.test(retainedCut, deletedCut)
         }
     }
 }

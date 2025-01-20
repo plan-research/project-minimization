@@ -18,33 +18,12 @@ typealias PropertyTestResult = Either<PropertyTesterError, Unit>
  */
 interface PropertyTester<M : Monad, T : DDItem> {
     context(M)
-    suspend fun test(items: List<T>): PropertyTestResult
+    suspend fun test(retainedItems: List<T>, deletedItems: List<T>): PropertyTestResult
 }
 
-interface ReversedPropertyTester<M : Monad, T : DDItem> {
-    context(M)
-    suspend fun test(itemsToDelete: List<T>): PropertyTestResult
-}
-
-/**
- * An interface that tests a specific property of a graph using a given context and a graph cut.
- *
- * @param V The type of the vertices in the graph
- */
 interface PropertyTesterWithGraph<M : Monad, V : DDItem> {
     context(M)
-    suspend fun test(cutToLeave: GraphCut<V>): PropertyTestResult
-}
-
-/**
- * Interface defining a tester for evaluating a specific property in a graph,
- * based on a specified graph cut that could be deleted
- *
- * @param V The type of vertices in the graph
- */
-interface ReversedPropertyTesterWithGraph<M : Monad, V : DDItem> {
-    context(M)
-    suspend fun test(cutToDelete: GraphCut<V>): PropertyTestResult
+    suspend fun test(retainedCut: GraphCut<V>, deletedCut: GraphCut<V>): PropertyTestResult
 }
 
 sealed interface PropertyTesterError {

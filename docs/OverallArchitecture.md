@@ -78,12 +78,6 @@ Such representation allows us to control flow the HDD algorithm in a scalable ma
 [tester]: ../project-minimization-core/src/main/kotlin/org/plan/research/minimization/core/model/PropertyTester.kt
 [generator]: ../project-minimization-core/src/main/kotlin/org/plan/research/minimization/core/algorithm/dd/hierarchical/HierarchicalDDGenerator.kt
 
-For each algorithm and interface there is a dual one
-that is focused on items that are supposed to be deleted instead of added.
-See [ReversedDDAlgorithmAdapter][rev-dd].
-
-[rev-dd]: ../project-minimization-core/src/main/kotlin/org/plan/research/minimization/core/algorithm/dd/impl/ReversedDDAlgorithmAdapter.kt
-
 ### Plugin
 
 This module is an implementation of an IntelliJ IDEA plugin.

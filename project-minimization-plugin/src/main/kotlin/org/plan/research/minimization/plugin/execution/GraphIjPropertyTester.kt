@@ -74,13 +74,19 @@ C : WithInstanceLevelGraphContext<C> {
     }
 
     context(IJDDContextMonad<C>)
-    override suspend fun test(cutToDelete: GraphCut<CondensedInstanceLevelNode>): PropertyTestResult {
+    override suspend fun test(
+        retainedCut: GraphCut<CondensedInstanceLevelNode>,
+        deletedCut: GraphCut<CondensedInstanceLevelNode>,
+    ): PropertyTestResult {
         val graph = context.graph
         // FIXME: add a settings flag to enable it
-        graph.dump(cutToDelete)
-        innerTester.cut = cutToDelete
+        graph.dump(deletedCut)
+        innerTester.cut = deletedCut
 
-        return loggableTester.test(cutToDelete.selectedVertices.flatMap { it.underlyingVertexes })
+        return loggableTester.test(
+            retainedCut.selectedVertices.flatMap { it.underlyingVertexes },
+            deletedCut.selectedVertices.flatMap { it.underlyingVertexes },
+        )
     }
 
     @Suppress("unused")

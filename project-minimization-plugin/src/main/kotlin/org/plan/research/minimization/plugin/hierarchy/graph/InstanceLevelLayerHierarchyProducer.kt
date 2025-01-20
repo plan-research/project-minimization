@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.hierarchy.graph
 
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
-import org.plan.research.minimization.core.algorithm.graph.hierarchical.ReversedGraphLayerHierarchyProducer
+import org.plan.research.minimization.core.algorithm.graph.hierarchical.GraphLayerHierarchyProducer
 import org.plan.research.minimization.core.model.lift
 import org.plan.research.minimization.plugin.model.IJGraphPropertyTester
 import org.plan.research.minimization.plugin.model.IJInstanceLevelLayerHierarchyGenerator
@@ -16,11 +16,12 @@ import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelNod
 import arrow.core.filterOption
 import arrow.core.getOrElse
 import arrow.core.raise.option
+import mu.KotlinLogging
 
 private typealias AlgorithmResult = DDAlgorithmResult<CondensedInstanceLevelNode>
 
 /**
- * A specific implementation of [ReversedGraphLayerHierarchyProducer] for producing hierarchical layers
+ * A specific implementation of [GraphLayerHierarchyProducer] for producing hierarchical layers
  * from a condensed instance-level graph.
  *
  * The implementation of that class is based on some like of reversed breath-first search.
@@ -36,6 +37,7 @@ class InstanceLevelLayerHierarchyProducer<C : WithInstanceLevelGraphContext<C>>(
 ) : IJInstanceLevelLayerHierarchyGenerator<C, CondensedInstanceLevelNode, CondensedInstanceLevelEdge, CondensedInstanceLevelGraph>(
     graphPropertyTester,
 ) {
+    private val logger = KotlinLogging.logger { }
     private val inactiveElements: MutableMap<CondensedInstanceLevelNode, Int> = mutableMapOf()
     private lateinit var depthCounter: DepthCounter<CondensedInstanceLevelNode>
     context(IJContextWithProgressMonad<C>)
@@ -44,6 +46,7 @@ class InstanceLevelLayerHierarchyProducer<C : WithInstanceLevelGraphContext<C>>(
             depthCounter = DepthCounter.create(context.graph)
             val layer = context.graph.sinks
             ensure(layer.isNotEmpty())
+            logger.debug { "[INSTANCE_GRAPH] produced ${layer.size} vertices on the first layer" }
             GraphLayer(
                 layer = layer,
             ).also { it.reportProgress() }
@@ -78,9 +81,10 @@ class InstanceLevelLayerHierarchyProducer<C : WithInstanceLevelGraphContext<C>>(
         lift {
             val graph = context.graph
             val nextInactiveElements =
-                this@propagateActive.flatMap { graph.edgesTo(it).getOrElse { emptyList() } }.map { it.from }
+                this@propagateActive.retained.flatMap { graph.edgesTo(it).getOrElse { emptyList() } }
+                    .map { it.from }
                     .onEach { inactiveElements.merge(it, 1, Int::plus) }
-
+            logger.debug { "After the stage there are  ${nextInactiveElements.size} (in-)active elements" }
             context to nextInactiveElements.distinct()
         }
     }
@@ -95,6 +99,7 @@ class InstanceLevelLayerHierarchyProducer<C : WithInstanceLevelGraphContext<C>>(
             val nextElements =
                 nextInactiveElements.filter { vertex -> graph.outDegreeOf(vertex) == inactiveElements[vertex] }
             ensure(nextElements.isNotEmpty())
+            logger.debug { "On the next stage there are ${nextElements.size} active elements" }
             GraphLayer(
                 layer = nextElements,
             )
@@ -110,6 +115,6 @@ class InstanceLevelLayerHierarchyProducer<C : WithInstanceLevelGraphContext<C>>(
             .map { depthCounter.getPercent(it) }
             .filterOption()
             .min()
-        nextStep(layerPercent)
+        nextStep(layerPercent.coerceAtLeast(1))
     }
 }

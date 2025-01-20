@@ -1,16 +1,18 @@
 package org.plan.research.minimization.plugin.logging
 
+import ch.usi.si.seart.cloc.CLOC
+import ch.usi.si.seart.cloc.CLOCException
+import com.intellij.openapi.components.service
+import kotlinx.serialization.json.Json
+import mu.KotlinLogging
 import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.PropertyTestResult
 import org.plan.research.minimization.core.model.PropertyTester
 import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.services.RootsManagerService
-
-import com.intellij.openapi.components.service
-
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.nio.file.Path
+import java.nio.file.Paths
+import kotlin.io.path.exists
 
 data class RootStatistics(
     var loc: Int = 0,
@@ -23,16 +25,13 @@ data class RootStatistics(
 class PropertyTesterWithStatistics<C : IJDDContext, T : DDItem>(
     private val innerTester: PropertyTester<C, T>,
 ) : PropertyTester<C, T> {
+    private var isFirst: Boolean = true
+    private val logger = KotlinLogging.logger {}
+
     override suspend fun test(context: C, items: List<T>): PropertyTestResult<C> {
+        if (isFirst) {analyzeProject(context); isFirst = false }
         val result = innerTester.test(context, items)
-        result.fold({ _ -> },
-            { value ->
-                if (value != context) {
-                    analyzeProject(context)
-                    analyzeProject(value)
-                }
-            },
-        )
+        result.onRight { value -> analyzeProject(value) }
         return result
     }
 
@@ -42,8 +41,11 @@ class PropertyTesterWithStatistics<C : IJDDContext, T : DDItem>(
         val projectDirPath = context.projectDir.toNioPath()
         for (root in roots) {
             val fullPath = projectDirPath.resolve(root)
-            val stat = statisticsForPath(fullPath)
-            projectStat += stat
+
+            if (fullPath.exists()) {
+                val stat = statisticsForPath(fullPath)
+                projectStat += stat
+            }
         }
         statLogger.info { "Project dir: ${context.projectDir}" }
         statLogger.info { "Total LOC: ${projectStat.loc}" }
@@ -59,41 +61,51 @@ class PropertyTesterWithStatistics<C : IJDDContext, T : DDItem>(
     }
 
     private fun runCloc(path: String): String {
-        val processBuilder = ProcessBuilder("cloc", path)
-        processBuilder.redirectErrorStream(true)
-        val process = processBuilder.start()
-        val result = StringBuilder()
-        BufferedReader(InputStreamReader(process.inputStream)).use { reader ->
-            var line: String?
-            while (reader.readLine().also { line = it } != null) {
-                result.append(line).append("\n")
-            }
+        return try {
+            // Convert the input path to a Path object
+            val targetPath: Path = Paths.get(path)
+
+            // Use the Cloc library to analyze the target
+            CLOC.command()
+                .timeout(30) // Set the timeout in seconds
+                .target(targetPath) // Specify the target directory or file
+                .linesByLanguage() // Generate statistics grouped by programming language
+                .toPrettyString() // Convert the result to a formatted string
+        } catch (e: CLOCException) {
+            "Error while running Cloc: ${e.message}"
         }
-        process.waitFor()
-        return result.toString()
     }
 
     private fun parseClocOutput(output: String): RootStatistics {
-        val lines = output.lines()
-        var loc = 0
-        var blankLoc = 0
-        var commentLoc = 0
-        var codeLoc = 0
-        var ktFiles = 0
+        return try {
+            val json = Json { ignoreUnknownKeys = true }
+            val clocStatistics = json.decodeFromString<ClocStatistics>(output)
 
-        for (line in lines) {
-            if (line.contains("Kotlin")) {
-                val parts = line.split(Regex("\\s+"))
-                if (parts.size >= 5) {
-                    ktFiles = parts[1].toIntOrNull() ?: 0
-                    blankLoc = parts[2].toIntOrNull() ?: 0
-                    commentLoc = parts[3].toIntOrNull() ?: 0
-                    codeLoc = parts[4].toIntOrNull() ?: 0
-                    loc = blankLoc + commentLoc + codeLoc
-                }
-            }
+            val kotlinStats = clocStatistics.kotlin
+
+            val loc = kotlinStats?.let { it.blank + it.comment + it.code } ?: 0
+            val blankLoc = kotlinStats?.blank ?: 0
+            val commentLoc = kotlinStats?.comment ?: 0
+            val codeLoc = kotlinStats?.code ?: 0
+            val ktFiles = kotlinStats?.nFiles ?: 0
+
+            RootStatistics(
+                loc = loc,
+                blankLoc = blankLoc,
+                commentLoc = commentLoc,
+                codeLoc = codeLoc,
+                ktFiles = ktFiles
+            )
+        } catch (e: Exception) {
+            logger.error("Error while running Cloc: ${e.message}")
+            RootStatistics(
+                loc = 0,
+                blankLoc = 0,
+                commentLoc = 0,
+                codeLoc = 0,
+                ktFiles = 0
+            )
         }
-        return RootStatistics(loc, blankLoc, commentLoc, codeLoc, ktFiles)
     }
 
     override fun toString(): String = innerTester.toString()

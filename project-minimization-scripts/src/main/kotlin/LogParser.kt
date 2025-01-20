@@ -1,5 +1,3 @@
-package org.plan.research.minimization.plugin.logging
-
 import org.plan.research.minimization.plugin.benchmark.BenchmarkConfig
 
 import com.charleskorn.kaml.Yaml

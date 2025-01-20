@@ -35,9 +35,6 @@
                 instance="org.plan.research.minimization.plugin.settings.MinimizationPluginSettingsConfigurable"
                 id="org.plan.research.minimization.plugin.settings.MinimizationPluginSettingsConfigurable"
                 displayName="Project Minimization"/>
-        <notificationGroup id="org.plan.research.minimization.benchmark.result"
-                           displayType="BALLOON"
-                           isLogByDefault="false"/>
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <supportsKotlinPluginMode supportsK2="true" />

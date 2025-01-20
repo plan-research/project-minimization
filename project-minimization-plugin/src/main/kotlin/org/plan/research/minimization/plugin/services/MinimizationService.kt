@@ -45,13 +45,13 @@ class MinimizationService(private val project: Project, private val coroutineSco
         coroutineScope.launch {
             settings.withFrozenState {
                 withBackgroundProgress(project, "Minimizing project") {
-                    minimizeProjectImpl().onRight { onComplete(it) }
+                    minimizeProjectAsync().onRight { onComplete(it) }
                 }
             }
         }
     }
 
-    private suspend fun minimizeProjectImpl(): Either<MinimizationError, HeavyIJDDContext> = withLoggingFolder {
+    suspend fun minimizeProjectAsync(): Either<MinimizationError, HeavyIJDDContext> = withLoggingFolder {
         either {
             logger.info { "Start Project minimization" }
             statLogger.info { "Start Project minimization for project: ${project.name}" }

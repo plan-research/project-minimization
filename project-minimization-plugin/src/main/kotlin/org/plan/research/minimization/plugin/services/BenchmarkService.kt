@@ -30,14 +30,18 @@ import kotlin.coroutines.resume
 import kotlin.io.path.Path
 import kotlin.io.path.readText
 import kotlinx.coroutines.*
+import mu.KotlinLogging
 
 @Service(Service.Level.PROJECT)
 class BenchmarkService(private val rootProject: Project, private val cs: CoroutineScope) {
+    private val logger = KotlinLogging.logger {}
+
     fun benchmark() = cs.launch {
-        val config = readConfig().getOrNull()
-        config ?: run {
-            return@launch
-        }
+        logger.info { "Start benchmark Action" }
+
+        logger.info { "Read Config" }
+        val config = readConfig().getOrNull() ?: return@launch
+
         val filteredProjects = config
             .projects
             .filter { it.isSuitableForGradleBenchmarking(allowAndroid = false) }  // FIXME
@@ -45,11 +49,7 @@ class BenchmarkService(private val rootProject: Project, private val cs: Corouti
             reportSequentialProgress(filteredProjects.size) { reporter ->
                 filteredProjects.forEach { project ->
                     reporter.itemStep("Minimizing ${project.name}") {
-                        catch({
                             project.process()
-                        },
-                        ) {
-                            }
                     }
                 }
             }
@@ -61,14 +61,14 @@ class BenchmarkService(private val rootProject: Project, private val cs: Corouti
     }
 
     private suspend fun readConfig(): Option<BenchmarkConfig> = option {
-        val projectRoot = rootProject.guessProjectDir() ?: raise(None)
-        val configurationFile = projectRoot.findFile("config.yaml") ?: raise(None)
+        val projectRoot = ensureNotNull(rootProject.guessProjectDir())
+        val configurationFile = ensureNotNull(projectRoot.findFile("config.yaml"))
         val content = withContext(Dispatchers.IO) { configurationFile.readText() }
         Yaml.default.decodeFromString(BenchmarkConfig.serializer(), content)
     }
 
     private fun getBenchmarkProjectRoot(project: BenchmarkProject): Option<Path> = option {
-        val root = rootProject.guessProjectDir()?.toNioPath() ?: raise(None)
+        val root = ensureNotNull(rootProject.guessProjectDir()?.toNioPath())
         root.resolve(Path(project.path))
     }
 
@@ -84,37 +84,57 @@ class BenchmarkService(private val rootProject: Project, private val cs: Corouti
     }
 
     private suspend fun BenchmarkProject.process(): Project? {
-        // Either<MinimizationError, Project>?
-        val gradleBuildTask = loadReproduceScript(this@process) ?: "build"
+        logger.info { "Launch benchmark: ${this@process.name}" }
+
         val openedProject = openBenchmarkProject(this@process).getOrNull() ?: return null
 
         if (openedProject.isDisposed) {
             throw IllegalStateException("Project is already disposed")
         }
 
+        var resultProject: Project? = null
+
         try {
-            setMinimizationSettings(openedProject, this.settingsFile)
+            setMinimizationSettings(openedProject, this@process)
             val minimizationService = openedProject.service<MinimizationService>()
 
-            val result = suspendCancellableCoroutine { cont ->
-                minimizationService.minimizeProject { context -> cont.resume(context) }
+            logger.info { "Start Minimization Action" }
+            val result = withBackgroundProgress(openedProject, "Minimizing project") {
+                minimizationService.minimizeProjectAsync()
+            }
+            logger.info { "End Minimization Action" }
+
+
+            resultProject = when (result) {
+                is Either.Right -> result.value.project
+                is Either.Left -> null
             }
 
-            return result.project
+            return resultProject
         } finally {
             withContext(Dispatchers.EDT + NonCancellable) {
-                closeProject(openedProject)
+                logger.info { "Close project: ${this@process.name}" }
+                if (!openedProject.isDisposed) {
+                    closeProject(openedProject)
+                }
+                resultProject?.let { project ->
+                    if (!project.isDisposed) {
+                        closeProject(project)
+                    }
+                }
             }
         }
     }
 
-    private fun setMinimizationSettings(project: Project, settingsFile: String? = null) {
-        settingsFile?.let {
-            loadStateFromFile(project, settingsFile)
-        }
-    }
+    private fun setMinimizationSettings(project: Project, benchmarkProject: BenchmarkProject) {
+        logger.info { "Set settings from file: ${benchmarkProject.settingsFile}" }
 
-    private fun loadReproduceScript(project: BenchmarkProject): String? = getGradleBuildTask(project.reproduceScript)
+        val settingsFileRoot = benchmarkProject.settingsFile?.let { settingsFile ->
+            rootProject.guessProjectDir()?.toNioPath()?.resolve(settingsFile)
+        }
+
+        settingsFileRoot?.let { loadStateFromFile(project, it.toString()) }
+    }
 
     /**
      * Function to transform a reproducing script into Gradle's task name.
@@ -123,26 +143,9 @@ class BenchmarkService(private val rootProject: Project, private val cs: Corouti
      *  * uses a single task (or a single task + `clean` task)
      *  * do not do extra actions
      */
-    private fun getGradleBuildTask(reproduceScript: String): String? {
-        val gradleLine = reproduceScript.lines().find { it.startsWith("./gradlew") } ?: return null
-        val tasks = gradleLine
-            .split(" ")
-            .asSequence()
-            .drop(1)
-            .map(String::trim)
-            .filterNot { "clean" in it }
-            .filterNot { it.startsWith("\"") }
-            .filterNot { it.startsWith("--") }
-        return tasks.firstOrNull()
-    }
 
     private fun BenchmarkProject.isSuitableForGradleBenchmarking(allowAndroid: Boolean): Boolean =
         (allowAndroid || this.extra?.tags?.contains("android") != true) &&
             this.buildSystem.type == BuildSystemType.GRADLE &&
             this.modules == ProjectModulesType.SINGLE
-
-    private data class BenchmarkMinimizationResult(
-        val result: Either<MinimizationError, Project>,
-        val projectConfig: BenchmarkProject,
-    )
 }

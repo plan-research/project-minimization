@@ -4,13 +4,11 @@ import org.plan.research.minimization.plugin.benchmark.BenchmarkConfig
 import org.plan.research.minimization.plugin.benchmark.BenchmarkProject
 import org.plan.research.minimization.plugin.benchmark.BuildSystemType
 import org.plan.research.minimization.plugin.benchmark.ProjectModulesType
-import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.settings.loadStateFromFile
 
 import arrow.core.Either
 import arrow.core.None
 import arrow.core.Option
-import arrow.core.raise.catch
 import arrow.core.raise.option
 import com.charleskorn.kaml.Yaml
 import com.intellij.openapi.application.EDT
@@ -23,14 +21,13 @@ import com.intellij.openapi.vfs.findFile
 import com.intellij.openapi.vfs.readText
 import com.intellij.platform.ide.progress.withBackgroundProgress
 import com.intellij.platform.util.progress.reportSequentialProgress
+import mu.KotlinLogging
 
 import java.nio.file.Path
 
-import kotlin.coroutines.resume
 import kotlin.io.path.Path
 import kotlin.io.path.readText
 import kotlinx.coroutines.*
-import mu.KotlinLogging
 
 @Service(Service.Level.PROJECT)
 class BenchmarkService(private val rootProject: Project, private val cs: CoroutineScope) {
@@ -49,7 +46,7 @@ class BenchmarkService(private val rootProject: Project, private val cs: Corouti
             reportSequentialProgress(filteredProjects.size) { reporter ->
                 filteredProjects.forEach { project ->
                     reporter.itemStep("Minimizing ${project.name}") {
-                            project.process()
+                        project.process()
                     }
                 }
             }
@@ -104,7 +101,6 @@ class BenchmarkService(private val rootProject: Project, private val cs: Corouti
             }
             logger.info { "End Minimization Action" }
 
-
             resultProject = when (result) {
                 is Either.Right -> result.value.project
                 is Either.Left -> null
@@ -143,7 +139,6 @@ class BenchmarkService(private val rootProject: Project, private val cs: Corouti
      *  * uses a single task (or a single task + `clean` task)
      *  * do not do extra actions
      */
-
     private fun BenchmarkProject.isSuitableForGradleBenchmarking(allowAndroid: Boolean): Boolean =
         (allowAndroid || this.extra?.tags?.contains("android") != true) &&
             this.buildSystem.type == BuildSystemType.GRADLE &&

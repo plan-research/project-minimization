@@ -4,11 +4,11 @@ import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.getCurrentTimeString
 import org.plan.research.minimization.plugin.logging.ExecutionDiscriminator
 import org.plan.research.minimization.plugin.logging.statLogger
-import org.plan.research.minimization.plugin.model.HeavyIJDDContext
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.LightIJDDContext
 import org.plan.research.minimization.plugin.model.MinimizationStage
-import org.plan.research.minimization.plugin.model.context.*
+import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
+import org.plan.research.minimization.plugin.model.context.IJDDContextTransformer
+import org.plan.research.minimization.plugin.model.context.LightIJDDContext
 import org.plan.research.minimization.plugin.model.context.impl.DefaultProjectContext
 import org.plan.research.minimization.plugin.psi.PsiImportCleaner
 

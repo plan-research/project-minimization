@@ -10,7 +10,7 @@ import org.plan.research.minimization.plugin.psi.trie.PsiTrie
 
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
-import com.intellij.openapi.vfs.findFile
+import com.intellij.openapi.vfs.findFileOrDirectory
 import com.intellij.psi.PsiElement
 import mu.KotlinLogging
 import org.jetbrains.kotlin.psi.KtFile
@@ -31,10 +31,12 @@ abstract class BasePsiLens<C, I, T> :
         logger.info { "Built a trie for the current context" }
         logFocusedItems(itemsToDelete, context)
         prepare(itemsToDelete)
-        val levelDiff = itemsToDelete
+        val (filesAndDirectories, otherPsiObjects) = itemsToDelete.partition { it.childrenPath.isEmpty() }
+        val levelDiff = otherPsiObjects
             .flatMap { transformSelectedElements(it, context) }
             .groupBy(PsiDDItem<T>::localPath)
 
+        focusOnFilesAndDirectories(filesAndDirectories, context)
         levelDiff.forEach { (path, items) -> focusOnInsideFile(items, path) }
 
         logger.info { "Focusing complete" }
@@ -73,7 +75,7 @@ abstract class BasePsiLens<C, I, T> :
     ) {
         val trie = PsiTrie.create(focusItems)
         val virtualFile = readAction {
-            context.projectDir.findFile(relativePath.toString())
+            context.projectDir.findFileOrDirectory(relativePath.toString())
         }
         virtualFile ?: run {
             logger.error { "The desired path for focused path $relativePath is not found in the project (name=${context.indexProject.name})" }
@@ -87,4 +89,6 @@ abstract class BasePsiLens<C, I, T> :
         logger.trace { "Processing all focused elements in $relativePath" }
         useTrie(trie, psiFile)
     }
+
+    protected abstract suspend fun focusOnFilesAndDirectories(itemsToDelete: List<I>, context: C)
 }

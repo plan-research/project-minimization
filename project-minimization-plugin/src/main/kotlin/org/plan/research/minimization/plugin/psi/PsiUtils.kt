@@ -9,6 +9,7 @@ import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathInd
 import org.plan.research.minimization.plugin.psi.graph.PsiIJEdge
 import org.plan.research.minimization.plugin.psi.stub.KtStub
 
+import arrow.core.None
 import arrow.core.Option
 import arrow.core.raise.option
 import com.intellij.openapi.application.EDT
@@ -16,6 +17,7 @@ import com.intellij.openapi.command.writeCommandAction
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
@@ -123,7 +125,12 @@ object PsiUtils {
             element,
             ::getChildPosition,
         ) { !PsiChildrenIndexDDItem.isCompatible(it) } ?: return null
-        val localPath = currentFile.virtualFile.toNioPath().relativeTo(context.projectDir.toNioPath())
+        val vfs = when (currentFile) {
+            is PsiFile -> currentFile.virtualFile
+            is PsiDirectory -> currentFile.virtualFile
+            else -> return null
+        }
+        val localPath = vfs.toNioPath().relativeTo(context.projectDir.toNioPath())
         val renderedType = PsiBodyTypeRenderer.transform(element)
         return PsiChildrenIndexDDItem.create(element, parentPath, localPath, renderedType)
     }
@@ -141,20 +148,26 @@ object PsiUtils {
         element: PsiElement,
     ): Option<PsiStubDDItem> = option {
         val (currentFile, parentPath) = buildParentPath(element, { _, element -> KtStub.create(element) }) { true }!!
-        val localPath = currentFile.virtualFile.toNioPath().relativeTo(context.projectDir.toNioPath())
+        val vfs = when (currentFile) {
+            is PsiFile -> currentFile.virtualFile
+            is PsiDirectory -> currentFile.virtualFile
+            else -> raise(None)
+        }
+        val localPath = vfs.toNioPath().relativeTo(context.projectDir.toNioPath())
         // At that stage we have no clue about the hierarchy of the overridden elements
         PsiStubDDItem.NonOverriddenPsiStubDDItem(localPath, parentPath.map { it.bind() })
     }
 
     @RequiresReadLock
+    @Suppress("TYPE_ALIAS")
     private fun <T> buildParentPath(
         element: PsiElement,
         pathElementProducer: ParentChildPsiProcessor<T>,
         isElementAllowed: (PsiElement) -> Boolean,
-    ): Pair<PsiFile, List<T>>? {
+    ): Pair<PsiElement, List<T>>? {
         var currentElement: PsiElement = element
         val path = buildList {
-            while (currentElement.parent != null && currentElement !is PsiFile) {
+            while (currentElement.parent != null && currentElement !is PsiFile && currentElement !is PsiDirectory) {
                 val parent = currentElement.parent
                 if (!isElementAllowed(parent)) {
                     return null
@@ -164,8 +177,7 @@ object PsiUtils {
                 currentElement = parent
             }
         }
-        require(currentElement is PsiFile)
-        return (currentElement as PsiFile) to path.reversed()
+        return currentElement to path.reversed()
     }
 
     @RequiresReadLock

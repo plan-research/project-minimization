@@ -31,6 +31,7 @@ class TestGraphService(private val project: Project, private val coroutineScope:
                     is PsiIJEdge.UsageInPSIElement -> arrayOf(Style.DOTTED)
                     is PsiIJEdge.Overload -> arrayOf(Style.DASHED)
                     is PsiIJEdge.ObligatoryOverride -> arrayOf(Style.DASHED, Color.RED)
+                    is PsiIJEdge.FileTreeEdge -> arrayOf(Style.SOLID, Color.SALMON)
                 }
             },
         )

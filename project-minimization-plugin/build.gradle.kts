@@ -10,20 +10,6 @@ plugins {
 group = rootProject.group
 version = rootProject.version
 
-// Configure Gradle IntelliJ Plugin
-// Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
-/*intellij {
-    val pluginName: String by project
-    val platformType: String by project
-    val platformVersion: String by project
-    val platformPlugins: String by project
-
-    this.pluginName.set(pluginName)
-    this.version.set(platformVersion)
-    this.type.set(platformType)
-    this.plugins.set(platformPlugins.split(',').map(String::trim).filter(String::isNotEmpty))
-}*/
-
 intellijPlatform {
     pluginConfiguration {
         val pluginName: String by project
@@ -45,12 +31,10 @@ dependencies {
         val platformBundledPlugins: String by project
 
         create(platformType, platformVersion)
-//        plugins(providers.gradleProperty("platformPlugins").map { it.split(',') })
         bundledPlugins(platformBundledPlugins.split(',').map(String::trim).filter(String::isNotEmpty))
 
         plugins(platformPlugins.split(',').map(String::trim).filter(String::isNotEmpty))
 
-        instrumentationTools()
         testFramework(TestFrameworkType.Platform)
         testFramework(TestFrameworkType.Plugin.Java)
         testPlatformDependency(Coordinates("com.jetbrains.intellij.platform", "external-system-test-framework"))

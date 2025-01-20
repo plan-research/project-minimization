@@ -31,6 +31,7 @@ import org.jetbrains.kotlin.config.SourceKotlinRootType
 import org.jetbrains.kotlin.config.TestSourceKotlinRootType
 import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.psi.KtElement
+import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtPrimaryConstructor
 import org.jetbrains.kotlin.psi.KtValVarKeywordOwner
 
@@ -40,6 +41,7 @@ import kotlin.io.path.relativeTo
 import kotlin.sequences.filter
 
 private typealias CoreDsuElement = Pair<KtElement, PsiStubDDItem>
+private typealias NodesAndEdges = Pair<List<PsiStubDDItem>, List<PsiIJEdge>>
 
 /**
  * Service that provides functions to get a list of all the psi elements that could be modified
@@ -106,44 +108,60 @@ class MinimizationPsiManagerService {
      * @param context The minimization context containing information about the current project and relevant properties.
      * @return An instance of [InstanceLevelGraph] containing the vertices (deletable PSI items) and edges (connections between them).
      */
-    suspend fun buildDeletablePsiGraph(context: IJDDContext): InstanceLevelGraph = smartReadAction(context.indexProject) {
-        val nodes = findDeletablePsiItemsWithoutCompression(context)
-        val psiCache = nodes.associate { it.first to it.second }
-        // TODO: Add file hierarchy?
-        // val filesNodes = nodes
-        // .map { (item) -> PsiStubDDItem.NonOverriddenPsiStubDDItem(item.localPath, emptyList()) }
-        // val fileEdges = nodes.zip(filesNodes).map { (from, fileNode) -> IJEdge.PSITreeEdge(from.first, fileNode) }
-        val psiEdges = nodes.mapNotNull { (_, from) ->
-            PsiUtils
-                .findAllDeletableParentElements(context, from)
-                ?.let { PsiIJEdge.PSITreeEdge(from, it) }
+    suspend fun buildDeletablePsiGraph(context: IJDDContext): InstanceLevelGraph =
+        smartReadAction(context.indexProject) {
+            val nodes = findDeletablePsiItemsWithoutCompression(context)
+            val psiCache = nodes.associate { it.first to it.second }
+
+            val (fileHierarchyNodes, fileHierarchyEdges) = buildFileHierarchy(context)
+            val filesNodes = nodes
+                .map { (_, item) -> PsiStubDDItem.NonOverriddenPsiStubDDItem(item.localPath, emptyList()) }
+            val fileEdges =
+                nodes.zip(filesNodes).map { (from, fileNode) -> PsiIJEdge.PSITreeEdge(from.second, fileNode) }
+            val psiEdges = nodes.mapNotNull { (_, from) ->
+                PsiUtils
+                    .findAllDeletableParentElements(context, from)
+                    ?.let { PsiIJEdge.PSITreeEdge(from, it) }
+            }
+            val overloadEdges = nodes.flatMap { (element, from) ->
+                KotlinOverriddenElementsGetter.getOverriddenElements(element).process(context, psiCache)
+                    .map { PsiIJEdge.Overload(from, it) }
+            }
+            val usageEdges = nodes.flatMap { (element, from) ->
+                PsiUtils.collectUsages(element).process(context, psiCache)
+                    .map { PsiIJEdge.UsageInPSIElement(from, it) }
+            }
+            val obligatoryOverride = nodes.flatMap { (element, from) ->
+                KotlinElementLookup.lookupObligatoryOverrides(element).process(context, psiCache)
+                    .map { PsiIJEdge.ObligatoryOverride(from, it) }
+            }
+            val expectActual = nodes.flatMap { (element, from) ->
+                KotlinElementLookup.lookupExpected(element).process(context, psiCache)
+                    .map { PsiIJEdge.UsageInPSIElement(from, it) }
+            }
+            InstanceLevelGraph(
+                vertices = (nodes.map(Pair<*, PsiStubDDItem>::second) + fileHierarchyNodes).distinct(),
+                edges = psiEdges + overloadEdges + usageEdges + obligatoryOverride + fileHierarchyEdges + fileEdges + expectActual,
+            )
         }
-        val overloadEdges = nodes.flatMap { (element, from) ->
-            KotlinOverriddenElementsGetter
-                .getOverriddenElements(element)
-                .asSequence()
-                .filter { it.isFromContext(context) }
-                .mapNotNull(psiCache::get)
-                .map { PsiIJEdge.Overload(from, it) }
+
+    private fun buildFileHierarchy(context: IJDDContext): NodesAndEdges {
+        val kotlinFiles = findAllKotlinFilesInIndexProject(context)
+        val projectRoot = context.indexProjectDir
+        val sourceRoots = service<RootsManagerService>().findPossibleRoots(context).map {
+            projectRoot.findFileByRelativePath(it.pathString)
         }
-        val usageEdges = nodes.flatMap { (element, from) ->
-            PsiUtils.collectUsages(element)
-                .asSequence()
-                .filter { it.isFromContext(context) && it != element }
-                .mapNotNull(psiCache::get)
-                .map { PsiIJEdge.UsageInPSIElement(from, it) }
+        val edges = buildList {
+            for (file in kotlinFiles) {
+                var currentFile = file
+                while (currentFile !in sourceRoots) {
+                    val parent = currentFile.parent ?: break
+                    PsiIJEdge.FileTreeEdge.create(context, currentFile, parent).onSome(::add)
+                    currentFile = parent
+                }
+            }
         }
-        val obligatoryOverride = nodes.flatMap { (element, from) ->
-            KotlinElementLookup.lookupObligatoryOverrides(element)
-                .asSequence()
-                .filter { it.isFromContext(context) }
-                .mapNotNull(psiCache::get)
-                .map { PsiIJEdge.ObligatoryOverride(from, it) }
-        }
-        InstanceLevelGraph(
-            vertices = nodes.map(Pair<*, PsiStubDDItem>::second),
-            edges = psiEdges + overloadEdges + usageEdges + obligatoryOverride,
-        )
+        return edges.flatMap { listOf(it.from, it.to) } to edges
     }
 
     /**
@@ -264,6 +282,14 @@ class MinimizationPsiManagerService {
         containingFile?.virtualFile?.let {
             ProjectFileIndex.getInstance(context.indexProject).isInProject(it)
         } == true
+
+    private fun List<PsiElement>.process(
+        context: IJDDContext,
+        psiCache: Map<KtExpression, PsiStubDDItem>,
+    ) =
+        asSequence()
+            .filter { it.isFromContext(context) }
+            .mapNotNull(psiCache::get)
 
     private class SourcesScope(project: Project) : GlobalSearchScope(project) {
         private val index = ProjectFileIndex.getInstance(project)

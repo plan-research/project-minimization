@@ -13,6 +13,7 @@ import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelEdg
 import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelGraph
 import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelNode
 
+import arrow.core.filterOption
 import arrow.core.getOrElse
 import arrow.core.raise.option
 
@@ -36,14 +37,16 @@ class InstanceLevelLayerHierarchyProducer<C : WithInstanceLevelGraphContext<C>>(
     graphPropertyTester,
 ) {
     private val inactiveElements: MutableMap<CondensedInstanceLevelNode, Int> = mutableMapOf()
+    private lateinit var depthCounter: DepthCounter<CondensedInstanceLevelNode>
     context(IJContextWithProgressMonad<C>)
     override suspend fun generateFirstGraphLayer() = option {
         lift {
+            depthCounter = DepthCounter.create(context.graph)
             val layer = context.graph.sinks
             ensure(layer.isNotEmpty())
             GraphLayer(
                 layer = layer,
-            )
+            ).also { it.reportProgress() }
         }
     }
 
@@ -64,6 +67,7 @@ class InstanceLevelLayerHierarchyProducer<C : WithInstanceLevelGraphContext<C>>(
             .bind()
             .let { (context, nextInactiveElements) -> context.produceNextLevel(nextInactiveElements) }
             .bind()
+            .also { it.reportProgress() }
     }
 
     /**
@@ -99,4 +103,13 @@ class InstanceLevelLayerHierarchyProducer<C : WithInstanceLevelGraphContext<C>>(
 
     context(IJDDContextMonad<C>)
     override fun graph(): CondensedInstanceLevelGraph = context.graph
+
+    context(IJContextWithProgressMonad<C>)
+    private fun GraphLayer.reportProgress() {
+        val layerPercent = IJContextWithProgressMonad.MAXIMUM_FRACTION - layer.asSequence()
+            .map { depthCounter.getPercent(it) }
+            .filterOption()
+            .min()
+        nextStep(layerPercent)
+    }
 }

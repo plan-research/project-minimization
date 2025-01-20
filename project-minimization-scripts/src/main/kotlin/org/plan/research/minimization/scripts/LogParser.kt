@@ -1,12 +1,15 @@
 package org.plan.research.minimization.scripts
 
-import com.charleskorn.kaml.Yaml
-import kotlinx.serialization.decodeFromString
 import org.plan.research.minimization.plugin.benchmark.BenchmarkConfig
+
+import com.charleskorn.kaml.Yaml
+
 import java.io.File
 import java.nio.file.Path
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+
+import kotlinx.serialization.decodeFromString
 
 // Data class to hold parsed project statistics
 data class ProjectStatistics(

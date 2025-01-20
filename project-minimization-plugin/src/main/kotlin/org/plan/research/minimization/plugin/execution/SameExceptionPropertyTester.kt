@@ -12,14 +12,11 @@ import org.plan.research.minimization.plugin.model.context.IJDDContextBase
 import org.plan.research.minimization.plugin.model.exception.CompilationException
 import org.plan.research.minimization.plugin.model.exception.ExceptionComparator
 import org.plan.research.minimization.plugin.model.item.IJDDItem
-import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
-import org.plan.research.minimization.plugin.services.SnapshotManagerService
+import org.plan.research.minimization.plugin.model.monad.SnapshotMonad
 
 import arrow.core.getOrElse
 import arrow.core.raise.ensure
 import arrow.core.raise.option
-import com.intellij.openapi.components.service
-import com.intellij.openapi.project.Project
 import mu.KotlinLogging
 
 private typealias Listeners<T> = List<SameExceptionPropertyTester.PropertyCheckingListener<T>>
@@ -28,18 +25,15 @@ private typealias Listeners<T> = List<SameExceptionPropertyTester.PropertyChecki
  * A property tester for Delta Debugging algorithm that leverages different compilation strategies
  */
 class SameExceptionPropertyTester<C : IJDDContextBase<C>, T : IJDDItem> private constructor(
-    rootProject: Project,
     private val buildExceptionProvider: BuildExceptionProvider,
     private val comparator: ExceptionComparator,
     private val lens: ProjectItemLens<C, T>,
     private val initialException: CompilationException,
     private val listeners: Listeners<T> = emptyList(),
 ) : IJPropertyTester<C, T> {
-    private val snapshotManager = rootProject.service<SnapshotManagerService>()
-
-    context(IJDDContextMonad<C>)
+    context(SnapshotMonad<C>)
     override suspend fun test(retainedItems: List<T>, deletedItems: List<T>): PropertyTestResult =
-        snapshotManager.transaction {
+        transaction {
             listeners.forEach { it.beforeFocus(context, deletedItems) }
             lens.focusOn(deletedItems)
             listeners.forEach { it.onSuccessfulFocus(context) }
@@ -94,7 +88,6 @@ class SameExceptionPropertyTester<C : IJDDContextBase<C>, T : IJDDItem> private 
         ) = option {
             val initialException = compilerPropertyChecker.checkCompilation(context).getOrNone().bind()
             SameExceptionPropertyTester(
-                context.originalProject,
                 compilerPropertyChecker,
                 exceptionComparator,
                 lens,

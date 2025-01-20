@@ -7,7 +7,7 @@ import org.plan.research.minimization.plugin.model.IJHierarchicalDDGenerator
 import org.plan.research.minimization.plugin.model.IJPropertyTester
 import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
-import org.plan.research.minimization.plugin.model.monad.IJContextWithProgressMonad
+import org.plan.research.minimization.plugin.model.monad.SnapshotWithProgressMonad
 import org.plan.research.minimization.plugin.model.monad.WithProgressMonadT
 import org.plan.research.minimization.plugin.psi.CompressingPsiItemTrie.NextPsiDDItemInfo
 import org.plan.research.minimization.plugin.psi.StubCompressingPsiTrie
@@ -27,7 +27,7 @@ class DeletablePsiElementHierarchyDDGenerator<C : IJDDContext>(
     private val cache: MutableMap<PsiStubDDItem, StubCompressingPsiTrie> = mutableMapOf()
     private val maximumTrieDepth = perFileTries.maxOf { (_, trie) -> trie.maxDepth }
 
-    context(IJContextWithProgressMonad<C>)
+    context(SnapshotWithProgressMonad<C>)
     override suspend fun generateFirstLevel() = option {
         nextStep(1)  // Initial step of the progress bar
 
@@ -38,7 +38,7 @@ class DeletablePsiElementHierarchyDDGenerator<C : IJDDContext>(
         HDDLevel(firstLevelItems, propertyChecker)
     }
 
-    context(IJContextWithProgressMonad<C>)
+    context(SnapshotWithProgressMonad<C>)
     override suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<PsiStubDDItem>) =
         option {
             val nextNodesInTrie = minimizationResult

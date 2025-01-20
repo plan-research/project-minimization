@@ -5,12 +5,14 @@ import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoRootFo
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.execution.comparable.withLogging
 import org.plan.research.minimization.plugin.getExceptionComparator
-import org.plan.research.minimization.plugin.lenses.FunctionDeletingLens
+import org.plan.research.minimization.plugin.lenses.DeclarationDeletingLens
 import org.plan.research.minimization.plugin.logging.LoggingPropertyCheckingListener
-import org.plan.research.minimization.plugin.model.IJDDContext
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducer
 import org.plan.research.minimization.plugin.model.ProjectHierarchyProducerResult
-import org.plan.research.minimization.plugin.model.PsiStubDDItem
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
+import org.plan.research.minimization.plugin.model.context.WithImportRefCounterContext
+import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
 import org.plan.research.minimization.plugin.psi.CompressingPsiItemTrie
 import org.plan.research.minimization.plugin.psi.StubCompressingPsiTrie
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
@@ -26,24 +28,28 @@ import mu.KotlinLogging
 
 import java.nio.file.Path
 
-class DeletablePsiElementHierarchyGenerator(private val depthThreshold: Int) : ProjectHierarchyProducer<PsiStubDDItem> {
+class DeletablePsiElementHierarchyGenerator<C>(private val depthThreshold: Int) :
+    ProjectHierarchyProducer<C, PsiStubDDItem> where C : IJDDContextBase<C>, C : WithImportRefCounterContext<C> {
     private val logger = KotlinLogging.logger { }
-    override suspend fun produce(fromContext: IJDDContext): ProjectHierarchyProducerResult<PsiStubDDItem> = either {
-        val project = fromContext.originalProject
+
+    override suspend fun produce(
+        context: C,
+    ): ProjectHierarchyProducerResult<C, PsiStubDDItem> = either {
+        val project = context.originalProject
         ensureNotNull(project.guessProjectDir()) { NoRootFound }
 
         val settings = project.service<MinimizationPluginSettings>()
         val exceptionComparator = settings.state.exceptionComparingStrategy.getExceptionComparator()
         val propertyTester = SameExceptionPropertyTester
-            .create<PsiStubDDItem>(
+            .create(
                 project.service<BuildExceptionProviderService>(),
                 exceptionComparator.withLogging(),
-                FunctionDeletingLens(),
-                fromContext,
-                listOfNotNull(LoggingPropertyCheckingListener.create<PsiStubDDItem>("instance-level")),
+                DeclarationDeletingLens(),
+                context,
+                listOfNotNull(LoggingPropertyCheckingListener.create("instance-level")),
             )
             .getOrElse { raise(NoExceptionFound) }
-        DeletablePsiElementHierarchyDDGenerator(propertyTester, buildTries(fromContext))
+        DeletablePsiElementHierarchyDDGenerator(propertyTester, buildTries(context))
     }
 
     private suspend fun buildTries(context: IJDDContext): Map<Path, StubCompressingPsiTrie> {

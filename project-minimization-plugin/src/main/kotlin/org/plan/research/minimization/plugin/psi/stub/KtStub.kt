@@ -1,6 +1,6 @@
 package org.plan.research.minimization.plugin.psi.stub
 
-import org.plan.research.minimization.plugin.model.PsiChildrenPathIndex
+import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
 
 import arrow.core.None
 import arrow.core.raise.option
@@ -14,6 +14,7 @@ import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtParameterList
 import org.jetbrains.kotlin.psi.KtPrimaryConstructor
 import org.jetbrains.kotlin.psi.KtProperty
+import org.jetbrains.kotlin.psi.KtTypeAlias
 
 abstract class KtStub : PsiChildrenPathIndex, Comparable<KtStub> {
     abstract val name: String?
@@ -46,6 +47,7 @@ abstract class KtStub : PsiChildrenPathIndex, Comparable<KtStub> {
                 is KtPrimaryConstructor -> KtPrimaryConstructorStub
                 is KtParameter -> KtParameterStub.create(element)
                 is KtParameterList -> KtParameterListStub
+                is KtTypeAlias -> KtTypeAliasStub.create(element)
                 else -> raise(None)
             }
         }

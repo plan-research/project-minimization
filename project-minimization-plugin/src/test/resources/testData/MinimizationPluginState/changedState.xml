@@ -7,7 +7,6 @@
   <minimizationTransformations />
   <stages>
     <fileLevelStage>
-      <option name="hierarchyCollectionStrategy" value="FILE_TREE" />
       <option name="ddAlgorithm" value="DD_MIN" />
     </fileLevelStage>
   </stages>

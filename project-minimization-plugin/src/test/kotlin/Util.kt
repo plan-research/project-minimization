@@ -4,6 +4,10 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.isFile
 import org.plan.research.minimization.plugin.getAllParents
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
+import org.plan.research.minimization.plugin.model.monad.WithProgressMonadT
+import org.plan.research.minimization.plugin.model.monad.withEmptyProgress
 import java.nio.file.Path
 import kotlin.io.path.invariantSeparatorsPathString
 import kotlin.io.path.relativeTo
@@ -59,3 +63,13 @@ fun generateAllPermutations(possibleIndices: Set<Int>): Sequence<List<Int>> {
         }
     }
 }
+
+inline fun <C : IJDDContext> C.runMonad(block: context(IJDDContextMonad<C>) () -> Unit): C {
+    val monad = IJDDContextMonad(this)
+    block(monad)
+    return monad.context
+}
+
+inline fun <C : IJDDContext> C.runMonadWithEmptyProgress(
+    block: context(WithProgressMonadT<IJDDContextMonad<C>>) () -> Unit,
+): C = runMonad { withEmptyProgress(block) }

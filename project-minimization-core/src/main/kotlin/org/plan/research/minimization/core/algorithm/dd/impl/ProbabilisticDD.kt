@@ -2,9 +2,7 @@ package org.plan.research.minimization.core.algorithm.dd.impl
 
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
-import org.plan.research.minimization.core.model.DDContext
-import org.plan.research.minimization.core.model.DDItem
-import org.plan.research.minimization.core.model.PropertyTester
+import org.plan.research.minimization.core.model.*
 
 import java.util.*
 
@@ -19,17 +17,18 @@ import kotlinx.coroutines.yield
  */
 @Suppress("MAGIC_NUMBER", "FLOAT_IN_ACCURATE_CALCULATIONS")
 class ProbabilisticDD : DDAlgorithm {
-    override suspend fun <C : DDContext, T : DDItem> minimize(
-        context: C, items: List<T>,
-        propertyTester: PropertyTester<C, T>,
-    ): DDAlgorithmResult<C, T> {
-        var currentContext = context
+    context(M)
+    override suspend fun <M : Monad, T : DDItem> minimize(
+        items: List<T>,
+        propertyTester: PropertyTester<M, T>,
+    ): DDAlgorithmResult<T> {
         val buffer = ArrayDeque<T>()
         val probs = IdentityHashMap<T, Double>()
         val defaultProb = 1 - exp(-2.0 / items.size)
         items.forEach { item -> probs[item] = defaultProb }
         val currentItems = items.toMutableList()
         val excludedItems = mutableListOf<T>()
+        val deletedItems = mutableListOf<T>()
         while (currentItems.size > 1 && probs[currentItems.last()]!! < 1.0) {
             yield()
             var p = 1.0
@@ -42,18 +41,18 @@ class ProbabilisticDD : DDAlgorithm {
                     break
                 }
             }
-            propertyTester.test(currentContext, currentItems).fold(
+            propertyTester.test(currentItems, excludedItems).fold(
                 ifLeft = {
                     excludedItems.forEach { item -> probs.computeIfPresent(item) { _, v -> v / (1 - p) } }
                     merge(probs, buffer, currentItems, excludedItems)
                 },
-                ifRight = { updatedContext ->
-                    currentContext = updatedContext
+                ifRight = {
+                    deletedItems.addAll(excludedItems)
                     excludedItems.clear()
                 },
             )
         }
-        return DDAlgorithmResult(currentContext, currentItems)
+        return DDAlgorithmResult(currentItems, deletedItems)
     }
 
     private fun <T> merge(

@@ -1,5 +1,7 @@
 package gradle
 
+import HeavyTestContext
+import LightTestContext
 import TestWithContext
 import TestWithHeavyContext
 import TestWithLightContext
@@ -11,10 +13,10 @@ import org.plan.research.minimization.plugin.execution.IdeaCompilationException
 import org.plan.research.minimization.plugin.execution.exception.KotlincErrorSeverity
 import org.plan.research.minimization.plugin.execution.exception.KotlincException
 import org.plan.research.minimization.plugin.execution.transformer.PathRelativizationTransformation
-import org.plan.research.minimization.plugin.model.HeavyIJDDContext
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.LightIJDDContext
-import org.plan.research.minimization.plugin.model.exception.CompilationResult
+import org.plan.research.minimization.plugin.model.CompilationResult
+import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
 import org.plan.research.minimization.plugin.model.state.CompilationStrategy
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
@@ -24,8 +26,7 @@ import kotlin.io.path.name
 import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 
-@Suppress("UNCHECKED_CAST")
-abstract class GradleCompilationTest<C : IJDDContext> : GradleProjectBaseTest(), TestWithContext<C> {
+abstract class GradleCompilationTest<C : IJDDContextBase<C>> : GradleProjectBaseTest(), TestWithContext<C> {
     override fun setUp() {
         super.setUp()
         project.service<MinimizationPluginSettings>()
@@ -187,7 +188,7 @@ abstract class GradleCompilationTest<C : IJDDContext> : GradleProjectBaseTest(),
         }
         assertEquals(transformedResults[0], transformedResults[1])
 
-        deleteContext(snapshot as C)
+        deleteContext(snapshot)
     }
 
     fun testAnalysisProject() {
@@ -215,7 +216,7 @@ abstract class GradleCompilationTest<C : IJDDContext> : GradleProjectBaseTest(),
         checkGradle: Boolean = true,
         linkProject: Boolean = true,
     ): CompilationResult = runBlocking {
-        if (context is HeavyIJDDContext) {
+        if (context is HeavyIJDDContext<*>) {
             if (linkProject) importGradleProject(context.project)
             if (checkGradle) assertGradleLoaded(context.project)
         }
@@ -229,9 +230,9 @@ abstract class GradleCompilationTest<C : IJDDContext> : GradleProjectBaseTest(),
 }
 
 class GradleCompilationHeavyTest :
-    GradleCompilationTest<HeavyIJDDContext>(),
-    TestWithContext<HeavyIJDDContext> by TestWithHeavyContext()
+    GradleCompilationTest<HeavyTestContext>(),
+    TestWithContext<HeavyTestContext> by TestWithHeavyContext()
 
 class GradleCompilationLightTest :
-    GradleCompilationTest<LightIJDDContext>(),
-    TestWithContext<LightIJDDContext> by TestWithLightContext()
+    GradleCompilationTest<LightTestContext>(),
+    TestWithContext<LightTestContext> by TestWithLightContext()

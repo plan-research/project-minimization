@@ -70,12 +70,10 @@ Algorithms:
 Interfaces that need to be implemented to use algorithms:
 
 - **[DDItem][item]** represents a single modification in Delta Debugging algorithm.
-- **[DDContext][ctx]** is an object to hold the state of the minimizing object.
 - **[PropertyTester][tester]** can check whether chosen modifications (DDItems) keep the target error.
 - **[HierarchicalDDGenerator][generator]** provides hierarchical structure for HDD algorithm. 
 Such representation allows us to control flow the HDD algorithm in a scalable manner.
 
-[ctx]: ../project-minimization-core/src/main/kotlin/org/plan/research/minimization/core/model/DDContext.kt
 [item]: ../project-minimization-core/src/main/kotlin/org/plan/research/minimization/core/model/DDItem.kt
 [tester]: ../project-minimization-core/src/main/kotlin/org/plan/research/minimization/core/model/PropertyTester.kt
 [generator]: ../project-minimization-core/src/main/kotlin/org/plan/research/minimization/core/algorithm/dd/hierarchical/HierarchicalDDGenerator.kt

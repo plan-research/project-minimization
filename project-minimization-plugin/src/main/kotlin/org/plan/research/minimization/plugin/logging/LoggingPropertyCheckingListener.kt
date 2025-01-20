@@ -2,9 +2,9 @@ package org.plan.research.minimization.plugin.logging
 
 import org.plan.research.minimization.plugin.execution.IdeaCompilationException
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester.PropertyCheckingListener
-import org.plan.research.minimization.plugin.model.IJDDContext
-import org.plan.research.minimization.plugin.model.IJDDItem
+import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.exception.CompilationException
+import org.plan.research.minimization.plugin.model.item.IJDDItem
 
 import mu.KotlinLogging
 
@@ -19,6 +19,7 @@ class LoggingPropertyCheckingListener<T : IJDDItem>(folderSuffix: String) : Prop
     private val logLocation = Path(ExecutionDiscriminator.loggingFolder.get(), "property-checking-log-$folderSuffix")
     private val entries = mutableMapOf<String, LogStage>()
     private val logger = KotlinLogging.logger { }
+    private var iteration = 0
 
     init {
         logLocation.createDirectories()
@@ -60,7 +61,7 @@ class LoggingPropertyCheckingListener<T : IJDDItem>(folderSuffix: String) : Prop
         val id = context.projectDir.name
         val entry = entries[id] as? LogStage.BeforeFocus
             ?: logger.error { "No entry found for $id on successful compilation" }.let { return }
-        fileById(context.projectDir.name).writeText(
+        fileById("${++iteration}-${context.projectDir.name}").writeText(
             json.encodeToString(
                 LogStage.SuccessfulCompilation(
                     entry.items,

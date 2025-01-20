@@ -1,6 +1,7 @@
 package org.plan.research.minimization.core.algorithm.dd.impl
 
 import arrow.core.raise.either
+import arrow.core.raise.ensure
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
@@ -11,40 +12,30 @@ import kotlin.test.assertContentEquals
 abstract class DDAlgorithmTestBase {
     abstract fun createAlgorithm(): DDAlgorithm
 
-    data object EmptyDDContext : DDContext
     data class SomeDDItem(val value: Int) : DDItem
 
-    class SimpleTester(private val target: Set<SomeDDItem>) : PropertyTester<EmptyDDContext, SomeDDItem> {
+    class SimpleTester(private val target: Set<SomeDDItem>) : PropertyTester<EmptyMonad, SomeDDItem> {
+        context(EmptyMonad)
         override suspend fun test(
-            context: EmptyDDContext,
-            items: List<SomeDDItem>
-        ): PropertyTestResult<EmptyDDContext> = either {
-            if (items.count { it in target } == target.size) {
-                EmptyDDContext
-            } else {
-                raise(PropertyTesterError.NoProperty)
-            }
+            retainedItems: List<SomeDDItem>,
+            deletedItems: List<SomeDDItem>,
+        ): PropertyTestResult = either {
+            ensure(retainedItems.count { it in target } == target.size) { PropertyTesterError.NoProperty }
         }
     }
 
     class ComplexTester(
         private val target: Set<SomeDDItem>,
         private val badItems: Set<SomeDDItem>,
-    ) : PropertyTester<EmptyDDContext, SomeDDItem> {
+    ) : PropertyTester<EmptyMonad, SomeDDItem> {
+        context(EmptyMonad)
         override suspend fun test(
-            context: EmptyDDContext,
-            items: List<SomeDDItem>
-        ): PropertyTestResult<EmptyDDContext> = either {
-            val badCount = items.count { it in badItems }
-            if (badCount == 0 || badCount == badItems.size) {
-                if (items.count { it in target } == target.size) {
-                    EmptyDDContext
-                } else {
-                    raise(PropertyTesterError.NoProperty)
-                }
-            } else {
-                raise(PropertyTesterError.UnknownProperty)
-            }
+            retainedItems: List<SomeDDItem>,
+            deletedItems: List<SomeDDItem>,
+        ): PropertyTestResult = either {
+            val badCount = retainedItems.count { it in badItems }
+            ensure(badCount == 0 || badCount == badItems.size) { PropertyTesterError.UnknownProperty }
+            ensure(retainedItems.count { it in target } == target.size) { PropertyTesterError.NoProperty }
         }
     }
 
@@ -62,8 +53,8 @@ abstract class DDAlgorithmTestBase {
         }
 
         val propertyTester = SimpleTester(target.toSet())
-        val (_, result) = algorithm.minimize(EmptyDDContext, items, propertyTester)
-        assertContentEquals(result.sortedBy { it.value }, target.sortedBy { it.value })
+        val result = EmptyMonad.run { algorithm.minimize(items, propertyTester) }
+        assertContentEquals(result.retained.sortedBy { it.value }, target.sortedBy { it.value })
     }
 
     private suspend fun complexTestWithSize(
@@ -93,12 +84,12 @@ abstract class DDAlgorithmTestBase {
         }
 
         val propertyTester = ComplexTester(target.toSet(), bad.toSet())
-        val (_, result) = algorithm.minimize(EmptyDDContext, items, propertyTester)
+        val result = EmptyMonad.run { algorithm.minimize(items, propertyTester) }
 
-        if (result.size == targetSize) {
-            assertContentEquals(result.sortedBy { it.value }, target.sortedBy { it.value })
+        if (result.retained.size == targetSize) {
+            assertContentEquals(result.retained.sortedBy { it.value }, target.sortedBy { it.value })
         } else {
-            assertContentEquals(result.sortedBy { it.value }, (target + bad).sortedBy { it.value })
+            assertContentEquals(result.retained.sortedBy { it.value }, (target + bad).sortedBy { it.value })
         }
     }
 

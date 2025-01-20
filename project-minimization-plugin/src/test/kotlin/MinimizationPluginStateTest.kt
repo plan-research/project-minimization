@@ -53,7 +53,7 @@ class MinimizationPluginStateTest : BasePlatformTestCase() {
         assertEquals(ExceptionComparingStrategy.SIMPLE, changedState.exceptionComparingStrategy)
         assertEquals(emptyList<TransformationDescriptor>(), changedState.minimizationTransformations)
         assertEquals(
-            listOf(FileLevelStage(HierarchyCollectionStrategy.FILE_TREE, DDStrategy.DD_MIN)),
+            listOf(FileLevelStage(DDStrategy.DD_MIN)),
             changedState.stages
         )
 

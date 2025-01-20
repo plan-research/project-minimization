@@ -1,8 +1,8 @@
 package org.plan.research.minimization.core.algorithm.dd
 
-import org.plan.research.minimization.core.model.DDContext
-import org.plan.research.minimization.core.model.DDItem
-import org.plan.research.minimization.core.model.PropertyTester
+import org.plan.research.minimization.core.model.*
+
+data class DDAlgorithmResult<T>(val retained: List<T>, val deleted: List<T>)
 
 /**
  * Interface representing a Delta Debugging algorithm used to minimize a set of items.
@@ -11,21 +11,9 @@ import org.plan.research.minimization.core.model.PropertyTester
  * identify and minimize the subset of items that cause a specific error or property.
  */
 interface DDAlgorithm {
-    suspend fun <C : DDContext, T : DDItem> minimize(
-        context: C, items: List<T>,
-        propertyTester: PropertyTester<C, T>,
-    ): DDAlgorithmResult<C, T>
+    context(M)
+    suspend fun <M : Monad, T : DDItem> minimize(
+        items: List<T>,
+        propertyTester: PropertyTester<M, T>,
+    ): DDAlgorithmResult<T>
 }
-
-/**
- * DDAlgorithmResult is a data class representing the result of an algorithm execution.
- *
- * @param C the type of context associated with the algorithm.
- * @param T the type of items produced by the algorithm.
- * @property context the context in which the algorithm was executed.
- * @property items the list of items produced by the algorithm.
- */
-data class DDAlgorithmResult<C : DDContext, T : DDItem>(
-    val context: C,
-    val items: List<T>,
-)

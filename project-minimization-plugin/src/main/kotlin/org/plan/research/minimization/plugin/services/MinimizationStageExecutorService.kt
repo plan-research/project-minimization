@@ -3,7 +3,7 @@ package org.plan.research.minimization.plugin.services
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.ReversedHierarchicalDD
 import org.plan.research.minimization.core.algorithm.graph.condensation.StrongConnectivityCondensation
 import org.plan.research.minimization.plugin.errors.MinimizationError
-import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
+import org.plan.research.minimization.plugin.execution.LinearIjPropertyTester
 import org.plan.research.minimization.plugin.getDDAlgorithm
 import org.plan.research.minimization.plugin.getExceptionComparator
 import org.plan.research.minimization.plugin.hierarchy.DeletablePsiElementHierarchyGenerator
@@ -79,7 +79,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         val lens = FunctionModificationLens<FunctionLevelStageContext>()
         val firstLevel = service<MinimizationPsiManagerService>()
             .findAllPsiWithBodyItems(lightContext)
-        val propertyChecker = SameExceptionPropertyTester.create(
+        val propertyChecker = LinearIjPropertyTester.create(
             project.service<BuildExceptionProviderService>(),
             project.service<MinimizationPluginSettings>().state
                 .exceptionComparingStrategy

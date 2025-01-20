@@ -2,7 +2,7 @@ package org.plan.research.minimization.plugin.hierarchy.graph
 
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoExceptionFound
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoRootFound
-import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
+import org.plan.research.minimization.plugin.execution.GraphIjPropertyTester
 import org.plan.research.minimization.plugin.execution.comparable.withLogging
 import org.plan.research.minimization.plugin.getExceptionComparator
 import org.plan.research.minimization.plugin.lenses.FunctionDeletingLens
@@ -28,7 +28,7 @@ class InstanceLevelLayerHierarchyBuilder<C> where C : WithInstanceLevelGraphCont
 
         val settings = project.service<MinimizationPluginSettings>()
         val exceptionComparator = settings.state.exceptionComparingStrategy.getExceptionComparator()
-        val propertyTester = SameExceptionPropertyTester
+        val propertyTester = GraphIjPropertyTester
             .create(
                 project.service<BuildExceptionProviderService>(),
                 exceptionComparator.withLogging(),

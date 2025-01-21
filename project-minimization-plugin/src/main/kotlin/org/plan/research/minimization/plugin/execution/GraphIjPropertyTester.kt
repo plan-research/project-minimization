@@ -78,9 +78,10 @@ C : WithInstanceLevelGraphContext<C> {
         retainedCut: GraphCut<CondensedInstanceLevelNode>,
         deletedCut: GraphCut<CondensedInstanceLevelNode>,
     ): PropertyTestResult {
-        val graph = context.graph
-        // FIXME: add a settings flag to enable it
-        graph.dump(deletedCut)
+        if (logger.isTraceEnabled) {
+            val graph = context.graph
+            graph.dump(deletedCut)
+        }
         innerTester.cut = deletedCut
 
         return loggableTester.test(

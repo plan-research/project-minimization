@@ -1,31 +1,41 @@
 package gradle
 
 import AbstractAnalysisKotlinTest
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.EDT
+import com.intellij.openapi.application.invokeAndWaitIfNeeded
+import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.application.smartReadAction
-import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.externalSystem.importing.ImportSpecBuilder
-import com.intellij.openapi.externalSystem.service.execution.ExternalSystemJdkUtil
 import com.intellij.openapi.externalSystem.service.execution.ProgressExecutionMode
 import com.intellij.openapi.externalSystem.service.project.ProjectDataManager
 import com.intellij.openapi.externalSystem.util.ExternalSystemUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.projectRoots.ProjectJdkTable
-import com.intellij.openapi.projectRoots.Sdk
-import com.intellij.openapi.util.Disposer
-import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import org.jetbrains.plugins.gradle.settings.GradleProjectSettings
-import org.jetbrains.plugins.gradle.settings.GradleSettings
+import com.intellij.platform.backend.observation.ActivityKey
+import com.intellij.platform.backend.observation.trackActivity
+import com.intellij.testFramework.TestObservation
+import com.intellij.testFramework.common.runAll
+import mu.KotlinLogging
 import org.jetbrains.plugins.gradle.util.GradleConstants
 import org.plan.research.minimization.plugin.model.state.TransformationDescriptor
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import kotlin.test.assertNotEquals
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 
+private object TestGradleProjectConfigurationActivityKey : ActivityKey {
+    override val presentableName: String
+        get() = "The test Gradle project configuration"
+}
+
+private val DEFAULT_SYNC_TIMEOUT: Duration = 10.minutes
+
+
+suspend fun <R> awaitGradleProjectConfiguration(project: Project, action: suspend () -> R): R {
+    return project.trackActivity(TestGradleProjectConfigurationActivityKey, action)
+        .also { TestObservation.awaitConfiguration(DEFAULT_SYNC_TIMEOUT, project) }
+}
 
 abstract class GradleProjectBaseTest : AbstractAnalysisKotlinTest() {
     override fun getTestDataPath(): String {
@@ -33,38 +43,37 @@ abstract class GradleProjectBaseTest : AbstractAnalysisKotlinTest() {
     }
 
     override fun runInDispatchThread(): Boolean = false
-
-    protected lateinit var sdk: Sdk
+    private val logger = KotlinLogging.logger {}
 
     override fun setUp() {
         super.setUp()
-        configureModules(project)
-        sdk = ExternalSystemJdkUtil.getAvailableJdk(project).second
-        ApplicationManager.getApplication().runWriteAction {
-            val jdkTable = ProjectJdkTable.getInstance()
-            jdkTable.addJdk(sdk, testRootDisposable)
+//        configureModules(project)
+    }
+
+    override fun tearDown() {
+        runAll({ removeJdk() }, { super.tearDown() })
+    }
+
+    private fun removeJdk() {
+        val jdkTable = ProjectJdkTable.getInstance()
+        val jdks = jdkTable.allJdks
+        invokeAndWaitIfNeeded {
+            runWriteAction {
+                jdks.forEach { jdkTable.removeJdk(it) }
+
+            }
         }
     }
 
     protected suspend fun importGradleProject(project: Project) {
-        val projectPath = smartReadAction(project) {
-            val projectPath = project.guessProjectDir()!!.path
-            val gradleSettings = GradleSettings.getInstance(project)
-            val projectSettings = GradleProjectSettings().apply {
-                externalProjectPath = projectPath
-                gradleJvm = sdk.name
-            }
-            gradleSettings.unlinkExternalProject(projectPath)
-            gradleSettings.linkProject(projectSettings)
-            projectPath
-        }
-
-        withContext(Dispatchers.EDT) {
+        val projectDir = project.guessProjectDir()!!
+        val importSpec = ImportSpecBuilder(project, GradleConstants.SYSTEM_ID)
+            .use(ProgressExecutionMode.IN_BACKGROUND_ASYNC)
+            .build()
+        awaitGradleProjectConfiguration(project) {
             ExternalSystemUtil.refreshProject(
-                projectPath,
-                ImportSpecBuilder(project, GradleConstants.SYSTEM_ID)
-                    .use(ProgressExecutionMode.MODAL_SYNC)
-                    .build()
+                projectDir.path,
+                importSpec
             )
         }
     }

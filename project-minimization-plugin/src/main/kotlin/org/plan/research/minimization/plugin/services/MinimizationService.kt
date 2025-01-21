@@ -3,8 +3,12 @@ package org.plan.research.minimization.plugin.services
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.getCurrentTimeString
 import org.plan.research.minimization.plugin.logging.ExecutionDiscriminator
+import org.plan.research.minimization.plugin.logging.statLogger
 import org.plan.research.minimization.plugin.model.MinimizationStage
-import org.plan.research.minimization.plugin.model.context.*
+import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
+import org.plan.research.minimization.plugin.model.context.IJDDContextTransformer
+import org.plan.research.minimization.plugin.model.context.LightIJDDContext
 import org.plan.research.minimization.plugin.model.context.impl.DefaultProjectContext
 import org.plan.research.minimization.plugin.psi.PsiImportCleaner
 
@@ -47,15 +51,17 @@ class MinimizationService(private val project: Project, private val coroutineSco
         coroutineScope.launch {
             settings.withFrozenState {
                 withBackgroundProgress(project, "Minimizing project") {
-                    minimizeProjectImpl().onRight { onComplete(it) }
+                    minimizeProjectAsync().onRight { onComplete(it) }
                 }
             }
         }
     }
 
-    private suspend fun minimizeProjectImpl(): MinimizationResult = withLoggingFolder {
+    suspend fun minimizeProjectAsync(): MinimizationResult = withLoggingFolder {
         either {
             logger.info { "Start Project minimization" }
+            statLogger.info { "Start Project minimization for project: ${project.name}" }
+
             var context: HeavyIJDDContext<*> = DefaultProjectContext(project)
 
             reportSequentialProgress(stages.size) { reporter ->
@@ -70,8 +76,10 @@ class MinimizationService(private val project: Project, private val coroutineSco
             context
         }.onRight {
             logger.info { "End Project minimization" }
+            statLogger.info { "End Project minimization for project: ${project.name}" }
         }.onLeft { error ->
             logger.info { "End Project minimization" }
+            statLogger.info { "End Project minimization for project: ${project.name}" }
             logger.error { "End minimizeProject with error: $error" }
         }
     }

@@ -16,6 +16,8 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 import kotlin.io.path.exists
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 
 data class RootStatistics(
@@ -43,9 +45,9 @@ class PropertyTesterWithStatistics<C : IJDDContext, T : IJDDItem>(
         return result
     }
 
-    private fun analyzeProject(context: C) {
+    private suspend fun analyzeProject(context: C) {
         val roots = service<RootsManagerService>().findPossibleRoots(context)
-        var projectStat = RootStatistics()
+        val projectStat = RootStatistics()
         val projectDirPath = context.projectDir.toNioPath()
         for (root in roots) {
             val fullPath = projectDirPath.resolve(root)
@@ -63,21 +65,23 @@ class PropertyTesterWithStatistics<C : IJDDContext, T : IJDDItem>(
         statLogger.info { "Kotlin files: ${projectStat.ktFiles}" }
     }
 
-    private fun statisticsForPath(root: Path): RootStatistics {
+    private suspend fun statisticsForPath(root: Path): RootStatistics {
         val clocOutput = runCloc(root.toString())
         return parseClocOutput(clocOutput)
     }
 
-    private fun runCloc(path: String): String = try {
+    private suspend fun runCloc(path: String): String = try {
         // Convert the input path to a Path object
         val targetPath: Path = Paths.get(path)
 
         // Use the Cloc library to analyze the target
-        CLOC.command()
-            .timeout(30)  // Set the timeout in seconds
-            .target(targetPath)  // Specify the target directory or file
-            .linesByLanguage()  // Generate statistics grouped by programming language
-            .toPrettyString()  // Convert the result to a formatted string
+        withContext(Dispatchers.IO) {
+            CLOC.command()
+                .timeout(30)  // Set the timeout in seconds
+                .target(targetPath)  // Specify the target directory or file
+                .linesByLanguage()  // Generate statistics grouped by programming language
+                .toPrettyString()  // Convert the result to a formatted string
+        }
     } catch (e: CLOCException) {
         "Error while running Cloc: ${e.message}"
     }

@@ -15,7 +15,7 @@ import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.project.ex.ProjectManagerEx
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.findFile
 import com.intellij.openapi.vfs.readText
@@ -23,10 +23,10 @@ import com.intellij.platform.ide.progress.withBackgroundProgress
 import com.intellij.platform.util.progress.reportSequentialProgress
 import mu.KotlinLogging
 
+import java.io.File
 import java.nio.file.Path
 
 import kotlin.io.path.Path
-import kotlin.io.path.readText
 import kotlinx.coroutines.*
 
 @Service(Service.Level.PROJECT)
@@ -51,10 +51,62 @@ class BenchmarkService(private val rootProject: Project, private val cs: Corouti
                 }
             }
         }
+
+        runCleaningActions()
     }
 
-    private suspend fun closeProject(project: Project) = withContext(Dispatchers.EDT) {
-        ProjectManager.getInstance().closeAndDispose(project)
+    private suspend fun runCleaningActions() {
+        logger.info { "Running cleaning actions..." }
+
+        // Path to the root project
+        val rootFile = rootProject.guessProjectDir()?.toNioPath()?.toFile() ?: run {
+            logger.error { "Root project path is null, skipping cleaning actions" }
+            return
+        }
+
+        // Execute first cleaning scripts
+        withContext(Dispatchers.IO) {
+            executeShellCommand(
+                "find . -name \"minimization-project-snapshots\" -type d -exec rm -rf '{}' '+'",
+                rootFile,
+            )
+
+            executeShellCommand(
+                "for i in \$(ls projects/); do\n" +
+                    "    echo \"Cleaning \$i\"\n" +
+                    "    cd \"projects/\$i\"\n" +
+                    "    ./gradlew clean\n" +
+                    "    cd ../..\n" +
+                    "done",
+                rootFile,
+            )
+        }
+    }
+
+    private fun executeShellCommand(command: String, workingFile: File) {
+        try {
+            val process = ProcessBuilder("/bin/sh", "-c", command)
+                .directory(workingFile)
+                .redirectErrorStream(true)
+                .start()
+
+            process.inputStream.bufferedReader().use { reader ->
+                reader.lines().forEach { logger.info { it } }
+            }
+
+            val exitCode = process.waitFor()
+            if (exitCode != 0) {
+                logger.error { "Command failed with exit code $exitCode: $command" }
+            } else {
+                logger.info { "Command executed successfully: $command" }
+            }
+        } catch (e: Exception) {
+            logger.error(e) { "Error while executing command: $command" }
+        }
+    }
+
+    private suspend fun closeProject(project: Project) {
+        ProjectManagerEx.getInstanceEx().forceCloseProjectAsync(project)
     }
 
     private suspend fun readConfig(): Option<BenchmarkConfig> = option {
@@ -72,8 +124,8 @@ class BenchmarkService(private val rootProject: Project, private val cs: Corouti
     private suspend fun openBenchmarkProject(project: BenchmarkProject): Option<Project> = option {
         val root = getBenchmarkProjectRoot(project).bind()
         try {
-            val project = service<ProjectOpeningService>().openProject(root)
-            ensureNotNull(project)
+            val benchmarkProject = service<ProjectOpeningService>().openProject(root)
+            ensureNotNull(benchmarkProject)
         } catch (e: Throwable) {
             e.printStackTrace()
             raise(None)

@@ -2,11 +2,10 @@ package org.plan.research.minimization.plugin.execution
 
 import org.plan.research.minimization.core.model.PropertyTestResult
 import org.plan.research.minimization.core.model.PropertyTesterError
+import org.plan.research.minimization.plugin.benchmark.BenchmarkSettings
 import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.logging.withLog
-import org.plan.research.minimization.plugin.logging.withLog
 import org.plan.research.minimization.plugin.logging.withStatistics
-import org.plan.research.minimization.plugin.model.*
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
 import org.plan.research.minimization.plugin.model.IJPropertyTester
 import org.plan.research.minimization.plugin.model.ProjectItemLens
@@ -106,7 +105,7 @@ class SameExceptionPropertyTester<C : IJDDContextBase<C>, T : IJDDItem> private 
             )
                 .also { logger.debug { "Initial exception is $initialException" } }
                 .withLog()
-                .withStatistics()
+                .let { if (BenchmarkSettings.isBenchmarkingEnabled) it.withStatistics() else it }
         }
     }
 }

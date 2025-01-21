@@ -1,5 +1,6 @@
 package psi.lookup
 
+import com.intellij.openapi.application.readAction
 import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtElement
@@ -31,10 +32,10 @@ class TypeDeclarationLookupTest : AbstractLookupTestBase() {
 
     private inline fun<reified T1: KtElement, reified T2: KtElement> checkPair(pair: Pair<PsiElement, PsiElement>, fromName: String? = null, toName: String? = null) {
         val (from, to) = pair
-        assertIs<T1>(from)
-        fromName?.let { assertEquals(it, from.name) }
-        assertIs<T2>(to)
-        toName?.let { assertEquals(it, to.name) }
+            assertIs<T1>(from)
+            fromName?.let { assertEquals(it, from.name) }
+            assertIs<T2>(to)
+            toName?.let { assertEquals(it, to.name) }
     }
 
     fun testVariables() {

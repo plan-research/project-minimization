@@ -1,8 +1,10 @@
 package gradle
 
+import AbstractAnalysisKotlinTest
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.smartReadAction
+import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.externalSystem.importing.ImportSpecBuilder
 import com.intellij.openapi.externalSystem.service.execution.ExternalSystemJdkUtil
@@ -13,6 +15,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.projectRoots.Sdk
+import com.intellij.openapi.util.Disposer
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -24,7 +27,7 @@ import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import kotlin.test.assertNotEquals
 
 
-abstract class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
+abstract class GradleProjectBaseTest : AbstractAnalysisKotlinTest() {
     override fun getTestDataPath(): String {
         return "src/test/resources/testData/gradle"
     }
@@ -35,6 +38,7 @@ abstract class GradleProjectBaseTest : JavaCodeInsightFixtureTestCase() {
 
     override fun setUp() {
         super.setUp()
+        configureModules(project)
         sdk = ExternalSystemJdkUtil.getAvailableJdk(project).second
         ApplicationManager.getApplication().runWriteAction {
             val jdkTable = ProjectJdkTable.getInstance()

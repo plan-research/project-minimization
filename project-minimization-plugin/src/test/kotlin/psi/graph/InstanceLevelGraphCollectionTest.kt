@@ -1,6 +1,7 @@
 package psi.graph
 
 import AbstractAnalysisKotlinTest
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.service
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.psi.KtClass
@@ -115,7 +116,7 @@ class InstanceLevelGraphCollectionTest : AbstractAnalysisKotlinTest() {
     }
 
 
-    private fun doTest(fileName: String, graphCheckFunction: (InstanceLevelGraph, IJDDContext) -> Unit) =
+    private fun doTest(fileName: String, graphCheckFunction: suspend (InstanceLevelGraph, IJDDContext) -> Unit) =
         runBlocking {
             val psiFile = myFixture.configureByFile(fileName)
             assertIs<KtFile>(psiFile)
@@ -125,11 +126,13 @@ class InstanceLevelGraphCollectionTest : AbstractAnalysisKotlinTest() {
             graphCheckFunction(graph, context)
         }
 
-    private inline fun <reified T : KtExpression> InstanceLevelGraph.findByClassAndName(
+    private suspend inline fun <reified T : KtExpression> InstanceLevelGraph.findByClassAndName(
         context: IJDDContext,
         name: String
     ) =
-        vertices.filterByPsi(context) { it is T && it.name == name }
+        readAction {
+            vertices.filterByPsi(context) { it is T && it.name == name }
+        }
 
     private inline fun <reified T : PsiIJEdge> InstanceLevelGraph.assertConnection(
         from: PsiStubDDItem,

@@ -13,22 +13,24 @@ abstract class AbstractLookupTestBase : AbstractAnalysisKotlinTest() {
     fun doTest(
         element: KtElement,
         filterFunction: (List<Pair<PsiElement, PsiElement>>) -> List<Pair<PsiElement, PsiElement>> = { it },
-        checkFunction: suspend (List<Pair<PsiElement, PsiElement>>) -> Unit
+        checkFunction: (List<Pair<PsiElement, PsiElement>>) -> Unit
     ) {
         configureModules(myFixture.project)
         runBlocking {
             myFixture.project.waitForSmartMode()
-            val collectedElements = buildList {
-                readAction {
+            val collectedElements = readAction {
+                buildList {
                     element.acceptChildren(object : RecursiveKtVisitor() {
                         override fun visitKtElement(element: KtElement) {
                             super.visitKtElement(element)
                             lookupFunction(element).forEach { add(element to it) }
                         }
                     })
-                }
-            }.let(filterFunction)
-            checkFunction(collectedElements)
+                }.let { filterFunction(it) }
+            }
+            readAction {
+                checkFunction(collectedElements)
+            }
         }
     }
 

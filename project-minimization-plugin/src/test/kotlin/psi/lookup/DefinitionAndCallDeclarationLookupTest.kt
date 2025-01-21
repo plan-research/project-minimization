@@ -1,5 +1,6 @@
 package psi.lookup
 
+import com.intellij.openapi.application.readAction
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import org.jetbrains.kotlin.psi.KtClass

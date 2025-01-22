@@ -1,10 +1,7 @@
 package org.plan.research.minimization.core.algorithm.dd
 
 import org.jgrapht.Graph
-import org.plan.research.minimization.core.model.DDItem
-import org.plan.research.minimization.core.model.GraphCut
-import org.plan.research.minimization.core.model.GraphPropertyTester
-import org.plan.research.minimization.core.model.Monad
+import org.plan.research.minimization.core.model.*
 
 data class DDGraphAlgorithmResult<T : DDItem, E>(val retained: GraphCut<T, E>, val deleted: GraphCut<T, E>)
 

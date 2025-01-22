@@ -71,7 +71,7 @@ class LoggingPropertyCheckingListener<T : IJDDItem>(folderSuffix: String) : Prop
         )
     }
 
-    private fun fileById(id: String) = logLocation.resolve("${iteration++}.json")
+    private fun fileById(id: String) = logLocation.resolve("$id.json")
 
     @Serializable
     private sealed interface LogStage {

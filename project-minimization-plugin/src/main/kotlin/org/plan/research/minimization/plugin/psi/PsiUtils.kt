@@ -23,6 +23,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.impl.PsiManagerEx
 import com.intellij.util.concurrency.annotations.RequiresReadLock
+import org.jetbrains.kotlin.idea.core.util.toPsiDirectory
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtFile
@@ -93,8 +94,11 @@ object PsiUtils {
      * @return The resolved [KtExpression] instance, or `null` if the PSI element cannot be resolved.
      */
     @RequiresReadLock
-    fun <T : PsiChildrenPathIndex> getPsiElementFromItem(context: IJDDContext, item: PsiDDItem<T>): KtElement? {
+    fun <T : PsiChildrenPathIndex> getPsiElementFromItem(context: IJDDContext, item: PsiDDItem<T>): PsiElement? {
         val file = context.projectDir.findFileByRelativePath(item.localPath.toString())!!
+        if (file.isDirectory) {
+            return file.toPsiDirectory(context.indexProject)
+        }
         val ktFile = getKtFile(context, file)!!
         return if (item.childrenPath.isEmpty()) ktFile else getElementByFileAndPath(ktFile, item.childrenPath)
     }

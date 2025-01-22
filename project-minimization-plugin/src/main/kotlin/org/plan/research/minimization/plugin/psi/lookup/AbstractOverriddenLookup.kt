@@ -4,6 +4,7 @@ import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.symbols.KaCallableSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.psiSafe
+import org.jetbrains.kotlin.idea.codeinsight.utils.isFunInterface
 import org.jetbrains.kotlin.idea.refactoring.isAbstract
 import org.jetbrains.kotlin.psi.KtCallableDeclaration
 import org.jetbrains.kotlin.psi.KtClass
@@ -16,7 +17,9 @@ import org.jetbrains.kotlin.psi.KtClass
  */
 object AbstractOverriddenLookup {
     private val KtClass.obligatoryFunctionIfFunInterface
-        get() = body?.functions?.take(1).orEmpty()
+        get() = body?.functions?.take(1)
+            .takeIf { isFunInterface() }
+            .orEmpty()
     fun lookupDirectlyOverridden(element: PsiElement): List<PsiElement> = when (element) {
         is KtClass -> element
             .declarations

@@ -1,6 +1,7 @@
 package org.plan.research.minimization.plugin.psi
 
 import com.intellij.psi.PsiElement
+import org.jetbrains.kotlin.idea.base.psi.isConstructorDeclaredProperty
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
 import org.jetbrains.kotlin.psi.KtElement
@@ -30,7 +31,9 @@ class UsedPsiElementGetter(private val insideFunction: Boolean) : KtVisitorVoid(
         Unit
     } ?: super.visitNamedFunction(function)
 
-    override fun visitProperty(property: KtProperty) = if (insideFunction) super.visitProperty(property) else Unit
+    override fun visitProperty(property: KtProperty) =
+        if (isVisitPropertyRequired(property)) super.visitProperty(property) else Unit
+
     override fun visitDotQualifiedExpression(expression: KtDotQualifiedExpression) {
         super.visitDotQualifiedExpression(expression)
     }
@@ -41,5 +44,11 @@ class UsedPsiElementGetter(private val insideFunction: Boolean) : KtVisitorVoid(
             KotlinElementLookup.lookupDefinition(element),
         )
         element.acceptChildren(this)
+    }
+
+    private fun isVisitPropertyRequired(element: KtProperty): Boolean = when {
+        insideFunction -> true
+        element.isConstructorDeclaredProperty() -> true
+        else -> false
     }
 }

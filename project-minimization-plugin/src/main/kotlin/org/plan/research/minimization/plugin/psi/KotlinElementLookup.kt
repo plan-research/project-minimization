@@ -28,9 +28,9 @@ object KotlinElementLookup {
 
     @RequiresReadLock
     fun lookupObligatoryOverrides(element: PsiElement) =
-        AbstractOverriddenLookup
-            .lookupDirectlyOverridden(element)
-            .map { it.propagateToConstructor() }
+        AbstractOverriddenLookup.run {
+            lookupDirectlyOverridden(element) + lookupFunInterfaces(element)
+        }.map { it.propagateToConstructor() }
 
     /**
      * Looks up and combines definitions, type declarations, and expected declarations

@@ -14,7 +14,9 @@ object KotlinOverriddenElementsGetter {
     fun getOverriddenElements(element: KtElement, includeClass: Boolean = true): List<KtElement> = when (element) {
         is KtNamedFunction -> getOverriddenFunction(element)
         is KtProperty -> getOverriddenProperties(element)
-        is KtClass -> getOverriddenClass(element).takeIf { includeClass }.orEmpty()
+        is KtClass -> getOverriddenClass(element).takeIf { includeClass }
+            .orEmpty() + getOverriddenConstructorParameters(element)
+
         is KtParameter -> getOverriddenParameters(element)
         else -> emptyList()
     }
@@ -42,6 +44,7 @@ object KotlinOverriddenElementsGetter {
             .mapNotNull { it.psiSafe<KtElement>() }
             .toList()
     }
+
     private fun getOverriddenClass(element: KtClass) = analyze(element) {
         val symbol = element.classSymbol
         symbol
@@ -50,4 +53,8 @@ object KotlinOverriddenElementsGetter {
             ?.toList()
             ?: emptyList()
     }
+
+    private fun getOverriddenConstructorParameters(klass: KtClass) = klass
+        .primaryConstructorParameters
+        .flatMap(::getOverriddenParameters)
 }

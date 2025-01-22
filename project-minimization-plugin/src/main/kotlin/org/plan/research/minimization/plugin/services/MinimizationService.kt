@@ -10,6 +10,7 @@ import org.plan.research.minimization.plugin.model.context.IJDDContextBase
 import org.plan.research.minimization.plugin.model.context.IJDDContextTransformer
 import org.plan.research.minimization.plugin.model.context.LightIJDDContext
 import org.plan.research.minimization.plugin.model.context.impl.DefaultProjectContext
+import org.plan.research.minimization.plugin.psi.KDocRemover
 import org.plan.research.minimization.plugin.psi.PsiImportCleaner
 
 import arrow.core.Either
@@ -66,6 +67,7 @@ class MinimizationService(private val project: Project, private val coroutineSco
 
             reportSequentialProgress(stages.size) { reporter ->
                 context = cloneProject(context, reporter)
+                removeKDocs(context)
 
                 for (stage in stages) {
                     logger.info { "Starting stage=${stage.name}. The starting snapshot is: ${context.projectDir.toNioPath()}" }
@@ -169,6 +171,15 @@ class MinimizationService(private val project: Project, private val coroutineSco
         val executionId = "execution-$time"
 
         return ExecutionDiscriminator.withLoggingFolder(logsBaseDir, executionId, block)
+    }
+
+    private suspend fun removeKDocs(context: HeavyIJDDContext<*>) {
+        val kDocRemover = KDocRemover()
+        try {
+            kDocRemover.removeKDocs(context)
+        } catch (e: Throwable) {
+            logger.error(e) { "Error happened on removing the KDocs completely" }
+        }
     }
 
     private inner class HeavyTransformer : IJDDContextTransformer<MinimizationResult> {

@@ -14,6 +14,7 @@ class C : B() {
     override fun methodWithoutBody() = "Overriden"
 }
 
-class D(override val x) : A {
+class D(y: Int) : A {
+    override val x = y // TODO: Fix constuctor parameters
     override fun methodWithoutBody() = "$x"
 }

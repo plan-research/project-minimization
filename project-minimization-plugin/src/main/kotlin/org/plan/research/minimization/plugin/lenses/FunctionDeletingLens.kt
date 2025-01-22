@@ -10,6 +10,8 @@ import org.plan.research.minimization.plugin.psi.stub.KtStub
 import org.plan.research.minimization.plugin.psi.trie.PsiTrie
 
 import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.writeAction
+import com.intellij.openapi.vfs.findFileOrDirectory
 import com.intellij.psi.PsiElement
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import mu.KotlinLogging
@@ -19,10 +21,11 @@ import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
 
 import java.nio.file.Path
+import kotlin.io.path.pathString
 
 import kotlin.io.path.relativeTo
 
-class DeclarationDeletingLens<C : WithImportRefCounterContext<C>> : BasePsiLens<C, PsiStubDDItem, KtStub>() {
+class FunctionDeletingLens<C : WithImportRefCounterContext<C>> : BasePsiLens<C, PsiStubDDItem, KtStub>() {
     private val logger = KotlinLogging.logger {}
     override fun focusOnPsiElement(
         item: PsiStubDDItem,
@@ -33,6 +36,18 @@ class DeclarationDeletingLens<C : WithImportRefCounterContext<C>> : BasePsiLens<
         psiElement.delete()
         if (nextSibling?.isComma == true) {
             nextSibling.delete()
+        }
+    }
+
+    override suspend fun focusOnFilesAndDirectories(
+        itemsToDelete: List<PsiStubDDItem>,
+        context: C,
+    ) = writeAction {
+        itemsToDelete.forEach {
+            context
+                .projectDir
+                .findFileOrDirectory(it.localPath.pathString)
+                ?.delete(this@FunctionDeletingLens)
         }
     }
 

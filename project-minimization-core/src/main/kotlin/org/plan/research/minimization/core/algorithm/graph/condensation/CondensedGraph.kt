@@ -38,4 +38,5 @@ class CondensedGraph<V : DDItem, E : GraphEdge<V>> internal constructor(
 
     override fun toString(): String = "CondensedGraph(vertices=$vertices, adjacencyList=$adjacencyList)"
     override fun induce(cut: CondensedCut<V, E>) = withoutNodes(vertices.toSet() - cut.selectedVertices)
+    fun without(cut: CondensedCut<V, E>) = withoutNodes(cut.selectedVertices)
 }

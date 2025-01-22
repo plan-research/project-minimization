@@ -1,3 +1,5 @@
+@file:Suppress("UnstableApiUsage")
+
 package org.plan.research.minimization.plugin.psi
 
 import org.jetbrains.kotlin.analysis.api.KaExperimentalApi

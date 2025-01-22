@@ -12,7 +12,7 @@ import org.plan.research.minimization.core.algorithm.dd.hierarchical.HDDLevel
 import org.plan.research.minimization.core.algorithm.dd.impl.DDMin
 import org.plan.research.minimization.core.algorithm.dd.impl.graph.domain.DAGDomain
 import org.plan.research.minimization.core.algorithm.dd.impl.graph.domain.OneItemPropertyTesterDomain
-import org.plan.research.minimization.core.algorithm.dd.impl.graph.domain.SingleGraphPropertyTester
+import org.plan.research.minimization.core.algorithm.dd.impl.graph.domain.OneItemGraphPropertyTester
 import org.plan.research.minimization.core.algorithm.dd.impl.graph.domain.TreeDomain
 import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.EmptyMonad
@@ -34,17 +34,10 @@ class GraphDDTest {
     @Property
     @Domain(TreeDomain::class)
     @Domain(OneItemPropertyTesterDomain::class)
-    fun testSingleOnTree(@ForAll propertyTester: SingleGraphPropertyTester) {
+    fun testSingleOnTree(@ForAll propertyTester: OneItemGraphPropertyTester) {
         val tree = propertyTester.originalGraph
 
         val (retainedCut, deletedCut) = runAlgorithm(tree, propertyTester)
-
-        assertEquals(tree.vertexSet(), retainedCut.vertexSet() + deletedCut.vertexSet())
-        assert(
-            retainedCut.vertexSet()
-                .intersect(deletedCut.vertexSet())
-                .isEmpty()
-        )
 
         assert(propertyTester.targetNode in retainedCut.vertexSet())
         assert(retainedCut.vertexSet().all {
@@ -60,23 +53,17 @@ class GraphDDTest {
     @Property
     @Domain(DAGDomain::class)
     @Domain(OneItemPropertyTesterDomain::class)
-    fun testSingleOnDag(@ForAll propertyTester: SingleGraphPropertyTester) {
+    fun testSingleOnDag(@ForAll propertyTester: OneItemGraphPropertyTester) {
         val tree = propertyTester.originalGraph
 
         val (retainedCut, deletedCut) = runAlgorithm(tree, propertyTester)
 
-        assertEquals(tree.vertexSet(), retainedCut.vertexSet() + deletedCut.vertexSet())
-        assert(
-            retainedCut.vertexSet()
-                .intersect(deletedCut.vertexSet())
-                .isEmpty()
-        )
-
         assert(propertyTester.targetNode in retainedCut.vertexSet())
-        // TODO
     }
 
     private fun runAlgorithm(graph: TestGraph, propertyTester: TestGraphPropertyTester) = runBlocking {
         EmptyMonad.run { GraphDD(DDMin(), TestGraphLayerMonadTProvider).minimize(graph, propertyTester) }
+    }.also {
+        checkCuts(graph, it.retained, it.deleted)
     }
 }

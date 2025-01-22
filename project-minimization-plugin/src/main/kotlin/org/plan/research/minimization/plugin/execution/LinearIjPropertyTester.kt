@@ -1,6 +1,8 @@
 package org.plan.research.minimization.plugin.execution
 
+import org.plan.research.minimization.plugin.benchmark.BenchmarkSettings
 import org.plan.research.minimization.plugin.logging.withLog
+import org.plan.research.minimization.plugin.logging.withStatistics
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
 import org.plan.research.minimization.plugin.model.ProjectItemLens
 import org.plan.research.minimization.plugin.model.context.IJDDContextBase
@@ -51,6 +53,7 @@ class LinearIjPropertyTester<C : IJDDContextBase<C>, T : IJDDItem> private const
             )
                 .also { logger.debug { "Initial exception is $initialException" } }
                 .withLog()
+                .let { if (BenchmarkSettings.isBenchmarkingEnabled) it.withStatistics() else it }
         }
     }
 }

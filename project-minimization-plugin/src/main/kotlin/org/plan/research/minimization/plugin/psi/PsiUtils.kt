@@ -93,10 +93,10 @@ object PsiUtils {
      * @return The resolved [KtExpression] instance, or `null` if the PSI element cannot be resolved.
      */
     @RequiresReadLock
-    fun <T : PsiChildrenPathIndex> getPsiElementFromItem(context: IJDDContext, item: PsiDDItem<T>): KtExpression? {
+    fun <T : PsiChildrenPathIndex> getPsiElementFromItem(context: IJDDContext, item: PsiDDItem<T>): KtElement? {
         val file = context.projectDir.findFileByRelativePath(item.localPath.toString())!!
         val ktFile = getKtFile(context, file)!!
-        return getElementByFileAndPath(ktFile, item.childrenPath)
+        return if (item.childrenPath.isEmpty()) ktFile else getElementByFileAndPath(ktFile, item.childrenPath)
     }
 
     private fun <T : PsiChildrenPathIndex> getElementByFileAndPath(ktFile: KtFile, path: List<T>): KtExpression? {

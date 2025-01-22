@@ -14,6 +14,8 @@ import com.intellij.openapi.util.Disposer
 import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
 import org.plan.research.minimization.plugin.execution.IdeaCompilationException
+import org.plan.research.minimization.plugin.execution.comparable.SimpleExceptionComparator
+import org.plan.research.minimization.plugin.execution.comparable.StacktraceExceptionComparator
 import org.plan.research.minimization.plugin.execution.exception.KotlincErrorSeverity
 import org.plan.research.minimization.plugin.execution.exception.KotlincException
 import org.plan.research.minimization.plugin.execution.transformer.PathRelativizationTransformation
@@ -190,7 +192,10 @@ abstract class GradleCompilationTest<C : IJDDContextBase<C>> : GradleProjectBase
                 compilationResult2.value.apply(transformer, snapshot)
             )
         }
-        assertEquals(transformedResults[0], transformedResults[1])
+        val compartor = StacktraceExceptionComparator(SimpleExceptionComparator())
+        runBlocking {
+            assertTrue(compartor.areEquals(transformedResults[0], transformedResults[1]))
+        }
 
         deleteContext(snapshot)
     }

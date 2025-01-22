@@ -42,6 +42,8 @@ dependencies {
     implementation(project(":project-minimization-core"))
     implementation(libs.kotlinx.immutable)
     implementation(libs.kotlinx.serialization)
+    implementation(libs.kaml)
+    implementation(libs.jcloc)
     implementation(libs.graphviz.java)
     implementation(libs.graphviz.kotlin)
 

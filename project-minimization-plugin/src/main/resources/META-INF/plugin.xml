@@ -48,5 +48,9 @@
                 class="org.plan.research.minimization.plugin.test.actions.DumpDeletablePsiGraphAction"
                 text="Dump Instance-Level Graph" description="Dumps instance-level graph"
                 internal="true"/>
+        <action id="org.plan.research.minimization.plugin.BenchmarkAction"
+                class="org.plan.research.minimization.plugin.BenchmarkAction" text="Run Minimization Plugin Benchmarks">
+            <add-to-group group-id="ToolsMenu" anchor="first"/>
+        </action>
     </actions>
 </idea-plugin>

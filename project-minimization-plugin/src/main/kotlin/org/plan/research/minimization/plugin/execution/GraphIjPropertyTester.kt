@@ -3,8 +3,10 @@ package org.plan.research.minimization.plugin.execution
 import org.plan.research.minimization.core.model.PropertyTestResult
 import org.plan.research.minimization.core.model.graph.GraphCut
 import org.plan.research.minimization.core.utils.graph.GraphToImageDumper
+import org.plan.research.minimization.plugin.benchmark.BenchmarkSettings
 import org.plan.research.minimization.plugin.logging.ExecutionDiscriminator
 import org.plan.research.minimization.plugin.logging.withLog
+import org.plan.research.minimization.plugin.logging.withStatistics
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
 import org.plan.research.minimization.plugin.model.IJGraphPropertyTester
 import org.plan.research.minimization.plugin.model.ProjectItemLens
@@ -57,6 +59,7 @@ C : WithInstanceLevelGraphContext<C> {
         LinearTester(rootProject, buildExceptionProvider, comparator, lens, initialException, listeners)
     private val loggableTester = innerTester
         .withLog()
+        .let { if (BenchmarkSettings.isBenchmarkingEnabled) it.withStatistics() else it }
 
     /**
      * A logging location for the saved condensed graph. The graph dumps are used for the debugging.

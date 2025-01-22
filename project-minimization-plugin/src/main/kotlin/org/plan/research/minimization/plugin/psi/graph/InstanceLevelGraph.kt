@@ -21,7 +21,7 @@ data class InstanceLevelGraph(
     private val reverseAdjacencyList: CondensedInstanceLevelAdjacencyList = edges.groupBy { it.to }
     override fun inDegreeOf(vertex: PsiStubDDItem) = reverseAdjacencyList[vertex]?.size ?: 0
     override fun toString(): String =
-        GraphToImageDumper.dumpGraph(this, stringify = { it.childrenPath.last().toString() }).toString()
+        GraphToImageDumper.dumpGraph(this, stringify = { it.childrenPath.lastOrNull()?.toString() ?: "File(path=${it.localPath})" }).toString()
 
     override fun induce(cut: GraphCut<PsiStubDDItem>): InstanceLevelGraph {
         val filteredVertices = cut.selectedVertices

@@ -1,19 +1,14 @@
 package org.plan.research.minimization.core.algorithm.dd.impl.graph
 
 import org.plan.research.minimization.core.algorithm.dd.DDGraphAlgorithm
-import org.plan.research.minimization.core.algorithm.dd.hierarchical.HDDLevel
 import org.plan.research.minimization.core.algorithm.dd.impl.ProbabilisticDD
-import org.plan.research.minimization.core.model.DDItem
-import org.plan.research.minimization.core.model.Monad
-
-class TestGraphLayerMonadT<M : Monad, T : DDItem>(monad: M) : GraphLayerMonadT<M, T>(monad) {
-    override fun onNextLevel(level: HDDLevel<M, T>) {}
-}
+import org.plan.research.minimization.core.model.*
 
 object TestGraphLayerMonadTProvider : GraphDD.GraphLayerMonadTProvider {
     context(M)
-    override fun <M : Monad, T : DDItem> provide(): GraphLayerMonadT<M, T> =
-        TestGraphLayerMonadT(this@M)
+    override suspend fun <M : Monad> runUnderProgress(block: WithProgressMonadFAsync<M, Unit>) {
+        withEmptyProgress(block)
+    }
 }
 
 class GraphDDTest : DDGraphAlgorithmTestBase() {

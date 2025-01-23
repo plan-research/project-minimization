@@ -5,9 +5,7 @@ import org.plan.research.minimization.core.algorithm.dd.DDGraphAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.DDGraphAlgorithmResult
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDD
 import org.plan.research.minimization.core.algorithm.dd.withZeroTesting
-import org.plan.research.minimization.core.model.DDItem
-import org.plan.research.minimization.core.model.GraphPropertyTester
-import org.plan.research.minimization.core.model.Monad
+import org.plan.research.minimization.core.model.*
 
 import org.jgrapht.Graph
 
@@ -24,7 +22,7 @@ class GraphDD(
     ): DDGraphAlgorithmResult<T> {
         val graphLayerHierarchyGenerator = GraphLayerHierarchyGenerator(propertyTester, graph)
 
-        graphLayerMonadTProvider.provide<M, T>().run {
+        graphLayerMonadTProvider.runUnderProgress {
             hdd.minimize(graphLayerHierarchyGenerator)
         }
 
@@ -36,6 +34,6 @@ class GraphDD(
 
     interface GraphLayerMonadTProvider {
         context(M)
-        fun <M : Monad, T : DDItem> provide(): GraphLayerMonadT<M, T>
+        suspend fun <M : Monad> runUnderProgress(block: WithProgressMonadFAsync<M, Unit>)
     }
 }

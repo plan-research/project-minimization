@@ -8,17 +8,15 @@ import com.intellij.psi.PsiElement
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtElement
-import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtTypeAlias
 import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.context.impl.DefaultProjectContext
+import org.plan.research.minimization.plugin.model.graph.InstanceLevelGraph
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
-import org.plan.research.minimization.plugin.psi.PsiUtils
-import org.plan.research.minimization.plugin.psi.graph.InstanceLevelGraph
-import org.plan.research.minimization.plugin.psi.graph.PsiIJEdge
+import org.plan.research.minimization.plugin.model.graph.PsiIJEdge
 import org.plan.research.minimization.plugin.psi.stub.KtClassStub
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import kotlin.test.assertIs
@@ -38,7 +36,7 @@ class InstanceLevelGraphCollectionTest : AbstractAnalysisKotlinTest() {
             val file = graph.findByClassAndName<KtFile>(context, "simple.kt").single()
             val dir = graph.findByClassAndName<PsiDirectory>(context, null).single()
 
-            assertSize(13, graph.edges)
+            assertSize(13, graph.edgeSet())
             graph.assertConnection<PsiIJEdge.Overload>(classB, classA)
             graph.assertConnection<PsiIJEdge.UsageInPSIElement>(classB, classA)
             graph.assertConnection<PsiIJEdge.PSITreeEdge>(funF, classB)
@@ -94,7 +92,7 @@ class InstanceLevelGraphCollectionTest : AbstractAnalysisKotlinTest() {
             val file = graph.findByClassAndName<KtFile>(context, "complex-overload.kt").single()
             val dir = graph.findByClassAndName<PsiDirectory>(context, null).single()
 
-            assertSize(25 + allElements.size, graph.edges)
+            assertSize(25 + allElements.size, graph.edgeSet())
             graph.assertConnection<PsiIJEdge.PSITreeEdge>(funFA, interfaceA)
 
             graph.assertConnection<PsiIJEdge.PSITreeEdge>(funFC, interfaceC)
@@ -143,7 +141,7 @@ class InstanceLevelGraphCollectionTest : AbstractAnalysisKotlinTest() {
             val file = graph.findByClassAndName<KtFile>(context, "complex-typealias.kt").single()
             val dir = graph.findByClassAndName<PsiDirectory>(context, null).single()
 
-            assertSize(7 + allElements.size, graph.edges)
+            assertSize(7 + allElements.size, graph.edgeSet())
             graph.assertConnection<PsiIJEdge.UsageInPSIElement>(classA, classI)
             graph.assertConnection<PsiIJEdge.UsageInPSIElement>(typeAliasB, classA)
             graph.assertConnection<PsiIJEdge.UsageInPSIElement>(typeAliasC, classA)
@@ -174,10 +172,10 @@ class InstanceLevelGraphCollectionTest : AbstractAnalysisKotlinTest() {
         name: String?
     ) =
         readAction {
-            vertices.filterByPsi(context) { it is T && (name == null || it.name == name) }
+            vertexSet().toList().filterByPsi(context) { it is T && (name == null || it.name == name) }
         }
 
-    private val PsiElement.name: String?
+    private val PsiElement.name: String
         get() = when (this) {
             is KtElement -> this.name
             is PsiDirectory -> this.name
@@ -189,7 +187,7 @@ class InstanceLevelGraphCollectionTest : AbstractAnalysisKotlinTest() {
         to: PsiStubDDItem
     ) {
         assertTrue(
-            edgesFrom(from).isSome { it ->
+            outgoingEdgesOf(from).let { it ->
                 val filteredType = it.filterIsInstance<T>()
                 assertTrue(filteredType.isNotEmpty())
                 filteredType.any { it.to == to }

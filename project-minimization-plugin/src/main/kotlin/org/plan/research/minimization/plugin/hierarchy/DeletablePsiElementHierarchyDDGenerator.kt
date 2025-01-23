@@ -3,12 +3,12 @@ package org.plan.research.minimization.plugin.hierarchy
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HDDLevel
 import org.plan.research.minimization.core.model.Monad
+import org.plan.research.minimization.core.model.WithProgressMonadT
 import org.plan.research.minimization.plugin.model.IJHierarchicalDDGenerator
 import org.plan.research.minimization.plugin.model.IJPropertyTester
 import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
 import org.plan.research.minimization.plugin.model.monad.SnapshotWithProgressMonad
-import org.plan.research.minimization.plugin.model.monad.WithProgressMonadT
 import org.plan.research.minimization.plugin.psi.CompressingPsiItemTrie.NextPsiDDItemInfo
 import org.plan.research.minimization.plugin.psi.StubCompressingPsiTrie
 import org.plan.research.minimization.plugin.psi.stub.KtStub
@@ -29,8 +29,6 @@ class DeletablePsiElementHierarchyDDGenerator<C : IJDDContext>(
 
     context(SnapshotWithProgressMonad<C>)
     override suspend fun generateFirstLevel() = option {
-        nextStep(1)  // Initial step of the progress bar
-
         val firstLevelItems = perFileTries.values
             .cache()
             .map(DeletableNextItemInfo::item)
@@ -59,6 +57,6 @@ class DeletablePsiElementHierarchyDDGenerator<C : IJDDContext>(
     @Suppress("MAGIC_NUMBER")
     private fun <M : Monad> List<DeletableNextItemInfo>.reportProgress() {
         val currentLevel = first().depth  // should be equal across all nodes
-        nextStep((100 * currentLevel) / maximumTrieDepth)
+        nextStep(currentLevel, maximumTrieDepth)
     }
 }

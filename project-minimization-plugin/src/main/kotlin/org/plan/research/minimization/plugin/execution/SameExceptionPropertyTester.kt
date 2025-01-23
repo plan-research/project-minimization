@@ -2,7 +2,10 @@ package org.plan.research.minimization.plugin.execution
 
 import org.plan.research.minimization.core.model.PropertyTestResult
 import org.plan.research.minimization.core.model.PropertyTesterError
+import org.plan.research.minimization.plugin.benchmark.BenchmarkSettings
 import org.plan.research.minimization.plugin.errors.SnapshotError
+import org.plan.research.minimization.plugin.logging.withLog
+import org.plan.research.minimization.plugin.logging.withStatistics
 import org.plan.research.minimization.plugin.model.BuildExceptionProvider
 import org.plan.research.minimization.plugin.model.IJPropertyTester
 import org.plan.research.minimization.plugin.model.ProjectItemLens
@@ -16,8 +19,10 @@ import org.plan.research.minimization.plugin.model.monad.SnapshotMonad
 import arrow.core.getOrElse
 import arrow.core.raise.either
 import arrow.core.raise.ensure
+import arrow.core.raise.option
+import mu.KotlinLogging
 
-open class AbstractSameExceptionPropertyTester<C : IJDDContextBase<C>, T : IJDDItem>(
+class SameExceptionPropertyTester<C : IJDDContextBase<C>, T : IJDDItem> private constructor(
     private val buildExceptionProvider: BuildExceptionProvider,
     private val comparator: ExceptionComparator,
     private val lens: ProjectItemLens<C, T>,
@@ -41,7 +46,7 @@ open class AbstractSameExceptionPropertyTester<C : IJDDContextBase<C>, T : IJDDI
         }
 
     context(IJDDContextMonad<C>)
-    protected open suspend fun compile() = either {
+    private suspend fun compile() = either {
         buildExceptionProvider
             .checkCompilation(context)
             .getOrElse {
@@ -52,14 +57,14 @@ open class AbstractSameExceptionPropertyTester<C : IJDDContextBase<C>, T : IJDDI
     }
 
     context(IJDDContextMonad<C>)
-    protected open suspend fun focus(itemsToDelete: List<T>) {
-        listeners.forEach { it.beforeFocus(context, itemsToDelete) }
-        lens.focusOn(itemsToDelete)
+    private suspend fun focus(deletedItems: List<T>) {
+        listeners.forEach { it.beforeFocus(context, deletedItems) }
+        lens.focusOn(deletedItems)
         listeners.forEach { it.onSuccessfulFocus(context) }
     }
 
     context(IJDDContextMonad<C>)
-    protected open suspend fun compareResult(compilationResult: CompilationException) = either {
+    private suspend fun compareResult(compilationResult: CompilationException) = either {
         val compareResult = comparator.areEquals(initialException, compilationResult)
         listeners.forEach {
             it.onComparedExceptions(
@@ -70,5 +75,29 @@ open class AbstractSameExceptionPropertyTester<C : IJDDContextBase<C>, T : IJDDI
             )
         }
         ensure(compareResult) { PropertyTesterError.UnknownProperty }
+    }
+
+    companion object {
+        private val logger = KotlinLogging.logger {}
+
+        suspend fun <C : IJDDContextBase<C>, T : IJDDItem> create(
+            compilerPropertyChecker: BuildExceptionProvider,
+            exceptionComparator: ExceptionComparator,
+            lens: ProjectItemLens<C, T>,
+            context: C,
+            listeners: Listeners<T> = emptyList(),
+        ) = option {
+            val initialException = compilerPropertyChecker.checkCompilation(context).getOrNone().bind()
+            SameExceptionPropertyTester(
+                compilerPropertyChecker,
+                exceptionComparator,
+                lens,
+                initialException,
+                listeners,
+            )
+                .also { logger.debug { "Initial exception is $initialException" } }
+                .withLog()
+                .let { if (BenchmarkSettings.isBenchmarkingEnabled) it.withStatistics() else it }
+        }
     }
 }

@@ -11,21 +11,18 @@ import org.plan.research.minimization.plugin.model.exception.ExceptionComparator
 import org.plan.research.minimization.plugin.model.item.IJDDItem
 
 import arrow.core.raise.option
-import com.intellij.openapi.project.Project
 import mu.KotlinLogging
 
 /**
  * A property tester for Delta Debugging algorithm that leverages different compilation strategies
  */
 class LinearIjPropertyTester<C : IJDDContextBase<C>, T : IJDDItem> private constructor(
-    rootProject: Project,
     buildExceptionProvider: BuildExceptionProvider,
     comparator: ExceptionComparator,
     lens: ProjectItemLens<C, T>,
     initialException: CompilationException,
     listeners: Listeners<T> = emptyList(),
 ) : AbstractSameExceptionPropertyTester<C, T>(
-    rootProject,
     buildExceptionProvider,
     comparator,
     lens,
@@ -44,7 +41,6 @@ class LinearIjPropertyTester<C : IJDDContextBase<C>, T : IJDDItem> private const
         ) = option {
             val initialException = compilerPropertyChecker.checkCompilation(context).getOrNone().bind()
             LinearIjPropertyTester(
-                context.originalProject,
                 compilerPropertyChecker,
                 exceptionComparator,
                 lens,

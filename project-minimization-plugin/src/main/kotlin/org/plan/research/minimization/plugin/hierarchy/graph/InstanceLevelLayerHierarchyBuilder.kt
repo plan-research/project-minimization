@@ -34,7 +34,7 @@ class InstanceLevelLayerHierarchyBuilder<C> where C : WithInstanceLevelGraphCont
                 exceptionComparator.withLogging(),
                 FunctionDeletingLens(),
                 fromContext,
-                listOf(LoggingPropertyCheckingListener("instance-level")),
+                listOfNotNull(LoggingPropertyCheckingListener.create("instance-level")),
             )
             .getOrElse { raise(NoExceptionFound) }
         InstanceLevelLayerHierarchyProducer(propertyTester)

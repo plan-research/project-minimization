@@ -7,8 +7,8 @@ import org.plan.research.minimization.plugin.model.IJGraphPropertyTester
 import org.plan.research.minimization.plugin.model.IJInstanceLevelLayerHierarchyGenerator
 import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.context.WithInstanceLevelGraphContext
-import org.plan.research.minimization.plugin.model.monad.IJContextWithProgressMonad
-import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
+import org.plan.research.minimization.plugin.model.monad.SnapshotMonad
+import org.plan.research.minimization.plugin.model.monad.SnapshotWithProgressMonad
 import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelEdge
 import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelGraph
 import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelNode
@@ -40,7 +40,7 @@ class InstanceLevelLayerHierarchyProducer<C : WithInstanceLevelGraphContext<C>>(
     private val logger = KotlinLogging.logger { }
     private val inactiveElements: MutableMap<CondensedInstanceLevelNode, Int> = mutableMapOf()
     private lateinit var depthCounter: DepthCounter<CondensedInstanceLevelNode>
-    context(IJContextWithProgressMonad<C>)
+    context(SnapshotWithProgressMonad<C>)
     override suspend fun generateFirstGraphLayer() = option {
         lift {
             depthCounter = DepthCounter.create(context.graph)
@@ -64,7 +64,7 @@ class InstanceLevelLayerHierarchyProducer<C : WithInstanceLevelGraphContext<C>>(
      * * These new active elements are the only possible candidates, since rest vertices hasn't been updated on that level.
      *   Thus, we know that there is some unprocessed edge out of the vertex.
      */
-    context(IJContextWithProgressMonad<C>)
+    context(SnapshotWithProgressMonad<C>)
     override suspend fun generateNextGraphLayer(minimizationResult: AlgorithmResult) = option {
         minimizationResult.propagateActive()
             .bind()
@@ -76,7 +76,7 @@ class InstanceLevelLayerHierarchyProducer<C : WithInstanceLevelGraphContext<C>>(
     /**
      * This function propagates to inactive elements information about completed active elements
      */
-    context(IJContextWithProgressMonad<C>)
+    context(SnapshotWithProgressMonad<C>)
     private fun AlgorithmResult.propagateActive() = option {
         lift {
             val graph = context.graph
@@ -92,7 +92,7 @@ class InstanceLevelLayerHierarchyProducer<C : WithInstanceLevelGraphContext<C>>(
     /**
      * The function that processes all processed inactive elements and produces the new layer by choosing the new active elements
      */
-    context(IJContextWithProgressMonad<C>)
+    context(SnapshotWithProgressMonad<C>)
     private fun IJDDContext.produceNextLevel(nextInactiveElements: List<CondensedInstanceLevelNode>) = option {
         lift {
             val graph = context.graph
@@ -106,12 +106,12 @@ class InstanceLevelLayerHierarchyProducer<C : WithInstanceLevelGraphContext<C>>(
         }
     }
 
-    context(IJDDContextMonad<C>)
+    context(SnapshotMonad<C>)
     override fun graph(): CondensedInstanceLevelGraph = context.graph
 
-    context(IJContextWithProgressMonad<C>)
+    context(SnapshotWithProgressMonad<C>)
     private fun GraphLayer.reportProgress() {
-        val layerPercent = IJContextWithProgressMonad.MAXIMUM_FRACTION - layer.asSequence()
+        val layerPercent = SnapshotWithProgressMonad.MAXIMUM_FRACTION - layer.asSequence()
             .map { depthCounter.getPercent(it) }
             .filterOption()
             .min()

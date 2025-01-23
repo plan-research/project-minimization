@@ -1,7 +1,6 @@
 package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDD
-import org.plan.research.minimization.core.model.MonadF
 import org.plan.research.minimization.core.algorithm.dd.withZeroTesting
 import org.plan.research.minimization.core.algorithm.graph.condensation.StrongConnectivityCondensation
 import org.plan.research.minimization.plugin.errors.MinimizationError
@@ -199,7 +198,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
     ): C = runMonad { withProgress(action) }
 
     private suspend inline fun <C : IJDDContextBase<C>> C.runMonad(
-        action: MonadF<SnapshotMonad<C>, Unit>,
+        action: SnapshotMonadF<C, Unit>,
     ): C {
         val monad = snapshotManager.createMonad(this)
         action(monad)

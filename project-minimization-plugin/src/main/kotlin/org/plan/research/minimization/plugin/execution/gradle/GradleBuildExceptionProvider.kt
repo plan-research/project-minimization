@@ -187,7 +187,7 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
         )
         return suspendCancellableCoroutine { cont ->
             cont.invokeOnCancellation { cancellation.cancel() }
-            gradleExecutionHelper.execute(
+            GradleExecutionHelper.execute(
                 context.projectDir.path, settings,
                 taskId, null, cancellation.token(),
             ) { connection ->

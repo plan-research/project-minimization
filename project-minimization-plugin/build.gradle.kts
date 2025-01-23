@@ -29,9 +29,17 @@ dependencies {
         val platformVersion: String by project
         val platformPlugins: String by project
         val platformBundledPlugins: String by project
+        val ideaLocalPath: String? by project
 
-        create(platformType, platformVersion)
-        bundledPlugins(platformBundledPlugins.split(',').map(String::trim).filter(String::isNotEmpty))
+        // If ideaLocalPath is defined is gradle.properties let's use the local idea
+        ideaLocalPath?.let { local(it) } ?: create(platformType, platformVersion)
+        bundledPlugins(
+            platformBundledPlugins
+                .split(',')
+                .map(String::trim)
+                .filter(String::isNotEmpty)
+                .filter { it != "com.intellij.llmInstaller" || ideaLocalPath == null }
+        )
 
         plugins(platformPlugins.split(',').map(String::trim).filter(String::isNotEmpty))
 

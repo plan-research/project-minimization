@@ -8,6 +8,13 @@ import java.util.Objects
 
 import kotlinx.serialization.Serializable
 
+val KotlincException.positionOrNull: CaretPosition?
+    get() = when (this) {
+        is KotlincException.BackendCompilerException -> this.position
+        is KotlincException.GeneralKotlincException -> this.position
+        else -> null
+    }
+
 @Serializable
 sealed interface KotlincException : CompilationException {
     override suspend fun apply(
@@ -27,24 +34,6 @@ sealed interface KotlincException : CompilationException {
         val stacktrace: String,
         val position: CaretPosition,
         val additionalMessage: String? = null,
-    ) : KotlincException {
-        override suspend fun apply(
-            transformation: ExceptionTransformation,
-            context: IJDDContext,
-        ) = transformation.transform(this, context)
-    }
-
-    /**
-     * Represents a generic internal compiler exception that occurs within the Kotlin compiler.
-     * It could be a frontend / backend (linker, etc.) / tooling exception that doesn't have `CompilerException` type
-     *
-     * @property stacktrace A string representing the stacktrace of the exception.
-     * @property message A string representing a human-readable message describing the exception.
-     */
-    @Serializable
-    data class GenericInternalCompilerException(
-        val stacktrace: String?,
-        val message: String,
     ) : KotlincException {
         override suspend fun apply(
             transformation: ExceptionTransformation,
@@ -77,6 +66,24 @@ sealed interface KotlincException : CompilationException {
         }
 
         override fun hashCode(): Int = Objects.hash(message, severity)
+    }
+
+    /**
+     * Represents a generic internal compiler exception that occurs within the Kotlin compiler.
+     * It could be a frontend / backend (linker, etc.) / tooling exception that doesn't have `CompilerException` type
+     *
+     * @property stacktrace A string representing the stacktrace of the exception.
+     * @property message A string representing a human-readable message describing the exception.
+     */
+    @Serializable
+    data class GenericInternalCompilerException(
+        val stacktrace: String?,
+        val message: String,
+    ) : KotlincException {
+        override suspend fun apply(
+            transformation: ExceptionTransformation,
+            context: IJDDContext,
+        ) = transformation.transform(this, context)
     }
     @Serializable
     data class KspException(

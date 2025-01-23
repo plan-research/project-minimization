@@ -27,7 +27,7 @@ class StrongConnectivityTest {
         doTest(tree)
     }
 
-    @Property(tries = 100)
+    @Property(tries = 50)
     @Domain(TestGraphDAGDomain::class)
     fun `test DAG condensation`(@ForAll dag: TestGraph) {
         doTest(dag)

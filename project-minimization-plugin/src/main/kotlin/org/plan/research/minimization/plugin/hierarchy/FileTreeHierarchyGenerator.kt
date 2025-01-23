@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.hierarchy
 
 import org.plan.research.minimization.plugin.errors.HierarchyBuildError.NoExceptionFound
-import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
+import org.plan.research.minimization.plugin.execution.LinearIjPropertyTester
 import org.plan.research.minimization.plugin.getExceptionComparator
 import org.plan.research.minimization.plugin.lenses.FileDeletingItemLens
 import org.plan.research.minimization.plugin.logging.LoggingPropertyCheckingListener
@@ -22,7 +22,7 @@ class FileTreeHierarchyGenerator<C : IJDDContextBase<C>> : ProjectHierarchyProdu
     ): ProjectHierarchyProducerResult<C, ProjectFileDDItem> = either {
         val project = context.originalProject
         val compilerPropertyTester = project.service<BuildExceptionProviderService>()
-        val propertyTester = SameExceptionPropertyTester
+        val propertyTester = LinearIjPropertyTester
             .create(
                 compilerPropertyTester,
                 project.service<MinimizationPluginSettings>().state

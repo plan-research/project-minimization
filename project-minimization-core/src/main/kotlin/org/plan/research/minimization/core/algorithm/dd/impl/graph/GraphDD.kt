@@ -1,7 +1,5 @@
 package org.plan.research.minimization.core.algorithm.dd.impl.graph
 
-import org.jgrapht.Graph
-import org.jgrapht.graph.AsSubgraph
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.DDGraphAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.DDGraphAlgorithmResult
@@ -11,16 +9,13 @@ import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.GraphPropertyTester
 import org.plan.research.minimization.core.model.Monad
 
+import org.jgrapht.Graph
+import org.jgrapht.graph.AsSubgraph
+
 class GraphDD(
     underlyingAlgorithm: DDAlgorithm,
     private val graphLayerMonadTProvider: GraphLayerMonadTProvider,
 ) : DDGraphAlgorithm {
-
-    interface GraphLayerMonadTProvider {
-        context(M)
-        fun <M : Monad, T : DDItem> provide(): GraphLayerMonadT<M, T>
-    }
-
     private val hdd = HierarchicalDD(underlyingAlgorithm.withZeroTesting())
 
     context(M)
@@ -41,4 +36,9 @@ class GraphDD(
     }
 
     private fun <V, E> Graph<V, E>.asSubgraph() = (this as? AsSubgraph) ?: AsSubgraph(this)
+
+    interface GraphLayerMonadTProvider {
+        context(M)
+        fun <M : Monad, T : DDItem> provide(): GraphLayerMonadT<M, T>
+    }
 }

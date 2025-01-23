@@ -3,10 +3,10 @@ package org.plan.research.minimization.core.algorithm.dd.impl.graph
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HDDLevel
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDDGenerator
+import org.plan.research.minimization.core.model.*
 
 import arrow.core.raise.option
 import org.jgrapht.Graph
-import org.plan.research.minimization.core.model.*
 
 abstract class GraphLayerMonadT<M : Monad, T : DDItem>(monad: M) : MonadT<M>(monad) {
     abstract fun onNextLevel(level: HDDLevel<M, T>)

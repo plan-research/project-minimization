@@ -20,7 +20,7 @@ import org.plan.research.minimization.plugin.getAllNestedElements
 import org.plan.research.minimization.plugin.model.context.IJDDContextBase
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 import org.plan.research.minimization.plugin.snapshot.ProjectCloningSnapshotManager
-import runMonad
+import runSnapshotMonadAsync
 import kotlin.io.path.Path
 import kotlin.io.path.relativeTo
 
@@ -81,8 +81,8 @@ abstract class ProjectCloningSnapshotTest<C : IJDDContextBase<C>> : ProjectCloni
 
         val clonedProject = runBlocking {
             val clonedContext = projectCloning.clone(initialContext)!!
-            clonedContext.runMonad {
-                val result = snapshotManager.transaction<Unit, _> {
+            clonedContext.runSnapshotMonadAsync(snapshotManager) {
+                val result = transaction<Unit> {
                     writeAction {
                         VfsUtil.iterateChildrenRecursively(context.projectDir, null) {
                             if (it.getPathContentPair(context.projectDir.toNioPath()) !in originalFiles) {
@@ -109,8 +109,8 @@ abstract class ProjectCloningSnapshotTest<C : IJDDContextBase<C>> : ProjectCloni
         val snapshotManager = ProjectCloningSnapshotManager(project)
         val initialContext = createContext(project)
         runBlocking {
-            initialContext.runMonad {
-                val result = snapshotManager.transaction {
+            initialContext.runSnapshotMonadAsync(snapshotManager) {
+                val result = transaction {
                     writeAction {
                         context.projectDir.findChild(".config")!!.deleteRecursively()
                     }
@@ -131,8 +131,8 @@ abstract class ProjectCloningSnapshotTest<C : IJDDContextBase<C>> : ProjectCloni
 
         val snapshotManager = ProjectCloningSnapshotManager(project)
         runBlocking {
-            initialContext.runMonad {
-                val result = snapshotManager.transaction<String, _> {
+            initialContext.runSnapshotMonadAsync(snapshotManager) {
+                val result = transaction<String> {
                     writeAction {
                         context.projectDir.findChild(".config")!!.deleteRecursively()
                     }

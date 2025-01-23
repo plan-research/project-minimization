@@ -1,13 +1,17 @@
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.isFile
+import kotlinx.coroutines.runBlocking
+import org.plan.research.minimization.core.model.MonadF
 import org.plan.research.minimization.plugin.getAllParents
 import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
-import org.plan.research.minimization.plugin.model.monad.WithProgressMonadT
-import org.plan.research.minimization.plugin.model.monad.withEmptyProgress
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
+import org.plan.research.minimization.plugin.model.monad.*
+import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
+import org.plan.research.minimization.plugin.services.SnapshotManagerService
 import java.nio.file.Path
 import kotlin.io.path.invariantSeparatorsPathString
 import kotlin.io.path.relativeTo
@@ -70,6 +74,22 @@ inline fun <C : IJDDContext> C.runMonad(block: context(IJDDContextMonad<C>) () -
     return monad.context
 }
 
-inline fun <C : IJDDContext> C.runMonadWithEmptyProgress(
-    block: context(WithProgressMonadT<IJDDContextMonad<C>>) () -> Unit,
-): C = runMonad { withEmptyProgress(block) }
+inline fun <C : IJDDContextBase<C>> C.runSnapshotMonad(
+    snapshotManager: SnapshotManager = originalProject.service<SnapshotManagerService>(),
+    crossinline block: MonadF<SnapshotMonad<C>, Unit>,
+): C = runBlocking {
+    runSnapshotMonadAsync(snapshotManager, block)
+}
+
+suspend inline fun <C : IJDDContextBase<C>> C.runSnapshotMonadAsync(
+    snapshotManager: SnapshotManager = originalProject.service<SnapshotManagerService>(),
+    block: MonadF<SnapshotMonad<C>, Unit>,
+): C {
+    val monad = snapshotManager.createMonad(this)
+    block(monad)
+    return monad.context
+}
+
+inline fun <C : IJDDContextBase<C>> C.runMonadWithEmptyProgress(
+    crossinline block: SnapshotWithProgressMonadF<C, Unit>,
+): C = runSnapshotMonad { withEmptyProgress(block) }

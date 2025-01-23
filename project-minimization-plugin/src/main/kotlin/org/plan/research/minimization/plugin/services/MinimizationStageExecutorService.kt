@@ -41,6 +41,7 @@ import mu.KotlinLogging
 @Service(Service.Level.PROJECT)
 class MinimizationStageExecutorService(private val project: Project) : MinimizationStageExecutor {
     private val logger = KotlinLogging.logger {}
+    private val snapshotManager = project.service<SnapshotManagerService>()
 
     override suspend fun executeFileLevelStage(context: HeavyIJDDContext<*>, fileLevelStage: FileLevelStage) = either {
         logger.info { "Start File level stage" }
@@ -192,14 +193,14 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         logger.error { "$stageName level stage failed with error: $error" }
     }
 
-    private suspend inline fun <C : IJDDContext> C.runMonadWithProgress(
-        action: IJContextWithProgressMonadF<C, Unit>,
+    private suspend inline fun <C : IJDDContextBase<C>> C.runMonadWithProgress(
+        action: SnapshotWithProgressMonadF<C, Unit>,
     ): C = runMonad { withProgress(action) }
 
-    private inline fun <C : IJDDContext> C.runMonad(
-        action: context(IJDDContextMonad<C>) () -> Unit,
+    private suspend inline fun <C : IJDDContextBase<C>> C.runMonad(
+        action: SnapshotMonadF<C, Unit>,
     ): C {
-        val monad = IJDDContextMonad(this)
+        val monad = snapshotManager.createMonad(this)
         action(monad)
         return monad.context
     }

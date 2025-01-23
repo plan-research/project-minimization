@@ -5,9 +5,10 @@ import org.plan.research.minimization.plugin.errors.SnapshotError.*
 import org.plan.research.minimization.plugin.logging.statLogger
 import org.plan.research.minimization.plugin.model.context.*
 import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
+import org.plan.research.minimization.plugin.model.monad.SnapshotMonad
+import org.plan.research.minimization.plugin.model.monad.TransactionAction
+import org.plan.research.minimization.plugin.model.monad.TransactionResult
 import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
-import org.plan.research.minimization.plugin.model.snapshot.TransactionAction
-import org.plan.research.minimization.plugin.model.snapshot.TransactionResult
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 
 import arrow.core.raise.either
@@ -44,44 +45,8 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
         }
     }
 
-    /**
-     * Executes a transaction within the provided context,
-     * typically involving project cloning and rollback upon failures.
-     *
-     * Transaction guarantees that:
-     * - Cloned project is closed if a transaction fails.
-     * - If a transaction is successful, the project of the context is closed.
-     *
-     * @param T The type parameter indicating the type of any raised error during the transaction.
-     * @param action A suspendable lambda function that takes a new transactional context and returns the updated context.
-     * @return Either a `SnapshotError` encapsulating the error in case of failure, or the updated `IJDDContext` in case of success.
-     */
-    context(IJDDContextMonad<C>)
-    override suspend fun <T, C : IJDDContextBase<C>> transaction(
-        action: TransactionAction<T, C>,
-    ): TransactionResult<T> = either {
-        statLogger.info { "Snapshot manager start's transaction" }
-        generalLogger.info { "Snapshot manager start's transaction" }
-
-        val clonedContext = context.clone(projectCloning)
-            ?: raise(TransactionCreationFailed("Failed to create project"))
-        val subMonad = createSubMonad(clonedContext)
-
-        try {
-            recover<T, _>(
-                block = { action(subMonad, this) },
-                recover = { raise(Aborted(it)) },
-                catch = { raise(TransactionFailed(it)) },
-            )
-        } catch (e: Throwable) {
-            closeProject(subMonad.context)
-            throw e
-        }
-        generalLogger.info { "Transaction completed successfully" }
-        statLogger.info { "Transaction result: success" }
-        closeProject(context)
-        context = subMonad.context
-    }.onLeft { it.log() }
+    override suspend fun <C : IJDDContextBase<C>> createMonad(context: C): SnapshotMonad<C> =
+        ProjectCloningMonad(context)
 
     // TODO: JBRes-2103 Resource Management
     private suspend fun closeProject(context: IJDDContextBase<*>) {
@@ -105,5 +70,37 @@ class ProjectCloningSnapshotManager(rootProject: Project) : SnapshotManager {
             generalLogger.error { "Failed to create project transaction. Reason: $reason" }
             statLogger.info { "Failed to create project transaction" }
         }
+    }
+
+    private inner class ProjectCloningMonad<C : IJDDContextBase<C>>(context: C) : SnapshotMonad<C> {
+        override var context: C = context
+            private set
+
+        override suspend fun <T> transaction(action: TransactionAction<T, C>): TransactionResult<T> = either {
+            statLogger.info { "Snapshot manager start's transaction" }
+            generalLogger.info { "Snapshot manager start's transaction" }
+
+            val clonedContext = context.clone(projectCloning)
+                ?: raise(TransactionCreationFailed("Failed to create project"))
+
+            val monad = IJDDContextMonad(clonedContext)
+
+            try {
+                recover<T, _>(
+                    block = { action(monad, this) },
+                    recover = { raise(Aborted(it)) },
+                    catch = { raise(TransactionFailed(it)) },
+                )
+            } catch (e: Throwable) {
+                closeProject(monad.context)
+                throw e
+            }
+
+            generalLogger.info { "Transaction completed successfully" }
+            statLogger.info { "Transaction result: success" }
+
+            closeProject(context)
+            context = monad.context
+        }.onLeft { it.log() }
     }
 }

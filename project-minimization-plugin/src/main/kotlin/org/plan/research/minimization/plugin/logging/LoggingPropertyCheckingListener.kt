@@ -15,7 +15,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-class LoggingPropertyCheckingListener<T : IJDDItem>(folderSuffix: String) : PropertyCheckingListener<T> {
+class LoggingPropertyCheckingListener<T : IJDDItem> private constructor(folderSuffix: String) : PropertyCheckingListener<T> {
     private val logLocation = Path(ExecutionDiscriminator.loggingFolder.get(), "property-checking-log-$folderSuffix")
     private val entries = mutableMapOf<String, LogStage>()
     private val logger = KotlinLogging.logger { }

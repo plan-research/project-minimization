@@ -8,8 +8,8 @@ import com.intellij.platform.util.progress.SequentialProgressReporter
 import com.intellij.platform.util.progress.reportSequentialProgress
 
 typealias WithProgressMonadF<M, T> = MonadF<WithProgressMonadT<M>, T>
-typealias IJContextWithProgressMonad<C> = WithProgressMonadT<IJDDContextMonad<C>>
-typealias IJContextWithProgressMonadF<C, T> = MonadF<IJContextWithProgressMonad<C>, T>
+typealias SnapshotWithProgressMonad<C> = WithProgressMonadT<SnapshotMonad<C>>
+typealias SnapshotWithProgressMonadF<C, T> = MonadF<SnapshotWithProgressMonad<C>, T>
 
 sealed class WithProgressMonadT<M : Monad>(monad: M) : MonadT<M>(monad) {
     /**

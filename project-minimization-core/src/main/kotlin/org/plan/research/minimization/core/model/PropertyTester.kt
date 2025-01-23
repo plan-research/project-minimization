@@ -19,9 +19,9 @@ interface PropertyTester<M : Monad, T : DDItem> {
     suspend fun test(retainedItems: List<T>, deletedItems: List<T>): PropertyTestResult
 }
 
-interface GraphPropertyTester<M : Monad, T : DDItem, E> {
+interface GraphPropertyTester<M : Monad, T : DDItem> {
     context(M)
-    suspend fun test(retainedCut: GraphCut<T, E>, deletedCut: GraphCut<T, E>): PropertyTestResult
+    suspend fun test(retainedCut: GraphCut<T>, deletedCut: GraphCut<T>): PropertyTestResult
 }
 
 sealed interface PropertyTesterError {

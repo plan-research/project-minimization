@@ -10,7 +10,6 @@ import org.plan.research.minimization.core.model.GraphPropertyTester
 import org.plan.research.minimization.core.model.Monad
 
 import org.jgrapht.Graph
-import org.jgrapht.graph.AsSubgraph
 
 class GraphDD(
     underlyingAlgorithm: DDAlgorithm,
@@ -21,21 +20,19 @@ class GraphDD(
     context(M)
     override suspend fun <M : Monad, T : DDItem, E> minimize(
         graph: Graph<T, E>,
-        propertyTester: GraphPropertyTester<M, T, E>,
-    ): DDGraphAlgorithmResult<T, E> {
+        propertyTester: GraphPropertyTester<M, T>,
+    ): DDGraphAlgorithmResult<T> {
         val graphLayerHierarchyGenerator = GraphLayerHierarchyGenerator(propertyTester, graph)
 
         graphLayerMonadTProvider.provide<M, T>().run {
             hdd.minimize(graphLayerHierarchyGenerator)
         }
 
-        val retained = graphLayerHierarchyGenerator.graph.asSubgraph()
-        val deleted = AsSubgraph(graph, graph.vertexSet() - retained.vertexSet())
+        val retained = graphLayerHierarchyGenerator.graph.vertexSet()
+        val deleted = graph.vertexSet() - retained
 
         return DDGraphAlgorithmResult(retained, deleted)
     }
-
-    private fun <V, E> Graph<V, E>.asSubgraph() = (this as? AsSubgraph) ?: AsSubgraph(this)
 
     interface GraphLayerMonadTProvider {
         context(M)

@@ -7,16 +7,17 @@ import org.plan.research.minimization.core.model.*
 
 import arrow.core.raise.option
 import org.jgrapht.Graph
+import org.jgrapht.graph.AsSubgraph
 
 abstract class GraphLayerMonadT<M : Monad, T : DDItem>(monad: M) : MonadT<M>(monad) {
     abstract fun onNextLevel(level: HDDLevel<M, T>)
 }
 
 class GraphLayerHierarchyGenerator<M : Monad, T : DDItem, E>(
-    private val graphPropertyTesterWithGraph: GraphPropertyTester<M, T, E>,
+    private val graphPropertyTesterWithGraph: GraphPropertyTester<M, T>,
     var graph: Graph<T, E>,
 ) : HierarchicalDDGenerator<GraphLayerMonadT<M, T>, M, T> {
-    private val layerToCutTransformer = LayerToCutTransformer<T, E>()
+    private val layerToCutTransformer = LayerToCutTransformer<T>()
     private val tester = LayerToCut()
     private val originalGraph = graph
     private val inactiveCount = mutableMapOf<T, Int>()
@@ -60,9 +61,9 @@ class GraphLayerHierarchyGenerator<M : Monad, T : DDItem, E>(
             retainedItems: List<T>,
             deletedItems: List<T>,
         ): PropertyTestResult {
-            val (retainedCut, deletedCut) = layerToCutTransformer.transform(originalGraph, graph, deletedItems)
+            val (retainedCut, deletedCut) = layerToCutTransformer.transform(graph, deletedItems)
             return graphPropertyTesterWithGraph.test(retainedCut, deletedCut).onRight {
-                graph = retainedCut
+                graph = AsSubgraph(originalGraph, retainedCut, graph.edgeSet())
             }
         }
     }

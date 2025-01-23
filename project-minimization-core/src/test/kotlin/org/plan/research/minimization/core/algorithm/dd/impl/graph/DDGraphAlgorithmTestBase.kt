@@ -6,7 +6,7 @@ import net.jqwik.api.Property
 import net.jqwik.api.PropertyDefaults
 import net.jqwik.api.ShrinkingMode
 import net.jqwik.api.domains.Domain
-import org.jgrapht.graph.DefaultEdge
+import org.jgrapht.graph.AsSubgraph
 import org.jgrapht.traverse.DepthFirstIterator
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.plan.research.minimization.core.algorithm.dd.DDGraphAlgorithm
@@ -25,15 +25,16 @@ abstract class DDGraphAlgorithmTestBase {
         val (retainedCut, deletedCut) = runAlgorithm(tree, propertyTester)
         checkCuts(tree, retainedCut, deletedCut)
 
-        assert(propertyTester.targetNode in retainedCut.vertexSet())
-        assert(retainedCut.vertexSet().all {
-            retainedCut.outDegreeOf(it) <= 1 && retainedCut.inDegreeOf(it) <= 1
+        val retainedGraph = AsSubgraph(tree, retainedCut)
+        assert(propertyTester.targetNode in retainedCut)
+        assert(retainedCut.all {
+            retainedGraph.outDegreeOf(it) <= 1 && retainedGraph.inDegreeOf(it) <= 1
         })
-        assert(retainedCut.inDegreeOf(propertyTester.targetNode) == 0)
-        val depthFirstIterator = DepthFirstIterator(retainedCut, propertyTester.targetNode)
+        assert(retainedGraph.inDegreeOf(propertyTester.targetNode) == 0)
+        val depthFirstIterator = DepthFirstIterator(retainedGraph, propertyTester.targetNode)
         var count = 0
         depthFirstIterator.forEach { _ -> count++ }
-        assertEquals(retainedCut.vertexSet().size, count)
+        assertEquals(retainedCut.size, count)
     }
 
     @Property
@@ -45,7 +46,7 @@ abstract class DDGraphAlgorithmTestBase {
         val (retainedCut, deletedCut) = runAlgorithm(graph, propertyTester)
         checkCuts(graph, retainedCut, deletedCut)
 
-        assert(propertyTester.targetNode in retainedCut.vertexSet())
+        assert(propertyTester.targetNode in retainedCut)
     }
 
     @Property
@@ -57,7 +58,7 @@ abstract class DDGraphAlgorithmTestBase {
         val (retainedCut, deletedCut) = runAlgorithm(tree, propertyTester)
         checkCuts(tree, retainedCut, deletedCut)
 
-        assert(retainedCut.vertexSet().containsAll(propertyTester.targetNodes))
+        assert(retainedCut.containsAll(propertyTester.targetNodes))
     }
 
     @Property
@@ -69,13 +70,13 @@ abstract class DDGraphAlgorithmTestBase {
         val (retainedCut, deletedCut) = runAlgorithm(graph, propertyTester)
         checkCuts(graph, retainedCut, deletedCut)
 
-        assert(retainedCut.vertexSet().containsAll(propertyTester.targetNodes))
+        assert(retainedCut.containsAll(propertyTester.targetNodes))
     }
 
     private fun runAlgorithm(
         graph: TestGraph,
         propertyTester: TestGraphPropertyTester,
-    ): DDGraphAlgorithmResult<TestNode, DefaultEdge> = runBlocking {
+    ): DDGraphAlgorithmResult<TestNode> = runBlocking {
         EmptyMonad.run { getAlgorithm().minimize(graph, propertyTester) }
     }
 

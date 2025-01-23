@@ -4,12 +4,12 @@ import org.plan.research.minimization.core.model.*
 
 import org.jgrapht.Graph
 
-data class DDGraphAlgorithmResult<T : DDItem, E>(val retained: GraphCut<T, E>, val deleted: GraphCut<T, E>)
+data class DDGraphAlgorithmResult<T : DDItem>(val retained: GraphCut<T>, val deleted: GraphCut<T>)
 
 interface DDGraphAlgorithm {
     context(M)
     suspend fun <M : Monad, T : DDItem, E> minimize(
         graph: Graph<T, E>,
-        propertyTester: GraphPropertyTester<M, T, E>,
-    ): DDGraphAlgorithmResult<T, E>
+        propertyTester: GraphPropertyTester<M, T>,
+    ): DDGraphAlgorithmResult<T>
 }

@@ -8,19 +8,18 @@ import org.plan.research.minimization.core.model.GraphCut
 
 fun checkCuts(
     graph: Graph<TestNode, DefaultEdge>,
-    retainedCut: GraphCut<TestNode, DefaultEdge>,
-    deletedCut: GraphCut<TestNode, DefaultEdge>,
+    retainedCut: GraphCut<TestNode>,
+    deletedCut: GraphCut<TestNode>,
 ) {
-    assertEquals(graph.vertexSet(), retainedCut.vertexSet() + deletedCut.vertexSet())
+    assertEquals(graph.vertexSet(), retainedCut + deletedCut)
     assert(
-        retainedCut.vertexSet()
-            .intersect(deletedCut.vertexSet())
+        retainedCut
+            .intersect(deletedCut)
             .isEmpty()
     )
 
-    val retained = retainedCut.vertexSet()
-    val iterator = DepthFirstIterator(graph, retained)
+    val iterator = DepthFirstIterator(graph, retainedCut)
     iterator.forEach {
-        assert(it in retained)
+        assert(it in retainedCut)
     }
 }

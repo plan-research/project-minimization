@@ -7,7 +7,6 @@ import net.jqwik.api.ForAll
 import net.jqwik.api.Provide
 import net.jqwik.api.domains.DomainContextBase
 import net.jqwik.kotlin.api.ofSize
-import org.jgrapht.graph.DefaultEdge
 import org.plan.research.minimization.core.algorithm.dd.impl.graph.TestGraph
 import org.plan.research.minimization.core.algorithm.dd.impl.graph.TestGraphPropertyTester
 import org.plan.research.minimization.core.algorithm.dd.impl.graph.TestNode
@@ -33,9 +32,9 @@ class MultipleItemsGraphPropertyTester(
     originalGraph: TestGraph,
 ) : TestGraphPropertyTester(originalGraph) {
     override fun OptionRaise.testImpl(
-        retainedCut: GraphCut<TestNode, DefaultEdge>,
-        deletedCut: GraphCut<TestNode, DefaultEdge>,
+        retainedCut: GraphCut<TestNode>,
+        deletedCut: GraphCut<TestNode>,
     ) {
-        ensure(retainedCut.vertexSet().containsAll(targetNodes))
+        ensure(retainedCut.containsAll(targetNodes))
     }
 }

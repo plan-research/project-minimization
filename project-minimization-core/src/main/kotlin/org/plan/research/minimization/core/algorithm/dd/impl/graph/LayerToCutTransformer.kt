@@ -4,31 +4,28 @@ import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.GraphCut
 
 import org.jgrapht.Graph
-import org.jgrapht.graph.AsSubgraph
 import org.jgrapht.graph.EdgeReversedGraph
 import org.jgrapht.traverse.DepthFirstIterator
 
-class LayerToCutTransformer<T : DDItem, E> {
+class LayerToCutTransformer<T : DDItem> {
     fun transform(
-        originalGraph: Graph<T, E>,
-        graph: Graph<T, E>,
+        graph: Graph<T, *>,
         deletedItems: List<T>,
-    ): LayerToCutTransformerResult<T, E> {
+    ): LayerToCutTransformerResult<T> {
         val edgeReversedGraph = EdgeReversedGraph(graph)
         val depthFirstIterator = DepthFirstIterator(edgeReversedGraph, deletedItems)
 
-        val itemsToDelete = mutableSetOf<T>()
+        val deletedCut = mutableSetOf<T>()
         for (deletedItem in depthFirstIterator) {
-            itemsToDelete.add(deletedItem)
+            deletedCut.add(deletedItem)
         }
 
-        val deletedCut = AsSubgraph(originalGraph, itemsToDelete)
-        val retainedCut = AsSubgraph(originalGraph, graph.vertexSet() - itemsToDelete)
+        val retainedCut = graph.vertexSet() - deletedCut
 
         return LayerToCutTransformerResult(retainedCut, deletedCut)
     }
-    data class LayerToCutTransformerResult<T : DDItem, E>(
-        val retainedCut: GraphCut<T, E>,
-        val deletedCut: GraphCut<T, E>,
+    data class LayerToCutTransformerResult<T : DDItem>(
+        val retainedCut: GraphCut<T>,
+        val deletedCut: GraphCut<T>,
     )
 }

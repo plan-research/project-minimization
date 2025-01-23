@@ -6,7 +6,6 @@ import net.jqwik.api.Arbitrary
 import net.jqwik.api.ForAll
 import net.jqwik.api.Provide
 import net.jqwik.api.domains.DomainContextBase
-import org.jgrapht.graph.DefaultEdge
 import org.plan.research.minimization.core.algorithm.dd.impl.graph.TestGraph
 import org.plan.research.minimization.core.algorithm.dd.impl.graph.TestGraphPropertyTester
 import org.plan.research.minimization.core.algorithm.dd.impl.graph.TestNode
@@ -27,9 +26,9 @@ class OneItemGraphPropertyTester(
     originalGraph: TestGraph,
 ) : TestGraphPropertyTester(originalGraph) {
     override fun OptionRaise.testImpl(
-        retainedCut: GraphCut<TestNode, DefaultEdge>,
-        deletedCut: GraphCut<TestNode, DefaultEdge>,
+        retainedCut: GraphCut<TestNode>,
+        deletedCut: GraphCut<TestNode>,
     ) {
-        ensure(targetNode in retainedCut.vertexSet())
+        ensure(targetNode in retainedCut)
     }
 }

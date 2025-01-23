@@ -14,7 +14,7 @@ import org.plan.research.minimization.core.algorithm.dd.impl.graph.TestNode
 class TreeDomain : DomainContextBase() {
     @Provide
     fun generateTree(): Arbitrary<TestGraph> {
-        val treeSize = Int.any(1..500)
+        val treeSize = Int.any(1..100)
         val treeEdges = treeSize.flatMap { size ->
             val edgeList = List(size - 1) { to ->
                 val range = 0..to

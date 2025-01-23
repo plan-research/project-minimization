@@ -1,5 +1,6 @@
 package org.plan.research.minimization.plugin.settings
 
+import org.plan.research.minimization.plugin.model.DeclarationGraphStage
 import org.plan.research.minimization.plugin.model.DeclarationLevelStage
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.FunctionLevelStage
@@ -29,7 +30,7 @@ class MinimizationPluginState : BaseState() {
     @get:XCollection(
         style = XCollection.Style.v1,
         elementName = "stage",
-        elementTypes = [FunctionLevelStage::class, DeclarationLevelStage::class, FileLevelStage::class],
+        elementTypes = [FunctionLevelStage::class, DeclarationGraphStage::class, DeclarationLevelStage::class, FileLevelStage::class],
     )
     var stages by property(defaultStages) { it == defaultStages }
 
@@ -47,6 +48,7 @@ class MinimizationPluginState : BaseState() {
         const val DEFAULT_TEMP_PROJ_LOCATION: String = "minimization-project-snapshots"
         val defaultStages: List<MinimizationStage> = listOf(
             FunctionLevelStage(),
+            DeclarationGraphStage(),
             FileLevelStage(),
         )
         val defaultTransformations: List<TransformationDescriptor> = listOf(

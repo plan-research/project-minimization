@@ -15,7 +15,7 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtNamedFunction
-import org.plan.research.minimization.plugin.lenses.DeclarationDeletingLens
+import org.plan.research.minimization.plugin.lenses.FunctionDeletingLens
 import org.plan.research.minimization.plugin.model.context.IJDDContextCloner
 import org.plan.research.minimization.plugin.model.context.LightIJDDContext
 import org.plan.research.minimization.plugin.model.context.WithImportRefCounterContext
@@ -52,7 +52,7 @@ class TestContext(
 }
 
 class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, KtStub>() {
-    override fun getLens() = DeclarationDeletingLens<TestContext>()
+    override fun getLens() = FunctionDeletingLens<TestContext>()
     override suspend fun getAllItems(context: TestContext): List<PsiStubDDItem> {
         configureModules(context.indexProject)
         return service<MinimizationPsiManagerService>()

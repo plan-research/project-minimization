@@ -15,4 +15,9 @@ import com.intellij.psi.PsiElement
 class FunctionModificationLens<C : IJDDContext> : BasePsiLens<C, PsiChildrenIndexDDItem, IntChildrenIndex>() {
     override fun focusOnPsiElement(item: PsiChildrenIndexDDItem, psiElement: PsiElement, context: C) =
         PsiBodyReplacer(context).transform(item, psiElement)
+
+    override suspend fun focusOnFilesAndDirectories(
+        itemsToDelete: List<PsiChildrenIndexDDItem>,
+        context: C,
+    ) = Unit
 }

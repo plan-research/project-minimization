@@ -1,15 +1,17 @@
 [versions]
 
 kotlin = "2.1.0"
-intellij = "2.1.0"
+intellij = "2.2.1"
 coroutines = "1.8.0"
 arrow = "1.2.4"
 ksp = "2.1.0-1.0.29"
 logging = "2.1.21"
 logback = "1.2.11"
 diktat = "2.0.0"
+kaml = "0.59.0"
 kotlinx-immutable-collections = "0.3.8"
 kotlinx-serialization = "1.7.3"
+jcloc = "0.3.0"
 jqwik = "1.9.2"
 graphviz-java = "0.18.1"
 jgrapht = "1.5.2"
@@ -25,6 +27,8 @@ arrow-ksp-plugin = { module = "io.arrow-kt:arrow-optics-ksp-plugin", version.ref
 kotlin-logging = { module = "io.github.microutils:kotlin-logging-jvm", version.ref = "logging" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 kotlinx-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "kotlinx-immutable-collections" }
+kaml = { module = "com.charleskorn.kaml:kaml", version.ref = "kaml" }
+jcloc = { module = "ch.usi.si.seart:jcloc", version.ref = "jcloc" }
 kotlinx-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 jqwik = { module = "net.jqwik:jqwik", version.ref = "jqwik" }
 jqwik-kotlin = { module = "net.jqwik:jqwik-kotlin", version.ref = "jqwik" }

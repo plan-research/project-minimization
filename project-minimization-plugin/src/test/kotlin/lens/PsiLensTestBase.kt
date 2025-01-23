@@ -32,7 +32,7 @@ abstract class PsiLensTestBase<C : LightIJDDContext<C>, ITEM, T> :
         val cloned = projectCloningService.clone(initialContext) as C
         kotlin.test.assertNotNull(cloned)
         val lens = getLens()
-        val items = getAllItems(initialContext)
+        val items = getAllItems(cloned)
 
         return cloned.runMonad {
             lens.focusOn(items - elements.toSet())

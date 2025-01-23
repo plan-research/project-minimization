@@ -17,6 +17,9 @@ class StacktraceExceptionComparator(
 ) : ExceptionComparator {
     override suspend fun areEquals(exception1: CompilationException, exception2: CompilationException): Boolean {
         if (exception1 is IdeaCompilationException && exception2 is IdeaCompilationException) {
+            if (exception1.kotlincExceptions.size != exception2.kotlincExceptions.size) {
+                return false
+            }
             return exception1.kotlincExceptions.zip(exception2.kotlincExceptions).all {pair -> areEquals(pair.first, pair.second) }
         }
 

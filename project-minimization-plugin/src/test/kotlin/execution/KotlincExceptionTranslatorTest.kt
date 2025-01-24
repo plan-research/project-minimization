@@ -172,9 +172,6 @@ class KotlincExceptionTranslatorTest : JavaCodeInsightFixtureTestCase() {
         val translated3 = translator.parseException(oldBackendError).getOrNull()
         kotlin.test.assertNotNull(translated3)
         assertIs<KotlincException.BackendCompilerException>(translated3)
-        // TODO: fix this when will be doing JBRes-1899
-//        assert(translated3.stacktrace.lines().all { it.startsWith("\tat ") })
-
     }
 
     fun testInvalidException() {

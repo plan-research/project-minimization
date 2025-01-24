@@ -3,6 +3,7 @@ package org.plan.research.minimization.plugin.lenses
 import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.context.WithImportRefCounterContext
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
+import org.plan.research.minimization.plugin.model.item.PsiStubDDItem.CallablePsiStubDDItem
 import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 import org.plan.research.minimization.plugin.psi.PsiImportRefCounter
 import org.plan.research.minimization.plugin.psi.PsiUtils
@@ -14,15 +15,20 @@ import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.vfs.findFileOrDirectory
 import com.intellij.psi.PsiElement
 import com.intellij.util.concurrency.annotations.RequiresReadLock
+import com.intellij.util.concurrency.annotations.RequiresWriteLock
 import mu.KotlinLogging
+import org.jetbrains.kotlin.idea.base.psi.deleteSingle
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
+import org.jetbrains.kotlin.idea.refactoring.deleteSeparatingComma
 import org.jetbrains.kotlin.idea.util.isComma
+import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.plugins.groovy.lang.psi.util.isWhiteSpaceOrNewLine
 
 import java.nio.file.Path
-import kotlin.io.path.pathString
 
+import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
 
 class FunctionDeletingLens<C : WithImportRefCounterContext<C>> : BasePsiLens<C, PsiStubDDItem, KtStub>() {
@@ -32,10 +38,24 @@ class FunctionDeletingLens<C : WithImportRefCounterContext<C>> : BasePsiLens<C, 
         psiElement: PsiElement,
         context: C,
     ) {
-        val nextSibling = psiElement.nextSibling
-        psiElement.delete()
-        if (nextSibling?.isComma == true) {
-            nextSibling.delete()
+        if (item is CallablePsiStubDDItem) {
+            // We are deleting parameter of the function / primary constructor
+            val parameterList = psiElement.parent ?: return
+            val indexOf = parameterList.children.indexOf(psiElement)
+            deleteFunctionCalls(item, indexOf, context)
+        }
+        deleteSeparatingComma(psiElement)
+        psiElement.deleteSingle()
+    }
+
+    @RequiresWriteLock
+    private fun deleteFunctionCalls(item: CallablePsiStubDDItem, indexToDelete: Int, context: C) {
+        for (call in item.callTraces) {
+            val callExpression = PsiUtils.getPsiElementFromItem(context, call) as? KtCallExpression ?: continue
+            val arguments = callExpression.valueArguments + callExpression.lambdaArguments
+            val element = arguments.getOrNull(indexToDelete) ?: continue
+            deleteSeparatingComma(element)
+            element.delete()
         }
     }
 
@@ -147,4 +167,13 @@ class FunctionDeletingLens<C : WithImportRefCounterContext<C>> : BasePsiLens<C, 
     private fun C.copyWithout(localPath: Path) = copy(
         importRefCounter = importRefCounter.performAction { remove(localPath) },
     )
+
+    private fun deleteSiblingsWhileCommaOrWhitespace(element: PsiElement) {
+        var currentElement: PsiElement? = element
+        while (currentElement?.isWhiteSpaceOrNewLine() == true || currentElement?.isComma == true) {
+            val nextElement = currentElement.nextSibling
+            currentElement.delete()
+            currentElement = nextElement
+        }
+    }
 }

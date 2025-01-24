@@ -78,38 +78,52 @@ class MinimizationPsiManagerService {
      *
      * @param context The context for the minimization process containing the current project and relevant properties.
      * @param compressOverridden If set to true, then all overridden elements will be compressed to one element
+     * @param withFunctionParameters
      * @return A list of deletable PSI items found in the Kotlin files of the project.
      */
     suspend fun findDeletablePsiItems(
         context: IJDDContext,
         compressOverridden: Boolean = true,
+        withFunctionParameters: Boolean = false,
     ): List<PsiStubDDItem> = smartReadAction(context.indexProject) {
         if (compressOverridden) {
             findDeletablePsiItemsCompressed(context)
         } else {
-            findDeletablePsiItemsWithoutCompression(context).map { it.item }
+            findDeletablePsiItemsWithoutCompression(context, withFunctionParameters).map { it.item }
         }
     }
 
     @RequiresReadLock
-    private fun findDeletablePsiItemsWithoutCompression(context: IJDDContext) =
-        findPsiInKotlinFiles(context, PsiStubDDItem.DELETABLE_PSI_JAVA_CLASSES)
+    private fun findDeletablePsiItemsWithoutCompression(
+        context: IJDDContext,
+        withFunctionParameters: Boolean,
+    ): List<IntermediatePsiItemInfo> {
+        val coreElements = findPsiInKotlinFiles(context, PsiStubDDItem.DELETABLE_PSI_JAVA_CLASSES)
             .mapNotNull { psiElement ->
-                PsiUtils.buildDeletablePsiItem(context, psiElement).getOrNull()?.let { IntermediatePsiItemInfo(psiElement, it) }
+                PsiUtils.buildDeletablePsiItem(context, psiElement).getOrNull()
+                    ?.let { IntermediatePsiItemInfo(psiElement, it) }
             }
+        val functionParameters = getFunctionsProperties(
+            context,
+            coreElements
+                .mapNotNull { it.psiElement.selfOrConstructorIfFunctionOrClass },
+        ).takeIf { withFunctionParameters }.orEmpty()
+        return coreElements + functionParameters
+    }
 
     @RequiresReadLock
     private fun findDeletablePsiItemsCompressed(
         context: IJDDContext,
     ): List<PsiStubDDItem> {
-        val nonStructuredItems = findDeletablePsiItemsWithoutCompression(context)
+        val nonStructuredItems = findDeletablePsiItemsWithoutCompression(context, false)
 
-        val dsu = PsiDSU<KtElement, PsiStubDDItem>(nonStructuredItems.map(IntermediatePsiItemInfo::asPair)) { lhs, rhs ->
-            lhs.childrenPath.size
-                .compareTo(rhs.childrenPath.size)
-                .takeIf { it != 0 }
-                ?: lhs.childrenPath.compareTo(rhs.childrenPath)
-        }
+        val dsu =
+            PsiDSU<KtElement, PsiStubDDItem>(nonStructuredItems.map(IntermediatePsiItemInfo::asPair)) { lhs, rhs ->
+                lhs.childrenPath.size
+                    .compareTo(rhs.childrenPath.size)
+                    .takeIf { it != 0 }
+                    ?: lhs.childrenPath.compareTo(rhs.childrenPath)
+            }
         return dsu.transformItems(context, nonStructuredItems)
     }
 
@@ -122,22 +136,17 @@ class MinimizationPsiManagerService {
      */
     suspend fun buildDeletablePsiGraph(context: IJDDContext): InstanceLevelGraph =
         smartReadAction(context.indexProject) {
-            val nodesWithoutConstructorParameters = findDeletablePsiItemsWithoutCompression(context)
-            val nodes = nodesWithoutConstructorParameters + getFunctionsProperties(
-                context,
-                nodesWithoutConstructorParameters
-                    .mapNotNull { it.psiElement.selfOrConstructorIfFunctionOrClass },
-            )
+            val nodes = this.findDeletablePsiItemsWithoutCompression(context, withFunctionParameters = true)
             val psiCache = nodes.associate { it.psiElement to it.item }
 
             val (fileHierarchyNodes, fileHierarchyEdges) = buildFileHierarchy(context)
             InstanceLevelGraph(
                 vertices = (nodes.map(IntermediatePsiItemInfo::item) + fileHierarchyNodes).distinct(),
-                edges = buildGraphEdges(nodes, context, psiCache) + fileHierarchyEdges,
+                edges = buildInstanceLevelGraphEdges(nodes, context, psiCache) + fileHierarchyEdges,
             )
         }
 
-    private fun buildGraphEdges(
+    private fun buildInstanceLevelGraphEdges(
         nodes: List<IntermediatePsiItemInfo>,
         context: IJDDContext,
         psiCache: Map<KtElement, PsiStubDDItem>,

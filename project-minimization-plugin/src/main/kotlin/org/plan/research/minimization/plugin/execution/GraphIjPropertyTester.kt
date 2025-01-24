@@ -17,12 +17,12 @@ import org.plan.research.minimization.plugin.model.exception.CompilationExceptio
 import org.plan.research.minimization.plugin.model.exception.ExceptionComparator
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
 import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
+import org.plan.research.minimization.plugin.model.monad.SnapshotMonad
 import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelGraph
 import org.plan.research.minimization.plugin.psi.graph.CondensedInstanceLevelNode
 import org.plan.research.minimization.plugin.psi.graph.InstanceLevelGraph
 
 import arrow.core.raise.option
-import com.intellij.openapi.project.Project
 import com.intellij.util.io.createDirectories
 import guru.nidi.graphviz.attribute.Attributes
 import guru.nidi.graphviz.attribute.Color
@@ -45,7 +45,6 @@ private typealias NodeAttributes = Array<Attributes<out ForNode>>
  * utilizing a backing linear property tester.
  */
 class GraphIjPropertyTester<C> private constructor(
-    rootProject: Project,
     buildExceptionProvider: BuildExceptionProvider,
     comparator: ExceptionComparator,
     lens: ProjectItemLens<C, PsiStubDDItem>,
@@ -56,7 +55,7 @@ class GraphIjPropertyTester<C> private constructor(
 C : IJDDContextBase<C>,
 C : WithInstanceLevelGraphContext<C> {
     private val innerTester =
-        LinearTester(rootProject, buildExceptionProvider, comparator, lens, initialException, listeners)
+        LinearTester(buildExceptionProvider, comparator, lens, initialException, listeners)
     private val loggableTester = innerTester
         .withLog()
         .let { if (BenchmarkSettings.isBenchmarkingEnabled) it.withStatistics() else it }
@@ -76,7 +75,7 @@ C : WithInstanceLevelGraphContext<C> {
         }
     }
 
-    context(IJDDContextMonad<C>)
+    context(SnapshotMonad<C>)
     override suspend fun test(
         retainedCut: GraphCut<CondensedInstanceLevelNode>,
         deletedCut: GraphCut<CondensedInstanceLevelNode>,
@@ -140,14 +139,12 @@ C : WithInstanceLevelGraphContext<C> {
         }
 
     private inner class LinearTester(
-        rootProject: Project,
         buildExceptionProvider: BuildExceptionProvider,
         comparator: ExceptionComparator,
         lens: ProjectItemLens<C, PsiStubDDItem>,
         initialException: CompilationException,
         listeners: Listeners<PsiStubDDItem> = emptyList(),
     ) : AbstractSameExceptionPropertyTester<C, PsiStubDDItem>(
-        rootProject,
         buildExceptionProvider,
         comparator,
         lens,
@@ -178,7 +175,6 @@ C : WithInstanceLevelGraphContext<C> {
         C : WithInstanceLevelGraphContext<C> = option {
             val initialException = compilerPropertyChecker.checkCompilation(context).getOrNone().bind()
             GraphIjPropertyTester(
-                context.originalProject,
                 compilerPropertyChecker,
                 exceptionComparator,
                 lens,

@@ -4,7 +4,7 @@ import org.plan.research.minimization.core.model.PropertyTestResult
 import org.plan.research.minimization.plugin.model.IJPropertyTester
 import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.item.IJDDItem
-import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
+import org.plan.research.minimization.plugin.model.monad.SnapshotMonad
 import org.plan.research.minimization.plugin.services.RootsManagerService
 
 import ch.usi.si.seart.cloc.CLOC
@@ -34,7 +34,7 @@ class PropertyTesterWithStatistics<C : IJDDContext, T : IJDDItem>(
     private var isFirst: Boolean = true
     private val logger = KotlinLogging.logger {}
 
-    context(IJDDContextMonad<C>)
+    context(SnapshotMonad<C>)
     override suspend fun test(retainedItems: List<T>, deletedItems: List<T>): PropertyTestResult {
         if (isFirst) {
             analyzeProject(context)

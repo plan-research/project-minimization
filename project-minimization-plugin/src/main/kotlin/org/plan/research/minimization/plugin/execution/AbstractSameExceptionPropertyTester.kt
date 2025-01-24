@@ -11,30 +11,25 @@ import org.plan.research.minimization.plugin.model.exception.CompilationExceptio
 import org.plan.research.minimization.plugin.model.exception.ExceptionComparator
 import org.plan.research.minimization.plugin.model.item.IJDDItem
 import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
-import org.plan.research.minimization.plugin.services.SnapshotManagerService
+import org.plan.research.minimization.plugin.model.monad.SnapshotMonad
 
 import arrow.core.getOrElse
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import com.intellij.openapi.components.service
-import com.intellij.openapi.project.Project
 
 open class AbstractSameExceptionPropertyTester<C : IJDDContextBase<C>, T : IJDDItem>(
-    rootProject: Project,
     private val buildExceptionProvider: BuildExceptionProvider,
     private val comparator: ExceptionComparator,
     private val lens: ProjectItemLens<C, T>,
     private val initialException: CompilationException,
     private val listeners: Listeners<T> = emptyList(),
 ) : IJPropertyTester<C, T> {
-    private val snapshotManager = rootProject.service<SnapshotManagerService>()
-
     /**
      * Tests whether the context's project has the same compiler exception as the root one
      */
-    context(IJDDContextMonad<C>)
+    context(SnapshotMonad<C>)
     override suspend fun test(retainedItems: List<T>, deletedItems: List<T>): PropertyTestResult =
-        snapshotManager.transaction {
+        transaction {
             focus(deletedItems)
             val compilationResult = compile().bind()
             compareResult(compilationResult).bind()

@@ -7,7 +7,7 @@ import org.plan.research.minimization.plugin.model.IJHierarchicalDDGenerator
 import org.plan.research.minimization.plugin.model.IJPropertyTester
 import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.item.ProjectFileDDItem
-import org.plan.research.minimization.plugin.model.monad.IJContextWithProgressMonad
+import org.plan.research.minimization.plugin.model.monad.SnapshotWithProgressMonad
 import org.plan.research.minimization.plugin.services.RootsManagerService
 
 import arrow.core.raise.option
@@ -26,7 +26,7 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
 ) : IJHierarchicalDDGenerator<C, ProjectFileDDItem> {
     private lateinit var reporter: ProgressReporter
 
-    context(IJContextWithProgressMonad<C>)
+    context(SnapshotWithProgressMonad<C>)
     override suspend fun generateFirstLevel() =
         option {
             val level = lift {
@@ -45,7 +45,7 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
             HDDLevel(level, propertyTester)
         }
 
-    context(IJContextWithProgressMonad<C>)
+    context(SnapshotWithProgressMonad<C>)
     override suspend fun generateNextLevel(minimizationResult: DDAlgorithmResult<ProjectFileDDItem>) =
         option {
             val nextFiles = lift {
@@ -74,7 +74,7 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
      * @param roots An array of VirtualFile representing the starting points to compute levels.
      * @constructor Creates a new instance of [ProgressReporter] based on the given root path and the array of root files.
      */
-    context(IJContextWithProgressMonad<C>)
+    context(SnapshotWithProgressMonad<C>)
     private inner class ProgressReporter(context: C, roots: List<Path>) {
         @Volatile
         private var currentLevel = 0

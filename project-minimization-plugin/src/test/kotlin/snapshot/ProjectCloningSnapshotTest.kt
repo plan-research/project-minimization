@@ -113,7 +113,7 @@ abstract class ProjectCloningSnapshotTest<C : IJDDContextBase<C>, S : SnapshotMa
         }
         val clonedFiles = clonedProject.projectDir.getAllFiles(clonedProject.projectDir.toNioPath())
         assertEquals(originalFiles.forEach { it.path }, clonedFiles.forEach { it.path })
-//        deleteContext(clonedProject)
+        deleteContext(clonedProject)
     }
 
     fun testAbortedTransaction() {

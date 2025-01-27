@@ -38,7 +38,7 @@
     </logger>
 
     <!-- Logger for your package (write in logs.log and Console) -->
-    <logger name="org.plan.research.minimization" level="DEBUG" />
+    <logger name="org.plan.research.minimization" level="TRACE" />
 
     <!-- Root logger limited to ERROR level to avoid logs from external libraries -->
     <root level="ERROR">

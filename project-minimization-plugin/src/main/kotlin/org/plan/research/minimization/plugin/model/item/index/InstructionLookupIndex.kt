@@ -10,8 +10,8 @@ import org.jetbrains.kotlin.psi.KtNamedFunction
 
 import kotlin.collections.filter
 
-sealed class CompositeIndex : PsiChildrenPathIndex {
-    data class ChildrenNonDeclarationIndex(val childrenIndex: Int) : CompositeIndex() {
+sealed class InstructionLookupIndex : PsiChildrenPathIndex {
+    data class ChildrenNonDeclarationIndex(val childrenIndex: Int) : InstructionLookupIndex() {
         override fun getNext(element: PsiElement): PsiElement? =
             element.children.filter { it !is KtClass && it !is KtNamedFunction }.getOrNull(childrenIndex)
 
@@ -26,5 +26,5 @@ sealed class CompositeIndex : PsiChildrenPathIndex {
         }
     }
 
-    data class StubDeclarationIndex(val stub: KtStub) : CompositeIndex(), PsiChildrenPathIndex by stub
+    data class StubDeclarationIndex(val stub: KtStub) : InstructionLookupIndex(), PsiChildrenPathIndex by stub
 }

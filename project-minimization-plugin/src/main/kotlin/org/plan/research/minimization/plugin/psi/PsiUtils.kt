@@ -5,7 +5,7 @@ import org.plan.research.minimization.plugin.model.item.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.model.item.PsiDDItem
 import org.plan.research.minimization.plugin.model.item.PsiStubChildrenCompositionItem
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
-import org.plan.research.minimization.plugin.model.item.index.CompositeIndex
+import org.plan.research.minimization.plugin.model.item.index.InstructionLookupIndex
 import org.plan.research.minimization.plugin.model.item.index.IntChildrenIndex
 import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
 import org.plan.research.minimization.plugin.psi.graph.PsiIJEdge
@@ -31,7 +31,6 @@ import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
-import org.jetbrains.kotlin.psi.psiUtil.parents
 import org.jetbrains.kotlin.psi.psiUtil.parentsWithSelf
 
 import kotlin.io.path.relativeTo
@@ -60,16 +59,16 @@ object PsiUtils {
         val file = parents.last() as? KtFile
         ensureNotNull(file)
 
-        val (stubPart, childrenPart) = parents.dropLast(1).reversed().splitWhile { KtStub.create(it).isSome() }
+        val (stubPart, childrenPart) = parents.dropLast(1).reversed().splitWhile(KtStub::canBeCreated)
         ensure(stubPart.isNotEmpty())
 
-        val stubs = stubPart.mapNotNull { CompositeIndex.StubDeclarationIndex(KtStub.create(it).bind()) }
+        val stubs = stubPart.map { InstructionLookupIndex.StubDeclarationIndex(KtStub.create(it).bind()) }
         val children = buildList {
-            add(CompositeIndex.ChildrenNonDeclarationIndex.create(stubPart.last(), childrenPart.first()).bind())
+            add(InstructionLookupIndex.ChildrenNonDeclarationIndex.create(stubPart.last(), childrenPart.first()).bind())
             childrenPart
                 .zipWithNext()
                 .forEach { (parent, child) ->
-                    add(CompositeIndex.ChildrenNonDeclarationIndex.create(parent, child).bind())
+                    add(InstructionLookupIndex.ChildrenNonDeclarationIndex.create(parent, child).bind())
                 }
         }
 

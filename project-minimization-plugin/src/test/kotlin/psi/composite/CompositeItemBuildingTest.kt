@@ -10,7 +10,7 @@ import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtFile
 import org.plan.research.minimization.plugin.model.context.impl.DefaultProjectContext
 import org.plan.research.minimization.plugin.model.item.PsiStubChildrenCompositionItem
-import org.plan.research.minimization.plugin.model.item.index.CompositeIndex
+import org.plan.research.minimization.plugin.model.item.index.InstructionLookupIndex
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.psi.stub.KtBlockExpressionStub
 import org.plan.research.minimization.plugin.psi.stub.KtFunctionStub
@@ -39,43 +39,43 @@ class CompositeItemBuildingTest: AbstractAnalysisKotlinTest() {
         val propertyCall = PsiStubChildrenCompositionItem(
             localPath = Path("simple-constructor.kt"),
             childrenPath = listOf(
-                CompositeIndex.StubDeclarationIndex(KtPropertyStub("x", null, "")),
-                CompositeIndex.ChildrenNonDeclarationIndex(0),
-                CompositeIndex.ChildrenNonDeclarationIndex(0),
+                InstructionLookupIndex.StubDeclarationIndex(KtPropertyStub("x", null, "")),
+                InstructionLookupIndex.ChildrenNonDeclarationIndex(0),
+                InstructionLookupIndex.ChildrenNonDeclarationIndex(0),
             )
         )
         val funReturnCall = PsiStubChildrenCompositionItem(
             localPath = Path("simple-constructor.kt"),
             childrenPath = listOf(
-                CompositeIndex.StubDeclarationIndex(KtFunctionStub("f", emptyList(), null, "")),
-                CompositeIndex.StubDeclarationIndex(KtBlockExpressionStub),
-                CompositeIndex.ChildrenNonDeclarationIndex(0),
-                CompositeIndex.ChildrenNonDeclarationIndex(0),
-                CompositeIndex.ChildrenNonDeclarationIndex(0)
+                InstructionLookupIndex.StubDeclarationIndex(KtFunctionStub("f", emptyList(), null, "")),
+                InstructionLookupIndex.StubDeclarationIndex(KtBlockExpressionStub),
+                InstructionLookupIndex.ChildrenNonDeclarationIndex(0),
+                InstructionLookupIndex.ChildrenNonDeclarationIndex(0),
+                InstructionLookupIndex.ChildrenNonDeclarationIndex(0)
             )
         )
         val funBodyExpressionCall = PsiStubChildrenCompositionItem(
             localPath = Path("simple-constructor.kt"),
             childrenPath = listOf(
-                CompositeIndex.StubDeclarationIndex(KtFunctionStub("g", emptyList(), null, "")),
-                CompositeIndex.ChildrenNonDeclarationIndex(1),
-                CompositeIndex.ChildrenNonDeclarationIndex(0)
+                InstructionLookupIndex.StubDeclarationIndex(KtFunctionStub("g", emptyList(), null, "")),
+                InstructionLookupIndex.ChildrenNonDeclarationIndex(1),
+                InstructionLookupIndex.ChildrenNonDeclarationIndex(0)
             )
         )
         val compositeFunCall = PsiStubChildrenCompositionItem(
             localPath = Path("simple-constructor.kt"),
             childrenPath = listOf(
-                CompositeIndex.StubDeclarationIndex(KtFunctionStub("h", emptyList(), null, "")),
-                CompositeIndex.StubDeclarationIndex(KtBlockExpressionStub),
-                CompositeIndex.StubDeclarationIndex(KtFunctionStub("g", emptyList(), null, "")),
-                CompositeIndex.StubDeclarationIndex(KtBlockExpressionStub),
-                CompositeIndex.StubDeclarationIndex(KtFunctionStub("h", emptyList(), null, "")),
-                CompositeIndex.StubDeclarationIndex(KtBlockExpressionStub),
-                CompositeIndex.ChildrenNonDeclarationIndex(0),
-                CompositeIndex.ChildrenNonDeclarationIndex(1),
-                CompositeIndex.ChildrenNonDeclarationIndex(0),
-                CompositeIndex.ChildrenNonDeclarationIndex(0),
-                CompositeIndex.ChildrenNonDeclarationIndex(0),
+                InstructionLookupIndex.StubDeclarationIndex(KtFunctionStub("h", emptyList(), null, "")),
+                InstructionLookupIndex.StubDeclarationIndex(KtBlockExpressionStub),
+                InstructionLookupIndex.StubDeclarationIndex(KtFunctionStub("g", emptyList(), null, "")),
+                InstructionLookupIndex.StubDeclarationIndex(KtBlockExpressionStub),
+                InstructionLookupIndex.StubDeclarationIndex(KtFunctionStub("h", emptyList(), null, "")),
+                InstructionLookupIndex.StubDeclarationIndex(KtBlockExpressionStub),
+                InstructionLookupIndex.ChildrenNonDeclarationIndex(0),
+                InstructionLookupIndex.ChildrenNonDeclarationIndex(1),
+                InstructionLookupIndex.ChildrenNonDeclarationIndex(0),
+                InstructionLookupIndex.ChildrenNonDeclarationIndex(0),
+                InstructionLookupIndex.ChildrenNonDeclarationIndex(0),
             )
         )
         assertContainsElements(items, propertyCall, funReturnCall, funBodyExpressionCall, compositeFunCall)

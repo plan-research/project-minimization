@@ -15,8 +15,8 @@ import java.nio.file.Path
  */
 data class PsiStubChildrenCompositionItem(
     override val localPath: Path,
-    override val childrenPath: List<CompositeIndex>,
-) : PsiDDItem<CompositeIndex> {
+    override val childrenPath: List<InstructionLookupIndex>,
+) : PsiDDItem<InstructionLookupIndex> {
     override fun toString(): String = "PsiStubChildrenCompositionItem(\n" +
         "                              localPath=$localPath,\n" +
         "                              childrenPath=${

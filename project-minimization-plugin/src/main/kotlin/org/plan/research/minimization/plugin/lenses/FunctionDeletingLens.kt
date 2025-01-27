@@ -2,6 +2,7 @@ package org.plan.research.minimization.plugin.lenses
 
 import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.context.WithImportRefCounterContext
+import org.plan.research.minimization.plugin.model.item.PsiStubChildrenCompositionItem
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem.CallablePsiStubDDItem
 import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
@@ -10,6 +11,8 @@ import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.psi.stub.KtStub
 import org.plan.research.minimization.plugin.psi.trie.PsiTrie
 
+import arrow.core.None
+import arrow.core.raise.option
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.vfs.findFileOrDirectory
@@ -20,11 +23,10 @@ import mu.KotlinLogging
 import org.jetbrains.kotlin.idea.base.psi.deleteSingle
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.idea.refactoring.deleteSeparatingComma
-import org.jetbrains.kotlin.idea.util.isComma
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.plugins.groovy.lang.psi.util.isWhiteSpaceOrNewLine
+import org.jetbrains.kotlin.psi.KtParameter
 
 import java.nio.file.Path
 
@@ -38,26 +40,32 @@ class FunctionDeletingLens<C : WithImportRefCounterContext<C>> : BasePsiLens<C, 
         psiElement: PsiElement,
         context: C,
     ) {
-        if (item is CallablePsiStubDDItem) {
-            // We are deleting parameter of the function / primary constructor
-            val parameterList = psiElement.parent ?: return
-            val indexOf = parameterList.children.indexOf(psiElement)
-            deleteFunctionCalls(item, indexOf, context)
-        }
         deleteSeparatingComma(psiElement)
         psiElement.deleteSingle()
     }
 
     @RequiresWriteLock
-    private fun deleteFunctionCalls(item: CallablePsiStubDDItem, indexToDelete: Int, context: C) {
-        for (call in item.callTraces) {
-            val callExpression = PsiUtils.getPsiElementFromItem(context, call) as? KtCallExpression ?: continue
-            val arguments = callExpression.valueArguments + callExpression.lambdaArguments
-            val element = arguments.getOrNull(indexToDelete) ?: continue
-            deleteSeparatingComma(element)
-            element.delete()
-        }
+    private fun deleteTrace(call: PsiStubChildrenCompositionItem, indexToDelete: Int, context: C) {
+        logger.trace { "Deleting call=${call.childrenPath} (in file=${call.localPath})" }
+        val callExpression = PsiUtils.getPsiElementFromItem(context, call) as? KtCallExpression
+            ?: let {
+                logger.trace { "call=${call.childrenPath} (in file=${call.localPath}) is not callable expression" }
+                return
+            }
+
+        val arguments = callExpression.valueArguments + callExpression.lambdaArguments
+        val element = arguments.getOrNull(indexToDelete)
+            ?: let {
+                logger.trace { "index=$indexToDelete can't be found. " }
+                return
+            }
+        deleteSeparatingComma(element)
+        element.delete()
     }
+
+    context(IJDDContextMonad<C>)
+    override suspend fun prepare(itemsToDelete: List<PsiStubDDItem>) =
+        processCallablePsiItems(itemsToDelete.filterIsInstance<CallablePsiStubDDItem>())
 
     override suspend fun focusOnFilesAndDirectories(
         itemsToDelete: List<PsiStubDDItem>,
@@ -69,6 +77,70 @@ class FunctionDeletingLens<C : WithImportRefCounterContext<C>> : BasePsiLens<C, 
                 .findFileOrDirectory(it.localPath.pathString)
                 ?.delete(this@FunctionDeletingLens)
         }
+    }
+
+    context(IJDDContextMonad<C>)
+    private suspend fun processCallableItemsInFile(file: Path, items: List<IntermediateCallInfo>) {
+        logger.trace { "Removing all needed calls from $file" }
+        val psiFile = readAction {
+            context
+                .projectDir
+                .findFileOrDirectory(file.pathString)
+                ?.toPsiFile(context.indexProject)
+                as? KtFile
+        } ?: let {
+            logger.info { "$file is not PSI File" }
+            return
+        }
+        PsiUtils.performPsiChangesAndSave(context, psiFile, "Removing calls to functions/constructors") {
+            val allIndexesForItem = items.groupBy { it.item }.mapValues { (_, v) -> v.map { it.parameterIndex } }
+            items.forEach { item ->
+                val indexes = allIndexesForItem[item.item]
+                    ?.sorted()
+                    ?.distinct()
+                    ?.reversed()
+                    ?: let {
+                        logger.debug { "Can't find indexes for ${item.item.childrenPath}" }
+                        return@forEach
+                    }
+                indexes.forEach { index -> deleteTrace(item.item, index, context) }
+            }
+        }
+    }
+
+    context(IJDDContextMonad<C>)
+    private suspend fun CallablePsiStubDDItem.getParameterIndex() = option {
+        logger.debug { "Found a callable psi stub DD item: $childrenPath" }
+        val psiElement = readAction {
+            PsiUtils.getPsiElementFromItem(context, this@getParameterIndex) as? KtParameter
+        } ?: let {
+            logger.warn { "callable element=$childrenPath is not a KtParameter" }
+            raise(None)
+        }
+
+        val owner = readAction { psiElement.ownerFunction } ?: let {
+            logger.warn { "callable element=$childrenPath has an owner that is not a KtCallExpression" }
+            raise(None)
+        }
+
+        val parameterList = readAction { owner.valueParameters }
+        parameterList.indexOf(psiElement)
+    }
+
+    context(IJDDContextMonad<C>)
+    private suspend fun processCallablePsiItems(items: List<CallablePsiStubDDItem>) {
+        logger.debug { "Found $items.size} callable items" }
+        val sortedTraces = items
+            .flatMap { item ->
+                val parameterIndex = item.getParameterIndex().getOrNull() ?: let {
+                    logger.warn { "Can't find parameter index for ${item.childrenPath}" }
+                    return@flatMap emptyList<IntermediateCallInfo>()
+                }
+                item.callTraces.map { IntermediateCallInfo(it, parameterIndex) }
+            }
+            .groupBy { it.item.localPath }
+        logger.debug { "Found ${sortedTraces.size} files with ${sortedTraces.values.sumOf { it.size }} traces " }
+        sortedTraces.forEach { (file, items) -> processCallableItemsInFile(file, items) }
     }
 
     context(IJDDContextMonad<C>)
@@ -168,12 +240,5 @@ class FunctionDeletingLens<C : WithImportRefCounterContext<C>> : BasePsiLens<C, 
         importRefCounter = importRefCounter.performAction { remove(localPath) },
     )
 
-    private fun deleteSiblingsWhileCommaOrWhitespace(element: PsiElement) {
-        var currentElement: PsiElement? = element
-        while (currentElement?.isWhiteSpaceOrNewLine() == true || currentElement?.isComma == true) {
-            val nextElement = currentElement.nextSibling
-            currentElement.delete()
-            currentElement = nextElement
-        }
-    }
+    private data class IntermediateCallInfo(val item: PsiStubChildrenCompositionItem, val parameterIndex: Int)
 }

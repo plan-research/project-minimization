@@ -69,10 +69,6 @@ class ProjectCloningService(private val rootProject: Project) : IJDDContextClone
         }
     }
 
-    private fun isImportant(file: VirtualFile, root: VirtualFile): Boolean =
-        // JBRes-2481: make sure on each clone we re-import the project
-        file.name != Project.DIRECTORY_STORE_FOLDER
-
     private fun createNewProjectDirectory(): Path =
         getSnapshotLocation().findOrCreateDirectory("snapshot-${getCurrentTimeString()}-${UUID.randomUUID()}")
 
@@ -111,4 +107,10 @@ class ProjectCloningService(private val rootProject: Project) : IJDDContextClone
 
     suspend fun <C : IJDDContextBase<C>> clone(context: C): C? =
         context.clone(this)
+
+    companion object {
+        fun isImportant(file: VirtualFile, root: VirtualFile): Boolean =
+            // JBRes-2481: make sure on each clone we re-import the project
+            file.name != Project.DIRECTORY_STORE_FOLDER
+    }
 }

@@ -155,6 +155,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         action: SnapshotWithProgressMonadF<C, Unit>,
     ): C = runMonad { withProgress(action) }
 
+    @Suppress("TYPE_ALIAS")
     private suspend inline fun <C : IJDDContextBase<C>> C.runMonad(
         action: MonadF<SnapshotMonad<C>, Unit>,
     ): C {

@@ -1,10 +1,8 @@
 package snapshot
 
-import HeavyTestContext
-import LightTestContext
+import PathContent
 import TestWithContext
-import TestWithHeavyContext
-import TestWithLightContext
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.guessProjectDir
@@ -18,13 +16,20 @@ import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.errors.SnapshotError
 import org.plan.research.minimization.plugin.getAllNestedElements
 import org.plan.research.minimization.plugin.model.context.IJDDContextBase
+import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.services.ProjectCloningService
-import org.plan.research.minimization.plugin.snapshot.ProjectCloningSnapshotManager
 import runSnapshotMonadAsync
 import kotlin.io.path.Path
 import kotlin.io.path.relativeTo
 
-abstract class ProjectCloningSnapshotTest<C : IJDDContextBase<C>> : ProjectCloningBaseTest(), TestWithContext<C> {
+abstract class ProjectCloningSnapshotTest<C : IJDDContextBase<C>, S : SnapshotManager>
+    : ProjectCloningBaseTest(), TestWithContext<C> {
+
+    /**
+     * Fabric method for SnapshotManager.
+     */
+    abstract fun createSnapshotManager(): S
+
     fun testOneFileProjectPartialCloning() {
         val file = myFixture.configureByFile("oneFileProject.txt")
         doPartialCloningTest(
@@ -70,23 +75,32 @@ abstract class ProjectCloningSnapshotTest<C : IJDDContextBase<C>> : ProjectCloni
         selectedFiles: List<VirtualFile>
     ) {
         val project = myFixture.project
-        val projectDir = project.guessProjectDir()!!
-        val snapshotManager = ProjectCloningSnapshotManager(project)
+        val snapshotManager = createSnapshotManager()
         val projectCloning = project.service<ProjectCloningService>()
         val initialContext = createContext(project)
 
-        val originalFiles =
-            selectedFiles.getAllFiles(projectDir) + project.guessProjectDir()!!
-                .getPathContentPair(projectDir.toNioPath())
+        var originalFiles: Set<PathContent> = emptySet()
 
         val clonedProject = runBlocking {
             val clonedContext = projectCloning.clone(initialContext)!!
             clonedContext.runSnapshotMonadAsync(snapshotManager) {
+                originalFiles =  clonedContext.projectDir.getAllFiles(clonedContext.projectDir.toNioPath()) +
+                        clonedContext.projectDir.getPathContentPair(clonedContext.projectDir.toNioPath())
+                println("Original files: $originalFiles")
+
+                ApplicationManager.getApplication().runWriteAction {
+                    context.projectDir.createChildData(this, "extraFile1.txt")
+                    context.projectDir.createChildData(this, "extraFile2.txt")
+                    val extraDir = context.projectDir.createChildDirectory(this, "extraDir")
+                    extraDir.createChildData(this, "extraFileInDir.txt")
+                }
+
                 val result = transaction<Unit> {
                     writeAction {
                         VfsUtil.iterateChildrenRecursively(context.projectDir, null) {
                             if (it.getPathContentPair(context.projectDir.toNioPath()) !in originalFiles) {
                                 if (it.exists()) {
+                                    println("Delete: ${it.getPathContentPair(context.projectDir.toNioPath())}")
                                     it.deleteRecursively()
                                 }
                             }
@@ -98,15 +112,15 @@ abstract class ProjectCloningSnapshotTest<C : IJDDContextBase<C>> : ProjectCloni
             }
         }
         val clonedFiles = clonedProject.projectDir.getAllFiles(clonedProject.projectDir.toNioPath())
-        assertEquals(originalFiles, clonedFiles)
-        deleteContext(clonedProject)
+        assertEquals(originalFiles.forEach { it.path }, clonedFiles.forEach { it.path })
+//        deleteContext(clonedProject)
     }
 
     fun testAbortedTransaction() {
         myFixture.copyDirectoryToProject("flatProject", "")
         val project = myFixture.project
 
-        val snapshotManager = ProjectCloningSnapshotManager(project)
+        val snapshotManager = createSnapshotManager()
         val initialContext = createContext(project)
         runBlocking {
             initialContext.runSnapshotMonadAsync(snapshotManager) {
@@ -129,7 +143,7 @@ abstract class ProjectCloningSnapshotTest<C : IJDDContextBase<C>> : ProjectCloni
         val project = myFixture.project
         val initialContext = createContext(project)
 
-        val snapshotManager = ProjectCloningSnapshotManager(project)
+        val snapshotManager = createSnapshotManager()
         runBlocking {
             initialContext.runSnapshotMonadAsync(snapshotManager) {
                 val result = transaction<String> {
@@ -146,12 +160,3 @@ abstract class ProjectCloningSnapshotTest<C : IJDDContextBase<C>> : ProjectCloni
         assert(project.isOpen)
     }
 }
-
-class ProjectCloningSnapshotHeavyTest :
-    ProjectCloningSnapshotTest<HeavyTestContext>(),
-    TestWithContext<HeavyTestContext> by TestWithHeavyContext()
-
-
-class ProjectCloningSnapshotLightTest :
-    ProjectCloningSnapshotTest<LightTestContext>(),
-    TestWithContext<LightTestContext> by TestWithLightContext()

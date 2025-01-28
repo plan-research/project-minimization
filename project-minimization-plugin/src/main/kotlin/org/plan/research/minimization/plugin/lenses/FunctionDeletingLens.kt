@@ -67,12 +67,12 @@ class FunctionDeletingLens<C : WithImportRefCounterContext<C>> : BasePsiLens<C, 
         element.delete()
     }
 
-    context(IJDDContextMonad<C>)
     private suspend fun deleteImportInTraces(
         refCounter: PsiImportRefCounter,
         call: PsiStubChildrenCompositionItem,
         indexToDelete: Int,
         originalFile: KtFile,
+        context: C,
     ) = refCounter.run {
         logger.trace { "Deleting imports in  call=${call.childrenPath} (in file=${call.localPath})" }
         val callExpression = readAction {
@@ -134,6 +134,7 @@ class FunctionDeletingLens<C : WithImportRefCounterContext<C>> : BasePsiLens<C, 
                     item,
                     index,
                     originalFile,
+                    context,
                 )
             }
         }

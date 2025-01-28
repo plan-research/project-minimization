@@ -198,7 +198,7 @@ class MinimizationPsiManagerService {
     }.toList()
 
     @RequiresReadLock
-    private fun <T : PsiElement> findPsiInKotlinFiles(
+    fun <T : PsiElement> findPsiInKotlinFiles(
         context: IJDDContext,
         classes: List<Class<out T>>,
     ): List<T> {

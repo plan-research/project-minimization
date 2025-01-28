@@ -7,6 +7,12 @@ import org.jgrapht.Graph
 import org.jgrapht.graph.EdgeReversedGraph
 import org.jgrapht.traverse.DepthFirstIterator
 
+/**
+ * Class that defines the transformation of a hierarchical graph layer
+ * into a corresponding graph cut.
+ *
+ * The only user of that object is [GraphLayerHierarchyGenerator].
+ */
 class LayerToCutTransformer<T : DDItem> {
     fun transform(
         graph: Graph<T, *>,

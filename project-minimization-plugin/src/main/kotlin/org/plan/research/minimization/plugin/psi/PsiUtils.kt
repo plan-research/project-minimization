@@ -143,7 +143,7 @@ object PsiUtils {
         return if (item.childrenPath.isEmpty()) ktFile else getElementByFileAndPath(ktFile, item.childrenPath)
     }
 
-    private fun <T : PsiChildrenPathIndex> getElementByFileAndPath(ktFile: KtFile, path: List<T>): KtExpression? {
+    fun <T : PsiChildrenPathIndex> getElementByFileAndPath(ktFile: KtFile, path: List<T>): KtExpression? {
         var currentDepth = 0
         var element: PsiElement = ktFile
         while (currentDepth < path.size) {

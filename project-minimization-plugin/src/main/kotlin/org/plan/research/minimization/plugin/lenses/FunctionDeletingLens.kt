@@ -27,11 +27,14 @@ import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtParameter
+import org.jetbrains.kotlin.psi.KtValueArgument
 
 import java.nio.file.Path
 
 import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
+
+private typealias IndexesForItem = Map<PsiStubChildrenCompositionItem, List<Int>>
 
 class FunctionDeletingLens<C : WithImportRefCounterContext<C>> : BasePsiLens<C, PsiStubDDItem, KtStub>() {
     private val logger = KotlinLogging.logger {}
@@ -44,8 +47,9 @@ class FunctionDeletingLens<C : WithImportRefCounterContext<C>> : BasePsiLens<C, 
         psiElement.deleteSingle()
     }
 
+    context(IJDDContextMonad<C>)
     @RequiresWriteLock
-    private fun deleteTrace(call: PsiStubChildrenCompositionItem, indexToDelete: Int, context: C) {
+    private fun deleteTrace(call: PsiStubChildrenCompositionItem, indexToDelete: Int) {
         logger.trace { "Deleting call=${call.childrenPath} (in file=${call.localPath})" }
         val callExpression = PsiUtils.getPsiElementFromItem(context, call) as? KtCallExpression
             ?: let {
@@ -61,6 +65,31 @@ class FunctionDeletingLens<C : WithImportRefCounterContext<C>> : BasePsiLens<C, 
             }
         deleteSeparatingComma(element)
         element.delete()
+    }
+
+    context(IJDDContextMonad<C>)
+    private suspend fun deleteImportInTraces(
+        refCounter: PsiImportRefCounter,
+        call: PsiStubChildrenCompositionItem,
+        indexToDelete: Int,
+        originalFile: KtFile,
+    ) = refCounter.run {
+        logger.trace { "Deleting imports in  call=${call.childrenPath} (in file=${call.localPath})" }
+        val callExpression = readAction {
+            PsiUtils.getElementByFileAndPath(originalFile, call.childrenPath) as? KtCallExpression
+        }
+            ?: let {
+                logger.trace { "call=${call.childrenPath} (in file=${call.localPath}) is not callable expression" }
+                return@run this
+            }
+
+        val element = readAction {
+            callExpression.getArgument(indexToDelete)
+        } ?: let {
+            logger.trace { "index=$indexToDelete can't be found. " }
+            return@run this
+        }
+        return refCounter.decreaseCounterBasedOnKtElement(context, element)
     }
 
     context(IJDDContextMonad<C>)
@@ -80,6 +109,54 @@ class FunctionDeletingLens<C : WithImportRefCounterContext<C>> : BasePsiLens<C, 
     }
 
     context(IJDDContextMonad<C>)
+    private suspend fun processImportsForCallsInFile(
+        refCounter: PsiImportRefCounter,
+        psiFile: KtFile,
+        allIndexesForItem: IndexesForItem,
+    ): PsiImportRefCounter {
+        val originalFile = readAction { context.getKtFileInIndexProject(psiFile) } ?: let {
+            logger.warn {
+                "can't find original file for ${
+                    psiFile.virtualFile.toNioPath().relativeTo(context.projectDir.toNioPath())
+                }"
+            }
+            return refCounter
+        }
+        val modifiedRefCounter = allIndexesForItem.keys.fold(refCounter) { refCounter, item ->
+            val indexes = allIndexesForItem[item]
+                ?: let {
+                    logger.debug { "Can't find indexes for ${item.childrenPath}" }
+                    return@fold refCounter
+                }
+            indexes.fold(refCounter) { refCounter, index ->
+                deleteImportInTraces(
+                    refCounter,
+                    item,
+                    index,
+                    originalFile,
+                )
+            }
+        }
+        context.removeUnusedImports(psiFile, modifiedRefCounter)
+        return refCounter.purgeUnusedImports()
+    }
+
+    context(IJDDContextMonad<C>)
+    private suspend fun deleteCallsInFile(
+        psiFile: KtFile,
+        allIndexesForItem: IndexesForItem,
+    ) = PsiUtils.performPsiChangesAndSave(context, psiFile, "Removing calls to functions/constructors") {
+        allIndexesForItem.keys.forEach { item ->
+            val indexes = allIndexesForItem[item]
+                ?: let {
+                    logger.debug { "Can't find indexes for ${item.childrenPath}" }
+                    return@forEach
+                }
+            indexes.forEach { index -> deleteTrace(item, index) }
+        }
+    }
+
+    context(IJDDContextMonad<C>)
     private suspend fun processCallableItemsInFile(file: Path, items: List<IntermediateCallInfo>) {
         logger.trace { "Removing all needed calls from $file" }
         val psiFile = readAction {
@@ -92,18 +169,24 @@ class FunctionDeletingLens<C : WithImportRefCounterContext<C>> : BasePsiLens<C, 
             logger.info { "$file is not PSI File" }
             return
         }
-        PsiUtils.performPsiChangesAndSave(context, psiFile, "Removing calls to functions/constructors") {
-            val allIndexesForItem = items.groupBy { it.item }.mapValues { (_, v) -> v.map { it.parameterIndex } }
-            items.forEach { item ->
-                val indexes = allIndexesForItem[item.item]
-                    ?.sorted()
-                    ?.distinct()
-                    ?.reversed()
-                    ?: let {
-                        logger.debug { "Can't find indexes for ${item.item.childrenPath}" }
-                        return@forEach
-                    }
-                indexes.forEach { index -> deleteTrace(item.item, index, context) }
+        val allIndexesForItem = items
+            .groupBy { it.item }
+            .mapValues { (_, v) ->
+                v
+                    .map { it.parameterIndex }
+                    .sorted()
+                    .distinct()
+                    .reversed()
+            }
+        val modifiedRefCounter =
+            context.importRefCounter[file].map { processImportsForCallsInFile(it, psiFile, allIndexesForItem) }
+        deleteCallsInFile(psiFile, allIndexesForItem)
+        modifiedRefCounter.onSome { counter ->
+            updateContext {
+                it.copy(
+                    importRefCounter = it.importRefCounter
+                        .performAction { put(file, counter) },
+                )
             }
         }
     }
@@ -239,6 +322,12 @@ class FunctionDeletingLens<C : WithImportRefCounterContext<C>> : BasePsiLens<C, 
     private fun C.copyWithout(localPath: Path) = copy(
         importRefCounter = importRefCounter.performAction { remove(localPath) },
     )
+
+    @RequiresReadLock
+    private fun KtCallExpression.getArgument(index: Int): KtValueArgument? {
+        val arguments = valueArguments + lambdaArguments
+        return arguments.getOrNull(index)
+    }
 
     private data class IntermediateCallInfo(val item: PsiStubChildrenCompositionItem, val parameterIndex: Int)
 }

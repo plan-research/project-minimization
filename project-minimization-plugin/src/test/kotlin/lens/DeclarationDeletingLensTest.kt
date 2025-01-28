@@ -125,7 +125,8 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
         kotlin.test.assertNotNull(importRefCounter)
         val context = TestContext(project, importRefCounter)
         val allItems = runBlocking { getAllItems(context) }
-        val items = runBlocking { readAction { allItems.filterByPsi(context) { it is KtNamedFunction && it.name != "h" } } }
+        val items =
+            runBlocking { readAction { allItems.filterByPsi(context) { it is KtNamedFunction && it.name != "h" } } }
         runBlocking {
             doTest(context, items, "project-import-optimizing-modified-f-g")
         }
@@ -250,13 +251,31 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
         val itemsToDelete = runBlocking {
             readAction {
                 listOf(
-                    allItems.findByPsi(context) { it is KtParameter && it.name == "b"  }!!,
-                    allItems.findByPsi(context) { it is KtParameter && it.name == "x"  }!!
+                    allItems.findByPsi(context) { it is KtParameter && it.name == "b" }!!,
+                    allItems.findByPsi(context) { it is KtParameter && it.name == "x" }!!
                 )
             }
         }
         runBlocking {
             doTest(context, itemsToDelete, "project-delete-function-parameter-result")
+        }
+    }
+
+    fun testDeletingConstructorCallWithImport() {
+        myFixture.copyDirectoryToProject("project-call-deletion-import", ".")
+        val importRefCounter = runBlocking {
+            KtSourceImportRefCounter.create(HeavyTestContext(project)).getOrNull()
+        }
+        kotlin.test.assertNotNull(importRefCounter)
+        val context = TestContext(project, importRefCounter)
+        val allItems = runBlocking { getAllItems(context) }
+        val itemsToDelete = runBlocking {
+            readAction {
+                allItems.filterByPsi(context) { it is KtParameter && it.name == "x" }
+            }
+        }
+        runBlocking {
+            doTest(context, itemsToDelete, "project-call-deletion-import-result")
         }
     }
 }

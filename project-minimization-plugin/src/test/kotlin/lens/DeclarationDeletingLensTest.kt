@@ -4,6 +4,7 @@ import HeavyTestContext
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.service
+import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFile
@@ -303,6 +304,43 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
         runBlocking {
             val test1 = doTest(context, itemsStage1, "project-secondary-constructor-simple-stage-1")
             doTest(test1, itemsStage2, "project-secondary-constructor-simple-stage-2")
+        }
+    }
+    fun testSecondaryConstructorParameter() {
+        myFixture.copyDirectoryToProject("project-secondary-constructor-parameter-simple", ".")
+        val importRefCounter = runBlocking {
+            KtSourceImportRefCounter.create(HeavyTestContext(project)).getOrNull()
+        }
+        kotlin.test.assertNotNull(importRefCounter)
+        val context = TestContext(project, importRefCounter)
+        val allItems = runBlocking { getAllItems(context) }
+        val item = runBlocking {
+            readAction {
+                allItems.filterByPsi(context) { it is KtParameter && it.name == "y"}.single()
+            }
+        }
+        runBlocking {
+            doTest(context, listOf(item), "project-secondary-constructor-parameter-simple-result")
+        }
+    }
+    fun testSecondaryConstructorParameterLinked() {
+        return // FIXME: some kotlin-idea problems
+        myFixture.copyDirectoryToProject("project-secondary-constructor-parameter-simple", ".")
+        configureModules(project)
+        DumbService.getInstance(project).waitForSmartMode()
+        val importRefCounter = runBlocking {
+            KtSourceImportRefCounter.create(HeavyTestContext(project)).getOrNull()
+        }
+        kotlin.test.assertNotNull(importRefCounter)
+        val context = TestContext(project, importRefCounter)
+        val allItems = runBlocking { getAllItems(context) }
+        val item = runBlocking {
+            readAction {
+                allItems.filterByPsi(context) { it is KtParameter && it.name == "x"}.single()
+            }
+        }
+        runBlocking {
+            doTest(context, listOf(item), "project-secondary-constructor-parameter-complicated-result")
         }
     }
 }

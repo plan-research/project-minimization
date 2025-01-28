@@ -15,6 +15,7 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.KtSecondaryConstructor
 import org.jetbrains.kotlin.psi.KtParameter
 import org.plan.research.minimization.plugin.lenses.FunctionDeletingLens
 import org.plan.research.minimization.plugin.model.context.IJDDContextCloner
@@ -276,6 +277,32 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
         }
         runBlocking {
             doTest(context, itemsToDelete, "project-call-deletion-import-result")
+        }
+    }
+
+    fun testSecondaryConstructorsSimple() {
+        myFixture.copyDirectoryToProject("project-secondary-constructor-simple", ".")
+        val importRefCounter = runBlocking {
+            KtSourceImportRefCounter.create(HeavyTestContext(project)).getOrNull()
+        }
+        kotlin.test.assertNotNull(importRefCounter)
+        val context = TestContext(project, importRefCounter)
+        val allItems = runBlocking { getAllItems(context) }
+        val itemsStage1 =
+            runBlocking {
+                readAction {
+                    allItems.filterByPsi(context) { it is KtSecondaryConstructor && it.valueParameters.size == 1 }
+                }
+            }
+        val itemsStage2 =
+            runBlocking {
+                readAction {
+                    allItems.filterByPsi(context) { it is KtSecondaryConstructor && it.valueParameters.size == 2 }
+                }
+            }
+        runBlocking {
+            val test1 = doTest(context, itemsStage1, "project-secondary-constructor-simple-stage-1")
+            doTest(test1, itemsStage2, "project-secondary-constructor-simple-stage-2")
         }
     }
 }

@@ -140,9 +140,10 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
 
         val ddAlgorithm = declarationLevelStage.ddAlgorithm.getDDAlgorithm()
         val hierarchicalDD = HierarchicalDD(ddAlgorithm)
-        val hierarchy = DeletablePsiElementHierarchyGenerator<DeclarationLevelStageContext>(declarationLevelStage.depthThreshold)
-            .produce(lightContext)
-            .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
+        val hierarchy =
+            DeletablePsiElementHierarchyGenerator<DeclarationLevelStageContext>(declarationLevelStage.depthThreshold)
+                .produce(lightContext)
+                .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
 
         lightContext.runMonadWithProgress {
             hierarchicalDD.minimize(hierarchy)
@@ -162,7 +163,8 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         val importRefCounter = KtSourceImportRefCounter.create(context).getOrElse {
             raise(MinimizationError.AnalysisFailed)
         }
-        val graph = service<MinimizationPsiManagerService>().buildDeletablePsiGraph(context)
+        val graph = service<MinimizationPsiManagerService>()
+            .buildDeletablePsiGraph(context, declarationGraphStage.isFunctionParametersEnabled)
         val condensedGraph = StrongConnectivityCondensation.compressGraph(graph)
 
         val lightContext = DeclarationGraphLevelStageContext(

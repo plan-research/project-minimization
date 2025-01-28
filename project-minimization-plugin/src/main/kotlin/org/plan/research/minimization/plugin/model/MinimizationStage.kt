@@ -107,6 +107,7 @@ data class DeclarationLevelStage(
 @optics
 data class DeclarationGraphStage(
     @Property val ddAlgorithm: DDStrategy = DDStrategy.PROBABILISTIC_DD,
+    @Property val isFunctionParametersEnabled: Boolean = true,
 ) : MinimizationStage {
     override val name: String = "Declaration Graph Minimization"
 

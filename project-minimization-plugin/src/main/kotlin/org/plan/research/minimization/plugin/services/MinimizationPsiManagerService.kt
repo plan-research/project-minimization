@@ -109,11 +109,12 @@ class MinimizationPsiManagerService {
                     ?.let { IntermediatePsiItemInfo(psiElement, it) }
             }
         logger.debug { "Got ${coreElements.size} core elements" }
-        val functionParameters = getFunctionsProperties(
-            context,
-            coreElements
-                .mapNotNull { it.psiElement.selfOrConstructorIfFunctionOrClass },
-        ).takeIf { withFunctionParameters }.orEmpty()
+        val functionParameters = takeIf { withFunctionParameters }
+            ?.getFunctionsProperties(
+                context,
+                coreElements.mapNotNull { it.psiElement.selfOrConstructorIfFunctionOrClass },
+            )
+            .orEmpty()
         logger.debug { "Got ${functionParameters.size} function parameters" }
         return coreElements + functionParameters
     }
@@ -139,12 +140,13 @@ class MinimizationPsiManagerService {
      * and their relationships within the given context.
      *
      * @param context The minimization context containing information about the current project and relevant properties.
+     * @param withFunctionParameters If set to `true` then the constructor and function parameters will be included in the graph
      * @return An instance of [InstanceLevelGraph] containing the vertices (deletable PSI items) and edges (connections between them).
      */
-    suspend fun buildDeletablePsiGraph(context: IJDDContext): InstanceLevelGraph =
+    suspend fun buildDeletablePsiGraph(context: IJDDContext, withFunctionParameters: Boolean): InstanceLevelGraph =
         withModalProgress(context.indexProject, "Building PSI graph") {
             smartReadAction(context.indexProject) {
-                val nodes = findDeletablePsiItemsWithoutCompression(context, withFunctionParameters = true)
+                val nodes = findDeletablePsiItemsWithoutCompression(context, withFunctionParameters)
                 val psiCache = nodes.associate { it.psiElement to it.item }
 
                 val (fileHierarchyNodes, fileHierarchyEdges) = buildFileHierarchy(context)

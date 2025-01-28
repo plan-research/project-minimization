@@ -179,7 +179,7 @@ class InstanceLevelGraphCollectionTest : AbstractAnalysisKotlinTest() {
             configureModules(myFixture.project)
             val context = DefaultProjectContext(project)
             DumbService.getInstance(project).waitForSmartMode()
-            val graph = service<MinimizationPsiManagerService>().buildDeletablePsiGraph(context)
+            val graph = service<MinimizationPsiManagerService>().buildDeletablePsiGraph(context, true)
             withContext(Dispatchers.EDT) {
                 PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
             }

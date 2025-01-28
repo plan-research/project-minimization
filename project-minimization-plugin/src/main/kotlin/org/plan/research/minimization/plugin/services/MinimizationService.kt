@@ -3,9 +3,14 @@ package org.plan.research.minimization.plugin.services
 import org.plan.research.minimization.plugin.errors.MinimizationError
 import org.plan.research.minimization.plugin.getCurrentTimeString
 import org.plan.research.minimization.plugin.logging.ExecutionDiscriminator
+import org.plan.research.minimization.plugin.logging.statLogger
 import org.plan.research.minimization.plugin.model.MinimizationStage
-import org.plan.research.minimization.plugin.model.context.*
+import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
+import org.plan.research.minimization.plugin.model.context.IJDDContextTransformer
+import org.plan.research.minimization.plugin.model.context.LightIJDDContext
 import org.plan.research.minimization.plugin.model.context.impl.DefaultProjectContext
+import org.plan.research.minimization.plugin.psi.KDocRemover
 import org.plan.research.minimization.plugin.psi.PsiImportCleaner
 
 import arrow.core.Either
@@ -47,19 +52,22 @@ class MinimizationService(private val project: Project, private val coroutineSco
         coroutineScope.launch {
             settings.withFrozenState {
                 withBackgroundProgress(project, "Minimizing project") {
-                    minimizeProjectImpl().onRight { onComplete(it) }
+                    minimizeProjectAsync().onRight { onComplete(it) }
                 }
             }
         }
     }
 
-    private suspend fun minimizeProjectImpl(): MinimizationResult = withLoggingFolder {
+    suspend fun minimizeProjectAsync(): MinimizationResult = withLoggingFolder {
         either {
             logger.info { "Start Project minimization" }
+            statLogger.info { "Start Project minimization for project: ${project.name}" }
+
             var context: HeavyIJDDContext<*> = DefaultProjectContext(project)
 
             reportSequentialProgress(stages.size) { reporter ->
                 context = cloneProject(context, reporter)
+                removeKDocs(context)
 
                 for (stage in stages) {
                     logger.info { "Starting stage=${stage.name}. The starting snapshot is: ${context.projectDir.toNioPath()}" }
@@ -70,8 +78,10 @@ class MinimizationService(private val project: Project, private val coroutineSco
             context
         }.onRight {
             logger.info { "End Project minimization" }
+            statLogger.info { "End Project minimization for project: ${project.name}" }
         }.onLeft { error ->
             logger.info { "End Project minimization" }
+            statLogger.info { "End Project minimization for project: ${project.name}" }
             logger.error { "End minimizeProject with error: $error" }
         }
     }
@@ -161,6 +171,15 @@ class MinimizationService(private val project: Project, private val coroutineSco
         val executionId = "execution-$time"
 
         return ExecutionDiscriminator.withLoggingFolder(logsBaseDir, executionId, block)
+    }
+
+    private suspend fun removeKDocs(context: HeavyIJDDContext<*>) {
+        val kDocRemover = KDocRemover()
+        try {
+            kDocRemover.removeKDocs(context)
+        } catch (e: Throwable) {
+            logger.error(e) { "Error happened on removing the KDocs completely" }
+        }
     }
 
     private inner class HeavyTransformer : IJDDContextTransformer<MinimizationResult> {

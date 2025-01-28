@@ -29,6 +29,7 @@ abstract class KtStub : PsiChildrenPathIndex, Comparable<KtStub> {
             null -> other.name?.let {
                 -1
             } ?: 0
+
             else -> other.name?.let {
                 name!!.compareTo(other.name!!)
             } ?: 1
@@ -51,5 +52,21 @@ abstract class KtStub : PsiChildrenPathIndex, Comparable<KtStub> {
                 else -> raise(None)
             }
         }
+
+        fun canBeCreated(element: PsiElement) =
+            when (element) {
+                is KtNamedFunction,
+                is KtProperty,
+                is KtClass,
+                is KtClassBody,
+                is KtBlockExpression,
+                is KtObjectDeclaration,
+                is KtPrimaryConstructor,
+                is KtParameter,
+                is KtParameterList,
+                is KtTypeAlias -> true
+
+                else -> false
+            }
     }
 }

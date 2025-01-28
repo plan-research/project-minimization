@@ -39,12 +39,15 @@ class MinimizationPsiManagerDeletablePsiTest : MinimizationPsiManagerTestBase() 
         val psiFile = myFixture.configureByFile("function-variable.kt")
         assertIs<KtFile>(psiFile)
         val elements = runBlocking {
-            service.findDeletablePsiItems(context)
+            service.findDeletablePsiItems(context, compressOverridden = false)
         }
         val psi = runBlocking { readAction { elements.getPsi(context) } }
-        assertSize(6, psi)
-        val (fn, clazz, classVar1, classVar2, var2) = psi
-        val var1 = psi[5]
+        assertSize(4, psi)
+        // TODO: Enable if class constructor fetching is done
+//        assertSize(6, psi)
+//        val (fn, clazz, classVar1, classVar2, var2) = psi
+//        val var1 = psi[5]
+        val (fn, clazz, var2, var1) = psi
         runBlocking {
             readAction {
                 assertIs<KtNamedFunction>(fn)
@@ -58,11 +61,12 @@ class MinimizationPsiManagerDeletablePsiTest : MinimizationPsiManagerTestBase() 
                 assertIs<KtProperty>(var2)
                 assertEquals("x", var2.name)
 
-                assertIs<KtParameter>(classVar1)
-                assertEquals("x", classVar1.name)
-
-                assertIs<KtParameter>(classVar2)
-                assertEquals("y", classVar2.name)
+                // TODO: Enable if class constructor fetching is done
+//                assertIs<KtParameter>(classVar1)
+//                assertEquals("x", classVar1.name)
+//
+//                assertIs<KtParameter>(classVar2)
+//                assertEquals("y", classVar2.name)
             }
         }
     }

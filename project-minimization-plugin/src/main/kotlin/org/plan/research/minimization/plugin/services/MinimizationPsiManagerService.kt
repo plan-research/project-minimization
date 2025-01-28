@@ -24,6 +24,7 @@ import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
+import com.intellij.platform.ide.progress.withModalProgress
 import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.GlobalSearchScopes
@@ -35,10 +36,14 @@ import org.jetbrains.jps.model.java.JavaSourceRootType
 import org.jetbrains.kotlin.config.SourceKotlinRootType
 import org.jetbrains.kotlin.config.TestSourceKotlinRootType
 import org.jetbrains.kotlin.idea.KotlinFileType
+import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtCallableDeclaration
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFunction
+import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.KtPrimaryConstructor
+import org.jetbrains.kotlin.psi.psiUtil.containingClass
 import kotlin.collections.plus
 
 import kotlin.collections.singleOrNull
@@ -103,11 +108,13 @@ class MinimizationPsiManagerService {
                 PsiUtils.buildDeletablePsiItem(context, psiElement).getOrNull()
                     ?.let { IntermediatePsiItemInfo(psiElement, it) }
             }
+        logger.debug { "Got ${coreElements.size} core elements" }
         val functionParameters = getFunctionsProperties(
             context,
             coreElements
                 .mapNotNull { it.psiElement.selfOrConstructorIfFunctionOrClass },
         ).takeIf { withFunctionParameters }.orEmpty()
+        logger.debug { "Got ${functionParameters.size} function parameters" }
         return coreElements + functionParameters
     }
 
@@ -135,15 +142,17 @@ class MinimizationPsiManagerService {
      * @return An instance of [InstanceLevelGraph] containing the vertices (deletable PSI items) and edges (connections between them).
      */
     suspend fun buildDeletablePsiGraph(context: IJDDContext): InstanceLevelGraph =
-        smartReadAction(context.indexProject) {
-            val nodes = this.findDeletablePsiItemsWithoutCompression(context, withFunctionParameters = true)
-            val psiCache = nodes.associate { it.psiElement to it.item }
+        withModalProgress(context.indexProject, "Building PSI graph") {
+            smartReadAction(context.indexProject) {
+                val nodes = findDeletablePsiItemsWithoutCompression(context, withFunctionParameters = true)
+                val psiCache = nodes.associate { it.psiElement to it.item }
 
-            val (fileHierarchyNodes, fileHierarchyEdges) = buildFileHierarchy(context)
-            InstanceLevelGraph(
-                vertices = (nodes.map(IntermediatePsiItemInfo::item) + fileHierarchyNodes).distinct(),
-                edges = buildInstanceLevelGraphEdges(nodes, context, psiCache) + fileHierarchyEdges,
-            )
+                val (fileHierarchyNodes, fileHierarchyEdges) = buildFileHierarchy(context)
+                InstanceLevelGraph(
+                    vertices = (nodes.map(IntermediatePsiItemInfo::item) + fileHierarchyNodes).distinct(),
+                    edges = buildInstanceLevelGraphEdges(nodes, context, psiCache) + fileHierarchyEdges,
+                )
+            }
         }
 
     private fun buildInstanceLevelGraphEdges(
@@ -309,10 +318,18 @@ class MinimizationPsiManagerService {
             val traces: List<PsiStubChildrenCompositionItem>,
         )
 
-        val classInfo = classes.map { funPsi ->
-            val traces = buildTraceFor(funPsi, context)
-            ClassInfo(funPsi, traces)
-        }
+        val classInfo = classes
+            .asSequence()
+            // We shouldn't delete any parameters from operator fun
+            .filterNot { it is KtNamedFunction && it.hasModifier(KtTokens.OPERATOR_KEYWORD) }
+            // We can't delete any parameter from a value class
+            .filterNot { it is KtPrimaryConstructor && it.containingClass()?.isValue() == true }
+            .map { funPsi ->
+                val traces = buildTraceFor(funPsi, context)
+                ClassInfo(funPsi, traces)
+            }
+            .toList()
+        logger.debug { "Built ${classInfo.size} traces" }
 
         return classInfo.flatMap { (funPsi, traces) ->
             funPsi

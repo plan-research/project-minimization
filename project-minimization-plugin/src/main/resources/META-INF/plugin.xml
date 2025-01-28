@@ -37,7 +37,7 @@
                 displayName="Project Minimization"/>
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
-        <supportsKotlinPluginMode supportsK2="true" />
+        <supportsKotlinPluginMode supportsK2="true"/>
     </extensions>
     <actions>
         <action id="org.plan.research.minimization.plugin.MinimizeProjectAction"
@@ -52,5 +52,10 @@
                 class="org.plan.research.minimization.plugin.BenchmarkAction" text="Run Minimization Plugin Benchmarks">
             <add-to-group group-id="ToolsMenu" anchor="first"/>
         </action>
+        <action id="org.plan.research.minimization.plugin.test.actions.FindAllConstructorCallsAction"
+                class="org.plan.research.minimization.plugin.test.actions.FindAllConstructorCallsAction"
+                text="Find All Primary Constructors' Calls"
+                description="The test method to print into logger all PSI elements that call the primary constructor"
+                internal="true"/>
     </actions>
 </idea-plugin>

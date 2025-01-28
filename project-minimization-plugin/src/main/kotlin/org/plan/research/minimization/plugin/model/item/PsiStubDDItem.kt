@@ -37,4 +37,11 @@ sealed interface PsiStubDDItem : PsiDDItem<KtStub> {
         override val childrenPath: List<KtStub>,
         override val childrenElements: List<PsiStubDDItem>,
     ) : PsiStubDDItem
+
+    data class CallablePsiStubDDItem(
+        override val childrenElements: List<PsiStubDDItem>,
+        override val localPath: Path,
+        override val childrenPath: List<KtStub>,
+        val callTraces: List<PsiStubChildrenCompositionItem>,
+    ) : PsiStubDDItem
 }

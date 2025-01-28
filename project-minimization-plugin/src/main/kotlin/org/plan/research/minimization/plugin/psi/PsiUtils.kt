@@ -3,7 +3,9 @@ package org.plan.research.minimization.plugin.psi
 import org.plan.research.minimization.plugin.model.context.IJDDContext
 import org.plan.research.minimization.plugin.model.item.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.model.item.PsiDDItem
+import org.plan.research.minimization.plugin.model.item.PsiStubChildrenCompositionItem
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
+import org.plan.research.minimization.plugin.model.item.index.InstructionLookupIndex
 import org.plan.research.minimization.plugin.model.item.index.IntChildrenIndex
 import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
 import org.plan.research.minimization.plugin.psi.graph.PsiIJEdge
@@ -24,10 +26,12 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.impl.PsiManagerEx
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.idea.core.util.toPsiDirectory
+import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.psiUtil.parentsWithSelf
 
 import kotlin.io.path.relativeTo
 import kotlinx.coroutines.Dispatchers
@@ -39,6 +43,42 @@ private typealias ParentChildPsiProcessor<T> = (PsiElement, PsiElement) -> T
  * The PsiProcessor class provides utilities for fetching PSI elements within a given project.
  */
 object PsiUtils {
+    /**
+     * Builds a [PsiStubChildrenCompositionItem] from a [PsiElement].
+     * Should be used with [KtCallExpression] to acquire a trace for a function calls.
+     *
+     * @param context A context with required information
+     * @param element [PsiElement] to build trace to
+     * @return [Option] with a built item
+     * @see PsiStubChildrenCompositionItem
+     */
+    @RequiresReadLock
+    fun buildCompositeStubItem(context: IJDDContext, element: PsiElement) = option {
+        ensure(element !is PsiFile && element is KtElement)
+        val parents = element.parentsWithSelf.toList()
+        val file = parents.last() as? KtFile
+        ensureNotNull(file)
+
+        val (stubPart, childrenPart) = parents.dropLast(1).reversed().splitWhile(KtStub::canBeCreated)
+        ensure(stubPart.isNotEmpty())
+
+        val stubs = stubPart.map { InstructionLookupIndex.StubDeclarationIndex(KtStub.create(it).bind()) }
+        val children = buildList {
+            add(InstructionLookupIndex.ChildrenNonDeclarationIndex.create(stubPart.last(), childrenPart.first()).bind())
+            childrenPart
+                .zipWithNext()
+                .forEach { (parent, child) ->
+                    add(InstructionLookupIndex.ChildrenNonDeclarationIndex.create(parent, child).bind())
+                }
+        }
+
+        val path = file.virtualFile.toNioPath().relativeTo(context.projectDir.toNioPath())
+        PsiStubChildrenCompositionItem(
+            localPath = path,
+            childrenPath = stubs + children,
+        )
+    }
+
     /**
      * Collects all dependencies (such as calls, used types, superclasses, and expected elements)
      * for a PSI tree with root [psiElement].
@@ -214,4 +254,6 @@ object PsiUtils {
             }
         }
     }
+
+    private fun <T> List<T>.splitWhile(predicate: (T) -> Boolean) = takeWhile(predicate) to dropWhile(predicate)
 }

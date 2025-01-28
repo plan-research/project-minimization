@@ -1,11 +1,19 @@
 package psi.graph
 
 import AbstractAnalysisKotlinTest
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.service
+import com.intellij.openapi.progress.runBlockingCancellable
+import com.intellij.openapi.project.DumbService
+import com.intellij.platform.ide.progress.runWithModalProgressBlocking
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiElement
+import com.intellij.testFramework.PlatformTestUtil
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtExpression
@@ -170,7 +178,11 @@ class InstanceLevelGraphCollectionTest : AbstractAnalysisKotlinTest() {
             assertIs<KtFile>(psiFile)
             configureModules(myFixture.project)
             val context = DefaultProjectContext(project)
+            DumbService.getInstance(project).waitForSmartMode()
             val graph = service<MinimizationPsiManagerService>().buildDeletablePsiGraph(context)
+            withContext(Dispatchers.EDT) {
+                PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+            }
             graphCheckFunction(graph, context)
         }
 

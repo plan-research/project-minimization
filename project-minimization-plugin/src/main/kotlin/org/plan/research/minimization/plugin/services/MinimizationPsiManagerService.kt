@@ -36,8 +36,8 @@ import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFunction
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPrimaryConstructor
-import org.jgrapht.graph.DirectedPseudograph
 import org.jetbrains.kotlin.psi.psiUtil.containingClass
+import org.jgrapht.graph.DirectedPseudograph
 
 import kotlin.collections.plus
 import kotlin.collections.singleOrNull

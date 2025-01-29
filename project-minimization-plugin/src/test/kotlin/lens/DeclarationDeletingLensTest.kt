@@ -13,6 +13,8 @@ import com.intellij.testFramework.PlatformTestUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import lens.TestContext
+import org.gradle.api.internal.project.DefaultProject
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtNamedFunction
@@ -21,8 +23,11 @@ import org.jetbrains.kotlin.psi.KtParameter
 import org.plan.research.minimization.plugin.lenses.FunctionDeletingLens
 import org.plan.research.minimization.plugin.model.context.IJDDContextCloner
 import org.plan.research.minimization.plugin.model.context.LightIJDDContext
+import org.plan.research.minimization.plugin.model.context.WithCallTraceParameterCacheContext
 import org.plan.research.minimization.plugin.model.context.WithImportRefCounterContext
+import org.plan.research.minimization.plugin.model.context.impl.DefaultProjectContext
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
+import org.plan.research.minimization.plugin.psi.CallTraceParameterCache
 import org.plan.research.minimization.plugin.psi.KtSourceImportRefCounter
 import org.plan.research.minimization.plugin.psi.stub.KtFunctionStub
 import org.plan.research.minimization.plugin.psi.stub.KtPrimaryConstructorStub
@@ -37,22 +42,29 @@ class TestContext(
     indexProject: Project,
     originalProject: Project,
     override val importRefCounter: KtSourceImportRefCounter,
+    override val callTraceParameterCache: CallTraceParameterCache
 ) : LightIJDDContext<TestContext>(projectDir, indexProject, originalProject),
-    WithImportRefCounterContext<TestContext> {
+    WithImportRefCounterContext<TestContext>,
+    WithCallTraceParameterCacheContext<TestContext>
+{
 
     constructor(
         project: Project,
         importRefCounter: KtSourceImportRefCounter,
-    ) : this(project.guessProjectDir()!!, project, project, importRefCounter)
+        callTraceParameterCache: CallTraceParameterCache,
+    ) : this(project.guessProjectDir()!!, project, project, importRefCounter, callTraceParameterCache)
 
     override fun copy(projectDir: VirtualFile): TestContext =
-        TestContext(projectDir, indexProject, originalProject, importRefCounter)
+        TestContext(projectDir, indexProject, originalProject, importRefCounter, callTraceParameterCache)
 
     override suspend fun clone(cloner: IJDDContextCloner): TestContext? =
         cloner.cloneLight(this)
 
     override fun copy(importRefCounter: KtSourceImportRefCounter): TestContext =
-        TestContext(projectDir, indexProject, originalProject, importRefCounter)
+        TestContext(projectDir, indexProject, originalProject, importRefCounter, callTraceParameterCache)
+
+    override fun copy(callTraceParameterCache: CallTraceParameterCache): TestContext =
+        TestContext(projectDir, indexProject, originalProject, importRefCounter, callTraceParameterCache)
 }
 
 class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, KtStub>() {
@@ -64,25 +76,34 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
     }
 
     override fun getTestDataPath() = "src/test/resources/testData/function-deleting"
-
-    fun testSimpleProject() {
-        myFixture.copyDirectoryToProject("project-simple", ".")
+    private fun createContext(): TestContext {
+        configureModules(project)
         val importRefCounter = runBlocking {
             KtSourceImportRefCounter.create(HeavyTestContext(project)).getOrNull()
         }
+        val cache = runBlocking { 
+            val defaultContext = DefaultProjectContext(project)
+            val allCallableItems = service<MinimizationPsiManagerService>()
+                .buildDeletablePsiGraph(defaultContext, true)
+                .vertexSet()
+                .filterIsInstance<PsiStubDDItem.CallablePsiStubDDItem>()
+            CallTraceParameterCache.create(defaultContext, allCallableItems)
+        }
+
         kotlin.test.assertNotNull(importRefCounter)
-        val context = TestContext(project, importRefCounter)
+        return TestContext(project, importRefCounter, cache)
+    }
+
+    fun testSimpleProject() {
+        myFixture.copyDirectoryToProject("project-simple", ".")
+        val context = createContext()
 
         runBlocking { doTest(context, getAllItems(context), "project-simple-modified-all") }
     }
 
     fun testSimpleProjectOdd() {
         myFixture.copyDirectoryToProject("project-simple", ".")
-        val importRefCounter = runBlocking {
-            KtSourceImportRefCounter.create(HeavyTestContext(project)).getOrNull()
-        }
-        kotlin.test.assertNotNull(importRefCounter)
-        val context = TestContext(project, importRefCounter)
+        val context = createContext()
 
         val allItems = runBlocking { getAllItems(context) }
         val items = allItems.filterIndexed { index, _ -> index % 2 != 0 }
@@ -91,11 +112,7 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
 
     fun testSimpleProjectMultiStage() {
         myFixture.copyDirectoryToProject("project-simple", ".")
-        val importRefCounter = runBlocking {
-            KtSourceImportRefCounter.create(HeavyTestContext(project)).getOrNull()
-        }
-        kotlin.test.assertNotNull(importRefCounter)
-        val context = TestContext(project, importRefCounter)
+        val context = createContext()
         runBlocking {
             val firstStage =
                 getAllItems(context).filter { (it.childrenPath.singleOrNull() as? KtFunctionStub)?.name == "g" }
@@ -107,11 +124,7 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
 
     fun testImportOptimizingSingleReference() {
         myFixture.copyDirectoryToProject("project-import-optimizing", ".")
-        val importRefCounter = runBlocking {
-            KtSourceImportRefCounter.create(HeavyTestContext(project)).getOrNull()
-        }
-        kotlin.test.assertNotNull(importRefCounter)
-        val context = TestContext(project, importRefCounter)
+        val context = createContext()
         val allItems = runBlocking { getAllItems(context) }
         val items = allItems.filterNot { (it.childrenPath.singleOrNull() as? KtFunctionStub)?.name != "h" }
         runBlocking {
@@ -121,11 +134,7 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
 
     fun testImportOptimizingTwoReference() {
         myFixture.copyDirectoryToProject("project-import-optimizing", ".")
-        val importRefCounter = runBlocking {
-            KtSourceImportRefCounter.create(HeavyTestContext(project)).getOrNull()
-        }
-        kotlin.test.assertNotNull(importRefCounter)
-        val context = TestContext(project, importRefCounter)
+        val context = createContext()
         val allItems = runBlocking { getAllItems(context) }
         val items =
             runBlocking { readAction { allItems.filterByPsi(context) { it is KtNamedFunction && it.name != "h" } } }
@@ -136,11 +145,7 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
 
     fun testImportOptimizingMultiStage() {
         myFixture.copyDirectoryToProject("project-import-optimizing", ".")
-        val importRefCounter = runBlocking {
-            KtSourceImportRefCounter.create(HeavyTestContext(project)).getOrNull()
-        }
-        kotlin.test.assertNotNull(importRefCounter)
-        val context = TestContext(project, importRefCounter)
+        val context = createContext()
         runBlocking {
             val firstStage =
                 getAllItems(context).filterNot { (it.childrenPath.singleOrNull() as? KtFunctionStub)?.name != "h" }
@@ -154,11 +159,7 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
     fun testStartImportMultiStage() {
         myFixture.copyDirectoryToProject("project-import-star", ".")
         configureModules(project)
-        val importRefCounter = runBlocking {
-            KtSourceImportRefCounter.create(HeavyTestContext(project)).getOrNull()
-        }
-        kotlin.test.assertNotNull(importRefCounter)
-        val context = TestContext(project, importRefCounter)
+        val context = createContext()
         runBlocking {
             val firstStage =
                 getAllItems(context).filter { (it.childrenPath.singleOrNull() as? KtFunctionStub)?.name == "f" }
@@ -172,11 +173,7 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
     fun testDeletingAll() {
         myFixture.copyDirectoryToProject("project-simple", ".")
         configureModules(project)
-        val importRefCounter = runBlocking {
-            KtSourceImportRefCounter.create(HeavyTestContext(project)).getOrNull()
-        }
-        kotlin.test.assertNotNull(importRefCounter)
-        val context = TestContext(project, importRefCounter)
+        val context = createContext()
 
         runBlocking {
             val projectCloningService = project.service<ProjectCloningService>()
@@ -198,11 +195,7 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
 
     fun testDeletingOverriddenFromMultipleFiles() {
         myFixture.copyDirectoryToProject("project-overridden-multiple-files", ".")
-        val importRefCounter = runBlocking {
-            KtSourceImportRefCounter.create(HeavyTestContext(project)).getOrNull()
-        }
-        kotlin.test.assertNotNull(importRefCounter)
-        val context = TestContext(project, importRefCounter)
+        val context = createContext()
         val allItems = runBlocking { getAllItems(context) }
         val items = allItems.filterNot { it.childrenPath.size == 1 }
         runBlocking {
@@ -212,11 +205,7 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
 
     fun testDeletingNonReceiver() {
         myFixture.copyDirectoryToProject("project-import-receiver", ".")
-        val importRefCounter = runBlocking {
-            KtSourceImportRefCounter.create(HeavyTestContext(project)).getOrNull()
-        }
-        kotlin.test.assertNotNull(importRefCounter)
-        val context = TestContext(project, importRefCounter)
+        val context = createContext()
         val allItems = runBlocking { getAllItems(context) }
         val items = allItems.filterNot {
             it.childrenPath.size == 1 && it.childrenPath.singleOrNull()
@@ -229,11 +218,7 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
 
     fun testDeletingConstructorParameterSimple() {
         myFixture.copyDirectoryToProject("project-delete-constructor-parameter-simple", ".")
-        val importRefCounter = runBlocking {
-            KtSourceImportRefCounter.create(HeavyTestContext(project)).getOrNull()
-        }
-        kotlin.test.assertNotNull(importRefCounter)
-        val context = TestContext(project, importRefCounter)
+        val context = createContext()
         val allItems = runBlocking { getAllItems(context) }
         val items =
             allItems.filter { it.childrenPath.any { it is KtPrimaryConstructorStub } && it.childrenPath.last().name == "x" }
@@ -244,11 +229,7 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
 
     fun testDeletingFunctionParameters() {
         myFixture.copyDirectoryToProject("project-delete-function-parameter", ".")
-        val importRefCounter = runBlocking {
-            KtSourceImportRefCounter.create(HeavyTestContext(project)).getOrNull()
-        }
-        kotlin.test.assertNotNull(importRefCounter)
-        val context = TestContext(project, importRefCounter)
+        val context = createContext()
         val allItems = runBlocking { getAllItems(context) }
         val itemsToDelete = runBlocking {
             readAction {
@@ -265,11 +246,7 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
 
     fun testDeletingConstructorCallWithImport() {
         myFixture.copyDirectoryToProject("project-call-deletion-import", ".")
-        val importRefCounter = runBlocking {
-            KtSourceImportRefCounter.create(HeavyTestContext(project)).getOrNull()
-        }
-        kotlin.test.assertNotNull(importRefCounter)
-        val context = TestContext(project, importRefCounter)
+        val context = createContext()
         val allItems = runBlocking { getAllItems(context) }
         val itemsToDelete = runBlocking {
             readAction {
@@ -283,11 +260,7 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
 
     fun testSecondaryConstructorsSimple() {
         myFixture.copyDirectoryToProject("project-secondary-constructor-simple", ".")
-        val importRefCounter = runBlocking {
-            KtSourceImportRefCounter.create(HeavyTestContext(project)).getOrNull()
-        }
-        kotlin.test.assertNotNull(importRefCounter)
-        val context = TestContext(project, importRefCounter)
+        val context = createContext()
         val allItems = runBlocking { getAllItems(context) }
         val itemsStage1 =
             runBlocking {
@@ -308,11 +281,7 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
     }
     fun testSecondaryConstructorParameter() {
         myFixture.copyDirectoryToProject("project-secondary-constructor-parameter-simple", ".")
-        val importRefCounter = runBlocking {
-            KtSourceImportRefCounter.create(HeavyTestContext(project)).getOrNull()
-        }
-        kotlin.test.assertNotNull(importRefCounter)
-        val context = TestContext(project, importRefCounter)
+        val context = createContext()
         val allItems = runBlocking { getAllItems(context) }
         val item = runBlocking {
             readAction {
@@ -327,11 +296,7 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
         myFixture.copyDirectoryToProject("project-secondary-constructor-parameter-simple", ".")
         configureModules(project)
         DumbService.getInstance(project).waitForSmartMode()
-        val importRefCounter = runBlocking {
-            KtSourceImportRefCounter.create(HeavyTestContext(project)).getOrNull()
-        }
-        kotlin.test.assertNotNull(importRefCounter)
-        val context = TestContext(project, importRefCounter)
+        val context = createContext()
         val allItems = runBlocking { getAllItems(context) }
         val item = runBlocking {
             readAction {

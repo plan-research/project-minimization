@@ -4,6 +4,7 @@ import org.plan.research.minimization.plugin.psi.stub.KtStub
 
 import arrow.core.raise.option
 import com.intellij.psi.PsiElement
+import com.intellij.psi.util.PsiTreeUtil
 import fleet.util.indexOfOrNull
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtNamedFunction
@@ -27,6 +28,17 @@ sealed class InstructionLookupIndex : PsiChildrenPathIndex, Comparable<Instructi
                         parent.children.filter { it !is KtClass && it !is KtNamedFunction }.indexOfOrNull(child),
                     ),
                 )
+            }
+            fun createFromAncestor(ancestor: PsiElement, child: PsiElement) = option {
+                ensure(PsiTreeUtil.isAncestor(ancestor, child, false))
+                buildList {
+                    var current: PsiElement? = child
+                    while (current != null && current != ancestor) {
+                        val parent = ensureNotNull(current.parent)
+                        add(create(parent, current).bind())
+                        current = parent
+                    }
+                }.reversed()
             }
         }
     }

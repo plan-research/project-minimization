@@ -5,5 +5,5 @@ import org.plan.research.minimization.plugin.psi.CallTraceParameterCache
 interface WithCallTraceParameterCacheContext<T : WithCallTraceParameterCacheContext<T>> : IJDDContext {
     val callTraceParameterCache: CallTraceParameterCache
 
-    fun copy(importRefCounter: CallTraceParameterCache): T
+    fun copy(callTraceParameterCache: CallTraceParameterCache): T
 }

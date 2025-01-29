@@ -24,6 +24,13 @@ import kotlinx.collections.immutable.toPersistentHashMap
 private typealias PersistentCache = PersistentMap<PsiStubChildrenCompositionItem, List<String>>
 private typealias MutableCache = MutableMap<PsiStubChildrenCompositionItem, List<String>>
 
+/**
+ * A cache that stores the order of the parameters in the call.
+ *
+ * Since Kotlin support named parameters (e.g. `fun f(y = 2, x = 1)`) and default parameters,
+ * the only way to look up the correct parameter to delete in call is to use analysis API.
+ *
+ */
 class CallTraceParameterCache private constructor(
     val initialMap: PersistentCache,
 ) {

@@ -18,12 +18,14 @@ sealed interface PsiStubDDItem : PsiDDItem<KtStub> {
             KtClass::class.java,
             KtObjectDeclaration::class.java,
             KtTypeAlias::class.java,
+            KtSecondaryConstructor::class.java,
         )
         val DELETABLE_PSI_JAVA_CLASSES: List<ClassKtExpression> =
             DELETABLE_PSI_INSIDE_FUNCTION_CLASSES + listOf(
                 KtProperty::class.java,
             )
     }
+
     data class NonOverriddenPsiStubDDItem(
         override val localPath: Path,
         override val childrenPath: List<KtStub>,
@@ -43,5 +45,17 @@ sealed interface PsiStubDDItem : PsiDDItem<KtStub> {
         override val localPath: Path,
         override val childrenPath: List<KtStub>,
         val callTraces: List<PsiStubChildrenCompositionItem>,
-    ) : PsiStubDDItem
+    ) : PsiStubDDItem {
+        companion object {
+            fun create(
+                from: PsiStubDDItem,
+                traces: List<PsiStubChildrenCompositionItem>,
+            ) = CallablePsiStubDDItem(
+                from.childrenElements,
+                from.localPath,
+                from.childrenPath,
+                traces.distinct(),
+            )
+        }
+    }
 }

@@ -1,15 +1,21 @@
 package psi.graph
 
 import AbstractAnalysisKotlinTest
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.service
+import com.intellij.openapi.project.DumbService
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiElement
+import com.intellij.testFramework.PlatformTestUtil
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtTypeAlias
 import org.plan.research.minimization.plugin.model.context.IJDDContext
@@ -72,6 +78,7 @@ class InstanceLevelGraphCollectionTest : AbstractAnalysisKotlinTest() {
             val funG = graph.findByClassAndName<KtNamedFunction>(context, "g").single()
             val valX = graph.findByClassAndName<KtProperty>(context, "x").single()
             val valY = graph.findByClassAndName<KtProperty>(context, "y").single()
+            val parameterX = graph.findByClassAndName<KtParameter>(context, "x").single()
 
             val allElements = listOf(
                 interfaceA,
@@ -86,13 +93,14 @@ class InstanceLevelGraphCollectionTest : AbstractAnalysisKotlinTest() {
                 classGG,
                 funG,
                 valX,
-                valY
+                valY,
+                parameterX
             )
 
             val file = graph.findByClassAndName<KtFile>(context, "complex-overload.kt").single()
             val dir = graph.findByClassAndName<PsiDirectory>(context, null).single()
 
-            assertSize(25 + allElements.size, graph.edgeSet())
+            assertSize(26 + allElements.size, graph.edgeSet())
             graph.assertConnection<PsiIJEdge.PSITreeEdge>(funFA, interfaceA)
 
             graph.assertConnection<PsiIJEdge.PSITreeEdge>(funFC, interfaceC)
@@ -119,8 +127,10 @@ class InstanceLevelGraphCollectionTest : AbstractAnalysisKotlinTest() {
             graph.assertConnection<PsiIJEdge.PSITreeEdge>(valY, funG)
             graph.assertConnection<PsiIJEdge.UsageInPSIElement>(funG, classD) // x2
             graph.assertConnection<PsiIJEdge.UsageInPSIElement>(overrideOverrideFunF, funG)
-            graph.assertConnection<PsiIJEdge.UsageInPSIElement>(classGG, interfaceA)
             graph.assertConnection<PsiIJEdge.UsageInPSIElement>(classE, classD)
+
+            graph.assertConnection<PsiIJEdge.PSITreeEdge>(parameterX, classGG)
+            graph.assertConnection<PsiIJEdge.UsageInPSIElement>(parameterX, interfaceA)
 
             allElements.forEach {
                 graph.assertConnection<PsiIJEdge.PSITreeEdge>(it, file)
@@ -163,7 +173,11 @@ class InstanceLevelGraphCollectionTest : AbstractAnalysisKotlinTest() {
             assertIs<KtFile>(psiFile)
             configureModules(myFixture.project)
             val context = DefaultProjectContext(project)
-            val graph = service<MinimizationPsiManagerService>().buildDeletablePsiGraph(context)
+            DumbService.getInstance(project).waitForSmartMode()
+            val graph = service<MinimizationPsiManagerService>().buildDeletablePsiGraph(context, true)
+            withContext(Dispatchers.EDT) {
+                PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+            }
             graphCheckFunction(graph, context)
         }
 

@@ -97,6 +97,11 @@ class StagesSettingsProducer {
             .apply { comment?.bind(commentText) }
     }
 
+    private fun Row.booleanProperty(graph: PropertyGraph, property: GraphProperty<Boolean>, text: String = "") {
+        checkBox(text)
+            .bindSelected(property)
+    }
+
     private fun <T : MinimizationStage, V> PropertyGraph.stageProperty(
         stageProperty: GraphProperty<T>,
         lens: Lens<T, V>,
@@ -159,12 +164,16 @@ class StagesSettingsProducer {
         stageProperty: GraphProperty<DeclarationGraphStage>,
     ): DialogPanel = panel {
         val ddAlgorithm = graph.stageProperty(stageProperty, DeclarationGraphStage.ddAlgorithm)
+        val withFunctionParameters = graph.stageProperty(stageProperty, DeclarationGraphStage.isFunctionParametersEnabled)
         row("Description:") {
             text("The algorithm removes declarations, e.g. classes, functions and fields using a graph approach.")
         }
         group("Declaration Graph Level Settings", indent = false) {
             row("Minimization strategy:") {
                 strategy(graph, ddAlgorithm)
+            }
+            row {
+                booleanProperty(graph, withFunctionParameters, "Delete function and constructor parameters")
             }
         }
     }

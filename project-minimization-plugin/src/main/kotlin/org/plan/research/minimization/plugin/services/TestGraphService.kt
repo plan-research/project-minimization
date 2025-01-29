@@ -21,7 +21,7 @@ class TestGraphService(private val project: Project, private val coroutineScope:
     fun dumpGraph() = coroutineScope.launch {
         val context = DefaultProjectContext(project)
         val graph = service<MinimizationPsiManagerService>()
-            .buildDeletablePsiGraph(context)
+            .buildDeletablePsiGraph(context, true)
         val representation = GraphToImageDumper.dumpGraph(
             graph,
             stringify = { it.toString() },

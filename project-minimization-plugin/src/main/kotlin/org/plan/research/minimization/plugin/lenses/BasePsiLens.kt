@@ -45,7 +45,7 @@ abstract class BasePsiLens<C, I, T> :
     protected open fun transformSelectedElements(item: I, context: C): List<I> = listOf(item)
 
     context(IJDDContextMonad<C>)
-    protected open fun prepare(itemsToDelete: List<I>) = Unit
+    protected open suspend fun prepare(itemsToDelete: List<I>) = Unit
 
     private suspend fun logFocusedItems(items: List<I>, context: C) {
         if (!logger.isTraceEnabled) {

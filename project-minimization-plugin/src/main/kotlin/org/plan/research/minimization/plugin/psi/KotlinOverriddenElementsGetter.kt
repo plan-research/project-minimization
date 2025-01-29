@@ -15,7 +15,7 @@ object KotlinOverriddenElementsGetter {
         is KtNamedFunction -> getOverriddenFunction(element)
         is KtProperty -> getOverriddenProperties(element)
         is KtClass -> getOverriddenClass(element).takeIf { includeClass }
-            .orEmpty() + getOverriddenConstructorParameters(element)
+            .orEmpty()
 
         is KtParameter -> getOverriddenParameters(element)
         else -> emptyList()
@@ -53,8 +53,4 @@ object KotlinOverriddenElementsGetter {
             ?.toList()
             ?: emptyList()
     }
-
-    private fun getOverriddenConstructorParameters(klass: KtClass) = klass
-        .primaryConstructorParameters
-        .flatMap(::getOverriddenParameters)
 }

@@ -16,6 +16,7 @@ import org.plan.research.minimization.plugin.psi.usages.MethodUserSearcher
 import arrow.core.compareTo
 import arrow.core.filterOption
 import arrow.core.raise.option
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -25,7 +26,6 @@ import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
-import com.intellij.platform.ide.progress.withModalProgress
 import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.GlobalSearchScopes
@@ -90,37 +90,36 @@ class MinimizationPsiManagerService {
         context: IJDDContext,
         compressOverridden: Boolean = true,
         withFunctionParameters: Boolean = false,
-    ): List<PsiStubDDItem> = smartReadAction(context.indexProject) {
+    ): List<PsiStubDDItem> =
         if (compressOverridden) {
             findDeletablePsiItemsCompressed(context)
         } else {
             findDeletablePsiItemsWithoutCompression(context, withFunctionParameters).map { it.item }
         }
-    }
 
-    @RequiresReadLock
-    private fun findDeletablePsiItemsWithoutCompression(
+    private suspend fun findDeletablePsiItemsWithoutCompression(
         context: IJDDContext,
         withFunctionParameters: Boolean,
     ): List<IntermediatePsiItemInfo> {
-        val coreElements = findPsiInKotlinFiles(context, PsiStubDDItem.DELETABLE_PSI_JAVA_CLASSES)
-            .mapNotNull { psiElement ->
-                PsiUtils.buildDeletablePsiItem(context, psiElement).getOrNull()
-                    ?.let { IntermediatePsiItemInfo(psiElement, it) }
-            }
+        val coreElements = smartReadAction(context.indexProject) {
+            findPsiInKotlinFiles(context, PsiStubDDItem.DELETABLE_PSI_JAVA_CLASSES)
+                .mapNotNull { psiElement ->
+                    PsiUtils.buildDeletablePsiItem(context, psiElement).getOrNull()
+                        ?.let { IntermediatePsiItemInfo(psiElement, it) }
+                }
+        }
         logger.debug { "Got ${coreElements.size} core elements" }
         val functionParameters = takeIf { withFunctionParameters }
             ?.getFunctionsProperties(
                 context,
-                coreElements.mapNotNull { it.psiElement.selfOrConstructorIfFunctionOrClass },
+                coreElements.mapNotNull { readAction { it.psiElement.selfOrConstructorIfFunctionOrClass } },
             )
             .orEmpty()
         logger.debug { "Got ${functionParameters.size} function parameters" }
         return coreElements + functionParameters
     }
 
-    @RequiresReadLock
-    private fun findDeletablePsiItemsCompressed(
+    private suspend fun findDeletablePsiItemsCompressed(
         context: IJDDContext,
     ): List<PsiStubDDItem> {
         val nonStructuredItems = findDeletablePsiItemsWithoutCompression(context, false)
@@ -132,7 +131,9 @@ class MinimizationPsiManagerService {
                     .takeIf { it != 0 }
                     ?: lhs.childrenPath.compareTo(rhs.childrenPath)
             }
-        return dsu.transformItems(context, nonStructuredItems)
+        return smartReadAction(context.indexProject) {
+            dsu.transformItems(context, nonStructuredItems)
+        }
     }
 
     /**
@@ -143,21 +144,19 @@ class MinimizationPsiManagerService {
      * @param withFunctionParameters If set to `true` then the constructor and function parameters will be included in the graph
      * @return An instance of [InstanceLevelGraph] containing the vertices (deletable PSI items) and edges (connections between them).
      */
-    suspend fun buildDeletablePsiGraph(context: IJDDContext, withFunctionParameters: Boolean): InstanceLevelGraph =
-        withModalProgress(context.indexProject, "Building PSI graph") {
-            smartReadAction(context.indexProject) {
-                val nodes = findDeletablePsiItemsWithoutCompression(context, withFunctionParameters)
-                val psiCache = nodes.associate { it.psiElement to it.item }
+    suspend fun buildDeletablePsiGraph(context: IJDDContext, withFunctionParameters: Boolean): InstanceLevelGraph {
+        val nodes = findDeletablePsiItemsWithoutCompression(context, withFunctionParameters)
 
-                val (fileHierarchyNodes, fileHierarchyEdges) = buildFileHierarchy(context)
-                InstanceLevelGraph(
-                    vertices = (nodes.map(IntermediatePsiItemInfo::item) + fileHierarchyNodes).distinct(),
-                    edges = buildInstanceLevelGraphEdges(nodes, context, psiCache) + fileHierarchyEdges,
-                )
-            }
-        }
+        val psiCache = nodes.associate { it.psiElement to it.item }
+        val (fileHierarchyNodes, fileHierarchyEdges) = buildFileHierarchy(context)
+        return InstanceLevelGraph(
+            vertices = (nodes.map(IntermediatePsiItemInfo::item) + fileHierarchyNodes).distinct(),
+            edges = buildInstanceLevelGraphEdges(nodes, context, psiCache) + fileHierarchyEdges,
+        )
+    }
 
-    private fun buildInstanceLevelGraphEdges(
+    @Suppress("TOO_LONG_FUNCTION")
+    private suspend fun buildInstanceLevelGraphEdges(
         nodes: List<IntermediatePsiItemInfo>,
         context: IJDDContext,
         psiCache: Map<KtElement, PsiStubDDItem>,
@@ -166,42 +165,60 @@ class MinimizationPsiManagerService {
             .map { (_, item) -> PsiStubDDItem.NonOverriddenPsiStubDDItem(item.localPath, emptyList()) }
         val fileEdges =
             nodes.zip(filesNodes).map { (from, fileNode) -> PsiIJEdge.PSITreeEdge(from.item, fileNode) }
-        val psiEdges = nodes.mapNotNull { (_, from) ->
-            PsiUtils
-                .findAllDeletableParentElements(context, from)
-                ?.let { PsiIJEdge.PSITreeEdge(from, it) }
-        }
-        val overloadEdges = nodes.flatMap { (element, from) ->
-            KotlinOverriddenElementsGetter.getOverriddenElements(element).process(context, psiCache)
-                .map { PsiIJEdge.Overload(from, it) }
-        }
-        val usageEdges = nodes.flatMap { (element, from) ->
-            PsiUtils.collectUsages(element).process(context, psiCache)
-                .map { PsiIJEdge.UsageInPSIElement(from, it) }
-        }
-        val obligatoryOverride = nodes.flatMap { (element, from) ->
-            KotlinElementLookup.lookupObligatoryOverrides(element).process(context, psiCache)
-                .map { PsiIJEdge.ObligatoryOverride(from, it) }
-        }
+        val psiEdges =
+            nodes.mapNotNull { (_, from) ->
+                readAction {
+                    PsiUtils
+                        .findAllDeletableParentElements(context, from)
+                        ?.let { PsiIJEdge.PSITreeEdge(from, it) }
+                }
+            }
+        val overloadEdges =
+            nodes.flatMap { (element, from) ->
+                smartReadAction(context.indexProject) {
+                    KotlinOverriddenElementsGetter.getOverriddenElements(element).process(context, psiCache)
+                        .map { PsiIJEdge.Overload(from, it) }
+                }
+            }
+        val usageEdges =
+            nodes.flatMap { (element, from) ->
+                smartReadAction(context.indexProject) {
+                    PsiUtils.collectUsages(element).process(context, psiCache)
+                        .map { PsiIJEdge.UsageInPSIElement(from, it) }
+                }
+            }
+        val obligatoryOverride =
+            nodes.flatMap { (element, from) ->
+                smartReadAction(context.indexProject) {
+                    KotlinElementLookup.lookupObligatoryOverrides(element).process(context, psiCache)
+                        .map { PsiIJEdge.ObligatoryOverride(from, it) }
+                }
+            }
         val expectActual = nodes.flatMap { (element, from) ->
-            KotlinElementLookup.lookupExpected(element).process(context, psiCache)
-                .map { PsiIJEdge.UsageInPSIElement(from, it) }
+            smartReadAction(context.indexProject) {
+                KotlinElementLookup.lookupExpected(element).process(context, psiCache)
+                    .map { PsiIJEdge.UsageInPSIElement(from, it) }
+            }
         }
         return psiEdges + overloadEdges + usageEdges + obligatoryOverride + fileEdges + expectActual
     }
 
-    private fun buildFileHierarchy(context: IJDDContext): NodesAndEdges {
-        val kotlinFiles = findAllKotlinFilesInIndexProject(context)
+    private suspend fun buildFileHierarchy(context: IJDDContext): NodesAndEdges {
+        val kotlinFiles = smartReadAction(context.indexProject) { findAllKotlinFilesInIndexProject(context) }
         val projectRoot = context.indexProjectDir
-        val sourceRoots = service<RootsManagerService>().findPossibleRoots(context).map {
-            projectRoot.findFileByRelativePath(it.pathString)
+        val sourceRoots = smartReadAction(context.indexProject) {
+            service<RootsManagerService>().findPossibleRoots(context).map {
+                projectRoot.findFileByRelativePath(it.pathString)
+            }
         }
         val edges = buildList {
             for (file in kotlinFiles) {
                 var currentFile = file
                 while (currentFile !in sourceRoots) {
                     val parent = currentFile.parent ?: break
-                    PsiIJEdge.FileTreeEdge.create(context, currentFile, parent).onSome(::add)
+                    readAction {
+                        PsiIJEdge.FileTreeEdge.create(context, currentFile, parent).onSome(::add)
+                    }
                     currentFile = parent
                 }
             }
@@ -310,8 +327,7 @@ class MinimizationPsiManagerService {
             .toList()
     }
 
-    @RequiresReadLock
-    private fun getFunctionsProperties(
+    private suspend fun getFunctionsProperties(
         context: IJDDContext,
         classes: List<KtFunction>,
     ): List<IntermediatePsiItemInfo> {
@@ -321,24 +337,24 @@ class MinimizationPsiManagerService {
         )
 
         val classInfo = classes
-            .asSequence()
             // We shouldn't delete any parameters from operator fun
-            .filterNot { it is KtNamedFunction && it.hasModifier(KtTokens.OPERATOR_KEYWORD) }
+            .filterNot { it is KtNamedFunction && readAction { it.hasModifier(KtTokens.OPERATOR_KEYWORD) } }
             // We can't delete any parameter from a value class
-            .filterNot { it is KtPrimaryConstructor && it.containingClass()?.isValue() == true }
+            .filterNot { it is KtPrimaryConstructor && readAction { it.containingClass()?.isValue() == true } }
             .map { funPsi ->
                 val traces = buildTraceFor(funPsi, context)
                 ClassInfo(funPsi, traces)
             }
-            .toList()
         logger.debug { "Built ${classInfo.size} traces" }
 
         return classInfo.flatMap { (funPsi, traces) ->
-            funPsi
-                .valueParameters
+            readAction {
+                funPsi
+                    .valueParameters
+            }
                 .map { property ->
                     option {
-                        val stubItem = PsiUtils.buildDeletablePsiItem(context, property).bind()
+                        val stubItem = readAction { PsiUtils.buildDeletablePsiItem(context, property).bind() }
                         IntermediatePsiItemInfo(property, CallablePsiStubDDItem.create(stubItem, traces))
                     }
                 }.filterOption()
@@ -347,23 +363,29 @@ class MinimizationPsiManagerService {
 
     // TODO: Add the search scope parameter.
     // Since we have some bug in find files, I don't want to add it now and just use project scope
-    @RequiresReadLock
-    private fun buildTraceFor(item: KtCallableDeclaration, context: IJDDContext): List<PsiStubChildrenCompositionItem> {
-        val methodUsageSearcher = MethodUserSearcher(
-            item,
-            context,
-        )
+    private suspend fun buildTraceFor(
+        item: KtCallableDeclaration,
+        context: IJDDContext,
+    ): List<PsiStubChildrenCompositionItem> {
+        val methodUsageSearcher = smartReadAction(context.indexProject) {
+            MethodUserSearcher(
+                item,
+                context,
+            )
+        }
         return buildList {
-            methodUsageSearcher.buildTaskList { usageInfo ->
-                usageInfo.element?.let {
-                    add(
-                        PsiUtils.buildCompositeStubItem(
-                            context = context,
-                            element = it.parent,
-                        ),
-                    )
+            smartReadAction(context.indexProject) {
+                methodUsageSearcher.buildTaskList { usageInfo ->
+                    usageInfo.element?.let {
+                        add(
+                            PsiUtils.buildCompositeStubItem(
+                                context = context,
+                                element = it.parent,
+                            ),
+                        )
+                    }
+                    true
                 }
-                true
             }
             methodUsageSearcher.executeTasks()
         }.filterOption()
@@ -378,8 +400,7 @@ class MinimizationPsiManagerService {
         context: IJDDContext,
         psiCache: Map<KtElement, PsiStubDDItem>,
     ) =
-        asSequence()
-            .filter { it.isFromContext(context) }
+        filter { it.isFromContext(context) }
             .mapNotNull(psiCache::get)
 
     private class SourcesScope(project: Project) : GlobalSearchScope(project) {

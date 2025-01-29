@@ -10,10 +10,15 @@ import org.jetbrains.kotlin.psi.KtNamedFunction
 
 import kotlin.collections.filter
 
-sealed class InstructionLookupIndex : PsiChildrenPathIndex {
+sealed class InstructionLookupIndex : PsiChildrenPathIndex, Comparable<InstructionLookupIndex> {
     data class ChildrenNonDeclarationIndex(val childrenIndex: Int) : InstructionLookupIndex() {
         override fun getNext(element: PsiElement): PsiElement? =
             element.children.filter { it !is KtClass && it !is KtNamedFunction }.getOrNull(childrenIndex)
+
+        override fun compareTo(other: InstructionLookupIndex): Int = when (other) {
+            is ChildrenNonDeclarationIndex -> childrenIndex.compareTo(other.childrenIndex)
+            is StubDeclarationIndex -> 1
+        }
 
         companion object {
             fun create(parent: PsiElement, child: PsiElement) = option {
@@ -26,5 +31,10 @@ sealed class InstructionLookupIndex : PsiChildrenPathIndex {
         }
     }
 
-    data class StubDeclarationIndex(val stub: KtStub) : InstructionLookupIndex(), PsiChildrenPathIndex by stub
+    data class StubDeclarationIndex(val stub: KtStub) : InstructionLookupIndex(), PsiChildrenPathIndex by stub {
+        override fun compareTo(other: InstructionLookupIndex): Int = when (other) {
+            is StubDeclarationIndex -> stub.compareTo(other.stub)
+            is ChildrenNonDeclarationIndex -> -1
+        }
+    }
 }

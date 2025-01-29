@@ -8,25 +8,24 @@ import org.plan.research.minimization.plugin.execution.IJGraphPropertyTesterAdap
 import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.getDDAlgorithm
 import org.plan.research.minimization.plugin.getExceptionComparator
-import org.plan.research.minimization.plugin.hierarchy.DeletablePsiElementHierarchyGenerator
 import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchyGenerator
 import org.plan.research.minimization.plugin.lenses.FunctionDeletingLens
 import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
 import org.plan.research.minimization.plugin.logging.LoggingPropertyCheckingListener
 import org.plan.research.minimization.plugin.logging.statLogger
-import org.plan.research.minimization.plugin.model.*
-import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
-import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.context.IJDDContextBase
+import org.plan.research.minimization.plugin.model.DeclarationGraphStage
+import org.plan.research.minimization.plugin.model.FileLevelStage
+import org.plan.research.minimization.plugin.model.FunctionLevelStage
+import org.plan.research.minimization.plugin.model.MinimizationStageExecutor
+import org.plan.research.minimization.plugin.model.context.*
 import org.plan.research.minimization.plugin.model.context.impl.DeclarationLevelStageContext
 import org.plan.research.minimization.plugin.model.context.impl.FileLevelStageContext
 import org.plan.research.minimization.plugin.model.context.impl.FunctionLevelStageContext
 import org.plan.research.minimization.plugin.model.item.PsiDDItem
+import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
 import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
-import org.plan.research.minimization.plugin.model.monad.SnapshotMonadF
-import org.plan.research.minimization.plugin.model.monad.SnapshotWithProgressMonadFAsync
-import org.plan.research.minimization.plugin.model.monad.WithProgressReporterMonadProvider
-import org.plan.research.minimization.plugin.model.monad.withProgress
+import org.plan.research.minimization.plugin.model.monad.*
+import org.plan.research.minimization.plugin.psi.CallTraceParameterCache
 import org.plan.research.minimization.plugin.psi.KtSourceImportRefCounter
 import org.plan.research.minimization.plugin.psi.PsiUtils
 
@@ -119,38 +118,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         }
     }
 
-    override suspend fun executeDeclarationLevelStage(
-        context: HeavyIJDDContext<*>,
-        declarationLevelStage: DeclarationLevelStage,
-    ) = either {
-        logger.info { "Start Function Deleting level stage" }
-        statLogger.info { "Start Function Deleting level stage" }
-        statLogger.info {
-            "Function deleting stage settings, " +
-                "DDAlgorithm: ${declarationLevelStage.ddAlgorithm}"
-        }
-
-        val importRefCounter = KtSourceImportRefCounter.create(context).getOrElse {
-            raise(MinimizationError.AnalysisFailed)
-        }
-
-        val lightContext = DeclarationLevelStageContext(
-            context.projectDir, context.project,
-            context.originalProject, importRefCounter,
-        )
-
-        val ddAlgorithm = declarationLevelStage.ddAlgorithm.getDDAlgorithm()
-        val hierarchicalDD = HierarchicalDD(ddAlgorithm)
-        val hierarchy =
-            DeletablePsiElementHierarchyGenerator<DeclarationLevelStageContext>(declarationLevelStage.depthThreshold)
-                .produce(lightContext)
-                .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
-
-        lightContext.runMonadWithProgress {
-            hierarchicalDD.minimize(hierarchy)
-        }
-    }.logResult("Function Deleting")
-
+    @Suppress("TOO_LONG_FUNCTION")
     override suspend fun executeDeclarationGraphStage(
         context: HeavyIJDDContext<*>,
         declarationGraphStage: DeclarationGraphStage,
@@ -166,10 +134,15 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         }
         val graph = service<MinimizationPsiManagerService>()
             .buildDeletablePsiGraph(context, declarationGraphStage.isFunctionParametersEnabled)
+        val callTraceParameterCache = CallTraceParameterCache.create(
+            context,
+            graph.vertexSet().filterIsInstance<PsiStubDDItem.CallablePsiStubDDItem>(),
+        )
 
         val lightContext = DeclarationLevelStageContext(
             context.projectDir, context.project,
             context.originalProject, importRefCounter,
+            callTraceParameterCache,
         )
 
         val ddAlgorithm = declarationGraphStage.ddAlgorithm.getDDAlgorithm()

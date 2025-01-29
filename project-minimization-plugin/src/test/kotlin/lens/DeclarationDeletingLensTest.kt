@@ -324,7 +324,6 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
         }
     }
     fun testSecondaryConstructorParameterLinked() {
-        return // FIXME: some kotlin-idea problems
         myFixture.copyDirectoryToProject("project-secondary-constructor-parameter-simple", ".")
         configureModules(project)
         DumbService.getInstance(project).waitForSmartMode()

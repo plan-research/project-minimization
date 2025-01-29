@@ -11,6 +11,7 @@ import org.plan.research.minimization.plugin.psi.PsiDSU
 import org.plan.research.minimization.plugin.psi.PsiUtils
 import org.plan.research.minimization.plugin.psi.graph.InstanceLevelGraph
 import org.plan.research.minimization.plugin.psi.graph.PsiIJEdge
+import org.plan.research.minimization.plugin.psi.usages.MethodUserSearcher
 
 import arrow.core.compareTo
 import arrow.core.filterOption
@@ -28,7 +29,6 @@ import com.intellij.platform.ide.progress.withModalProgress
 import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.GlobalSearchScopes
-import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import mu.KotlinLogging
@@ -44,8 +44,8 @@ import org.jetbrains.kotlin.psi.KtFunction
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPrimaryConstructor
 import org.jetbrains.kotlin.psi.psiUtil.containingClass
-import kotlin.collections.plus
 
+import kotlin.collections.plus
 import kotlin.collections.singleOrNull
 import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
@@ -348,19 +348,26 @@ class MinimizationPsiManagerService {
     // TODO: Add the search scope parameter.
     // Since we have some bug in find files, I don't want to add it now and just use project scope
     @RequiresReadLock
-    private fun buildTraceFor(item: KtCallableDeclaration, context: IJDDContext) =
-        ReferencesSearch
-            .search(item)
-            .findAll()
-            .map {
-                PsiUtils.buildCompositeStubItem(
-                    context = context,
-                    // it.element is a reference expression.
-                    // We should basically be interested in KtCallExpression, so lift to the parent
-                    element = it.element.parent,
-                )
+    private fun buildTraceFor(item: KtCallableDeclaration, context: IJDDContext): List<PsiStubChildrenCompositionItem> {
+        val methodUsageSearcher = MethodUserSearcher(
+            item,
+            context,
+        )
+        return buildList {
+            methodUsageSearcher.buildTaskList { usageInfo ->
+                usageInfo.element?.let {
+                    add(
+                        PsiUtils.buildCompositeStubItem(
+                            context = context,
+                            element = it.parent,
+                        ),
+                    )
+                }
+                true
             }
-            .filterOption()
+            methodUsageSearcher.executeTasks()
+        }.filterOption()
+    }
 
     private fun PsiElement.isFromContext(context: IJDDContext): Boolean =
         containingFile?.virtualFile?.let {

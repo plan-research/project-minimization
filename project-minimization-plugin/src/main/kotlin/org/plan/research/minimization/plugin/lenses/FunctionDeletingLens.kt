@@ -23,6 +23,7 @@ import mu.KotlinLogging
 import org.jetbrains.kotlin.idea.base.psi.deleteSingle
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.idea.refactoring.deleteSeparatingComma
+import org.jetbrains.kotlin.psi.KtCallElement
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
@@ -51,16 +52,16 @@ class FunctionDeletingLens<C : WithImportRefCounterContext<C>> : BasePsiLens<C, 
     @RequiresWriteLock
     private fun deleteTrace(call: PsiStubChildrenCompositionItem, indexToDelete: Int) {
         logger.trace { "Deleting call=${call.childrenPath} (in file=${call.localPath})" }
-        val callExpression = PsiUtils.getPsiElementFromItem(context, call) as? KtCallExpression
+        val callExpression = PsiUtils.getPsiElementFromItem(context, call) as? KtCallElement
             ?: let {
-                logger.trace { "call=${call.childrenPath} (in file=${call.localPath}) is not callable expression" }
+                logger.error { "call=${call.childrenPath} (in file=${call.localPath}) is not callable expression" }
                 return
             }
 
         val arguments = callExpression.valueArguments + callExpression.lambdaArguments
-        val element = arguments.getOrNull(indexToDelete)
+        val element = arguments.getOrNull(indexToDelete)?.asElement()
             ?: let {
-                logger.trace { "index=$indexToDelete can't be found. " }
+                logger.error { "index=$indexToDelete can't be found. " }
                 return
             }
         deleteSeparatingComma(element)

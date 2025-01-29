@@ -14,6 +14,7 @@ kotlinx-serialization = "1.7.3"
 jcloc = "0.3.0"
 jqwik = "1.9.2"
 graphviz-java = "0.18.1"
+jgrapht = "1.5.2"
 
 [libraries]
 diktat-gradle-plugin = { module = "com.saveourtool.diktat:diktat-gradle-plugin", version.ref = "diktat" }
@@ -33,6 +34,7 @@ jqwik = { module = "net.jqwik:jqwik", version.ref = "jqwik" }
 jqwik-kotlin = { module = "net.jqwik:jqwik-kotlin", version.ref = "jqwik" }
 graphviz-java = { group = "guru.nidi", name = "graphviz-java", version.ref = "graphviz-java"}
 graphviz-kotlin = { group = "guru.nidi", name = "graphviz-kotlin", version.ref = "graphviz-java"}
+jgrapht-core = { module = "org.jgrapht:jgrapht-core", version.ref = "jgrapht" }
 
 [plugins]
 intellij = { id = "org.jetbrains.intellij.platform", version.ref = "intellij" }

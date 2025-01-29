@@ -28,6 +28,7 @@ allprojects {
     }
 
     dependencies {
+        implementation(libs.jgrapht.core)
         implementation(libs.arrow.core)
         implementation(libs.kotlin.logging)
         implementation(libs.logback.classic)

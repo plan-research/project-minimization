@@ -1,20 +1,26 @@
 package org.plan.research.minimization.plugin.services
 
-import org.plan.research.minimization.core.utils.graph.GraphToImageDumper
+import org.plan.research.minimization.core.GraphToImageDumper
 import org.plan.research.minimization.plugin.model.context.impl.DefaultProjectContext
-import org.plan.research.minimization.plugin.psi.graph.PsiIJEdge
+import org.plan.research.minimization.plugin.model.graph.PsiIJEdge
 
+import com.intellij.openapi.application.EDT
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.vfs.LocalFileSystem
 import guru.nidi.graphviz.attribute.Color
 import guru.nidi.graphviz.attribute.Style
 import guru.nidi.graphviz.engine.Format
 import guru.nidi.graphviz.engine.Graphviz
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Service(Service.Level.PROJECT)
 class TestGraphService(private val project: Project, private val coroutineScope: CoroutineScope) {
@@ -25,7 +31,7 @@ class TestGraphService(private val project: Project, private val coroutineScope:
         val representation = GraphToImageDumper.dumpGraph(
             graph,
             stringify = { it.toString() },
-            edgeAttributes = { from, edge ->
+            edgeAttributes = { edge ->
                 when (edge) {
                     is PsiIJEdge.PSITreeEdge -> arrayOf(Style.SOLID)
                     is PsiIJEdge.UsageInPSIElement -> arrayOf(Style.DOTTED)
@@ -37,6 +43,18 @@ class TestGraphService(private val project: Project, private val coroutineScope:
         )
         val projectRoot = project.guessProjectDir()!!.toNioPath()
         val graphViz = Graphviz.fromGraph(representation)
-        graphViz.render(Format.SVG).toFile(projectRoot.resolve("instance-level-graph.svg").toFile())
+        val file = projectRoot.resolve("instance-level-graph.svg").toFile()
+        
+        withContext(Dispatchers.IO) {
+            graphViz.render(Format.SVG).toFile(file)
+        }
+        
+        val vf = readAction { LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file) }
+
+        vf?.let { virtualFile ->
+            withContext(Dispatchers.EDT) {
+                FileEditorManager.getInstance(project).openFile(virtualFile, true)
+            }
+        }
     }
 }

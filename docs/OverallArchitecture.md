@@ -62,15 +62,17 @@ Algorithms:
 - **[DDMin][ddmin]** - default Delta Debugging algorithm.
 - **[ProbabilisticDD][pdd]** - probabilistic Delta Debugging modification.
 - **[HierarchicalDD][hdd]** - hierarchical Delta Debugging.
+- **[GraphDD][graphdd]** - a baseline of a graph minimization algorithm.
 
 [ddmin]: ../project-minimization-core/src/main/kotlin/org/plan/research/minimization/core/algorithm/dd/impl/DDMin.kt
 [pdd]: ../project-minimization-core/src/main/kotlin/org/plan/research/minimization/core/algorithm/dd/impl/ProbabilisticDD.kt
 [hdd]: ../project-minimization-core/src/main/kotlin/org/plan/research/minimization/core/algorithm/dd/hierarchical/HierarchicalDD.kt
+[graphdd]: ../project-minimization-core/src/main/kotlin/org/plan/research/minimization/core/algorithm/dd/impl/graph/GraphDD.kt
 
 Interfaces that need to be implemented to use algorithms:
 
 - **[DDItem][item]** represents a single modification in Delta Debugging algorithm.
-- **[PropertyTester][tester]** can check whether chosen modifications (DDItems) keep the target error.
+- **[PropertyTester and GraphPropertyTester][tester]** can check whether chosen modifications (DDItems) keep the target error.
 - **[HierarchicalDDGenerator][generator]** provides hierarchical structure for HDD algorithm. 
 Such representation allows us to control flow the HDD algorithm in a scalable manner.
 
@@ -84,7 +86,9 @@ This module is an implementation of an IntelliJ IDEA plugin.
 
 - **IJDDItem.**
 Project's components are represented as [IJDDItem][ij-item], which has such inherited classes:
-  - `ProjectFileDDItem` represents any file of the project.
+  - **[ProjectFileDDItem][proj-file-item]** represents any file of the project.
+  - **[PsiDDItem][psi-item]** represents a psi element of the project in the IDEA-project-agnostic way,
+  so can be reused across different instances of the same project.
 
 - **IJDDContext.**
 The algorithm context is represented as [IJDDContext][ij-context], which contains the current minimized project.
@@ -118,9 +122,13 @@ Here are some implementations of SnapshotManager:
 [settings-doc]: Settings.md
 
 [stage]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/MinimizationStage.kt
-[ij-item]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/IJDDItem.kt
-[ij-context]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/IJDDContext.kt
+
+[ij-item]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/item/IJDDItem.kt
+[proj-file-item]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/item/ProjectFileDDItem.kt
+[psi-item]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/item/PsiDDItem.kt
+
+[ij-context]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/context/IJDDContext.kt
+
 [snapshot]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/snapshot/SnapshotManager.kt
 [project-cloning]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/snapshot/ProjectCloningSnapshotManager.kt
-[compilation]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/CompilationPropertyChecker.kt
 [state]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/settings/MinimizationPluginState.kt

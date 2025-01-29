@@ -1,6 +1,8 @@
 package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.graph.InstanceLevelGraph
+import org.plan.research.minimization.plugin.model.graph.PsiIJEdge
 import org.plan.research.minimization.plugin.model.item.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.model.item.PsiStubChildrenCompositionItem
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
@@ -9,8 +11,6 @@ import org.plan.research.minimization.plugin.psi.KotlinElementLookup
 import org.plan.research.minimization.plugin.psi.KotlinOverriddenElementsGetter
 import org.plan.research.minimization.plugin.psi.PsiDSU
 import org.plan.research.minimization.plugin.psi.PsiUtils
-import org.plan.research.minimization.plugin.psi.graph.InstanceLevelGraph
-import org.plan.research.minimization.plugin.psi.graph.PsiIJEdge
 import org.plan.research.minimization.plugin.psi.usages.MethodUserSearcher
 
 import arrow.core.compareTo
@@ -20,21 +20,14 @@ import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.openapi.module.Module
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.psi.PsiElement
-import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.psi.search.GlobalSearchScopes
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import mu.KotlinLogging
-import org.jetbrains.jps.model.java.JavaSourceRootType
-import org.jetbrains.kotlin.config.SourceKotlinRootType
-import org.jetbrains.kotlin.config.TestSourceKotlinRootType
 import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtCallableDeclaration
@@ -44,12 +37,12 @@ import org.jetbrains.kotlin.psi.KtFunction
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPrimaryConstructor
 import org.jetbrains.kotlin.psi.psiUtil.containingClass
+import org.jgrapht.graph.DirectedPseudograph
 
 import kotlin.collections.plus
 import kotlin.collections.singleOrNull
 import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
-import kotlin.sequences.filter
 
 private typealias NodesAndEdges = Pair<List<PsiStubDDItem>, List<PsiIJEdge>>
 
@@ -149,10 +142,15 @@ class MinimizationPsiManagerService {
 
         val psiCache = nodes.associate { it.psiElement to it.item }
         val (fileHierarchyNodes, fileHierarchyEdges) = buildFileHierarchy(context)
-        return InstanceLevelGraph(
-            vertices = (nodes.map(IntermediatePsiItemInfo::item) + fileHierarchyNodes).distinct(),
-            edges = buildInstanceLevelGraphEdges(nodes, context, psiCache) + fileHierarchyEdges,
-        )
+        val vertices = (nodes.map(IntermediatePsiItemInfo::item) + fileHierarchyNodes).distinct()
+        val edges = buildInstanceLevelGraphEdges(nodes, context, psiCache) + fileHierarchyEdges
+
+        val builder = DirectedPseudograph.createBuilder<PsiStubDDItem, PsiIJEdge>(PsiIJEdge::class.java)
+
+        vertices.forEach { builder.addVertex(it) }
+        edges.forEach { builder.addEdge(it.from, it.to, it) }
+
+        return builder.build()
     }
 
     @Suppress("TOO_LONG_FUNCTION")
@@ -161,6 +159,7 @@ class MinimizationPsiManagerService {
         context: IJDDContext,
         psiCache: Map<KtElement, PsiStubDDItem>,
     ): List<PsiIJEdge> {
+        // TODO: remake using dsl
         val filesNodes = nodes
             .map { (_, item) -> PsiStubDDItem.NonOverriddenPsiStubDDItem(item.localPath, emptyList()) }
         val fileEdges =
@@ -240,9 +239,6 @@ class MinimizationPsiManagerService {
         val rootFiles = roots.mapNotNull {
             context.indexProjectDir.findFileByRelativePath(it.pathString)
         }
-        val scope = GlobalSearchScopes.directoriesScope(context.indexProject, true, *rootFiles.toTypedArray())
-            .intersectWith(SourcesScope(context.indexProject))
-        // return FileTypeIndex.getFiles(KotlinFileType.INSTANCE, scope).toList()
         return myVirtualFileTraverse(rootFiles)
     }
 
@@ -402,22 +398,6 @@ class MinimizationPsiManagerService {
     ) =
         filter { it.isFromContext(context) }
             .mapNotNull(psiCache::get)
-
-    private class SourcesScope(project: Project) : GlobalSearchScope(project) {
-        private val index = ProjectFileIndex.getInstance(project)
-
-        override fun contains(file: VirtualFile): Boolean =
-            index.isUnderSourceRootOfType(
-                file,
-                setOf(
-                    SourceKotlinRootType, TestSourceKotlinRootType,
-                    JavaSourceRootType.SOURCE, JavaSourceRootType.TEST_SOURCE,
-                ),
-            )
-
-        override fun isSearchInModuleContent(aModule: Module): Boolean = true
-        override fun isSearchInLibraries(): Boolean = false
-    }
 
     private data class IntermediatePsiItemInfo(
         val psiElement: KtElement,

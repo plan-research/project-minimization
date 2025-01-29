@@ -1,31 +1,32 @@
 package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDD
-import org.plan.research.minimization.core.algorithm.dd.withZeroTesting
-import org.plan.research.minimization.core.algorithm.graph.condensation.StrongConnectivityCondensation
+import org.plan.research.minimization.core.algorithm.dd.impl.graph.GraphDD
+import org.plan.research.minimization.core.algorithm.dd.withCondensation
 import org.plan.research.minimization.plugin.errors.MinimizationError
-import org.plan.research.minimization.plugin.execution.LinearIjPropertyTester
+import org.plan.research.minimization.plugin.execution.IJGraphPropertyTesterAdapter
+import org.plan.research.minimization.plugin.execution.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.getDDAlgorithm
 import org.plan.research.minimization.plugin.getExceptionComparator
 import org.plan.research.minimization.plugin.hierarchy.DeletablePsiElementHierarchyGenerator
 import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchyGenerator
-import org.plan.research.minimization.plugin.hierarchy.graph.InstanceLevelLayerHierarchyBuilder
+import org.plan.research.minimization.plugin.lenses.FunctionDeletingLens
 import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
 import org.plan.research.minimization.plugin.logging.LoggingPropertyCheckingListener
 import org.plan.research.minimization.plugin.logging.statLogger
-import org.plan.research.minimization.plugin.model.DeclarationGraphStage
-import org.plan.research.minimization.plugin.model.DeclarationLevelStage
-import org.plan.research.minimization.plugin.model.FileLevelStage
-import org.plan.research.minimization.plugin.model.FunctionLevelStage
-import org.plan.research.minimization.plugin.model.MinimizationStageExecutor
-import org.plan.research.minimization.plugin.model.context.*
-import org.plan.research.minimization.plugin.model.context.impl.DeclarationGraphLevelStageContext
+import org.plan.research.minimization.plugin.model.*
+import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.model.context.IJDDContextBase
 import org.plan.research.minimization.plugin.model.context.impl.DeclarationLevelStageContext
 import org.plan.research.minimization.plugin.model.context.impl.FileLevelStageContext
 import org.plan.research.minimization.plugin.model.context.impl.FunctionLevelStageContext
 import org.plan.research.minimization.plugin.model.item.PsiDDItem
 import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
-import org.plan.research.minimization.plugin.model.monad.*
+import org.plan.research.minimization.plugin.model.monad.SnapshotMonadF
+import org.plan.research.minimization.plugin.model.monad.SnapshotWithProgressMonadFAsync
+import org.plan.research.minimization.plugin.model.monad.WithProgressReporterMonadProvider
+import org.plan.research.minimization.plugin.model.monad.withProgress
 import org.plan.research.minimization.plugin.psi.KtSourceImportRefCounter
 import org.plan.research.minimization.plugin.psi.PsiUtils
 
@@ -83,7 +84,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         val lens = FunctionModificationLens<FunctionLevelStageContext>()
         val firstLevel = service<MinimizationPsiManagerService>()
             .findAllPsiWithBodyItems(lightContext)
-        val propertyChecker = LinearIjPropertyTester.create(
+        val propertyChecker = SameExceptionPropertyTester.create(
             project.service<BuildExceptionProviderService>(),
             project.service<MinimizationPluginSettings>().state
                 .exceptionComparingStrategy
@@ -165,22 +166,31 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         }
         val graph = service<MinimizationPsiManagerService>()
             .buildDeletablePsiGraph(context, declarationGraphStage.isFunctionParametersEnabled)
-        val condensedGraph = StrongConnectivityCondensation.compressGraph(graph)
 
-        val lightContext = DeclarationGraphLevelStageContext(
+        val lightContext = DeclarationLevelStageContext(
             context.projectDir, context.project,
             context.originalProject, importRefCounter,
-            condensedGraph,
         )
 
-        val ddAlgorithm = declarationGraphStage.ddAlgorithm.getDDAlgorithm().withZeroTesting()
-        val hierarchicalDD = HierarchicalDD(ddAlgorithm)
-        val hierarchy = InstanceLevelLayerHierarchyBuilder<DeclarationGraphLevelStageContext>()
-            .produce(lightContext)
-            .getOrElse { raise(MinimizationError.HierarchyFailed(it)) }
+        val ddAlgorithm = declarationGraphStage.ddAlgorithm.getDDAlgorithm()
+        val graphDD = GraphDD(ddAlgorithm, WithProgressReporterMonadProvider()).withCondensation()
 
-        lightContext.runMonadWithProgress {
-            hierarchicalDD.minimize(hierarchy)
+        val settings = project.service<MinimizationPluginSettings>()
+        val exceptionComparator = settings.state.exceptionComparingStrategy.getExceptionComparator()
+        val propertyTester = IJGraphPropertyTesterAdapter
+            .create(
+                project.service<BuildExceptionProviderService>(),
+                exceptionComparator,
+                FunctionDeletingLens(),
+                lightContext,
+                listOfNotNull(LoggingPropertyCheckingListener.create("instance-level")),
+            ).getOrElse {
+                logger.error { "Property checker creation failed. Aborted" }
+                raise(MinimizationError.PropertyCheckerFailed)
+            }
+
+        lightContext.runMonad {
+            graphDD.minimize(graph, propertyTester)
         }
     }.logResult("Function Deleting Graph")
 
@@ -195,8 +205,8 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         logger.error { "$stageName level stage failed with error: $error" }
     }
 
-    private suspend inline fun <C : IJDDContextBase<C>> C.runMonadWithProgress(
-        action: SnapshotWithProgressMonadF<C, Unit>,
+    private suspend fun <C : IJDDContextBase<C>> C.runMonadWithProgress(
+        action: SnapshotWithProgressMonadFAsync<C, Unit>,
     ): C = runMonad { withProgress(action) }
 
     private suspend inline fun <C : IJDDContextBase<C>> C.runMonad(

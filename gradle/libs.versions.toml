@@ -17,6 +17,7 @@ graphviz-java = "0.18.1"
 jgrapht = "1.5.2"
 clikt = "5.0.2"
 mordant = "3.0.1"
+kotlin-csv = "1.10.0"
 
 [libraries]
 diktat-gradle-plugin = { module = "com.saveourtool.diktat:diktat-gradle-plugin", version.ref = "diktat" }
@@ -38,8 +39,9 @@ graphviz-java = { group = "guru.nidi", name = "graphviz-java", version.ref = "gr
 graphviz-kotlin = { group = "guru.nidi", name = "graphviz-kotlin", version.ref = "graphviz-java" }
 jgrapht-core = { module = "org.jgrapht:jgrapht-core", version.ref = "jgrapht" }
 clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
-clikt-markdown = { module = "com.github.ajalt.clikt:clikt-markdown", version.ref = "clikt"}
+clikt-markdown = { module = "com.github.ajalt.clikt:clikt-markdown", version.ref = "clikt" }
 mordant = { module = "com.github.ajalt.mordant:mordant", version.ref = "mordant" }
+csv = { module = "com.jsoizo:kotlin-csv-jvm", version.ref = "kotlin-csv" }
 
 [plugins]
 intellij = { id = "org.jetbrains.intellij.platform", version.ref = "intellij" }

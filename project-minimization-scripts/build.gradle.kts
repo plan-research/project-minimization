@@ -15,6 +15,7 @@ dependencies {
 
     implementation(project(":project-minimization-plugin"))
     implementation(libs.kaml)
+    implementation(libs.csv)
 }
 
 tasks.test {

@@ -5,6 +5,7 @@ import org.plan.research.minimization.plugin.model.context.WithImportRefCounterC
 import org.plan.research.minimization.plugin.model.item.PsiStubChildrenCompositionItem
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
 import org.plan.research.minimization.plugin.model.item.PsiStubDDItem.CallablePsiStubDDItem
+import org.plan.research.minimization.plugin.model.item.index.InstructionLookupIndex
 import org.plan.research.minimization.plugin.model.item.index.InstructionLookupIndex.ChildrenNonDeclarationIndex
 import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
 import org.plan.research.minimization.plugin.psi.PsiUtils
@@ -17,7 +18,6 @@ import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.vfs.findFileOrDirectory
 import com.intellij.psi.PsiElement
-import com.intellij.util.concurrency.annotations.RequiresWriteLock
 import mu.KotlinLogging
 import org.jetbrains.kotlin.idea.base.psi.deleteSingle
 import org.jetbrains.kotlin.idea.refactoring.deleteSeparatingComma
@@ -28,7 +28,7 @@ import kotlin.io.path.pathString
 class FunctionDeletingLens<C> :
     AbstractImportRefLens<C, PsiStubDDItem, KtStub>() where C : WithImportRefCounterContext<C>, C : WithCallTraceParameterCacheContext<C> {
     private val logger = KotlinLogging.logger {}
-    private val callTraceDeletionLens = CallTraceDeletionLens<C>()
+    private val callTraceDeletionLens = CallTraceDeletionLens()
 
     override fun focusOnPsiElement(
         item: PsiStubDDItem,
@@ -37,26 +37,6 @@ class FunctionDeletingLens<C> :
     ) {
         deleteSeparatingComma(psiElement)
         psiElement.deleteSingle()
-    }
-
-    context(IJDDContextMonad<C>)
-    @RequiresWriteLock
-    private fun deleteTrace(call: PsiStubChildrenCompositionItem, indexToDelete: Int) {
-        logger.trace { "Deleting call=${call.childrenPath} (in file=${call.localPath})" }
-        val callExpression = PsiUtils.getPsiElementFromItem(context, call) as? KtCallElement
-            ?: let {
-                logger.error { "call=${call.childrenPath} (in file=${call.localPath}) is not callable expression" }
-                return
-            }
-
-        val arguments = callExpression.valueArguments + callExpression.lambdaArguments
-        val element = arguments.getOrNull(indexToDelete)?.asElement()
-            ?: let {
-                logger.error { "index=$indexToDelete can't be found. " }
-                return
-            }
-        deleteSeparatingComma(element)
-        element.delete()
     }
 
     context(IJDDContextMonad<C>)
@@ -89,8 +69,8 @@ class FunctionDeletingLens<C> :
         logger.debug { "Found ${items.size} callable items" }
         val sortedTraces = items
             .flatMap { item ->
-                val parameterName = item.getParameterIndex().getOrNull() ?: let {
-                    logger.warn { "Can't find parameter index for ${item.childrenPath}" }
+                val parameterName = item.getParameterIndex().getOrNull() ?: run {
+                    logger.warn { "Can't find parameter name for ${item.childrenPath}" }
                     return@flatMap emptyList<PsiStubChildrenCompositionItem>()
                 }
                 item.callTraces.map { it.transformToParameterPath(context, parameterName) }.filterOption()
@@ -120,6 +100,7 @@ class FunctionDeletingLens<C> :
         option {
             val psiItem = readAction { PsiUtils.getPsiElementFromItem(context, this@transformToParameterPath) }
             ensure(psiItem is KtCallElement)
+            // Name -> index in value argument list
             val parameterIndex = context
                 .callTraceParameterCache
                 .getIndexOf(parameterName, this@transformToParameterPath)
@@ -130,7 +111,36 @@ class FunctionDeletingLens<C> :
                 raise(None)
             }
             val psiArgument = readAction { argument.asElement() }
-            // Perfectly crafted path to the parameter itself instead of just call expression
-            copy(childrenPath = childrenPath + ChildrenNonDeclarationIndex.createFromAncestor(psiItem!!, psiArgument).bind())
+            // Perfectly crafted path to the parameter itself instead of call expression
+            copy(
+                childrenPath = childrenPath +
+                    ChildrenNonDeclarationIndex.createFromAncestor(psiItem!!, psiArgument).bind(),
+            )
         }
+
+    /**
+     * A specific implementation of `AbstractImportRefLens` used to handle deletion of call traces in a PSI.
+     * This lens operates within a specific deletion context and is designed to work in conjunction with other lenses for more complex operations.
+     */
+    private inner class CallTraceDeletionLens :
+        AbstractImportRefLens<C, PsiStubChildrenCompositionItem, InstructionLookupIndex>() {
+        override fun focusOnPsiElement(
+            item: PsiStubChildrenCompositionItem,
+            psiElement: PsiElement,
+            context: C,
+        ) {
+            deleteSeparatingComma(psiElement)
+            psiElement.deleteSingle()
+        }
+
+        override suspend fun focusOnFilesAndDirectories(
+            itemsToDelete: List<PsiStubChildrenCompositionItem>,
+            context: C,
+        ) {
+            if (itemsToDelete.isEmpty()) {
+                return
+            }
+            throw UnsupportedOperationException("This lens should be not called on their own but only as part of FunctionDeletionLens")
+        }
+    }
 }

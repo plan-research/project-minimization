@@ -307,4 +307,89 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
             doTest(context, listOf(item), "project-secondary-constructor-parameter-complicated-result")
         }
     }
+    fun testDefaultFunctionParametersX() {
+        myFixture.copyDirectoryToProject("project-default-function-parameters", ".")
+        configureModules(project)
+        DumbService.getInstance(project).waitForSmartMode()
+        val context = createContext()
+        val allItems = runBlocking { getAllItems(context) }
+        val item = runBlocking {
+            readAction {
+                allItems.filterByPsi(context) { it is KtParameter && it.name == "x"}.single()
+            }
+        }
+        runBlocking {
+            doTest(context, listOf(item), "project-default-function-parameters-result-x")
+        }
+    }
+    fun testDefaultFunctionParametersY() {
+        myFixture.copyDirectoryToProject("project-default-function-parameters", ".")
+        configureModules(project)
+        DumbService.getInstance(project).waitForSmartMode()
+        val context = createContext()
+        val allItems = runBlocking { getAllItems(context) }
+        val item = runBlocking {
+            readAction {
+                allItems.filterByPsi(context) { it is KtParameter && it.name == "y"}.single()
+            }
+        }
+        runBlocking {
+            doTest(context, listOf(item), "project-default-function-parameters-result-y")
+        }
+    }
+    fun testDefaultFunctionParametersLambda() {
+        myFixture.copyDirectoryToProject("project-default-function-parameters", ".")
+        configureModules(project)
+        DumbService.getInstance(project).waitForSmartMode()
+        val context = createContext()
+        val allItems = runBlocking { getAllItems(context) }
+        val item = runBlocking {
+            readAction {
+                allItems.filterByPsi(context) { it is KtParameter && it.name == "lambda"}.single()
+            }
+        }
+        runBlocking {
+            doTest(context, listOf(item), "project-default-function-parameters-result-lambda")
+        }
+    }
+
+    fun testNamedFunctionParametersSimple() {
+        myFixture.copyDirectoryToProject("project-named-function-parameters", ".")
+        configureModules(project)
+        DumbService.getInstance(project).waitForSmartMode()
+        val context = createContext()
+        val allItems = runBlocking { getAllItems(context) }
+        val item = runBlocking {
+            readAction {
+                allItems.filterByPsi(context) { it is KtParameter && it.name == "y"}.single()
+            }
+        }
+        runBlocking {
+            doTest(context, listOf(item), "project-named-function-parameters-result")
+        }
+    }
+    fun testNamedFunctionParametersMultiStage() {
+        return
+        myFixture.copyDirectoryToProject("project-named-function-parameters", ".")
+        configureModules(project)
+        DumbService.getInstance(project).waitForSmartMode()
+        val context = createContext()
+        val allItems = runBlocking { getAllItems(context) }
+        val item = runBlocking {
+            readAction {
+                allItems.filterByPsi(context) { it is KtParameter && it.name == "y"}.single()
+            }
+        }
+        val contextAfterStage1 = runBlocking {
+            doTest(context, listOf(item), "project-named-function-parameters-result")
+        }
+        val itemStage2 = runBlocking {
+            readAction {
+                allItems.filterByPsi(context) { it is KtParameter && it.name == "x"}.single()
+            }
+        }
+        runBlocking {
+            doTest(contextAfterStage1, listOf(itemStage2), "project-named-function-parameters-result-stage-2")
+        }
+    }
 }

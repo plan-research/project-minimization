@@ -36,8 +36,8 @@ class CallTraceParameterCache private constructor(
 ) {
     fun getIndexOf(parameter: String, item: PsiStubChildrenCompositionItem) = option {
         val result = initialMap[item]?.indexOf(parameter)
-        ensureNotNull(result)
-        ensure(result != -1)
+        ensureNotNull(result)  // `item` is not found in map
+        ensure(result != -1)  // `parameter` is not found in list of parameters
         result
     }
 

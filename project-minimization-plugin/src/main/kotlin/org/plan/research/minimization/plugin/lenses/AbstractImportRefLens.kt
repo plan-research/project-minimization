@@ -17,6 +17,11 @@ import org.jetbrains.kotlin.psi.KtFile
 
 import java.nio.file.Path
 
+/**
+ * Abstract class used for managing and optimizing imports in Kotlin PSI files.
+ * This class extends the `BasePsiLens` and relies on a reference counting mechanism
+ * to manage and remove unused import statements in Kotlin files.
+ */
 abstract class AbstractImportRefLens<C, I, T> : BasePsiLens<C, I, T>()
 where C : WithImportRefCounterContext<C>,
 I : PsiDDItem<T>,
@@ -27,7 +32,10 @@ T : Comparable<T>, T : PsiChildrenPathIndex {
         trie: PsiTrie<I, T>,
         ktFile: KtFile,
     ) {
+        // Usual PSI removing stuff
         super.useTrie(trie, ktFile)
+
+        // Import optimization part
         val localPath = ktFile.getLocalPath(context)
         if (readAction { !ktFile.isValid }) {
             logger.debug { "All top-level declarations has been removed from $localPath. Invalidating the ref counter for it" }
@@ -55,6 +63,13 @@ T : Comparable<T>, T : PsiChildrenPathIndex {
         }
     }
 
+    /**
+     * A function that gets all terminal elements from the [PsiTrie].
+     * This process is basically disassembly of the trie to a list
+     *
+     * @param ktFile
+     * @param trie
+     */
     protected suspend fun C.getTerminalElements(
         ktFile: KtFile,
         trie: PsiTrie<I, T>,
@@ -65,6 +80,12 @@ T : Comparable<T>, T : PsiChildrenPathIndex {
         }.filterIsInstance<KtElement>()
     }
 
+    /**
+     * Removes all unused imports in [ktFile] using information from [refCounter]
+     *
+     * @param ktFile
+     * @param refCounter
+     */
     protected suspend fun C.removeUnusedImports(
         ktFile: KtFile,
         refCounter: PsiImportRefCounter,

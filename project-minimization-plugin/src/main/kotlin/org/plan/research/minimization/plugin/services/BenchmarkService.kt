@@ -33,11 +33,12 @@ import kotlinx.coroutines.*
 class BenchmarkService(private val rootProject: Project, private val cs: CoroutineScope) {
     private val logger = KotlinLogging.logger {}
 
-    fun benchmark() = cs.launch {
+    fun benchmark() = cs.launch { asyncBenchmark() }
+    suspend fun asyncBenchmark() {
         logger.info { "Start benchmark Action" }
 
         logger.info { "Read Config" }
-        val config = readConfig().getOrNull() ?: return@launch
+        val config = readConfig().getOrNull() ?: return
 
         val filteredProjects = config
             .projects

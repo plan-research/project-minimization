@@ -37,6 +37,8 @@
                 displayName="Project Minimization"/>
         <appStarter implementation="org.plan.research.minimization.plugin.headless.MinimizeProjectApplicationStarter"
                     id="minimize"/>
+        <appStarter implementation="org.plan.research.minimization.plugin.headless.RunBenchmarkApplicationStarter"
+                    id="benchmark-minimization"/>
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <supportsKotlinPluginMode supportsK2="true"/>

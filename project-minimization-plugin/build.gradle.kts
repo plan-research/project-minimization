@@ -1,6 +1,8 @@
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.models.Coordinates
 import org.jetbrains.intellij.platform.gradle.tasks.RunIdeTask
+import org.jetbrains.intellij.platform.gradle.tasks.aware.SplitModeAware.SplitModeTarget
 
 plugins {
     alias(libs.plugins.intellij)
@@ -46,6 +48,9 @@ dependencies {
     implementation(libs.jcloc)
     implementation(libs.graphviz.java)
     implementation(libs.graphviz.kotlin)
+    implementation(libs.clikt)
+    implementation(libs.clikt.markdown)
+    implementation(libs.mordant)
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.1.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.1.0")
@@ -70,5 +75,29 @@ tasks.named<RunIdeTask>("runIde") {
 tasks.test {
     jvmArgumentProviders += CommandLineArgumentProvider {
         listOf("-Didea.kotlin.plugin.use.k2=true")
+    }
+}
+
+val runCliMinimization by intellijPlatformTesting.runIde.registering {
+    task {
+        dependsOn("buildPlugin")
+        val inputFolder: String? by project
+        jvmArgs = listOf(
+            "-Djava.awt.headless=true",
+            "--add-exports",
+            "java.base/jdk.internal.vm=ALL-UNNAMED",
+        )
+        maxHeapSize = "20g"
+        standardInput = System.`in`
+        standardOutput = System.`out`
+        splitMode = false
+        splitModeTarget = SplitModeTarget.BACKEND
+        inputFolder?.let {
+            args = listOf(
+                "minimize",
+                "-p",
+                it,
+            )
+        }
     }
 }

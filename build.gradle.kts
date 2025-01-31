@@ -4,7 +4,7 @@ import org.jetbrains.research.code.submissions.clustering.buildutils.configureDi
 import org.jetbrains.research.code.submissions.clustering.buildutils.createDiktatTask
 
 group = "org.plan.research.minimization"
-version = "1.0-SNAPSHOT"
+version = "v0.0.1-beta"
 
 plugins {
     java

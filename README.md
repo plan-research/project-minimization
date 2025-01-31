@@ -21,7 +21,7 @@ There are two ways to run the plugin:
 ```
 
 As soon as an IDE with the installed plugin is executed, you can perform an action `Minimize Project` on an opened project. 
-The action can be found in the `Code` menu bar or via search.
+The action can be found in the `Tools` menu bar or via search.
 
 It is expected that during minimization, several new projects can be opened and closed. 
 It's necessary to perform safe actions without affecting the original project. At the end of the minimization process, only one extra window with the minimized project should be opened.

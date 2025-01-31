@@ -17,15 +17,13 @@ import java.util.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-typealias GitInitializerType = suspend (VirtualFile, (VirtualFile) -> Boolean) -> Git
-
 /**
  * Service responsible for git operations within ProjectGitSnapshotManager.
  */
 @Service(Service.Level.APP)
 class GitWrapperService {
     suspend fun commitChanges(context: IJDDContext, git: Git): IJDDContext = context.apply {
-        commit(context, git)
+        commit(git)
         projectDir.refresh(false, true)
     }
 
@@ -40,7 +38,7 @@ class GitWrapperService {
         context.projectDir.refresh(false, true)
     }
 
-    private suspend fun commit(context: IJDDContext, git: Git) = withContext(Dispatchers.IO) {
+    private suspend fun commit(git: Git) = withContext(Dispatchers.IO) {
         git.apply {
             // git commit -a
             commit().setMessage(UUID.randomUUID().toString()).setAll(true).setAllowEmpty(true)
@@ -48,17 +46,13 @@ class GitWrapperService {
         }
     }
 
-    suspend fun gitInit(virtualProjectDir: VirtualFile, filter: (VirtualFile) -> Boolean): Git {
+    suspend fun gitInit(virtualProjectDir: VirtualFile, filter: (VirtualFile) -> Boolean): Git = withContext(Dispatchers.IO) {
         val projectDir: File = virtualProjectDir.toNioPath().toFile()
 
-        if (projectDir.resolve(".git").exists()) {
-            projectDir.resolve(".git").deleteRecursively()
-        }
-        if (projectDir.resolve(".gitignore").exists()) {
-            projectDir.resolve(".gitignore").delete()
-        }
+        projectDir.resolve(".git").takeIf { it.exists() }?.deleteRecursively()
+        projectDir.resolve(".gitignore").takeIf { it.exists() }?.delete()
 
-        return Git.init()
+        Git.init()
             .setDirectory(projectDir)
             .call()
             .also {

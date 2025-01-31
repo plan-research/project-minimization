@@ -56,7 +56,7 @@ class FunctionDeletingLens<C> :
     }
 
     context(IJDDContextMonad<C>)
-    private fun CallablePsiStubDDItem.getParameterIndex() = option {
+    private fun CallablePsiStubDDItem.getParameterName() = option {
         logger.trace { "Found a callable psi stub DD item: $childrenPath" }
         childrenPath.lastOrNull()?.name ?: run {
             logger.warn { "Callable element=${this@CallablePsiStubDDItem.childrenPath} has no name" }
@@ -69,7 +69,7 @@ class FunctionDeletingLens<C> :
         logger.debug { "Found ${items.size} callable items" }
         val sortedTraces = items
             .flatMap { item ->
-                val parameterName = item.getParameterIndex().getOrNull() ?: run {
+                val parameterName = item.getParameterName().getOrNull() ?: run {
                     logger.warn { "Can't find parameter name for ${item.childrenPath}" }
                     return@flatMap emptyList<PsiStubChildrenCompositionItem>()
                 }
@@ -82,7 +82,7 @@ class FunctionDeletingLens<C> :
             context.copy(
                 callTraceParameterCache = items.fold(context.callTraceParameterCache) { cache, item ->
                     item.callTraces.fold(cache) { cache, callTrace ->
-                        val parameterName = item.getParameterIndex().getOrNull() ?: let {
+                        val parameterName = item.getParameterName().getOrNull() ?: let {
                             logger.warn { "Can't find parameter index for ${item.childrenPath}" }
                             return@fold cache
                         }

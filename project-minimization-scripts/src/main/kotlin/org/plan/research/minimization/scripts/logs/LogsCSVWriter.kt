@@ -1,7 +1,7 @@
 package org.plan.research.minimization.scripts.logs
 
-import org.plan.research.minimization.scripts.logs.model.LinesMetric
-import org.plan.research.minimization.scripts.logs.model.ProjectStatistics
+import org.plan.research.minimization.plugin.model.benchmark.logs.LinesMetric
+import org.plan.research.minimization.plugin.model.benchmark.logs.ProjectStatistics
 
 import com.github.doyaaaaaken.kotlincsv.client.ICsvFileWriter
 import com.github.doyaaaaaken.kotlincsv.dsl.csvWriter

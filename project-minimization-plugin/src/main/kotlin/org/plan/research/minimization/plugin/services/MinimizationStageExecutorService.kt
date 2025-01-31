@@ -45,10 +45,9 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
     private val snapshotManager = project.service<SnapshotManagerService>()
 
     override suspend fun executeFileLevelStage(context: HeavyIJDDContext<*>, fileLevelStage: FileLevelStage) = either {
-        logger.info { "Start File level stage" }
-        statLogger.info { "Start File level stage" }
+        logStageStart(fileLevelStage)
         statLogger.info {
-            "File level stage settings, " +
+            "${fileLevelStage.name} stage settings, " +
                 "DDAlgorithm: ${fileLevelStage.ddAlgorithm}"
         }
 
@@ -66,16 +65,16 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         lightContext.runMonadWithProgress {
             hierarchicalDD.minimize(hierarchy)
         }
-    }.logResult("File")
+    }.logResult(fileLevelStage.name)
 
     override suspend fun executeFunctionLevelStage(
         context: HeavyIJDDContext<*>,
         functionLevelStage: FunctionLevelStage,
     ) = either {
-        logger.info { "Start Function Body Replacement level stage" }
-        statLogger.info { "Start Function Body Replacement level stage" }
+        logStageStart(functionLevelStage)
         statLogger.info {
-            "Function level stage settings. DDAlgorithm: ${functionLevelStage.ddAlgorithm}"
+            "${functionLevelStage.name} stage settings, " +
+                "DDAlgorithm: ${functionLevelStage.ddAlgorithm}"
         }
 
         val lightContext = FunctionLevelStageContext(context.projectDir, context.project, context.originalProject)
@@ -104,7 +103,12 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
                 propertyChecker,
             )
         }
-    }.logResult("Function Body Replacement")
+    }.logResult(functionLevelStage.name)
+
+    private fun logStageStart(stage: MinimizationStage) {
+        logger.info { "Start ${stage.name} stage" }
+        statLogger.info { "Start ${stage.name} stage" }
+    }
 
     private suspend fun <T : PsiChildrenPathIndex> List<PsiDDItem<T>>.logPsiElements(context: IJDDContext) {
         if (!logger.isTraceEnabled) {
@@ -123,8 +127,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         context: HeavyIJDDContext<*>,
         declarationLevelStage: DeclarationLevelStage,
     ) = either {
-        logger.info { "Start Function Deleting level stage" }
-        statLogger.info { "Start Function Deleting level stage" }
+        logStageStart(declarationLevelStage)
         statLogger.info {
             "Function deleting stage settings, " +
                 "DDAlgorithm: ${declarationLevelStage.ddAlgorithm}"
@@ -149,15 +152,15 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         lightContext.runMonadWithProgress {
             hierarchicalDD.minimize(hierarchy)
         }
-    }.logResult("Function Deleting")
+    }.logResult(declarationLevelStage.name)
 
     override suspend fun executeDeclarationGraphStage(
         context: HeavyIJDDContext<*>,
         declarationGraphStage: DeclarationGraphStage,
     ) = either {
-        logger.info { "Start Function Deleting Graph stage" }
+        logStageStart(declarationGraphStage)
         statLogger.info {
-            "Function deleting Graph stage settings, " +
+            "${declarationGraphStage.name} stage settings, " +
                 "DDAlgorithm: ${declarationGraphStage.ddAlgorithm}"
         }
 
@@ -192,17 +195,17 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         lightContext.runMonad {
             graphDD.minimize(graph, propertyTester)
         }
-    }.logResult("Function Deleting Graph")
+    }.logResult(declarationGraphStage.name)
 
     private fun <A, B> Either<A, B>.logResult(stageName: String) = onRight {
-        logger.info { "End $stageName level stage" }
-        statLogger.info { "End $stageName level stage" }
-        statLogger.info { "$stageName level stage result: success" }
+        logger.info { "End $stageName stage" }
+        statLogger.info { "End $stageName stage" }
+        statLogger.info { "$stageName stage result: success" }
     }.onLeft { error ->
-        logger.info { "End $stageName level stage" }
-        statLogger.info { "End $stageName level stage" }
-        statLogger.info { "$stageName level stage result: $error" }
-        logger.error { "$stageName level stage failed with error: $error" }
+        logger.info { "End $stageName stage" }
+        statLogger.info { "End $stageName stage" }
+        statLogger.info { "$stageName stage result: $error" }
+        logger.error { "$stageName stage failed with error: $error" }
     }
 
     private suspend fun <C : IJDDContextBase<C>> C.runMonadWithProgress(

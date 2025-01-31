@@ -3,7 +3,9 @@ package org.plan.research.minimization.plugin.services
 import org.plan.research.minimization.plugin.benchmark.BenchmarkConfig
 import org.plan.research.minimization.plugin.benchmark.BenchmarkProject
 import org.plan.research.minimization.plugin.benchmark.BuildSystemType
+import org.plan.research.minimization.plugin.benchmark.LogParser
 import org.plan.research.minimization.plugin.benchmark.ProjectModulesType
+import org.plan.research.minimization.plugin.model.benchmark.logs.ProjectStatistics
 import org.plan.research.minimization.plugin.settings.loadStateFromFile
 
 import arrow.core.Either
@@ -32,8 +34,20 @@ import kotlinx.coroutines.*
 @Service(Service.Level.PROJECT)
 class BenchmarkService(private val rootProject: Project, private val cs: CoroutineScope) {
     private val logger = KotlinLogging.logger {}
+    fun parseBenchmarkLogs(): List<ProjectStatistics> {
+        val stagesName = rootProject
+            .service<MinimizationPluginSettings>()
+            .stateObservable
+            .stages
+            .get()
+            .map { it.name }
+        return LogParser().parseLogs(rootProject.guessProjectDir()!!.toNioPath(), stagesName)
+    }
 
-    fun benchmark() = cs.launch { asyncBenchmark() }
+    fun benchmark(onComplete: () -> Unit) = cs.launch {
+        asyncBenchmark()
+        onComplete()
+    }
     suspend fun asyncBenchmark() {
         logger.info { "Start benchmark Action" }
 

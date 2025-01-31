@@ -1,11 +1,9 @@
-package org.plan.research.minimization.scripts.logs
+package org.plan.research.minimization.plugin.benchmark
 
-import org.plan.research.minimization.plugin.benchmark.BenchmarkConfig
-import org.plan.research.minimization.plugin.benchmark.BenchmarkProject
-import org.plan.research.minimization.scripts.logs.model.LinesMetric
-import org.plan.research.minimization.scripts.logs.model.ProjectStatistics
-import org.plan.research.minimization.scripts.logs.model.StageStatistics
-import org.plan.research.minimization.scripts.logs.model.ThroughMinimizationStatistics
+import org.plan.research.minimization.plugin.model.benchmark.logs.LinesMetric
+import org.plan.research.minimization.plugin.model.benchmark.logs.ProjectStatistics
+import org.plan.research.minimization.plugin.model.benchmark.logs.StageStatistics
+import org.plan.research.minimization.plugin.model.benchmark.logs.ThroughMinimizationStatistics
 
 import com.charleskorn.kaml.Yaml
 
@@ -56,14 +54,14 @@ class LogParser {
             elapsed = calculateDuration(relevantLogs.first(), relevantLogs.last()),
             ktFiles = extractStat(relevantLogs, "Kotlin files"),
             lines = projectLinesMetric,
-            numberOfCompilations = relevantLogs.count { it.contains("Project dir:") },
+            numberOfCompilations = relevantLogs.count { it.contains("Snapshot manager start's transaction") },
             stageMetrics = buildList {
                 add(StageStatistics(name = "<tmp>", linesMetric = projectLinesMetric.stale()))
                 stageNames.forEach { stageName ->
                     add(
                         extractStageStatistics(
                             stageName,
-                            relevantLogs.extractRelevantLogsFor("$stageName level stage") ?: return@forEach,
+                            relevantLogs.extractRelevantLogsFor("$stageName stage") ?: return@forEach,
                             this.last(),
                         ),
                     )

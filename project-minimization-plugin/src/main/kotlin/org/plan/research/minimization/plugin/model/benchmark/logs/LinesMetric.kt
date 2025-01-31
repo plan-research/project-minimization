@@ -1,4 +1,4 @@
-package org.plan.research.minimization.scripts.logs.model
+package org.plan.research.minimization.plugin.model.benchmark.logs
 
 data class LinesMetric(
     val totalLines: ThroughMinimizationStatistics,

@@ -101,3 +101,27 @@ val runCliMinimization by intellijPlatformTesting.runIde.registering {
         }
     }
 }
+
+val runCliBenchmark by intellijPlatformTesting.runIde.registering {
+    task {
+        dependsOn("buildPlugin")
+        val inputFolder: String? by project
+        jvmArgs = listOf(
+            "-Djava.awt.headless=true",
+            "--add-exports",
+            "java.base/jdk.internal.vm=ALL-UNNAMED",
+        )
+        maxHeapSize = "20g"
+        standardInput = System.`in`
+        standardOutput = System.`out`
+        splitMode = false
+        splitModeTarget = SplitModeTarget.BACKEND
+        inputFolder?.let {
+            args = listOf(
+                "benchmark-minimization",
+                "-p",
+                it,
+            )
+        }
+    }
+}

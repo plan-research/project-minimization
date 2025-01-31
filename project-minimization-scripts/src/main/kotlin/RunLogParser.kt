@@ -1,6 +1,6 @@
 package org.plan.research.minimization
 
-import org.plan.research.minimization.scripts.logs.LogParser
+import org.plan.research.minimization.plugin.benchmark.LogParser
 import org.plan.research.minimization.scripts.logs.LogsCSVWriter
 import java.nio.file.Path
 

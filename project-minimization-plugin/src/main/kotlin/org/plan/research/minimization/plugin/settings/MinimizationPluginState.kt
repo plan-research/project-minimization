@@ -49,7 +49,6 @@ class MinimizationPluginState : BaseState() {
         val defaultStages: List<MinimizationStage> = listOf(
             FunctionLevelStage(),
             DeclarationGraphStage(),
-            FileLevelStage(),
         )
         val defaultTransformations: List<TransformationDescriptor> = listOf(
             TransformationDescriptor.PATH_RELATIVIZATION,

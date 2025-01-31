@@ -23,13 +23,20 @@ class WithProgressReporterMonadT<M : Monad>(
     private val reporter: SequentialProgressReporter,
     monad: M,
 ) : WithProgressMonadT<M>(monad) {
+    private var prevResult: Int = 0
+
     override fun nextStep(endFractionP: Int, endFractionQ: Int) {
-        if (endFractionQ == maxSteps) {
-            reporter.nextStep(endFractionP)
+        val result = if (endFractionQ == maxSteps) {
+            endFractionP
         } else {
             val p = (maxSteps * endFractionP).toLong()
             val frac = p / endFractionQ
-            reporter.nextStep(frac.toInt())
+            frac.toInt()
+        }.coerceIn(1..maxSteps)
+
+        if (result > prevResult) {
+            prevResult = result
+            reporter.nextStep(result)
         }
     }
 }

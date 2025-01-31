@@ -30,11 +30,9 @@ class BenchmarkAction : AnAction() {
         runCatching {
             val project = e.project ?: return
             val benchmarkingService = project.service<BenchmarkService>()
-            benchmarkingService.benchmark()
+            benchmarkingService.benchmark { BenchmarkSettings.isBenchmarkingEnabled = false }
         }.onFailure {
             logger.error("Benchmarking failed", it)
-        }.also {
-            BenchmarkSettings.isBenchmarkingEnabled = false
         }
     }
 }

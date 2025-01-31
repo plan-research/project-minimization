@@ -15,6 +15,9 @@ jcloc = "0.3.0"
 jqwik = "1.9.2"
 graphviz-java = "0.18.1"
 jgrapht = "1.5.2"
+clikt = "5.0.2"
+mordant = "3.0.1"
+kotlin-csv = "1.10.0"
 
 [libraries]
 diktat-gradle-plugin = { module = "com.saveourtool.diktat:diktat-gradle-plugin", version.ref = "diktat" }
@@ -32,9 +35,13 @@ jcloc = { module = "ch.usi.si.seart:jcloc", version.ref = "jcloc" }
 kotlinx-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 jqwik = { module = "net.jqwik:jqwik", version.ref = "jqwik" }
 jqwik-kotlin = { module = "net.jqwik:jqwik-kotlin", version.ref = "jqwik" }
-graphviz-java = { group = "guru.nidi", name = "graphviz-java", version.ref = "graphviz-java"}
-graphviz-kotlin = { group = "guru.nidi", name = "graphviz-kotlin", version.ref = "graphviz-java"}
+graphviz-java = { group = "guru.nidi", name = "graphviz-java", version.ref = "graphviz-java" }
+graphviz-kotlin = { group = "guru.nidi", name = "graphviz-kotlin", version.ref = "graphviz-java" }
 jgrapht-core = { module = "org.jgrapht:jgrapht-core", version.ref = "jgrapht" }
+clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
+clikt-markdown = { module = "com.github.ajalt.clikt:clikt-markdown", version.ref = "clikt" }
+mordant = { module = "com.github.ajalt.mordant:mordant", version.ref = "mordant" }
+csv = { module = "com.jsoizo:kotlin-csv-jvm", version.ref = "kotlin-csv" }
 
 [plugins]
 intellij = { id = "org.jetbrains.intellij.platform", version.ref = "intellij" }

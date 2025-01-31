@@ -14,7 +14,7 @@ The plugin artefact will be placed in `project-minimization-plugin/build/distrib
 ## How to run
 
 There are two ways to run the plugin:
-- Build the plugin as a `zip` file and install it into your IDE via [a standard pipeline](https://www.jetbrains.com/help/idea/managing-plugins.html#install_plugin_from_disk).
+- Get from the releases or build the plugin as a `zip` file and install it into your IDE via [a standard pipeline](https://www.jetbrains.com/help/idea/managing-plugins.html#install_plugin_from_disk).
 - Run the following command, which executes a new instance of IntelliJ IDEA with the preinstalled plugin:
 ```bash
 ./gradlew runIde

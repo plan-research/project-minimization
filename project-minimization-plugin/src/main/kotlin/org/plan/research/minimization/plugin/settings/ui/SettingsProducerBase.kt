@@ -130,7 +130,8 @@ abstract class SettingsProducerBase(protected val project: Project) {
         val (ignorePathsPanel, ignoreFilesList) = ignoreFilesSettingsProducer.createIgnorePathsPanel(projectDir)
 
         row {
-            label("Add here directories/files of your project if you are sure that they are important or can not be minimized")
+            label("Ignore paths:")
+                .comment("Add here directories/files of your project if you are sure that they are important or can not be minimized")
         }
         row {
             cell(ignorePathsPanel)

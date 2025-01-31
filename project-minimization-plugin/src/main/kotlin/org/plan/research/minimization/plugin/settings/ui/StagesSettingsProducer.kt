@@ -17,6 +17,7 @@ import com.intellij.ui.components.dialog
 import com.intellij.ui.dsl.builder.*
 
 import java.awt.CardLayout
+import java.awt.Dimension
 import javax.swing.DefaultListModel
 import javax.swing.JPanel
 import javax.swing.ListSelectionModel
@@ -97,11 +98,6 @@ class StagesSettingsProducer {
             .apply { comment?.bind(commentText) }
     }
 
-    private fun Row.booleanProperty(graph: PropertyGraph, property: GraphProperty<Boolean>, text: String = "") {
-        checkBox(text)
-            .bindSelected(property)
-    }
-
     private fun <T : MinimizationStage, V> PropertyGraph.stageProperty(
         stageProperty: GraphProperty<T>,
         lens: Lens<T, V>,
@@ -173,7 +169,9 @@ class StagesSettingsProducer {
                 strategy(graph, ddAlgorithm)
             }
             row {
-                booleanProperty(graph, withFunctionParameters, "Delete function and constructor parameters")
+                checkBox("Delete function and constructor parameters")
+                    .bindSelected(withFunctionParameters)
+                    .comment("Experimental feature")
             }
         }
     }
@@ -223,7 +221,17 @@ class StagesSettingsProducer {
 
             row("Stage:") {
                 selected = comboBox(items.map { it.name })
-                    .applyToComponent { selectedIndex = index }
+                    .applyToComponent {
+                        selectedIndex = index
+
+                        val metrics = getFontMetrics(font)
+                        val maxWidth = items.maxOf { metrics.stringWidth(it.name) }
+
+                        size = Dimension(
+                            maxWidth + 2,
+                            size.height,
+                        )
+                    }
             }
 
             val cardLayout = CardLayout()

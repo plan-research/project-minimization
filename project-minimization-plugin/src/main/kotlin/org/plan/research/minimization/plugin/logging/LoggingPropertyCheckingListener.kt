@@ -61,7 +61,7 @@ class LoggingPropertyCheckingListener<T : IJDDItem> private constructor(folderSu
         val id = context.projectDir.name
         val entry = entries[id] as? LogStage.BeforeFocus
             ?: logger.error { "No entry found for $id on successful compilation" }.let { return }
-        fileById("${++iteration}-${context.projectDir.name}").writeText(
+        fileById(context.projectDir.name).writeText(
             json.encodeToString(
                 LogStage.SuccessfulCompilation(
                     entry.items,
@@ -71,7 +71,7 @@ class LoggingPropertyCheckingListener<T : IJDDItem> private constructor(folderSu
         )
     }
 
-    private fun fileById(id: String) = logLocation.resolve("$id.json")
+    private fun fileById(id: String) = logLocation.resolve("${++iteration}-$id.json")
 
     @Serializable
     private sealed interface LogStage {

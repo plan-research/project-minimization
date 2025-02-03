@@ -22,7 +22,7 @@ class PsiTrie<I, T> private constructor() where I : PsiDDItem<T>, T : Comparable
     fun processMarkedElements(element: PsiElement, processor: PsiProcessor<I>) {
         containingItem?.let {
             logger.trace {
-                "Processing marked element: ${element.textRange} (type: ${element.javaClass.simpleName}) in ${element.containingFile.virtualFile.path}"
+                "Processing marked element: type ${element.javaClass.simpleName} in ${element.containingFile.virtualFile.path}"
             }
             processor(it, element)
             return

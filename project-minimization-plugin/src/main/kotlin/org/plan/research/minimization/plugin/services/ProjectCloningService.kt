@@ -1,10 +1,10 @@
 package org.plan.research.minimization.plugin.services
 
-import org.plan.research.minimization.plugin.getCurrentTimeString
-import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
-import org.plan.research.minimization.plugin.model.context.IJDDContextBase
-import org.plan.research.minimization.plugin.model.context.IJDDContextCloner
-import org.plan.research.minimization.plugin.model.context.LightIJDDContext
+import org.plan.research.minimization.plugin.context.HeavyIJDDContext
+import org.plan.research.minimization.plugin.context.IJDDContextBase
+import org.plan.research.minimization.plugin.context.IJDDContextCloner
+import org.plan.research.minimization.plugin.context.LightIJDDContext
+import org.plan.research.minimization.plugin.util.getCurrentTimeString
 
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.Service

@@ -13,10 +13,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.idea.base.plugin.artifacts.KotlinArtifacts
-import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
-import org.plan.research.minimization.plugin.model.item.PsiDDItem
-import org.plan.research.minimization.plugin.psi.PsiUtils
+import org.plan.research.minimization.plugin.context.IJDDContext
+import org.plan.research.minimization.plugin.modification.item.index.PsiChildrenPathIndex
+import org.plan.research.minimization.plugin.modification.item.PsiDDItem
+import org.plan.research.minimization.plugin.modification.psi.PsiUtils
 import kotlin.collections.filter
 
 abstract class AbstractAnalysisKotlinTest : JavaCodeInsightFixtureTestCase() {

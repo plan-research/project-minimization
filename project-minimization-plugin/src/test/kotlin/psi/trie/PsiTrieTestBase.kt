@@ -11,11 +11,11 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.psi.KtFile
-import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
-import org.plan.research.minimization.plugin.model.item.PsiDDItem
-import org.plan.research.minimization.plugin.psi.PsiUtils
-import org.plan.research.minimization.plugin.psi.trie.PsiTrie
+import org.plan.research.minimization.plugin.context.IJDDContext
+import org.plan.research.minimization.plugin.modification.item.index.PsiChildrenPathIndex
+import org.plan.research.minimization.plugin.modification.item.PsiDDItem
+import org.plan.research.minimization.plugin.modification.psi.PsiUtils
+import org.plan.research.minimization.plugin.modification.psi.trie.PsiTrie
 import kotlin.test.assertIs
 
 abstract class PsiTrieTestBase<ITEM, T> : AbstractAnalysisKotlinTest() where ITEM : PsiDDItem<T>, T : PsiChildrenPathIndex, T : Comparable<T>{

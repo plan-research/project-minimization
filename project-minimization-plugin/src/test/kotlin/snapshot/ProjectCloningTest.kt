@@ -10,7 +10,7 @@ import com.intellij.openapi.components.service
 import getAllFiles
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertNotEquals
-import org.plan.research.minimization.plugin.model.context.IJDDContextBase
+import org.plan.research.minimization.plugin.context.IJDDContextBase
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 
 abstract class ProjectCloningTest<C : IJDDContextBase<C>> : ProjectCloningBaseTest(), TestWithContext<C> {

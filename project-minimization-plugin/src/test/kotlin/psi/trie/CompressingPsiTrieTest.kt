@@ -3,9 +3,9 @@ package psi.trie
 import generateAllPermutations
 import org.junit.Test
 import org.junit.jupiter.api.assertThrows
-import org.plan.research.minimization.plugin.model.item.index.IntChildrenIndex
-import org.plan.research.minimization.plugin.model.item.PsiChildrenIndexDDItem
-import org.plan.research.minimization.plugin.psi.CompressingPsiItemTrie
+import org.plan.research.minimization.plugin.modification.item.index.IntChildrenIndex
+import org.plan.research.minimization.plugin.modification.item.PsiChildrenIndexDDItem
+import org.plan.research.minimization.plugin.modification.psi.CompressingPsiItemTrie
 import kotlin.io.path.Path
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

@@ -5,10 +5,10 @@ import arrow.core.compareTo
 import arrow.core.some
 import com.intellij.openapi.components.service
 import kotlinx.coroutines.runBlocking
-import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.context.impl.DefaultProjectContext
-import org.plan.research.minimization.plugin.model.item.PsiStubDDItem.CallablePsiStubDDItem
-import org.plan.research.minimization.plugin.psi.CallTraceParameterCache
+import org.plan.research.minimization.plugin.context.IJDDContext
+import org.plan.research.minimization.plugin.context.impl.DefaultProjectContext
+import org.plan.research.minimization.plugin.modification.item.PsiStubDDItem.CallablePsiStubDDItem
+import org.plan.research.minimization.plugin.modification.psi.CallTraceParameterCache
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 
 class CallTraceParameterCacheTest : AbstractAnalysisKotlinTest() {

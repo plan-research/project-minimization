@@ -1,7 +1,12 @@
 package org.plan.research.minimization.plugin.settings.ui
 
-import org.plan.research.minimization.plugin.model.*
-import org.plan.research.minimization.plugin.model.state.DDStrategy
+import org.plan.research.minimization.plugin.algorithm.DeclarationGraphStage
+import org.plan.research.minimization.plugin.algorithm.FileLevelStage
+import org.plan.research.minimization.plugin.algorithm.FunctionLevelStage
+import org.plan.research.minimization.plugin.algorithm.MinimizationStage
+import org.plan.research.minimization.plugin.algorithm.ddAlgorithm
+import org.plan.research.minimization.plugin.algorithm.isFunctionParametersEnabled
+import org.plan.research.minimization.plugin.settings.enums.DDStrategy
 
 import arrow.optics.Lens
 import com.intellij.openapi.observable.properties.GraphProperty

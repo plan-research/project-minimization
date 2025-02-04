@@ -1,10 +1,10 @@
 package org.plan.research.minimization.plugin.logging
 
 import org.plan.research.minimization.core.model.PropertyTestResult
-import org.plan.research.minimization.plugin.model.IJPropertyTester
-import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.item.IJDDItem
-import org.plan.research.minimization.plugin.model.monad.SnapshotMonad
+import org.plan.research.minimization.plugin.algorithm.IJPropertyTester
+import org.plan.research.minimization.plugin.context.IJDDContext
+import org.plan.research.minimization.plugin.context.snapshot.SnapshotMonad
+import org.plan.research.minimization.plugin.modification.item.IJDDItem
 import org.plan.research.minimization.plugin.services.RootsManagerService
 
 import ch.usi.si.seart.cloc.CLOC

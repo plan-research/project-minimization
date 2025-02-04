@@ -5,10 +5,10 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
-import org.plan.research.minimization.plugin.model.context.IJDDContextBase
-import org.plan.research.minimization.plugin.model.context.IJDDContextCloner
-import org.plan.research.minimization.plugin.model.context.LightIJDDContext
+import org.plan.research.minimization.plugin.context.HeavyIJDDContext
+import org.plan.research.minimization.plugin.context.IJDDContextBase
+import org.plan.research.minimization.plugin.context.IJDDContextCloner
+import org.plan.research.minimization.plugin.context.LightIJDDContext
 
 interface TestWithContext<C : IJDDContextBase<C>> {
     fun createContext(project: Project): C

@@ -8,10 +8,10 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import org.plan.research.minimization.plugin.execution.exception.KotlincErrorSeverity
-import org.plan.research.minimization.plugin.execution.exception.KotlincException
-import org.plan.research.minimization.plugin.execution.transformer.PathRelativizationTransformation
-import org.plan.research.minimization.plugin.model.CaretPosition
+import org.plan.research.minimization.plugin.compilation.exception.KotlincErrorSeverity
+import org.plan.research.minimization.plugin.compilation.exception.KotlincException
+import org.plan.research.minimization.plugin.compilation.transformer.PathRelativizationTransformer
+import org.plan.research.minimization.plugin.compilation.exception.CaretPosition
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 import org.plan.research.minimization.plugin.services.ProjectOpeningService
 
@@ -27,7 +27,7 @@ class PathRelativizationTransformationTest : JavaCodeInsightFixtureTestCase() {
     fun testGenericKotlinCompilationError() {
         val project = myFixture.project
         val projectLocation = project.guessProjectDir()!!.toNioPath()
-        val transformation = PathRelativizationTransformation()
+        val transformation = PathRelativizationTransformer()
         val context = HeavyTestContext(project)
 
         val genericKotlinError = KotlincException.GeneralKotlincException(
@@ -71,7 +71,7 @@ class PathRelativizationTransformationTest : JavaCodeInsightFixtureTestCase() {
     fun testBackendCompilationError() {
         val project = myFixture.project
         val projectLocation = project.guessProjectDir()!!.toNioPath()
-        val transformation = PathRelativizationTransformation()
+        val transformation = PathRelativizationTransformer()
         val context = HeavyTestContext(project)
 
         val rootException = KotlincException.BackendCompilerException(
@@ -112,7 +112,7 @@ class PathRelativizationTransformationTest : JavaCodeInsightFixtureTestCase() {
     fun testGenericCompilationException() {
         val project = myFixture.project
         val projectLocation = project.guessProjectDir()!!.toNioPath()
-        val transformation = PathRelativizationTransformation()
+        val transformation = PathRelativizationTransformer()
         val context = HeavyTestContext(project)
 
         val rootException = KotlincException.GenericInternalCompilerException(

@@ -1,17 +1,17 @@
 package org.plan.research.minimization.plugin.services
 
-import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.graph.InstanceLevelGraph
-import org.plan.research.minimization.plugin.model.graph.PsiIJEdge
-import org.plan.research.minimization.plugin.model.item.PsiChildrenIndexDDItem
-import org.plan.research.minimization.plugin.model.item.PsiStubChildrenCompositionItem
-import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
-import org.plan.research.minimization.plugin.model.item.PsiStubDDItem.CallablePsiStubDDItem
-import org.plan.research.minimization.plugin.psi.KotlinElementLookup
-import org.plan.research.minimization.plugin.psi.KotlinOverriddenElementsGetter
-import org.plan.research.minimization.plugin.psi.PsiDSU
-import org.plan.research.minimization.plugin.psi.PsiUtils
-import org.plan.research.minimization.plugin.psi.usages.MethodUserSearcher
+import org.plan.research.minimization.plugin.context.IJDDContext
+import org.plan.research.minimization.plugin.modification.graph.InstanceLevelGraph
+import org.plan.research.minimization.plugin.modification.graph.PsiIJEdge
+import org.plan.research.minimization.plugin.modification.item.PsiChildrenIndexDDItem
+import org.plan.research.minimization.plugin.modification.item.PsiStubChildrenCompositionItem
+import org.plan.research.minimization.plugin.modification.item.PsiStubDDItem
+import org.plan.research.minimization.plugin.modification.item.PsiStubDDItem.CallablePsiStubDDItem
+import org.plan.research.minimization.plugin.modification.psi.KotlinElementLookup
+import org.plan.research.minimization.plugin.modification.psi.KotlinOverriddenElementsGetter
+import org.plan.research.minimization.plugin.modification.psi.PsiDSU
+import org.plan.research.minimization.plugin.modification.psi.PsiUtils
+import org.plan.research.minimization.plugin.modification.psi.usages.MethodUserSearcher
 
 import arrow.core.compareTo
 import arrow.core.filterOption
@@ -72,7 +72,7 @@ class MinimizationPsiManagerService {
      * The deletable elements are the elements that
      *  * are one of the [PsiStubDDItem.DELETABLE_PSI_JAVA_CLASSES] classes
      *  * on the path from [org.jetbrains.kotlin.psi.KtFile] to that element there are only serializable elements.
-     *  That means that they could be represented via [org.plan.research.minimization.plugin.psi.stub.KtStub]
+     *  That means that they could be represented via [org.plan.research.minimization.plugin.modification.psi.stub.KtStub]
      *
      * @param context The context for the minimization process containing the current project and relevant properties.
      * @param compressOverridden If set to true, then all overridden elements will be compressed to one element

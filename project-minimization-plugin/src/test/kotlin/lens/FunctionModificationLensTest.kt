@@ -15,9 +15,9 @@ import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
-import org.plan.research.minimization.plugin.lenses.FunctionModificationLens
-import org.plan.research.minimization.plugin.model.item.PsiChildrenIndexDDItem
-import org.plan.research.minimization.plugin.model.item.index.IntChildrenIndex
+import org.plan.research.minimization.plugin.modification.lenses.FunctionModificationLens
+import org.plan.research.minimization.plugin.modification.item.PsiChildrenIndexDDItem
+import org.plan.research.minimization.plugin.modification.item.index.IntChildrenIndex
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 import runMonad

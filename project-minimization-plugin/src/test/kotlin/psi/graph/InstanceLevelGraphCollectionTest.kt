@@ -18,12 +18,12 @@ import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtTypeAlias
-import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.context.impl.DefaultProjectContext
-import org.plan.research.minimization.plugin.model.graph.InstanceLevelGraph
-import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
-import org.plan.research.minimization.plugin.model.graph.PsiIJEdge
-import org.plan.research.minimization.plugin.psi.stub.KtClassStub
+import org.plan.research.minimization.plugin.context.IJDDContext
+import org.plan.research.minimization.plugin.context.impl.DefaultProjectContext
+import org.plan.research.minimization.plugin.modification.graph.InstanceLevelGraph
+import org.plan.research.minimization.plugin.modification.item.PsiStubDDItem
+import org.plan.research.minimization.plugin.modification.graph.PsiIJEdge
+import org.plan.research.minimization.plugin.modification.psi.stub.KtClassStub
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import kotlin.test.assertIs
 

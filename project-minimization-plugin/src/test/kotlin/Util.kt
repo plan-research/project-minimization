@@ -2,16 +2,19 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.isFile
 import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.core.model.withEmptyProgress
-import org.plan.research.minimization.plugin.getAllParents
-import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.context.IJDDContextBase
-import org.plan.research.minimization.plugin.model.monad.*
-import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
+import org.plan.research.minimization.plugin.context.IJDDContext
+import org.plan.research.minimization.plugin.context.IJDDContextBase
+import org.plan.research.minimization.plugin.context.IJDDContextMonad
+import org.plan.research.minimization.plugin.context.snapshot.SnapshotMonad
+import org.plan.research.minimization.plugin.context.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.services.SnapshotManagerService
+import org.plan.research.minimization.plugin.util.SnapshotWithProgressMonadFAsync
 import java.nio.file.Path
 import kotlin.io.path.relativeTo
 
@@ -38,6 +41,28 @@ fun VirtualFile.getAllFiles(projectPath: Path): Set<PathContent> = buildSet {
         return@buildSet
     children.forEach {
         addAll(it.getAllFiles(projectPath))
+    }
+}
+
+fun List<VirtualFile>.getAllParents(root: VirtualFile): List<VirtualFile> = buildSet {
+    @Suppress("AVOID_NESTED_FUNCTIONS")
+    fun traverseParents(vertex: VirtualFile?) {
+        if (vertex == null || contains(vertex) || VfsUtil.isAncestor(vertex, root, false)) {
+            return
+        }
+        add(vertex)
+        traverseParents(vertex.parent)
+    }
+    this@getAllParents.forEach(::traverseParents)
+}.toList()
+
+fun VirtualFile.getAllNestedElements(): List<VirtualFile> = buildList {
+    VfsUtilCore.iterateChildrenRecursively(
+        this@getAllNestedElements,
+        null,
+    ) {
+        add(it)
+        true
     }
 }
 

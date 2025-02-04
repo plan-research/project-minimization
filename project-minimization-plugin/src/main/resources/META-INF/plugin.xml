@@ -40,22 +40,22 @@
         <supportsKotlinPluginMode supportsK2="true"/>
     </extensions>
     <actions>
-        <action id="org.plan.research.minimization.plugin.MinimizeProjectAction"
-                class="org.plan.research.minimization.plugin.MinimizeProjectAction" text="Minimize Project">
+        <action id="org.plan.research.minimization.plugin.actions.MinimizeProjectAction"
+                class="org.plan.research.minimization.plugin.actions.MinimizeProjectAction" text="Minimize Project">
             <add-to-group group-id="ToolsMenu" anchor="first"/>
         </action>
-        <action id="org.plan.research.minimization.plugin.BenchmarkAction"
-                class="org.plan.research.minimization.plugin.BenchmarkAction" text="Run Minimization Plugin Benchmarks">
-            <add-to-group group-id="ToolsMenu" anchor="after" relative-to-action="org.plan.research.minimization.plugin.MinimizeProjectAction"/>
+        <action id="org.plan.research.minimization.plugin.actions.BenchmarkAction"
+                class="org.plan.research.minimization.plugin.actions.BenchmarkAction" text="Run Minimization Plugin Benchmarks">
+            <add-to-group group-id="ToolsMenu" anchor="after" relative-to-action="org.plan.research.minimization.plugin.actions.MinimizeProjectAction"/>
         </action>
 
-        <action id="org.plan.research.minimization.plugin.test.actions.FindAllConstructorCallsAction"
-                class="org.plan.research.minimization.plugin.test.actions.FindAllConstructorCallsAction"
+        <action id="org.plan.research.minimization.plugin.actions.FindAllConstructorCallsAction"
+                class="org.plan.research.minimization.plugin.actions.FindAllConstructorCallsAction"
                 text="Find All Primary Constructors' Calls"
                 description="The test method to print into logger all PSI elements that call the primary constructor"
                 internal="true"/>
-        <action id="org.plan.research.minimization.plugin.test.actions.DumpDeletablePsiGraphAction"
-                class="org.plan.research.minimization.plugin.test.actions.DumpDeletablePsiGraphAction"
+        <action id="org.plan.research.minimization.plugin.actions.DumpDeletablePsiGraphAction"
+                class="org.plan.research.minimization.plugin.actions.DumpDeletablePsiGraphAction"
                 text="Dump Instance-Level Graph" description="Dumps instance-level graph"
                 internal="true"/>
     </actions>

@@ -1,11 +1,15 @@
 import com.intellij.openapi.components.service
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import org.plan.research.minimization.plugin.model.FileLevelStage
-import org.plan.research.minimization.plugin.model.state.*
+import org.plan.research.minimization.plugin.algorithm.FileLevelStage
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 import org.plan.research.minimization.plugin.settings.loadStateFromFile
 import org.plan.research.minimization.plugin.settings.saveStateToFile
+import org.plan.research.minimization.plugin.settings.enums.CompilationStrategy
+import org.plan.research.minimization.plugin.settings.enums.DDStrategy
+import org.plan.research.minimization.plugin.settings.enums.ExceptionComparingStrategy
+import org.plan.research.minimization.plugin.settings.enums.SnapshotStrategy
+import org.plan.research.minimization.plugin.settings.enums.TransformationDescriptor
 import org.w3c.dom.Document
 import java.io.File
 import java.nio.file.Paths

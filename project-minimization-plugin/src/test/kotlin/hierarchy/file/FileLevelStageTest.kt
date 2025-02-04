@@ -10,10 +10,10 @@ import getAllFiles
 import getPathContentPair
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import org.plan.research.minimization.plugin.execution.DumbCompiler
-import org.plan.research.minimization.plugin.model.FileLevelStage
-import org.plan.research.minimization.plugin.model.state.CompilationStrategy
-import org.plan.research.minimization.plugin.model.state.DDStrategy
+import org.plan.research.minimization.plugin.compilation.DumbCompiler
+import org.plan.research.minimization.plugin.algorithm.FileLevelStage
+import org.plan.research.minimization.plugin.settings.enums.CompilationStrategy
+import org.plan.research.minimization.plugin.settings.enums.DDStrategy
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.services.MinimizationStageExecutorService
 import org.plan.research.minimization.plugin.services.ProjectCloningService

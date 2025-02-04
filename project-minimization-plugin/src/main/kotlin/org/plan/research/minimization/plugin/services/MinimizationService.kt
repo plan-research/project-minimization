@@ -1,17 +1,17 @@
 package org.plan.research.minimization.plugin.services
 
-import org.plan.research.minimization.plugin.errors.MinimizationError
-import org.plan.research.minimization.plugin.getCurrentTimeString
+import org.plan.research.minimization.plugin.algorithm.MinimizationError
+import org.plan.research.minimization.plugin.algorithm.MinimizationStage
+import org.plan.research.minimization.plugin.context.HeavyIJDDContext
+import org.plan.research.minimization.plugin.context.IJDDContextBase
+import org.plan.research.minimization.plugin.context.IJDDContextTransformer
+import org.plan.research.minimization.plugin.context.LightIJDDContext
+import org.plan.research.minimization.plugin.context.impl.DefaultProjectContext
 import org.plan.research.minimization.plugin.logging.ExecutionDiscriminator
 import org.plan.research.minimization.plugin.logging.statLogger
-import org.plan.research.minimization.plugin.model.MinimizationStage
-import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
-import org.plan.research.minimization.plugin.model.context.IJDDContextBase
-import org.plan.research.minimization.plugin.model.context.IJDDContextTransformer
-import org.plan.research.minimization.plugin.model.context.LightIJDDContext
-import org.plan.research.minimization.plugin.model.context.impl.DefaultProjectContext
-import org.plan.research.minimization.plugin.psi.KDocRemover
-import org.plan.research.minimization.plugin.psi.PsiImportCleaner
+import org.plan.research.minimization.plugin.modification.psi.KDocRemover
+import org.plan.research.minimization.plugin.modification.psi.PsiImportCleaner
+import org.plan.research.minimization.plugin.util.getCurrentTimeString
 
 import arrow.core.Either
 import arrow.core.raise.Raise

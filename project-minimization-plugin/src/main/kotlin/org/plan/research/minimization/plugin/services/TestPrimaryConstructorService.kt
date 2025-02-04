@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.services
 
-import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.psi.PsiUtils
+import org.plan.research.minimization.plugin.context.IJDDContext
+import org.plan.research.minimization.plugin.modification.psi.PsiUtils
 
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.Service

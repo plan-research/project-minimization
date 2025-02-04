@@ -1,12 +1,12 @@
 package org.plan.research.minimization.plugin.settings.ui
 
-import org.plan.research.minimization.plugin.execution.gradle.GradleBuildExceptionProvider
-import org.plan.research.minimization.plugin.model.MinimizationStage
-import org.plan.research.minimization.plugin.model.state.CompilationStrategy
-import org.plan.research.minimization.plugin.model.state.ExceptionComparingStrategy
-import org.plan.research.minimization.plugin.model.state.SnapshotStrategy
+import org.plan.research.minimization.plugin.algorithm.MinimizationStage
+import org.plan.research.minimization.plugin.compilation.gradle.GradleBuildExceptionProvider
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.settings.MinimizationPluginState
+import org.plan.research.minimization.plugin.settings.enums.CompilationStrategy
+import org.plan.research.minimization.plugin.settings.enums.ExceptionComparingStrategy
+import org.plan.research.minimization.plugin.settings.enums.SnapshotStrategy
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.observable.properties.PropertyGraph

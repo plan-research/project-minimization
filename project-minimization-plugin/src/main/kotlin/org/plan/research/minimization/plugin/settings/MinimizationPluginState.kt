@@ -1,13 +1,13 @@
 package org.plan.research.minimization.plugin.settings
 
-import org.plan.research.minimization.plugin.model.DeclarationGraphStage
-import org.plan.research.minimization.plugin.model.FileLevelStage
-import org.plan.research.minimization.plugin.model.FunctionLevelStage
-import org.plan.research.minimization.plugin.model.MinimizationStage
-import org.plan.research.minimization.plugin.model.state.CompilationStrategy
-import org.plan.research.minimization.plugin.model.state.ExceptionComparingStrategy
-import org.plan.research.minimization.plugin.model.state.SnapshotStrategy
-import org.plan.research.minimization.plugin.model.state.TransformationDescriptor
+import org.plan.research.minimization.plugin.algorithm.DeclarationGraphStage
+import org.plan.research.minimization.plugin.algorithm.FileLevelStage
+import org.plan.research.minimization.plugin.algorithm.FunctionLevelStage
+import org.plan.research.minimization.plugin.algorithm.MinimizationStage
+import org.plan.research.minimization.plugin.settings.enums.CompilationStrategy
+import org.plan.research.minimization.plugin.settings.enums.ExceptionComparingStrategy
+import org.plan.research.minimization.plugin.settings.enums.SnapshotStrategy
+import org.plan.research.minimization.plugin.settings.enums.TransformationDescriptor
 
 import com.intellij.openapi.components.BaseState
 import com.intellij.util.xmlb.annotations.Tag

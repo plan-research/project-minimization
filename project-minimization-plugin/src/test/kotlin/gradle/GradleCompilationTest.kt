@@ -6,24 +6,20 @@ import TestWithContext
 import TestWithHeavyContext
 import TestWithLightContext
 import arrow.core.Either
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
-import com.intellij.openapi.externalSystem.autoimport.AutoImportProjectTracker
-import com.intellij.openapi.project.ex.ProjectManagerEx
-import com.intellij.openapi.util.Disposer
 import kotlinx.coroutines.runBlocking
-import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError
-import org.plan.research.minimization.plugin.execution.IdeaCompilationException
-import org.plan.research.minimization.plugin.execution.comparable.SimpleExceptionComparator
-import org.plan.research.minimization.plugin.execution.comparable.StacktraceExceptionComparator
-import org.plan.research.minimization.plugin.execution.exception.KotlincErrorSeverity
-import org.plan.research.minimization.plugin.execution.exception.KotlincException
-import org.plan.research.minimization.plugin.execution.transformer.PathRelativizationTransformation
-import org.plan.research.minimization.plugin.model.CompilationResult
-import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
-import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.context.IJDDContextBase
-import org.plan.research.minimization.plugin.model.state.CompilationStrategy
+import org.plan.research.minimization.plugin.compilation.CompilationPropertyCheckerError
+import org.plan.research.minimization.plugin.compilation.exception.IdeaCompilationException
+import org.plan.research.minimization.plugin.compilation.comparator.SimpleExceptionComparator
+import org.plan.research.minimization.plugin.compilation.comparator.StacktraceExceptionComparator
+import org.plan.research.minimization.plugin.compilation.exception.KotlincErrorSeverity
+import org.plan.research.minimization.plugin.compilation.exception.KotlincException
+import org.plan.research.minimization.plugin.compilation.transformer.PathRelativizationTransformer
+import org.plan.research.minimization.plugin.compilation.CompilationResult
+import org.plan.research.minimization.plugin.context.HeavyIJDDContext
+import org.plan.research.minimization.plugin.context.IJDDContext
+import org.plan.research.minimization.plugin.context.IJDDContextBase
+import org.plan.research.minimization.plugin.settings.enums.CompilationStrategy
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.services.ProjectCloningService
@@ -185,7 +181,7 @@ abstract class GradleCompilationTest<C : IJDDContextBase<C>> : GradleProjectBase
         assertIs<Either.Right<IdeaCompilationException>>(compilationResult)
         assertIs<Either.Right<IdeaCompilationException>>(compilationResult2)
 
-        val transformer = PathRelativizationTransformation()
+        val transformer = PathRelativizationTransformer()
         val transformedResults = runBlocking {
             listOf(
                 compilationResult.value.apply(transformer, context),

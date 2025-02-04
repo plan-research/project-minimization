@@ -5,7 +5,7 @@ import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.service
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.psi.*
-import org.plan.research.minimization.plugin.psi.PsiUtils
+import org.plan.research.minimization.plugin.modification.psi.PsiUtils
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import kotlin.test.assertIs
 

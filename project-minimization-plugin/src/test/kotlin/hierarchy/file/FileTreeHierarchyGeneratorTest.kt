@@ -15,9 +15,9 @@ import com.intellij.testFramework.UsefulTestCase
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.model.lift
-import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchicalDDGenerator
-import org.plan.research.minimization.plugin.hierarchy.FileTreeHierarchyGenerator
-import org.plan.research.minimization.plugin.model.state.CompilationStrategy
+import org.plan.research.minimization.plugin.algorithm.hierarchy.FileTreeHierarchicalDDGenerator
+import org.plan.research.minimization.plugin.algorithm.hierarchy.FileTreeHierarchyGenerator
+import org.plan.research.minimization.plugin.settings.enums.CompilationStrategy
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import runMonadWithEmptyProgress
 import kotlin.io.path.name

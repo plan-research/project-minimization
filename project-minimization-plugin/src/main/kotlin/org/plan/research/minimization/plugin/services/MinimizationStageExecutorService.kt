@@ -41,6 +41,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
 
     override suspend fun executeFileLevelStage(context: HeavyIJDDContext<*>, fileLevelStage: FileLevelStage) = either {
         logger.info { "Start File level stage" }
+        statLogger.info { "Start File level stage" }
         statLogger.info {
             "File level stage settings, " +
                 "DDAlgorithm: ${fileLevelStage.ddAlgorithm}"
@@ -66,7 +67,8 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         context: HeavyIJDDContext<*>,
         functionLevelStage: FunctionLevelStage,
     ) = either {
-        logger.info { "Start Function level stage" }
+        logger.info { "Start Function Body Replacement level stage" }
+        statLogger.info { "Start Function Body Replacement level stage" }
         statLogger.info {
             "Function level stage settings. DDAlgorithm: ${functionLevelStage.ddAlgorithm}"
         }
@@ -116,7 +118,8 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         context: HeavyIJDDContext<*>,
         declarationLevelStage: DeclarationLevelStage,
     ) = either {
-        logger.info { "Start Function deleting stage" }
+        logger.info { "Start Function deleting level stage" }
+        statLogger.info { "Start Function deleting level stage" }
         statLogger.info {
             "Function deleting stage settings, " +
                 "DDAlgorithm: ${declarationLevelStage.ddAlgorithm}"
@@ -144,9 +147,11 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
 
     private fun <A, B> Either<A, B>.logResult(stageName: String) = onRight {
         logger.info { "End $stageName level stage" }
+        statLogger.info { "End $stageName level stage" }
         statLogger.info { "$stageName level stage result: success" }
     }.onLeft { error ->
         logger.info { "End $stageName level stage" }
+        statLogger.info { "End $stageName level stage" }
         statLogger.info { "$stageName level stage result: $error" }
         logger.error { "$stageName level stage failed with error: $error" }
     }

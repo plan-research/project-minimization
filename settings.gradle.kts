@@ -14,4 +14,5 @@ plugins {
 include(
     "project-minimization-core",
     "project-minimization-plugin",
+    "project-minimization-scripts",
 )

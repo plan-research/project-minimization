@@ -10,13 +10,13 @@ import com.intellij.openapi.observable.properties.PropertyGraph
 import com.intellij.openapi.observable.util.bind
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogPanel
-import com.intellij.ui.JBColor
 import com.intellij.ui.ToolbarDecorator
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.dialog
 import com.intellij.ui.dsl.builder.*
 
 import java.awt.CardLayout
+import java.awt.Dimension
 import javax.swing.DefaultListModel
 import javax.swing.JPanel
 import javax.swing.ListSelectionModel
@@ -97,11 +97,6 @@ class StagesSettingsProducer {
             .apply { comment?.bind(commentText) }
     }
 
-    private fun Row.booleanProperty(graph: PropertyGraph, property: GraphProperty<Boolean>, text: String = "") {
-        checkBox(text)
-            .bindSelected(property)
-    }
-
     private fun <T : MinimizationStage, V> PropertyGraph.stageProperty(
         stageProperty: GraphProperty<T>,
         lens: Lens<T, V>,
@@ -126,39 +121,6 @@ class StagesSettingsProducer {
         }
     }
 
-    private fun declarationLevelPanel(
-        graph: PropertyGraph,
-        stageProperty: GraphProperty<DeclarationLevelStage>,
-    ): DialogPanel = panel {
-        val ddAlgorithm = graph.stageProperty(stageProperty, DeclarationLevelStage.ddAlgorithm)
-        val maxDepth = graph.stageProperty(stageProperty, DeclarationLevelStage.depthThreshold)
-        row {
-            text("⚠ This algorithm will increase execution time dramatically!").applyToComponent {
-                foreground = JBColor.RED
-            }
-        }
-        row("Description:") {
-            text("The algorithm removes declarations, e.g. classes, functions and fields.")
-        }
-        group("Declaration Level Settings", indent = false) {
-            row("Minimization strategy:") {
-                strategy(graph, ddAlgorithm)
-            }
-            row("A max depth for the algorithm:") {
-                intTextField(1..Int.MAX_VALUE)
-                    .bindIntText(maxDepth)
-                    .validationOnApply {
-                        val value = it.text.toIntOrNull()
-                        if (value == null || value < 1) {
-                            error("Please enter a positive integer.")
-                        } else {
-                            null
-                        }
-                    }.comment("Recommended value: 2")
-            }
-        }
-    }
-
     private fun declarationGraphLevelPanel(
         graph: PropertyGraph,
         stageProperty: GraphProperty<DeclarationGraphStage>,
@@ -173,7 +135,9 @@ class StagesSettingsProducer {
                 strategy(graph, ddAlgorithm)
             }
             row {
-                booleanProperty(graph, withFunctionParameters, "Delete function and constructor parameters")
+                checkBox("Delete function and constructor parameters")
+                    .bindSelected(withFunctionParameters)
+                    .comment("Experimental feature")
             }
         }
     }
@@ -223,7 +187,17 @@ class StagesSettingsProducer {
 
             row("Stage:") {
                 selected = comboBox(items.map { it.name })
-                    .applyToComponent { selectedIndex = index }
+                    .applyToComponent {
+                        selectedIndex = index
+
+                        val metrics = getFontMetrics(font)
+                        val maxWidth = items.maxOf { metrics.stringWidth(it.name) }
+
+                        size = Dimension(
+                            maxWidth + 2,
+                            size.height,
+                        )
+                    }
             }
 
             val cardLayout = CardLayout()
@@ -252,7 +226,6 @@ class StagesSettingsProducer {
     ): List<MinimizationStageData> {
         val propertyGraph = PropertyGraph()
         val newFunctionStage = propertyGraph.property((stage as? FunctionLevelStage) ?: FunctionLevelStage())
-        val newDeclarationStage = propertyGraph.property((stage as? DeclarationLevelStage) ?: DeclarationLevelStage())
         val newDeclarationGraphStage = propertyGraph.property((stage as? DeclarationGraphStage) ?: DeclarationGraphStage())
         val newFileStage = propertyGraph.property((stage as? FileLevelStage) ?: FileLevelStage())
 
@@ -268,12 +241,6 @@ class StagesSettingsProducer {
                 panel = declarationGraphLevelPanel(propertyGraph, newDeclarationGraphStage),
                 stage = newDeclarationGraphStage,
                 isDefaultSelected = stage is DeclarationGraphStage,
-            ),
-            MinimizationStageData(
-                name = "Declaration level stage",
-                panel = declarationLevelPanel(propertyGraph, newDeclarationStage),
-                stage = newDeclarationStage,
-                isDefaultSelected = stage is DeclarationLevelStage,
             ),
             MinimizationStageData(
                 name = "File level stage",

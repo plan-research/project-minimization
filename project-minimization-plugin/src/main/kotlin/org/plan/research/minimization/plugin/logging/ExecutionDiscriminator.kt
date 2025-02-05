@@ -5,6 +5,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.sift.AbstractDiscriminator
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
+import kotlin.io.path.createTempDirectory
 import kotlin.io.path.div
 
 class ExecutionDiscriminator : AbstractDiscriminator<ILoggingEvent>() {
@@ -13,7 +14,12 @@ class ExecutionDiscriminator : AbstractDiscriminator<ILoggingEvent>() {
     override fun getKey(): String = "executionLogDir"
 
     companion object {
-        val loggingFolder = Atomic<String>(System.getProperty("idea.log.path"))
+        val loggingFolder = Atomic<String>(
+            System.getProperty(
+                "idea.log.path",
+                createTempDirectory("minimization-logs").absolutePathString(),
+            ),
+        )
 
         inline fun <T> withLoggingFolder(baseFolder: Path, executionId: String, block: () -> T): T {
             val resultFolder = baseFolder.div(executionId).absolutePathString()

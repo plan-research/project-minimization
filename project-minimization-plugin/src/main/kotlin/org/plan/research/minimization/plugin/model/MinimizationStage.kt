@@ -26,11 +26,6 @@ interface MinimizationStageExecutor {
         functionLevelStage: FunctionLevelStage,
     ): MinimizationResult
 
-    suspend fun executeDeclarationLevelStage(
-        context: HeavyIJDDContext<*>,
-        declarationLevelStage: DeclarationLevelStage,
-    ): MinimizationResult
-
     suspend fun executeDeclarationGraphStage(
         context: HeavyIJDDContext<*>,
         declarationGraphStage: DeclarationGraphStage,
@@ -87,27 +82,11 @@ data class FunctionLevelStage(
     companion object
 }
 
-@Tag("declarationLevelStage")
-@optics
-data class DeclarationLevelStage(
-    @Property val ddAlgorithm: DDStrategy = DDStrategy.PROBABILISTIC_DD,
-    @Property val depthThreshold: Int = 2,
-) : MinimizationStage {
-    override val name: String = "Instance-level Minimization"
-
-    override suspend fun apply(
-        context: HeavyIJDDContext<*>,
-        executor: MinimizationStageExecutor,
-    ): MinimizationResult = executor.executeDeclarationLevelStage(context, this)
-
-    companion object
-}
-
 @Tag("declarationGraphStage")
 @optics
 data class DeclarationGraphStage(
     @Property val ddAlgorithm: DDStrategy = DDStrategy.PROBABILISTIC_DD,
-    @Property val isFunctionParametersEnabled: Boolean = true,
+    @Property val isFunctionParametersEnabled: Boolean = false,
 ) : MinimizationStage {
     override val name: String = "Declaration Graph Minimization"
 

@@ -12,10 +12,13 @@ import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.vfs.findFileOrDirectory
 import com.intellij.psi.PsiElement
+import com.intellij.util.concurrency.annotations.RequiresReadLock
 import mu.KotlinLogging
+import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.psi.KtFile
 
 import java.nio.file.Path
+import kotlin.io.path.relativeTo
 
 /**
  * An abstract class for the PSI element focusing lens
@@ -91,4 +94,26 @@ abstract class BasePsiLens<C, I, T> :
     }
 
     protected abstract suspend fun focusOnFilesAndDirectories(itemsToDelete: List<I>, context: C)
+
+    protected fun KtFile.getLocalPath(context: C): Path {
+        val rootPath = context.projectDir.toNioPath()
+        return this.virtualFile.toNioPath().relativeTo(rootPath)
+    }
+    @RequiresReadLock
+    protected fun IJDDContext.getKtFileInIndexProject(ktFile: KtFile): KtFile? {
+        val rootPath = projectDir.toNioPath()
+        val localPath = ktFile.virtualFile.toNioPath().relativeTo(rootPath)
+        val indexFile = indexProjectDir.findFileByRelativePath(localPath.toString()) ?: run {
+            logger.error { "Can't find a local file with path $localPath in index project" }
+            return null
+        }
+        val indexKtFile = indexFile.toPsiFile(indexProject) ?: run {
+            logger.error { "Can't find a PSI file for a local file with path $localPath in index project" }
+            return null
+        }
+        return indexKtFile as? KtFile ?: run {
+            logger.error { "KtFile with localPath=$localPath is not a KtFile in index project" }
+            null
+        }
+    }
 }

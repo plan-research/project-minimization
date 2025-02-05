@@ -81,7 +81,6 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
         private val levelMaxDepths = HashMap<Path, Int>()
 
         init {
-            nextStep(1)
             computeLevels(context, roots)
         }
 
@@ -124,7 +123,7 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
         fun updateProgress(level: List<ProjectFileDDItem>) {
             currentLevel += 1
             val maxDepth = level.maxOf { levelMaxDepths[it.localPath]!! }
-            nextStep((100 * currentLevel) / maxDepth)
+            nextStep(currentLevel, maxDepth)
         }
     }
 

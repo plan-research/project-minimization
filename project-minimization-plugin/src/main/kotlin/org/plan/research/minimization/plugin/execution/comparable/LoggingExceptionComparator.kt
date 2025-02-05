@@ -1,5 +1,6 @@
 package org.plan.research.minimization.plugin.execution.comparable
 
+import org.plan.research.minimization.plugin.logging.ExecutionDiscriminator
 import org.plan.research.minimization.plugin.model.exception.CompilationException
 import org.plan.research.minimization.plugin.model.exception.ExceptionComparator
 
@@ -19,7 +20,8 @@ private val logger = KotlinLogging.logger {}
 
 class LoggingExceptionComparator(private val backedComparator: ExceptionComparator) : ExceptionComparator {
     private val logger = KotlinLogging.logger {}
-    private val loggingLocation = Path(System.getProperty("idea.log.path"), "exception-comparing")
+    private val loggingLocation = Path(ExecutionDiscriminator.loggingFolder.get(), "exception-comparing")
+    private var iteration = 0
 
     init {
         if (!loggingLocation.exists()) {
@@ -34,7 +36,7 @@ class LoggingExceptionComparator(private val backedComparator: ExceptionComparat
         if (!logger.isTraceEnabled) {
             return backedComparator.areEquals(exception1, exception2)
         }
-        val newId = UUID.randomUUID().toString()
+        val newId = "${++iteration}-${UUID.randomUUID()}"
         logger.trace { "Comparing exceptions with id $newId" }
         val serializableClass = ExceptionComparison(
             exception1.toString(),

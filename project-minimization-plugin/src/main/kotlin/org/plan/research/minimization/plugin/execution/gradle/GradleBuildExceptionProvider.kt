@@ -52,7 +52,6 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  * that checks the compilation status of a given Gradle-based project.
  *
  * The implementation for now is based on the `clean` and `compileKotlin` tasks.
- * However, TODO is to add a setting to make work with other tasks
  */
 class GradleBuildExceptionProvider : BuildExceptionProvider {
     private val gradleOutputParser = KotlincOutputParser()
@@ -200,7 +199,6 @@ class GradleBuildExceptionProvider : BuildExceptionProvider {
      * Executes a Gradle task for the given project and returns the result or an error if the task fails.
      *
      * Basically just contains a lot of boilerplate code to make IDEA work.
-     * FIXME: Extract it to another module
      *
      * @param context Context where the Gradle task will be run.
      * @param task The specific GradleTask to be executed within the project.

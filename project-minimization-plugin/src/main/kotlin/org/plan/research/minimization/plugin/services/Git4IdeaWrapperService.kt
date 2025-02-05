@@ -1,24 +1,24 @@
 package org.plan.research.minimization.plugin.services
 
+import org.plan.research.minimization.plugin.model.context.IJDDContext
+
+import com.intellij.history.LocalHistory
+import com.intellij.history.LocalHistoryAction
 import com.intellij.openapi.application.readAction
-import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
-import com.intellij.openapi.vcs.LocalFilePath
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.toNioPathOrNull
-import git4idea.GitUtil
 import git4idea.commands.Git
 import git4idea.commands.GitCommand
 import git4idea.commands.GitLineHandler
-import git4idea.repo.GitRepository
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import org.plan.research.minimization.plugin.model.context.IJDDContext
+
 import java.io.File
 import java.util.*
-import com.intellij.openapi.vfs.VfsUtil
+
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Service responsible for git4Idea operations within ProjectGitSnapshotManager.
@@ -36,15 +36,11 @@ class Git4IdeaWrapperService {
         withContext(Dispatchers.IO) {
             val git = Git.getInstance()
             val handler: GitLineHandler = GitLineHandler(project, context.indexProjectDir, GitCommand.RESET)
-            handler.setSilent(true) // Avoid auto-refresh causing conflicts
             handler.addParameters("--hard")
 
             git.runCommand(handler)
-            runWriteAction {
-                VfsUtil.markDirtyAndRefresh(true, true, true, context.indexProjectDir)
-                VfsUtil.markDirtyAndRefresh(true, true, true, context.projectDir)
-            }
         }
+        context.projectDir.refresh(false, true)
     }
 
     private suspend fun commit(context: IJDDContext) {
@@ -53,15 +49,13 @@ class Git4IdeaWrapperService {
         withContext(Dispatchers.IO) {
             val git = Git.getInstance()
             val handler: GitLineHandler = GitLineHandler(project, context.indexProjectDir, GitCommand.COMMIT)
-            handler.setSilent(true) // Avoid auto-refresh causing conflicts
             handler.addParameters("-m", UUID.randomUUID().toString(), "--allow-empty", "-a")
 
+            val action = startLocalHistoryAction(project, "Save Project Snapshot")
+
             git.runCommand(handler)
-            runWriteAction {
-                VfsUtil.markDirtyAndRefresh(true, true, true, context.indexProjectDir)
-                VfsUtil.markDirtyAndRefresh(true, true, true, context.projectDir)
-            }
         }
+        context.projectDir.refresh(false, true)
     }
 
     suspend fun gitInit(context: IJDDContext, filter: (VirtualFile) -> Boolean) {
@@ -80,15 +74,8 @@ class Git4IdeaWrapperService {
             git.init(project, virtualProjectDir).success().also {
                 virtualProjectDir.gitAdd(context, project, filter)
                 commit(context)
-                runWriteAction {
-                    VfsUtil.markDirtyAndRefresh(true, true, true, context.indexProjectDir)
-                    VfsUtil.markDirtyAndRefresh(true, true, true, context.projectDir)
-                }
             }
-//            context.projectDir.refresh(false, true)
-//            context.indexProjectDir.refresh(false, true)
-
-            // Add files and commit
+            context.projectDir.refresh(false, true)
         }
     }
 
@@ -131,4 +118,6 @@ class Git4IdeaWrapperService {
             }
         }
     }
+
+    private fun startLocalHistoryAction(project: Project, actionName: String): LocalHistoryAction = LocalHistory.getInstance().startAction(actionName)
 }

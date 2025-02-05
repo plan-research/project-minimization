@@ -9,8 +9,7 @@ import org.plan.research.minimization.plugin.model.monad.SnapshotMonad
 import org.plan.research.minimization.plugin.model.monad.TransactionAction
 import org.plan.research.minimization.plugin.model.monad.TransactionResult
 import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
-import org.plan.research.minimization.plugin.services.Git4IdeaWrapperService
-import org.plan.research.minimization.plugin.services.ProjectCloningService
+import org.plan.research.minimization.plugin.services.LocalStorageWrapperService
 
 import arrow.core.raise.either
 import arrow.core.raise.recover
@@ -18,18 +17,12 @@ import com.intellij.openapi.components.service
 import com.intellij.util.application
 import mu.KotlinLogging
 
-class ProjectGit4IdeaSnapshotManager : SnapshotManager {
+class ProjectLocalHistorySnapshotManager : SnapshotManager {
     private val logger = KotlinLogging.logger {}
-    private val git4IdeaWrapperService = application.service<Git4IdeaWrapperService>()
+    private val gitWrapperService = application.service<LocalStorageWrapperService>()
 
     override suspend fun <C : IJDDContextBase<C>> createMonad(context: C): SnapshotMonad<C> {
-        logger.info { "Initializing Git4Idea SnapshotManager" }
-        git4IdeaWrapperService.gitInit(context) { file ->
-            ProjectCloningService.isImportant(
-                file,
-                context.projectDir,
-            )
-        }
+        gitWrapperService.gitInit(context.indexProject)
 
         return ProjectCloningMonad(context)
     }
@@ -51,7 +44,8 @@ class ProjectGit4IdeaSnapshotManager : SnapshotManager {
         }
     }
 
-    private inner class ProjectCloningMonad<C : IJDDContextBase<C>>(context: C) : SnapshotMonad<C> {
+    private inner class ProjectCloningMonad<C : IJDDContextBase<C>>(context: C) :
+        SnapshotMonad<C> {
         override var context: C = context
             private set
 
@@ -60,8 +54,6 @@ class ProjectGit4IdeaSnapshotManager : SnapshotManager {
             logger.info { "Snapshot manager start's transaction" }
 
             val monad = IJDDContextMonad(context)
-
-            logger.info { "Commits: ${git4IdeaWrapperService.getCommitList(context)}" }
 
             try {
                 recover<T, _>(
@@ -72,13 +64,13 @@ class ProjectGit4IdeaSnapshotManager : SnapshotManager {
                     catch = { raise(TransactionFailed(it)) },
                 )
             } catch (e: Throwable) {
-                git4IdeaWrapperService.resetChanges(context)
+                gitWrapperService.resetChanges(context)
                 throw e
             }
         }.onRight {
             logger.info { "Transaction completed successfully" }
             statLogger.info { "Transaction result: success" }
-            git4IdeaWrapperService.commitChanges(context)
+            gitWrapperService.commitChanges(context)
         }.onLeft { it.log() }
     }
 }

@@ -21,6 +21,6 @@ data class TestGraph(override val vertices: List<TestNode>, override val edges: 
     override fun induce(cut: GraphCut<TestNode>): TestGraph {
         val selectedVertices = cut.selectedVertices
         val inducedEdges = edges.filter { it.from in selectedVertices && it.to in selectedVertices }
-        return TestGraph(selectedVertices, inducedEdges)
+        return TestGraph(selectedVertices.toList(), inducedEdges)
     }
 }

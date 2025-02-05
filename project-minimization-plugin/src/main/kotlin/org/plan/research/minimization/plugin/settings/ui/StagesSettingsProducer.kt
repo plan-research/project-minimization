@@ -97,6 +97,11 @@ class StagesSettingsProducer {
             .apply { comment?.bind(commentText) }
     }
 
+    private fun Row.booleanProperty(graph: PropertyGraph, property: GraphProperty<Boolean>, text: String = "") {
+        checkBox(text)
+            .bindSelected(property)
+    }
+
     private fun <T : MinimizationStage, V> PropertyGraph.stageProperty(
         stageProperty: GraphProperty<T>,
         lens: Lens<T, V>,
@@ -150,6 +155,25 @@ class StagesSettingsProducer {
                             null
                         }
                     }.comment("Recommended value: 2")
+            }
+        }
+    }
+
+    private fun declarationGraphLevelPanel(
+        graph: PropertyGraph,
+        stageProperty: GraphProperty<DeclarationGraphStage>,
+    ): DialogPanel = panel {
+        val ddAlgorithm = graph.stageProperty(stageProperty, DeclarationGraphStage.ddAlgorithm)
+        val withFunctionParameters = graph.stageProperty(stageProperty, DeclarationGraphStage.isFunctionParametersEnabled)
+        row("Description:") {
+            text("The algorithm removes declarations, e.g. classes, functions and fields using a graph approach.")
+        }
+        group("Declaration Graph Level Settings", indent = false) {
+            row("Minimization strategy:") {
+                strategy(graph, ddAlgorithm)
+            }
+            row {
+                booleanProperty(graph, withFunctionParameters, "Delete function and constructor parameters")
             }
         }
     }
@@ -229,6 +253,7 @@ class StagesSettingsProducer {
         val propertyGraph = PropertyGraph()
         val newFunctionStage = propertyGraph.property((stage as? FunctionLevelStage) ?: FunctionLevelStage())
         val newDeclarationStage = propertyGraph.property((stage as? DeclarationLevelStage) ?: DeclarationLevelStage())
+        val newDeclarationGraphStage = propertyGraph.property((stage as? DeclarationGraphStage) ?: DeclarationGraphStage())
         val newFileStage = propertyGraph.property((stage as? FileLevelStage) ?: FileLevelStage())
 
         return listOf(
@@ -237,6 +262,12 @@ class StagesSettingsProducer {
                 panel = functionLevelPanel(propertyGraph, newFunctionStage),
                 stage = newFunctionStage,
                 isDefaultSelected = stage is FunctionLevelStage,
+            ),
+            MinimizationStageData(
+                name = "Declaration graph level stage",
+                panel = declarationGraphLevelPanel(propertyGraph, newDeclarationGraphStage),
+                stage = newDeclarationGraphStage,
+                isDefaultSelected = stage is DeclarationGraphStage,
             ),
             MinimizationStageData(
                 name = "Declaration level stage",

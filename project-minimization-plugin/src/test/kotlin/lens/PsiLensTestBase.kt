@@ -32,10 +32,9 @@ abstract class PsiLensTestBase<C : LightIJDDContext<C>, ITEM, T> :
         val cloned = projectCloningService.clone(initialContext) as C
         kotlin.test.assertNotNull(cloned)
         val lens = getLens()
-        val items = getAllItems(initialContext)
 
         return cloned.runMonad {
-            lens.focusOn(items - elements.toSet())
+            lens.focusOn(elements)
 
             val files = smartReadAction(context.indexProject) {
                 val fileIndex = ProjectRootManager.getInstance(context.indexProject).fileIndex

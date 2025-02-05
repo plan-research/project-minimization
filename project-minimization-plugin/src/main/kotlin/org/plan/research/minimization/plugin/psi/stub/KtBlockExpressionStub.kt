@@ -9,7 +9,7 @@ object KtBlockExpressionStub : KtStub() {
 
     override fun getNext(element: PsiElement) = element.children.find { it is KtBlockExpression }
     override fun compareTo(other: KtStub) = 0
-    override fun toString(): String = "KtClassBody"
+    override fun toString(): String = "KtBlockExpressionStub"
     override fun equals(other: Any?) = other is KtBlockExpressionStub
 
     override fun hashCode() = descriptor.hashCode()

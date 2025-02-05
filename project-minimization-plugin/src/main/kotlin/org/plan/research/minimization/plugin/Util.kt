@@ -17,6 +17,7 @@ import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.model.state.*
 import org.plan.research.minimization.plugin.snapshot.ProjectCloningSnapshotManager
 import org.plan.research.minimization.plugin.snapshot.ProjectGitSnapshotManager
+import org.plan.research.minimization.plugin.snapshot.ProjectGit4IdeaSnapshotManager
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
@@ -53,6 +54,7 @@ fun SnapshotStrategy.getSnapshotManager(project: Project): SnapshotManager =
     when (this) {
         SnapshotStrategy.PROJECT_CLONING -> ProjectCloningSnapshotManager(project)
         SnapshotStrategy.PROJECT_GIT -> ProjectGitSnapshotManager()
+        SnapshotStrategy.PROJECT_GIT4IDEA -> ProjectGit4IdeaSnapshotManager()
     }
 
 fun DDStrategy.getDDAlgorithm(): DDAlgorithm =

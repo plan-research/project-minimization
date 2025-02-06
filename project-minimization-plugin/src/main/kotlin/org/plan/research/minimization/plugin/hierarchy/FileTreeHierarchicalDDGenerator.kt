@@ -65,12 +65,9 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
 
     private suspend fun generateNext(vf: VirtualFile) = readAction {
         generateSequence(vf) {
-            if (it.isValid && it.children.size == 1)
-                it.children.first()
-            else null
+            if (it.isValid && it.children.size == 1) it.children.first() else null
         }.last().let {
-            if (it.isValid) it.children
-            else emptyArray()
+            if (it.isValid) it.children else emptyArray()
         }
     }
 
@@ -114,10 +111,9 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
             while (stack.isNotEmpty()) {
                 val entry = stack.last()
 
-                val nextChild = entry.nextChild()
-                if (nextChild != null) {
-                    stack.add(StackEntry(nextChild))
-                } else {
+                entry.nextChild()?.let {
+                    stack.add(StackEntry(it))
+                } ?: {
                     stack.removeLast()
                     subtreeSize[keyOf(entry.file)] =
                         1 + entry.file.children.sumOf {
@@ -137,7 +133,7 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
 
     private data class StackEntry(
         val file: VirtualFile,
-        private var nextChildIndex: Int = 0
+        private var nextChildIndex: Int = 0,
     ) {
         fun nextChild() = file.children.getOrNull(nextChildIndex++)
     }

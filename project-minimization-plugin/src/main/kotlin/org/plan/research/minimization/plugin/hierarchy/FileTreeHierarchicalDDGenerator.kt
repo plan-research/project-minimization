@@ -56,9 +56,9 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
                     }
                 }
             }
-            ensure(nextFiles.isNotEmpty())
-
             reporter.updateProgress(nextFiles)
+
+            ensure(nextFiles.isNotEmpty())
 
             HDDLevel(nextFiles, propertyTester)
         }
@@ -87,11 +87,11 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
     context(SnapshotWithProgressMonad<C>)
     private inner class ProgressReporter(context: C, roots: List<Path>) {
         @Volatile
-        private var currentLevel = 0
-        private val levelMaxDepths = HashMap<Path, Int>()
+        private var totalSize = 0
+        private val subtreeSize = HashMap<Path, Int>()
 
         init {
-            computeLevels(context, roots)
+            computeSubtreeSizes(context, roots)
         }
 
         /**
@@ -101,41 +101,44 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
          * @param context The context of the project.
          * @param roots An array of VirtualFile representing the starting points to compute levels.
          */
-        private fun computeLevels(context: C, roots: List<Path>) {
-            val stack = mutableListOf<StackEntry>()
-            roots.forEach { root ->
-                context.projectDir.findFileByRelativePath(root.pathString)?.let {
-                    stack.add(StackEntry(it, 1))
-                }
+        private fun computeSubtreeSizes(context: C, roots: List<Path>) {
+            val rootFiles = roots.mapNotNull { root ->
+                context.projectDir.findFileByRelativePath(root.pathString)
             }
 
-            val root = context.projectDir.toNioPath()
+            val keyOf = context.projectDir.toNioPath().let { proj ->
+                fun(file: VirtualFile) = file.toNioPath().relativeTo(proj)
+            }
+
+            val stack = rootFiles.map { StackEntry(it) }.toMutableList()
             while (stack.isNotEmpty()) {
                 val entry = stack.last()
 
-                val children = entry.file.children
-                if (children.isNotEmpty()) {
-                    if (entry.nextChildIndex < children.size) {
-                        stack.add(StackEntry(children[entry.nextChildIndex], entry.level + 1))
-                        entry.nextChildIndex += 1
-                    } else {
-                        stack.removeLast()
-                        levelMaxDepths[entry.file.toNioPath().relativeTo(root)] =
-                            children.maxOf { levelMaxDepths[it.toNioPath().relativeTo(root)]!! }
-                    }
+                val nextChild = entry.nextChild()
+                if (nextChild != null) {
+                    stack.add(StackEntry(nextChild))
                 } else {
                     stack.removeLast()
-                    levelMaxDepths[entry.file.toNioPath().relativeTo(root)] = entry.level
+                    subtreeSize[keyOf(entry.file)] =
+                        1 + entry.file.children.sumOf {
+                            subtreeSize[keyOf(it)]!!
+                        }
                 }
             }
+
+            totalSize = rootFiles.sumOf { subtreeSize[keyOf(it)]!! }
         }
 
         fun updateProgress(level: List<ProjectFileDDItem>) {
-            currentLevel += 1
-            val maxDepth = level.maxOf { levelMaxDepths[it.localPath]!! }
-            nextStep(currentLevel, maxDepth)
+            val remaining = level.sumOf { subtreeSize[it.localPath]!! }
+            nextStep(totalSize - remaining, totalSize)
         }
     }
 
-    private data class StackEntry(val file: VirtualFile, val level: Int, var nextChildIndex: Int = 0)
+    private data class StackEntry(
+        val file: VirtualFile,
+        private var nextChildIndex: Int = 0
+    ) {
+        fun nextChild() = file.children.getOrNull(nextChildIndex++)
+    }
 }

@@ -51,10 +51,9 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
             val nextFiles = lift {
                 minimizationResult.retained.flatMap {
                     val vf = it.getVirtualFile(context) ?: return@flatMap emptyList()
-                    readAction { vf.children }
-                        .map { file ->
-                            ProjectFileDDItem.create(context, file)
-                        }
+                    generateNext(vf).map { file ->
+                        ProjectFileDDItem.create(context, file)
+                    }
                 }
             }
             ensure(nextFiles.isNotEmpty())
@@ -63,6 +62,17 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
 
             HDDLevel(nextFiles, propertyTester)
         }
+
+    private suspend fun generateNext(vf: VirtualFile) = readAction {
+        generateSequence(vf) {
+            if (it.isValid && it.children.size == 1)
+                it.children.first()
+            else null
+        }.last().let {
+            if (it.isValid) it.children
+            else emptyArray()
+        }
+    }
 
     /**
      * ProgressReporter is a class responsible for managing and reporting the progress of a hierarchical

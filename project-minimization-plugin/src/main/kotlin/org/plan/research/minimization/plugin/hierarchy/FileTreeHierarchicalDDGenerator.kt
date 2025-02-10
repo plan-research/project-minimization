@@ -113,7 +113,7 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
 
                 entry.nextChild()?.let {
                     stack.add(StackEntry(it))
-                } ?: {
+                } ?: run {
                     stack.removeLast()
                     subtreeSize[keyOf(entry.file)] =
                         1 + entry.file.children.sumOf {

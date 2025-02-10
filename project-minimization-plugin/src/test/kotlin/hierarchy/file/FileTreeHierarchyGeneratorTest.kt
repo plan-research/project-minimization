@@ -111,14 +111,6 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
                     DDAlgorithmResult(currentLevel.items, emptyList())
                 ).getOrNull()
             }!!
-            assertSize(1, currentLevel.items)
-            val secondElement = currentLevel.items.first()
-            assertEquals("complicated-project", secondElement.localPath.name)
-            currentLevel = runWithModalProgressBlocking(project, "") {
-                generator.generateNextLevel(
-                    DDAlgorithmResult(currentLevel.items, emptyList())
-                ).getOrNull()
-            }!!
             for (i in 0..9) {
                 assertSize(2, currentLevel.items)
                 val directory =
@@ -131,7 +123,14 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
                 val nextElements =
                     currentLevel.items.filterNot { it.getVirtualFile(lift { context })!!.isDirectory }
                 val nextLevelWithoutDirectory =
-                    runWithModalProgressBlocking(project, "") { generator.generateNextLevel(DDAlgorithmResult(nextElements, emptyList())).getOrNull() }
+                    runWithModalProgressBlocking(project, "") {
+                        generator.generateNextLevel(
+                            DDAlgorithmResult(
+                                nextElements,
+                                emptyList()
+                            )
+                        ).getOrNull()
+                    }
                 assertNull(nextLevelWithoutDirectory)
                 currentLevel = runWithModalProgressBlocking(project, "") {
                     generator.generateNextLevel(

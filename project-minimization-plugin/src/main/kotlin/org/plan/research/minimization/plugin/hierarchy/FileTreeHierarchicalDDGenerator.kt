@@ -63,6 +63,14 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
             HDDLevel(nextFiles, propertyTester)
         }
 
+    /**
+     * Generates the next level of files for the given virtual file.
+     *
+     * This method skips chains of single nested directories and returns the children of the last directory.
+     *
+     * @param vf The starting virtual file.
+     * @return An array of virtual files representing the next level of files.
+     */
     private suspend fun generateNext(vf: VirtualFile): Array<VirtualFile> {
         var iter = vf
         while (true) {
@@ -81,12 +89,12 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
     /**
      * ProgressReporter is a class responsible for managing and reporting the progress of a hierarchical
      * delta-debugging process on a file tree structure. It utilizes a sequential progress reporter to
-     * keep track of the current progress and update it during the process. This class computes levels
+     * keep track of the current progress and update it during the process. This class computes subtree sizes
      * of directories and files to provide meaningful progress reporting.
      *
      * @param context The context of the project.
-     * @param roots An array of VirtualFile representing the starting points to compute levels.
-     * @constructor Creates a new instance of [ProgressReporter] based on the given root path and the array of root files.
+     * @param roots An array of Path representing the starting points to compute levels.
+     * @constructor Creates a new instance of [ProgressReporter] based on the given context and the array of root files.
      */
     context(SnapshotWithProgressMonad<C>)
     private inner class ProgressReporter(context: C, roots: List<Path>) {
@@ -99,11 +107,11 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
         }
 
         /**
-         * Computes the maximum depth levels for the given root paths and their descendants.
+         * Computes the subtree sizes for the given root paths and their descendants.
          * This method implements DFS traversal via call-stack simulation.
          *
          * @param context The context of the project.
-         * @param roots An array of VirtualFile representing the starting points to compute levels.
+         * @param roots An array of Path representing the starting points to compute subtree sizes.
          */
         private fun computeSubtreeSizes(context: C, roots: List<Path>) {
             val rootFiles = roots.mapNotNull { root ->

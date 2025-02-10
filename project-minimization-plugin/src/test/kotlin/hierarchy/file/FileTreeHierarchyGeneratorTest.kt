@@ -149,6 +149,48 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
         }
     }
 
+    fun testWithNestedDirs() {
+        myFixture.copyDirectoryToProject("nested-dirs-project", "nested-dirs-project")
+        val files = FilenameIndex.getAllFilesByExt(project, "txt")
+        UsefulTestCase.assertSize(3, files)
+
+        val projectRoot = project.guessProjectDir()!!
+        val projectRootPsi = psiManager.findDirectory(projectRoot)!!
+        val rootPsiDepth = getPsiDepth(projectRootPsi)
+        val depths = files.map { getPsiDepth(it.findPsiFile(project)!!) - rootPsiDepth }
+        assertContainsElements(depths, 6, 7, 8)
+
+        LightTestContext(project).runMonadWithEmptyProgress {
+            val generator = generateHierarchicalDDGenerator(lift { context })
+
+            val projectLevel = runWithModalProgressBlocking(project, "test") {
+                generator.generateFirstLevel()
+            }.getOrNull()!!
+            assertSize(1, projectLevel.items)
+
+            val dirLevel = runWithModalProgressBlocking(project, "test") {
+                generator.generateNextLevel(DDAlgorithmResult(projectLevel.items, emptyList()))
+            }.getOrNull()!!
+            val dirVFs = dirLevel.items.map { it.getVirtualFile(lift { context })!! }
+            UsefulTestCase.assertSize(files.size, dirVFs)
+            assert(dirVFs.all { it.isDirectory })
+            assertContainsElements(dirVFs.map { it.name }, "first-0", "second-0", "third-0")
+
+            val fileLevel = runWithModalProgressBlocking(project, "test") {
+                generator.generateNextLevel(DDAlgorithmResult(dirLevel.items, emptyList()))
+            }.getOrNull()!!
+            val fileVFs = fileLevel.items.map { it.getVirtualFile(lift { context })!! }
+            UsefulTestCase.assertSize(files.size, fileVFs)
+            assert(fileVFs.all { it.isFile })
+            assertContainsElements(fileVFs.map { it.name }, "first.txt", "second.txt", "third.txt")
+
+            val lastLevel = runWithModalProgressBlocking(project, "test") {
+                generator.generateNextLevel(DDAlgorithmResult(fileLevel.items, emptyList()))
+            }.getOrNull()
+            assertNull(lastLevel)
+        }
+    }
+
     private fun getPsiDepth(element: PsiElement?): Int = if (element == null) 0 else getPsiDepth(element.parent) + 1
 
     private fun generateHierarchicalDDGenerator(context: LightTestContext): FileTreeHierarchicalDDGenerator<LightTestContext> {

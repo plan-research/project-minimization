@@ -63,12 +63,19 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
             HDDLevel(nextFiles, propertyTester)
         }
 
-    private suspend fun generateNext(vf: VirtualFile) = readAction {
-        generateSequence(vf) {
-            if (it.isValid && it.children.size == 1) it.children.first() else null
-        }.last().let {
-            if (it.isValid) it.children else emptyArray()
+    private suspend fun generateNext(vf: VirtualFile): Array<VirtualFile> {
+        var iter = vf
+        while (true) {
+            iter = readAction {
+                if (iter.isValid && iter.isDirectory) {
+                    iter.children.singleOrNull()?.takeIf { it.isValid && it.isDirectory }
+                } else {
+                    null
+                }
+            } ?: break
         }
+
+        return readAction { if (iter.isValid) iter.children else emptyArray() }
     }
 
     /**

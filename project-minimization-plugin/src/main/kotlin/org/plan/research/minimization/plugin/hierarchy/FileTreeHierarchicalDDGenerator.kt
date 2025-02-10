@@ -107,7 +107,7 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
                 fun(file: VirtualFile) = file.toNioPath().relativeTo(proj)
             }
 
-            val stack = rootFiles.map { StackEntry(it) }.toMutableList()
+            val stack = rootFiles.mapTo(mutableListOf()) { StackEntry(it) }
             while (stack.isNotEmpty()) {
                 val entry = stack.last()
 

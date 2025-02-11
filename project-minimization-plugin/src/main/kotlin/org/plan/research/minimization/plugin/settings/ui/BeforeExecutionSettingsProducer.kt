@@ -19,6 +19,10 @@ class BeforeExecutionSettingsProducer(project: Project) : SettingsProducerBase(p
 
     override fun getPanel(): DialogPanel =
         panel {
+            tempProjectLocation()
+
+            separator()
+
             gradleTask()
             gradleOptions()
 

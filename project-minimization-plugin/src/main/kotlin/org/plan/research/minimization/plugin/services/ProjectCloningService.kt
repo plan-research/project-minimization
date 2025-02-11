@@ -20,6 +20,7 @@ import com.intellij.openapi.vfs.toNioPathOrNull
 import java.nio.file.Path
 import java.util.*
 
+import kotlin.io.path.Path
 import kotlin.io.path.copyTo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -37,7 +38,7 @@ class ProjectCloningService(private val rootProject: Project) : IJDDContextClone
         .stateObservable
         .logsLocation
         .observe { it }
-    private val tempProjectsDirectoryName by rootProject
+    private val tempProjectsDirectoryPath by rootProject
         .service<MinimizationPluginSettings>()
         .stateObservable
         .temporaryProjectLocation
@@ -60,10 +61,9 @@ class ProjectCloningService(private val rootProject: Project) : IJDDContextClone
         projectDir.refresh(false, true)
         return withContext(Dispatchers.IO) {
             val clonedProjectPath = createNewProjectDirectory()
-            val snapshotLocation = getSnapshotLocation()
             val logsLocation = getLogsLocation()
             projectDir.copyTo(clonedProjectPath) {
-                isImportant(it, projectDir) && it.toNioPath() != snapshotLocation && it.toNioPath() != logsLocation
+                isImportant(it, projectDir) && it.toNioPath() != logsLocation
             }
             clonedProjectPath
         }
@@ -74,13 +74,8 @@ class ProjectCloningService(private val rootProject: Project) : IJDDContextClone
         file.name != Project.DIRECTORY_STORE_FOLDER
 
     private fun createNewProjectDirectory(): Path =
-        getSnapshotLocation().findOrCreateDirectory("snapshot-${getCurrentTimeString()}-${UUID.randomUUID()}")
-
-    private fun getSnapshotLocation(): Path =
-        rootProject
-            .guessProjectDir()!!
-            .toNioPath()
-            .findOrCreateDirectory(tempProjectsDirectoryName)
+        Path(tempProjectsDirectoryPath)
+            .findOrCreateDirectory("snapshot-${getCurrentTimeString()}-${UUID.randomUUID()}")
 
     private fun getLogsLocation(): Path? =
         rootProject

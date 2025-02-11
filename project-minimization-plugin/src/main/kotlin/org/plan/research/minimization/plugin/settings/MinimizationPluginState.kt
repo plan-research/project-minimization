@@ -10,16 +10,26 @@ import org.plan.research.minimization.plugin.model.state.SnapshotStrategy
 import org.plan.research.minimization.plugin.model.state.TransformationDescriptor
 
 import com.intellij.openapi.components.BaseState
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.guessProjectDir
 import com.intellij.util.xmlb.annotations.Tag
 import com.intellij.util.xmlb.annotations.XCollection
+import java.nio.file.Path
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.createTempDirectory
+import kotlin.io.path.div
 
-class MinimizationPluginState : BaseState() {
+class MinimizationPluginState(project: Project? = null) : BaseState() {
+    @Transient
+    private val defaultSnapshotLocation: String = project
+        ?.let { getSnapshotLocationFromProject(it).absolutePathString() }
+        ?: ""
     var compilationStrategy by enum(CompilationStrategy.GRADLE_IDEA)
     var gradleTask by property(DEFAULT_GRADLE_TASK) { it == DEFAULT_GRADLE_TASK }
-    var temporaryProjectLocation by property(DEFAULT_TEMP_PROJ_LOCATION) { it == DEFAULT_TEMP_PROJ_LOCATION }
+    var temporaryProjectLocation by property(defaultSnapshotLocation) { it == defaultSnapshotLocation }
     var logsLocation by property(DEFAULT_LOGS_LOCATION) { it == DEFAULT_LOGS_LOCATION }
     var snapshotStrategy by enum(SnapshotStrategy.PROJECT_CLONING)
-    var exceptionComparingStrategy by enum(ExceptionComparingStrategy.SIMPLE)
+    var exceptionComparingStrategy by enum(ExceptionComparingStrategy.STACKTRACE)
 
     @get:Tag
     @get:XCollection(style = XCollection.Style.v1, elementName = "option")
@@ -44,7 +54,6 @@ class MinimizationPluginState : BaseState() {
     companion object {
         const val DEFAULT_GRADLE_TASK = "build"
         const val DEFAULT_LOGS_LOCATION: String = "minimization-logs"
-        const val DEFAULT_TEMP_PROJ_LOCATION: String = "minimization-project-snapshots"
         val defaultStages: List<MinimizationStage> = listOf(
             FunctionLevelStage(),
             DeclarationGraphStage(),
@@ -55,3 +64,10 @@ class MinimizationPluginState : BaseState() {
         )
     }
 }
+
+fun getSnapshotLocationFromProject(project: Project): Path =
+    project.guessProjectDir()
+        ?.toNioPath()
+        ?.parent
+        ?.div("${project.name}-minimization-snapshots")
+        ?: createTempDirectory("${project.name}-minimization-snapshots")

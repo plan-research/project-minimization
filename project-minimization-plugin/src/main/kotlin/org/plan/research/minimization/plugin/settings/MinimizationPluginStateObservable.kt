@@ -1,7 +1,9 @@
 package org.plan.research.minimization.plugin.settings
 
-class MinimizationPluginStateObservable {
-    val state: MinimizationPluginState = MinimizationPluginState()
+import com.intellij.openapi.project.Project
+
+class MinimizationPluginStateObservable(project: Project) {
+    val state: MinimizationPluginState = MinimizationPluginState(project)
     var compilationStrategy = StateDelegate(
         getter = { state.compilationStrategy },
         setter = { state.compilationStrategy = it },
@@ -48,6 +50,7 @@ class MinimizationPluginStateObservable {
         gradleTask.set(newState.gradleTask)
         gradleOptions.set(newState.gradleOptions)
         temporaryProjectLocation.set(newState.temporaryProjectLocation)
+        logsLocation.set(newState.logsLocation)
         snapshotStrategy.set(newState.snapshotStrategy)
         exceptionComparingStrategy.set(newState.exceptionComparingStrategy)
         stages.set(newState.stages)

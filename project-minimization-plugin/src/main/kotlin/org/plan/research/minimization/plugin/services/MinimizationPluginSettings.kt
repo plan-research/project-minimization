@@ -8,14 +8,15 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.observable.properties.AtomicBooleanProperty
+import com.intellij.openapi.project.Project
 
 @Service(Service.Level.PROJECT)
 @State(
     name = "org.plan.research.minimization.plugin.services.MinimizationPluginSettings",
     storages = [Storage("MinimizationPluginSettings.xml")],
 )
-class MinimizationPluginSettings : PersistentStateComponent<MinimizationPluginState> {
-    val stateObservable = MinimizationPluginStateObservable()
+class MinimizationPluginSettings(project: Project) : PersistentStateComponent<MinimizationPluginState> {
+    val stateObservable = MinimizationPluginStateObservable(project)
     var settingsEnabled = AtomicBooleanProperty(true)
 
     inline fun <T> withFrozenState(block: () -> T): T {

@@ -10,10 +10,12 @@ data class DDAlgorithmResult<T>(val retained: List<T>, val deleted: List<T>)
  * The `minimize` function works with a given context and a list of items, using a property tester to
  * identify and minimize the subset of items that cause a specific error or property.
  */
-interface DDAlgorithm {
+interface IDDAlgorithm<U : DDItem> {
     context(M)
-    suspend fun <M : Monad, T : DDItem> minimize(
+    suspend fun <M : Monad, T : U> minimize(
         items: List<T>,
         propertyTester: PropertyTester<M, T>,
     ): DDAlgorithmResult<T>
 }
+
+typealias DDAlgorithm = IDDAlgorithm<DDItem>

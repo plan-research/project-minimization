@@ -7,6 +7,7 @@ import org.plan.research.minimization.core.model.Monad
 import org.plan.research.minimization.core.model.PropertyTester
 
 import mu.KotlinLogging
+import org.plan.research.minimization.core.algorithm.dd.DDItemInfo
 
 class DDAlgorithmWithLog(
     private val innerDDAlgorithm: DDAlgorithm,
@@ -17,12 +18,13 @@ class DDAlgorithmWithLog(
     override suspend fun <M : Monad, T : DDItem> minimize(
         items: List<T>,
         propertyTester: PropertyTester<M, T>,
+        info: (T) -> DDItemInfo,
     ): DDAlgorithmResult<T> {
         val result: DDAlgorithmResult<T>
 
         logger.info {
             "Start minimization algorithm \n" +
-                "propertyTester - $propertyTester"
+                    "propertyTester - $propertyTester"
         }
         if (logger.isTraceEnabled) {
             logger.trace {

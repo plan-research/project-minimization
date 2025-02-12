@@ -9,6 +9,7 @@ import java.util.*
 import kotlin.collections.ArrayDeque
 import kotlin.math.exp
 import kotlinx.coroutines.yield
+import org.plan.research.minimization.core.algorithm.dd.DDItemInfo
 
 /**
  * Probabilistic Delta Debugging.
@@ -21,6 +22,7 @@ class ProbabilisticDD : DDAlgorithm {
     override suspend fun <M : Monad, T : DDItem> minimize(
         items: List<T>,
         propertyTester: PropertyTester<M, T>,
+        info: (T) -> DDItemInfo,
     ): DDAlgorithmResult<T> {
         val buffer = ArrayDeque<T>()
         val probs = IdentityHashMap<T, Double>()

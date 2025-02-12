@@ -6,6 +6,7 @@ import org.plan.research.minimization.core.model.*
 
 import kotlin.math.min
 import kotlinx.coroutines.yield
+import org.plan.research.minimization.core.algorithm.dd.DDItemInfo
 
 /**
  * Default Delta Debugging algorithm.
@@ -19,6 +20,7 @@ class DDMin : DDAlgorithm {
     override suspend fun <M : Monad, T : DDItem> minimize(
         items: List<T>,
         propertyTester: PropertyTester<M, T>,
+        info: (T) -> DDItemInfo,
     ): DDAlgorithmResult<T> {
         var currentItems = ArrayDeque(items)
         var smallItems = ArrayDeque<T>()

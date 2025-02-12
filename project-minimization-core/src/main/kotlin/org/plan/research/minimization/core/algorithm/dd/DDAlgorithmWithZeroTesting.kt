@@ -9,6 +9,7 @@ private class DDAlgorithmWithZeroTesting(private val ddAlgorithm: DDAlgorithm) :
     override suspend fun <M : Monad, T : DDItem> minimize(
         items: List<T>,
         propertyTester: PropertyTester<M, T>,
+        info: (T) -> DDItemInfo,
     ): DDAlgorithmResult<T> {
         val result = ddAlgorithm.minimize(items, propertyTester)
 

@@ -1,6 +1,12 @@
 package org.plan.research.minimization.plugin.settings
 
-class MinimizationPluginStateObservable {
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.util.io.findOrCreateDirectory
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.div
+
+class MinimizationPluginStateObservable(private val project: Project) {
     val state: MinimizationPluginState = MinimizationPluginState()
     var compilationStrategy = StateDelegate(
         getter = { state.compilationStrategy },
@@ -15,7 +21,13 @@ class MinimizationPluginStateObservable {
         setter = { state.gradleOptions = it },
     )
     var temporaryProjectLocation = StateDelegate(
-        getter = { state.temporaryProjectLocation },
+        getter = {
+            state.temporaryProjectLocation ?: run {
+                val newPath = createNewTempPath()
+                state.temporaryProjectLocation = newPath
+                newPath
+            }
+        },
         setter = { state.temporaryProjectLocation = it },
     )
     var logsLocation = StateDelegate(
@@ -48,12 +60,21 @@ class MinimizationPluginStateObservable {
         gradleTask.set(newState.gradleTask)
         gradleOptions.set(newState.gradleOptions)
         temporaryProjectLocation.set(newState.temporaryProjectLocation)
+        logsLocation.set(newState.logsLocation)
         snapshotStrategy.set(newState.snapshotStrategy)
         exceptionComparingStrategy.set(newState.exceptionComparingStrategy)
         stages.set(newState.stages)
         minimizationTransformations.set(newState.minimizationTransformations)
         ignorePaths.set(newState.ignorePaths)
     }
+
+    private fun createNewTempPath(): String = project
+        .guessProjectDir()!!
+        .toNioPath()
+        .parent
+        .div("${project.name}-minimization-temp")
+        .findOrCreateDirectory()
+        .absolutePathString()
 }
 
 class StateDelegate<T>(private val getter: () -> T, private val setter: (T) -> Unit) {

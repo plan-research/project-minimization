@@ -17,6 +17,9 @@ import com.intellij.ui.dsl.builder.*
 import com.intellij.util.execution.ParametersListUtil
 
 import javax.swing.DefaultListModel
+import kotlin.io.path.Path
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.relativeTo
 
 @Suppress("NO_CORRESPONDING_PROPERTY")
 abstract class SettingsProducerBase(protected val project: Project) {
@@ -24,6 +27,7 @@ abstract class SettingsProducerBase(protected val project: Project) {
     protected val state = settings.stateObservable
     private val stagesSettingsProducer by lazy { StagesSettingsProducer() }
     private val ignoreFilesSettingsProducer by lazy { IgnoreFilesSettingsProducer() }
+    private val tempProjectLocationProducer by lazy { TempProjectLocationProducer() }
 
     abstract fun getPanel(): DialogPanel
 
@@ -59,9 +63,21 @@ abstract class SettingsProducerBase(protected val project: Project) {
     }
 
     protected fun Panel.tempProjectLocation() {
+        val projectLocation = project.guessProjectDir()?.toNioPath()
         row("Temporary project location:") {
-            textField()
-                .bindText(state.temporaryProjectLocation::get, state.temporaryProjectLocation::set)
+            tempProjectLocationProducer
+                .run { create(project, projectLocation) }
+                .bindText(
+                    getter = {
+                        projectLocation?.let {
+                            Path(state.temporaryProjectLocation.get()).relativeTo(it).toString()
+                        } ?: state.temporaryProjectLocation.get()
+                    },
+                    setter = {
+                        val newPath = projectLocation?.resolve(it)?.absolutePathString() ?: it
+                        state.temporaryProjectLocation.set(newPath)
+                    },
+                )
         }
     }
 

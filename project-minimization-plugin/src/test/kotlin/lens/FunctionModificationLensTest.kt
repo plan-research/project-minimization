@@ -5,7 +5,7 @@ import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.service
-import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findFile
 import com.intellij.openapi.vfs.toNioPathOrNull
@@ -38,7 +38,10 @@ class FunctionModificationLensTest : PsiLensTestBase<LightTestContext, PsiChildr
         myFixture.copyDirectoryToProject("project-simple", ".")
         configureModules(project)
         val context = LightTestContext(project)
-        runBlocking { doTest(context, emptyList(), "project-simple-modified") }
+        runBlocking {
+            val elements = getAllItems(context)
+            doTest(context, elements, "project-simple-modified")
+        }
     }
 
     fun testMultipleFilesProject() {
@@ -50,18 +53,17 @@ class FunctionModificationLensTest : PsiLensTestBase<LightTestContext, PsiChildr
             val elementsB = getAllElements(context, root.findFile("b.kt")!!)
             val elementsC = getAllElements(context, root.findFile("c.kt")!!)
             val elementsD = getAllElements(context, root.findFile("d.kt")!!)
-            val savedElements =
+            val elementsToDelete =
                 readAction {
                     listOf(
-                        elementsA.findByPsi(context) { it is KtNamedFunction && !it.hasBlockBody() && it.name == "f" }!!,
-                        elementsB.findLastByPsi(context) { it is KtLambdaExpression }!!,
-                        *elementsC.filterByPsi(context) { it is KtPropertyAccessor }.toTypedArray(),
-                        elementsD[0],
-                        elementsD[1]
+                        elementsA.findByPsi(context) { !(it is KtNamedFunction && !it.hasBlockBody() && it.name == "f") }!!,
+                        elementsB.findByPsi(context) { it !is KtLambdaExpression }!!,
+                        *elementsC.filterByPsi(context) { it !is KtPropertyAccessor }.toTypedArray(),
+                        *elementsD.drop(2).toTypedArray(),
                     )
                 }
 
-            doTest(context, savedElements, "project-multiple-files-modified")
+            doTest(context, elementsToDelete, "project-multiple-files-modified")
         }
     }
 
@@ -75,19 +77,19 @@ class FunctionModificationLensTest : PsiLensTestBase<LightTestContext, PsiChildr
             val filter = { it: PsiElement ->
                 it is KtNamedFunction &&
                         runBlocking { readAction { it.hasBlockBody() } } &&
-                        it.name == "stage2"
+                        it.name == "stage1"
             }
-            val savedElements = readAction {
+            val elementsToDelete = readAction {
                 listOf(
                     elementsA.findByPsi(context, filter)!!,
                     elementsB.findByPsi(context, filter)!!
                 )
             }
-            doTest(context, savedElements, "project-multi-stage-modified-stage-1")
+            doTest(context, elementsToDelete, "project-multi-stage-modified-stage-1")
             writeAction {
                 root.findChild("project-multi-stage-modified-stage-1")!!.delete(this)
             }
-            doTest(context, emptyList(), "project-multi-stage-modified-stage-2")
+            doTest(context, elementsA + elementsB, "project-multi-stage-modified-stage-2")
         }
     }
 
@@ -97,19 +99,14 @@ class FunctionModificationLensTest : PsiLensTestBase<LightTestContext, PsiChildr
         expectedFolder: String
     ): LightTestContext {
         val projectCloningService = project.service<ProjectCloningService>()
-        val psiGetterService = service<MinimizationPsiManagerService>()
-        val cloned = projectCloningService.clone(initialContext) as LightTestContext
+        val cloned = projectCloningService.clone(initialContext)
         kotlin.test.assertNotNull(cloned)
         configureModules(cloned.indexProject)
         val lens = getLens()
-        val items = psiGetterService.findAllPsiWithBodyItems(cloned)
         return cloned.runMonad {
-            lens.focusOn(items - elements.toSet())
+            lens.focusOn(elements)
 
-            val files = smartReadAction(context.indexProject) {
-                val fileIndex = ProjectRootManager.getInstance(context.indexProject).fileIndex
-                buildList { fileIndex.iterateContentUnderDirectory(context.projectDir) { fileOrDir -> add(fileOrDir); true } }
-            }
+            val files = buildList { VfsUtil.iterateChildrenRecursively(context.projectDir, null) { fileOrDir -> add(fileOrDir) } }
             val projectRoot = context.projectDir.toNioPath()
 
             files.mapNotNull { smartReadAction(context.indexProject) { it.toPsiFile(context.indexProject) } }

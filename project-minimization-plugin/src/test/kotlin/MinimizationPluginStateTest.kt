@@ -1,4 +1,6 @@
 import com.intellij.openapi.components.service
+import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.vfs.toNioPathOrNull
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import org.plan.research.minimization.plugin.model.FileLevelStage
 import org.plan.research.minimization.plugin.model.state.*
@@ -10,6 +12,8 @@ import org.w3c.dom.Document
 import java.io.File
 import java.nio.file.Paths
 import javax.xml.parsers.DocumentBuilderFactory
+import kotlin.io.path.Path
+import kotlin.io.path.relativeTo
 import kotlin.test.assertEquals
 
 class MinimizationPluginStateTest : BasePlatformTestCase() {
@@ -22,9 +26,9 @@ class MinimizationPluginStateTest : BasePlatformTestCase() {
         assertEquals(CompilationStrategy.GRADLE_IDEA, baseState.compilationStrategy)
         assertEquals("build", baseState.gradleTask)
         assertEquals(emptyList<String>(), baseState.gradleOptions)
-        assertEquals("minimization-project-snapshots", baseState.temporaryProjectLocation)
+        assertNull(baseState.temporaryProjectLocation)
         assertEquals(SnapshotStrategy.PROJECT_CLONING, baseState.snapshotStrategy)
-        assertEquals(ExceptionComparingStrategy.SIMPLE, baseState.exceptionComparingStrategy)
+        assertEquals(ExceptionComparingStrategy.STACKTRACE, baseState.exceptionComparingStrategy)
         assertEquals(
             MinimizationPluginState.defaultTransformations,
             baseState.minimizationTransformations
@@ -50,7 +54,7 @@ class MinimizationPluginStateTest : BasePlatformTestCase() {
         assertEquals(listOf("--info"), changedState.gradleOptions)
         assertEquals("new-project-location", changedState.temporaryProjectLocation)
         assertEquals(SnapshotStrategy.PROJECT_CLONING, changedState.snapshotStrategy)
-        assertEquals(ExceptionComparingStrategy.SIMPLE, changedState.exceptionComparingStrategy)
+        assertEquals(ExceptionComparingStrategy.STACKTRACE, changedState.exceptionComparingStrategy)
         assertEquals(emptyList<TransformationDescriptor>(), changedState.minimizationTransformations)
         assertEquals(
             listOf(FileLevelStage(DDStrategy.DD_MIN)),

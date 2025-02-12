@@ -3,6 +3,8 @@ package org.plan.research.minimization.plugin.settings
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.util.io.findOrCreateDirectory
+import kotlin.io.path.Path
+import kotlin.io.path.absolute
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.div
 
@@ -68,13 +70,12 @@ class MinimizationPluginStateObservable(private val project: Project) {
         ignorePaths.set(newState.ignorePaths)
     }
 
-    private fun createNewTempPath(): String = project
-        .guessProjectDir()!!
-        .toNioPath()
-        .parent
-        .div("${project.name}-minimization-temp")
-        .findOrCreateDirectory()
-        .absolutePathString()
+    private fun createNewTempPath(): String =
+        (project.guessProjectDir()?.toNioPath() ?: Path("").absolute())
+            .parent
+            .div("${project.name}-minimization-temp")
+            .findOrCreateDirectory()
+            .absolutePathString()
 }
 
 class StateDelegate<T>(private val getter: () -> T, private val setter: (T) -> Unit) {

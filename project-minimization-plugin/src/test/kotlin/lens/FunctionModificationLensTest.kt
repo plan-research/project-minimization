@@ -5,7 +5,7 @@ import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.service
-import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findFile
 import com.intellij.openapi.vfs.toNioPathOrNull
@@ -98,7 +98,7 @@ class FunctionModificationLensTest : PsiLensTestBase<LightTestContext, PsiChildr
     ): LightTestContext {
         val projectCloningService = project.service<ProjectCloningService>()
         val psiGetterService = service<MinimizationPsiManagerService>()
-        val cloned = projectCloningService.clone(initialContext) as LightTestContext
+        val cloned = projectCloningService.clone(initialContext)
         kotlin.test.assertNotNull(cloned)
         configureModules(cloned.indexProject)
         val lens = getLens()
@@ -106,10 +106,7 @@ class FunctionModificationLensTest : PsiLensTestBase<LightTestContext, PsiChildr
         return cloned.runMonad {
             lens.focusOn(items - elements.toSet())
 
-            val files = smartReadAction(context.indexProject) {
-                val fileIndex = ProjectRootManager.getInstance(context.indexProject).fileIndex
-                buildList { fileIndex.iterateContentUnderDirectory(context.projectDir) { fileOrDir -> add(fileOrDir); true } }
-            }
+            val files = buildList { VfsUtil.iterateChildrenRecursively(context.projectDir, null) { fileOrDir -> add(fileOrDir) } }
             val projectRoot = context.projectDir.toNioPath()
 
             files.mapNotNull { smartReadAction(context.indexProject) { it.toPsiFile(context.indexProject) } }

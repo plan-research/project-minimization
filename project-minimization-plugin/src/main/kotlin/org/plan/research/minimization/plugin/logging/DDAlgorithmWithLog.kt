@@ -8,13 +8,13 @@ import org.plan.research.minimization.core.model.PropertyTester
 
 import mu.KotlinLogging
 
-class DDAlgorithmWithLog(
-    private val innerDDAlgorithm: DDAlgorithm,
-) : DDAlgorithm {
+class DDAlgorithmWithLog<T : DDItem>(
+    private val innerDDAlgorithm: DDAlgorithm<T>,
+) : DDAlgorithm<T> {
     private val logger = KotlinLogging.logger {}
 
     context(M)
-    override suspend fun <M : Monad, T : DDItem> minimize(
+    override suspend fun <M : Monad> minimize(
         items: List<T>,
         propertyTester: PropertyTester<M, T>,
     ): DDAlgorithmResult<T> {
@@ -22,7 +22,7 @@ class DDAlgorithmWithLog(
 
         logger.info {
             "Start minimization algorithm \n" +
-                "propertyTester - $propertyTester"
+                    "propertyTester - $propertyTester"
         }
         if (logger.isTraceEnabled) {
             logger.trace {
@@ -51,4 +51,4 @@ class DDAlgorithmWithLog(
     override fun toString(): String = innerDDAlgorithm.toString()
 }
 
-fun DDAlgorithm.withLog(): DDAlgorithm = DDAlgorithmWithLog(this)
+fun <T : DDItem> DDAlgorithm<T>.withLog(): DDAlgorithm<T> = DDAlgorithmWithLog(this)

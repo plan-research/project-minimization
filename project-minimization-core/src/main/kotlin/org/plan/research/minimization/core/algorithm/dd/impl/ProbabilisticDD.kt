@@ -16,9 +16,9 @@ import kotlinx.coroutines.yield
  * This version doesn't support caching mechanisms.
  */
 @Suppress("MAGIC_NUMBER", "FLOAT_IN_ACCURATE_CALCULATIONS")
-class ProbabilisticDD : DDAlgorithm {
+class ProbabilisticDD<T : DDItem> : DDAlgorithm<T> {
     context(M)
-    override suspend fun <M : Monad, T : DDItem> minimize(
+    override suspend fun <M : Monad> minimize(
         items: List<T>,
         propertyTester: PropertyTester<M, T>,
     ): DDAlgorithmResult<T> {
@@ -55,7 +55,7 @@ class ProbabilisticDD : DDAlgorithm {
         return DDAlgorithmResult(currentItems, deletedItems)
     }
 
-    private fun <T> merge(
+    private fun merge(
         probs: Map<T, Double>,
         buffer: ArrayDeque<T>,
         currentItems: MutableList<T>,

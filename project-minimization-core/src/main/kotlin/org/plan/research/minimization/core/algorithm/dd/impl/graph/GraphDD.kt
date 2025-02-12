@@ -9,14 +9,14 @@ import org.plan.research.minimization.core.model.*
 
 import org.jgrapht.Graph
 
-class GraphDD(
-    underlyingAlgorithm: DDAlgorithm,
+class GraphDD<T : DDItem>(
+    underlyingAlgorithm: DDAlgorithm<T>,
     private val graphLayerMonadTProvider: GraphLayerMonadTProvider,
-) : DDGraphAlgorithm {
+) : DDGraphAlgorithm<T> {
     private val hdd = HierarchicalDD(underlyingAlgorithm.withZeroTesting())
 
     context(M)
-    override suspend fun <M : Monad, T : DDItem, E> minimize(
+    override suspend fun <M : Monad, E> minimize(
         graph: Graph<T, E>,
         propertyTester: GraphPropertyTester<M, T>,
     ): DDGraphAlgorithmResult<T> {

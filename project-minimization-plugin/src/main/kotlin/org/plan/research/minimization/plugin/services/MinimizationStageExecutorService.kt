@@ -37,6 +37,9 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import mu.KotlinLogging
+import org.plan.research.minimization.core.algorithm.dd.CondensedVertex
+import org.plan.research.minimization.plugin.model.item.ProjectFileDDItem
+import org.plan.research.minimization.plugin.model.item.PsiChildrenIndexDDItem
 
 @Service(Service.Level.PROJECT)
 class MinimizationStageExecutorService(private val project: Project) : MinimizationStageExecutor {
@@ -48,12 +51,12 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         statLogger.info { "Start File level stage" }
         statLogger.info {
             "File level stage settings, " +
-                "DDAlgorithm: ${fileLevelStage.ddAlgorithm}"
+                    "DDAlgorithm: ${fileLevelStage.ddAlgorithm}"
         }
 
         val lightContext = FileLevelStageContext(context.projectDir, context.project, context.originalProject)
 
-        val baseAlgorithm = fileLevelStage.ddAlgorithm.getDDAlgorithm()
+        val baseAlgorithm = fileLevelStage.ddAlgorithm.getDDAlgorithm<ProjectFileDDItem>()
         val hierarchicalDD = HierarchicalDD(baseAlgorithm)
 
         logger.info { "Initialise file hierarchy" }
@@ -79,7 +82,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
 
         val lightContext = FunctionLevelStageContext(context.projectDir, context.project, context.originalProject)
 
-        val ddAlgorithm = functionLevelStage.ddAlgorithm.getDDAlgorithm()
+        val ddAlgorithm = functionLevelStage.ddAlgorithm.getDDAlgorithm<PsiChildrenIndexDDItem>()
         val lens = FunctionModificationLens<FunctionLevelStageContext>()
         val firstLevel = service<MinimizationPsiManagerService>()
             .findAllPsiWithBodyItems(lightContext)
@@ -114,7 +117,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         }
         logger.trace {
             "Starting DD Algorithm with following elements:\n" +
-                text.joinToString("\n") { "\t- $it" }
+                    text.joinToString("\n") { "\t- $it" }
         }
     }
 
@@ -126,7 +129,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
         logger.info { "Start Function Deleting Graph stage" }
         statLogger.info {
             "Function deleting Graph stage settings, " +
-                "DDAlgorithm: ${declarationGraphStage.ddAlgorithm}"
+                    "DDAlgorithm: ${declarationGraphStage.ddAlgorithm}"
         }
 
         val importRefCounter = KtSourceImportRefCounter.create(context).getOrElse {
@@ -145,7 +148,7 @@ class MinimizationStageExecutorService(private val project: Project) : Minimizat
             callTraceParameterCache,
         )
 
-        val ddAlgorithm = declarationGraphStage.ddAlgorithm.getDDAlgorithm()
+        val ddAlgorithm = declarationGraphStage.ddAlgorithm.getDDAlgorithm<CondensedVertex<PsiStubDDItem>>()
         val graphDD = GraphDD(ddAlgorithm, WithProgressReporterMonadProvider()).withCondensation()
 
         val settings = project.service<MinimizationPluginSettings>()

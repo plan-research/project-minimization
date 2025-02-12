@@ -6,9 +6,9 @@ import org.jgrapht.Graph
 
 data class DDGraphAlgorithmResult<T : DDItem>(val retained: GraphCut<T>, val deleted: GraphCut<T>)
 
-interface DDGraphAlgorithm {
+interface DDGraphAlgorithm<T : DDItem> {
     context(M)
-    suspend fun <M : Monad, T : DDItem, E> minimize(
+    suspend fun <M : Monad, E> minimize(
         graph: Graph<T, E>,
         propertyTester: GraphPropertyTester<M, T>,
     ): DDGraphAlgorithmResult<T>

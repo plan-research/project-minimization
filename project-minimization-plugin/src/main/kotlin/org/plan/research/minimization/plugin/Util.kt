@@ -34,6 +34,7 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import org.plan.research.minimization.core.model.DDItem
 
 object PathSerializer : KSerializer<Path> {
     override val descriptor: SerialDescriptor =
@@ -54,10 +55,10 @@ fun SnapshotStrategy.getSnapshotManager(project: Project): SnapshotManager =
         SnapshotStrategy.PROJECT_CLONING -> ProjectCloningSnapshotManager(project)
     }
 
-fun DDStrategy.getDDAlgorithm(): DDAlgorithm =
+fun <T : DDItem> DDStrategy.getDDAlgorithm(): DDAlgorithm<T> =
     when (this) {
-        DDStrategy.DD_MIN -> DDMin()
-        DDStrategy.PROBABILISTIC_DD -> ProbabilisticDD()
+        DDStrategy.DD_MIN -> DDMin<T>()
+        DDStrategy.PROBABILISTIC_DD -> ProbabilisticDD<T>()
     }.withLog()
 
 fun CompilationStrategy.getCompilationStrategy(): BuildExceptionProvider =

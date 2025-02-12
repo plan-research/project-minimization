@@ -1,9 +1,13 @@
 package org.plan.research.minimization.plugin.settings
 
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.util.io.findOrCreateDirectory
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.div
 
-class MinimizationPluginStateObservable(project: Project) {
-    val state: MinimizationPluginState = MinimizationPluginState(project)
+class MinimizationPluginStateObservable(private val project: Project) {
+    val state: MinimizationPluginState = MinimizationPluginState()
     var compilationStrategy = StateDelegate(
         getter = { state.compilationStrategy },
         setter = { state.compilationStrategy = it },
@@ -17,7 +21,13 @@ class MinimizationPluginStateObservable(project: Project) {
         setter = { state.gradleOptions = it },
     )
     var temporaryProjectLocation = StateDelegate(
-        getter = { state.temporaryProjectLocation },
+        getter = {
+            state.temporaryProjectLocation ?: run {
+                val newPath = createNewTempPath()
+                state.temporaryProjectLocation = newPath
+                newPath
+            }
+        },
         setter = { state.temporaryProjectLocation = it },
     )
     var logsLocation = StateDelegate(
@@ -57,6 +67,14 @@ class MinimizationPluginStateObservable(project: Project) {
         minimizationTransformations.set(newState.minimizationTransformations)
         ignorePaths.set(newState.ignorePaths)
     }
+
+    private fun createNewTempPath(): String = project
+        .guessProjectDir()!!
+        .toNioPath()
+        .parent
+        .div("${project.name}-minimization-temp")
+        .findOrCreateDirectory()
+        .absolutePathString()
 }
 
 class StateDelegate<T>(private val getter: () -> T, private val setter: (T) -> Unit) {

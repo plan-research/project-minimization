@@ -33,14 +33,13 @@ import kotlinx.coroutines.withContext
 @Service(Service.Level.PROJECT)
 class ProjectCloningService(private val rootProject: Project) : IJDDContextCloner {
     private val openingService = service<ProjectOpeningService>()
-    private val logsDirectoryName by rootProject
+    private val state = rootProject
         .service<MinimizationPluginSettings>()
         .stateObservable
+    private val logsDirectoryName by state
         .logsLocation
         .observe { it }
-    private val tempProjectsDirectoryPath by rootProject
-        .service<MinimizationPluginSettings>()
-        .stateObservable
+    private val tempProjectsDirectoryPath by state
         .temporaryProjectLocation
         .observe { it }
 

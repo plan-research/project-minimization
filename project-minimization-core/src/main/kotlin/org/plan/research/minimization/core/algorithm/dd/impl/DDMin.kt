@@ -13,10 +13,10 @@ import kotlinx.coroutines.yield
  * This version already supports an optimized caching mechanism specialized for DDMin,
  * so it's not necessary to implement your own.
  */
-class DDMin<T : DDItem> : DDAlgorithm<T> {
+class DDMin : DDAlgorithm {
     context(M)
     @Suppress("NESTED_BLOCK", "TOO_LONG_FUNCTION")
-    override suspend fun <M : Monad> minimize(
+    override suspend fun <M : Monad, T : DDItem> minimize(
         items: List<T>,
         propertyTester: PropertyTester<M, T>,
     ): DDAlgorithmResult<T> {

@@ -12,6 +12,6 @@ object TestGraphLayerMonadTProvider : GraphDD.GraphLayerMonadTProvider {
 }
 
 class GraphDDTest : DDGraphAlgorithmTestBase() {
-    override fun getAlgorithm(): DDGraphAlgorithm<TestNode> =
+    override fun getAlgorithm(): DDGraphAlgorithm =
         GraphDD(ProbabilisticDD(), TestGraphLayerMonadTProvider)
 }

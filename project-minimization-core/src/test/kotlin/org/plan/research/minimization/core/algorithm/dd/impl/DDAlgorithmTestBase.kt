@@ -10,7 +10,7 @@ import kotlin.random.Random
 import kotlin.test.assertContentEquals
 
 abstract class DDAlgorithmTestBase {
-    abstract fun <T : DDItem> createAlgorithm(): DDAlgorithm<T>
+    abstract fun createAlgorithm(): DDAlgorithm
 
     data class SomeDDItem(val value: Int) : DDItem
 
@@ -40,7 +40,7 @@ abstract class DDAlgorithmTestBase {
     }
 
     private suspend fun simpleTestWithSize(
-        algorithm: DDAlgorithm<SomeDDItem>,
+        algorithm: DDAlgorithm,
         size: Int, targetSize: Int,
         random: Random, shuffled: Boolean,
     ) {
@@ -58,7 +58,7 @@ abstract class DDAlgorithmTestBase {
     }
 
     private suspend fun complexTestWithSize(
-        algorithm: DDAlgorithm<SomeDDItem>,
+        algorithm: DDAlgorithm,
         size: Int, targetSize: Int, badSize: Int,
         random: Random, shuffled: Boolean,
     ) {
@@ -95,7 +95,7 @@ abstract class DDAlgorithmTestBase {
 
     @Test
     fun simpleTest() {
-        val algorithm = createAlgorithm<SomeDDItem>()
+        val algorithm = createAlgorithm()
         val random = Random(42)
         runBlocking {
             repeat(ITERATIONS) {
@@ -109,7 +109,7 @@ abstract class DDAlgorithmTestBase {
 
     @Test
     fun complexTest() {
-        val algorithm = createAlgorithm<SomeDDItem>()
+        val algorithm = createAlgorithm()
         val random = Random(42)
         runBlocking {
             repeat(ITERATIONS) {

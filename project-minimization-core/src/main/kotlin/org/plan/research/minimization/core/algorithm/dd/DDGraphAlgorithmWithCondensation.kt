@@ -13,10 +13,10 @@ typealias CondensedGraph<T> = Graph<CondensedVertex<T>, DefaultEdge>
 data class CondensedVertex<T : DDItem>(val items: Set<T>) : DDItem
 
 @Suppress("TYPE_ALIAS")
-class DDGraphAlgorithmWithCondensation<T : DDItem>(
-    private val underlyingAlgorithm: DDGraphAlgorithm<CondensedVertex<T>>,
-) : DDGraphAlgorithm<T> {
-    private fun <E> condense(graph: Graph<T, E>): CondensedGraph<T> {
+class DDGraphAlgorithmWithCondensation(
+    private val underlyingAlgorithm: DDGraphAlgorithm,
+) : DDGraphAlgorithm {
+    private fun <T : DDItem, E> condense(graph: Graph<T, E>): CondensedGraph<T> {
         val strongConnectivityAlgorithm = KosarajuStrongConnectivityInspector(graph)
         val components = strongConnectivityAlgorithm.stronglyConnectedComponents
             .map { CondensedVertex(it.vertexSet()) }
@@ -46,7 +46,7 @@ class DDGraphAlgorithmWithCondensation<T : DDItem>(
     }
 
     context(M)
-    override suspend fun <M : Monad, E> minimize(
+    override suspend fun <M : Monad, T : DDItem, E> minimize(
         graph: Graph<T, E>,
         propertyTester: GraphPropertyTester<M, T>,
     ): DDGraphAlgorithmResult<T> {
@@ -58,14 +58,14 @@ class DDGraphAlgorithmWithCondensation<T : DDItem>(
         return DDGraphAlgorithmResult(retained.flatten(), deleted.flatten())
     }
 
-    private fun GraphCut<CondensedVertex<T>>.flatten(): GraphCut<T> =
-        fold(mutableSetOf()) { acc, vertex ->
-            acc.apply {
-                addAll(vertex.items)
-            }
+    private fun <T : DDItem> GraphCut<CondensedVertex<T>>.flatten(
+    ): GraphCut<T> = fold(mutableSetOf()) { acc, vertex ->
+        acc.apply {
+            addAll(vertex.items)
         }
+    }
 
-    private inner class GraphPropertyTesterAdapter<M : Monad>(
+    private inner class GraphPropertyTesterAdapter<M : Monad, T : DDItem>(
         val propertyTester: GraphPropertyTester<M, T>,
     ) : GraphPropertyTester<M, CondensedVertex<T>> {
         context(M)
@@ -76,5 +76,5 @@ class DDGraphAlgorithmWithCondensation<T : DDItem>(
     }
 }
 
-fun <T : DDItem> DDGraphAlgorithm<CondensedVertex<T>>.withCondensation(): DDGraphAlgorithm<T> =
+fun DDGraphAlgorithm.withCondensation(): DDGraphAlgorithm =
     DDGraphAlgorithmWithCondensation(this)

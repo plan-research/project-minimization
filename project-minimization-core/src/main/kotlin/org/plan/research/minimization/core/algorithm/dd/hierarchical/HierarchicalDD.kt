@@ -19,11 +19,9 @@ import kotlinx.coroutines.yield
  *
  * @param baseDDAlgorithm The delta debugging algorithm utilized for minimization at each hierarchical level.
  */
-class HierarchicalDD<T : DDItem>(
-    private val baseDDAlgorithm: DDAlgorithm<T>
-) {
+class HierarchicalDD(private val baseDDAlgorithm: DDAlgorithm) {
     context(M)
-    suspend fun <M : MonadT<M2>, M2 : Monad> minimize(generator: HierarchicalDDGenerator<M, M2, T>) {
+    suspend fun <M : MonadT<M2>, M2 : Monad, T : DDItem> minimize(generator: HierarchicalDDGenerator<M, M2, T>) {
         var level = generator.generateFirstLevel().getOrElse { return }
         while (true) {
             yield()

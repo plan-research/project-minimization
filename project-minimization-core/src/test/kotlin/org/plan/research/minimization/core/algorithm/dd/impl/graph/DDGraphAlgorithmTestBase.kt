@@ -80,5 +80,5 @@ abstract class DDGraphAlgorithmTestBase {
         EmptyMonad.run { getAlgorithm().minimize(graph, propertyTester) }
     }
 
-    abstract fun getAlgorithm(): DDGraphAlgorithm<TestNode>
+    abstract fun getAlgorithm(): DDGraphAlgorithm
 }

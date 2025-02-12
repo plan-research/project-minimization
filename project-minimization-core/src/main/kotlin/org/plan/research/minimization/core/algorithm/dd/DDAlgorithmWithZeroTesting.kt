@@ -4,11 +4,9 @@ import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.Monad
 import org.plan.research.minimization.core.model.PropertyTester
 
-private class DDAlgorithmWithZeroTesting<T : DDItem>(
-    private val ddAlgorithm: DDAlgorithm<T>
-) : DDAlgorithm<T> {
+private class DDAlgorithmWithZeroTesting(private val ddAlgorithm: DDAlgorithm) : DDAlgorithm {
     context(M)
-    override suspend fun <M : Monad> minimize(
+    override suspend fun <M : Monad, T : DDItem> minimize(
         items: List<T>,
         propertyTester: PropertyTester<M, T>,
     ): DDAlgorithmResult<T> {
@@ -23,7 +21,7 @@ private class DDAlgorithmWithZeroTesting<T : DDItem>(
     }
 }
 
-fun <T : DDItem> DDAlgorithm<T>.withZeroTesting(): DDAlgorithm<T> = when (this) {
+fun DDAlgorithm.withZeroTesting(): DDAlgorithm = when (this) {
     is DDAlgorithmWithZeroTesting -> this
     else -> DDAlgorithmWithZeroTesting(this)
 }

@@ -1,6 +1,6 @@
 package org.plan.research.minimization.core.algorithm.dd.impl
 
-import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
+import org.plan.research.minimization.core.algorithm.dd.IDDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.model.*
 
@@ -16,14 +16,16 @@ import kotlinx.coroutines.yield
  * This version doesn't support caching mechanisms.
  */
 @Suppress("MAGIC_NUMBER", "FLOAT_IN_ACCURATE_CALCULATIONS")
-class ProbabilisticDD : DDAlgorithm {
+class ProbabilisticDD<U : DDItem>(
+    private val initDist: Distribution<U> = ConstantDistribution(),
+) : IDDAlgorithm<U> {
     context(M)
-    override suspend fun <M : Monad, T : DDItem> minimize(
+    override suspend fun <M : Monad, T : U> minimize(
         items: List<T>,
         propertyTester: PropertyTester<M, T>,
     ): DDAlgorithmResult<T> {
         val buffer = ArrayDeque<T>()
-        val probs = IdentityHashMap<T, Double>()
+        val probs = IdentityHashMap(initDist.on(items))
         val defaultProb = 1 - exp(-2.0 / items.size)
         items.forEach { item -> probs[item] = defaultProb }
         val currentItems = items.toMutableList()
@@ -55,8 +57,8 @@ class ProbabilisticDD : DDAlgorithm {
         return DDAlgorithmResult(currentItems, deletedItems)
     }
 
-    private fun <T> merge(
-        probs: Map<T, Double>,
+    private fun <T : U> merge(
+        probs: Map<U, Double>,
         buffer: ArrayDeque<T>,
         currentItems: MutableList<T>,
         excludedItems: MutableList<T>,
@@ -94,5 +96,16 @@ class ProbabilisticDD : DDAlgorithm {
         }
         currentItems.addAll(buffer)
         buffer.clear()
+    }
+}
+
+interface Distribution<U : DDItem> {
+    fun on(items: List<U>): Map<U, Double>
+}
+
+class ConstantDistribution<U : DDItem> : Distribution<U> {
+    override fun on(items: List<U>): Map<U, Double> {
+        val defaultProb = 1 - exp(-2.0 / items.size)
+        return items.associateWith { defaultProb }
     }
 }

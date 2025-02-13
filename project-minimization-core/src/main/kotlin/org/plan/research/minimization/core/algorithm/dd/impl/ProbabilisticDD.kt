@@ -8,6 +8,8 @@ import java.util.*
 
 import kotlin.collections.ArrayDeque
 import kotlin.math.exp
+import kotlin.math.pow
+import kotlin.math.max
 import kotlinx.coroutines.yield
 import org.plan.research.minimization.core.algorithm.dd.DDItemInfo
 
@@ -25,10 +27,8 @@ class ProbabilisticDD : DDAlgorithm {
         info: (T) -> DDItemInfo,
     ): DDAlgorithmResult<T> {
         val buffer = ArrayDeque<T>()
-        val probs = IdentityHashMap<T, Double>()
-        val defaultProb = 1 - exp(-2.0 / items.size)
-        items.forEach { item -> probs[item] = defaultProb }
-        val currentItems = items.toMutableList()
+        val probs = initProbs(items, info)
+        val currentItems = items.sortedByDescending { probs[it]!! }.toMutableList()
         val excludedItems = mutableListOf<T>()
         val deletedItems = mutableListOf<T>()
         while (currentItems.size > 1 && probs[currentItems.last()]!! < 1.0) {
@@ -96,5 +96,41 @@ class ProbabilisticDD : DDAlgorithm {
         }
         currentItems.addAll(buffer)
         buffer.clear()
+    }
+
+    private fun <T> initProbs(
+        items: List<T>,
+        info: (T) -> DDItemInfo,
+    ): IdentityHashMap<T, Double> {
+        val probs = IdentityHashMap<T, Double>()
+        val important = IdentityHashMap<T, Boolean>()
+        items.forEach { important[it] = info(it).likelyImportant }
+
+        val importantItemsCount = items.count { important[it]!! }
+        if (importantItemsCount == 0 || importantItemsCount == items.size) {
+            val bisectProb = splitAtProb(items.size / 2.0)
+            items.forEach { probs[it] = bisectProb }
+            return probs
+        }
+
+        val unimportantItemsCount = items.size - importantItemsCount
+        val unimportantProb = splitAtProb(unimportantItemsCount.toDouble())
+        val importantProb = max(
+            splitAtProb(importantItemsCount.toDouble() / 2),
+            unimportantProb.pow(0.9),
+        )
+
+        items.forEach {
+            probs[it] = if (important[it]!!) importantProb else unimportantProb
+        }
+        
+        return probs
+    }
+
+    companion object {
+        /**
+         * Returns probability such that if first n items have it, then PDD will split at n.
+         */
+        private fun splitAtProb(n: Double): Double = 1 - exp(-1.0 / n)
     }
 }

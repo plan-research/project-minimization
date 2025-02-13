@@ -2,11 +2,13 @@ package org.plan.research.minimization.core.algorithm.dd.impl
 
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
-import org.plan.research.minimization.core.model.*
+import org.plan.research.minimization.core.algorithm.dd.DDItemInfo
+import org.plan.research.minimization.core.model.DDItem
+import org.plan.research.minimization.core.model.Monad
+import org.plan.research.minimization.core.model.PropertyTester
 
 import kotlin.math.min
 import kotlinx.coroutines.yield
-import org.plan.research.minimization.core.algorithm.dd.DDItemInfo
 
 /**
  * Default Delta Debugging algorithm.

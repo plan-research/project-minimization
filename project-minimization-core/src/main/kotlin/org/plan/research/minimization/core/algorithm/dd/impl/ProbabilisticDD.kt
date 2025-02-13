@@ -2,16 +2,16 @@ package org.plan.research.minimization.core.algorithm.dd.impl
 
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
+import org.plan.research.minimization.core.algorithm.dd.DDItemInfo
 import org.plan.research.minimization.core.model.*
 
 import java.util.*
 
 import kotlin.collections.ArrayDeque
 import kotlin.math.exp
-import kotlin.math.pow
 import kotlin.math.max
+import kotlin.math.pow
 import kotlinx.coroutines.yield
-import org.plan.research.minimization.core.algorithm.dd.DDItemInfo
 
 /**
  * Probabilistic Delta Debugging.
@@ -123,7 +123,7 @@ class ProbabilisticDD : DDAlgorithm {
         items.forEach {
             probs[it] = if (important[it]!!) importantProb else unimportantProb
         }
-        
+
         return probs
     }
 

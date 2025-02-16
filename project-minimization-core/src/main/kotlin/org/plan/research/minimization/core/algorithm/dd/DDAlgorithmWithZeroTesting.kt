@@ -11,7 +11,7 @@ private class DDAlgorithmWithZeroTesting(private val ddAlgorithm: DDAlgorithm) :
         propertyTester: PropertyTester<M, T>,
         info: (T) -> DDItemInfo,
     ): DDAlgorithmResult<T> {
-        val result = ddAlgorithm.minimize(items, propertyTester)
+        val result = ddAlgorithm.minimize(items, propertyTester, info)
 
         return result.retained.singleOrNull()?.let {
             propertyTester.test(emptyList(), result.retained).fold(

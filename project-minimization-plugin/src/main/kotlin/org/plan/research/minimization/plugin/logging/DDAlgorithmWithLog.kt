@@ -24,7 +24,7 @@ class DDAlgorithmWithLog(
 
         logger.info {
             "Start minimization algorithm \n" +
-                "propertyTester - $propertyTester"
+                    "propertyTester - $propertyTester"
         }
         if (logger.isTraceEnabled) {
             logger.trace {
@@ -38,7 +38,7 @@ class DDAlgorithmWithLog(
         statLogger.info { "DDAlgorithm started with size: ${items.size}" }
 
         try {
-            result = innerDDAlgorithm.minimize(items, propertyTester)
+            result = innerDDAlgorithm.minimize(items, propertyTester, info)
         } catch (e: Throwable) {
             logger.error { "DDAlgorithm ended up with error: ${e.message}" }
             throw e

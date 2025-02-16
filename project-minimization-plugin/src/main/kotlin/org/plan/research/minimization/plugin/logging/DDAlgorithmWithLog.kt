@@ -2,7 +2,7 @@ package org.plan.research.minimization.plugin.logging
 
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
-import org.plan.research.minimization.core.algorithm.dd.DDItemInfo
+import org.plan.research.minimization.core.model.DDInfo
 import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.Monad
 import org.plan.research.minimization.core.model.PropertyTester
@@ -18,13 +18,13 @@ class DDAlgorithmWithLog(
     override suspend fun <M : Monad, T : DDItem> minimize(
         items: List<T>,
         propertyTester: PropertyTester<M, T>,
-        info: (T) -> DDItemInfo,
+        info: DDInfo<T>,
     ): DDAlgorithmResult<T> {
         val result: DDAlgorithmResult<T>
 
         logger.info {
             "Start minimization algorithm \n" +
-                    "propertyTester - $propertyTester"
+                "propertyTester - $propertyTester"
         }
         if (logger.isTraceEnabled) {
             logger.trace {

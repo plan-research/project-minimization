@@ -1,5 +1,6 @@
 package org.plan.research.minimization.core.algorithm.dd
 
+import org.plan.research.minimization.core.model.DDInfo
 import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.Monad
 import org.plan.research.minimization.core.model.PropertyTester
@@ -9,7 +10,7 @@ private class DDAlgorithmWithZeroTesting(private val ddAlgorithm: DDAlgorithm) :
     override suspend fun <M : Monad, T : DDItem> minimize(
         items: List<T>,
         propertyTester: PropertyTester<M, T>,
-        info: (T) -> DDItemInfo,
+        info: DDInfo<T>,
     ): DDAlgorithmResult<T> {
         val result = ddAlgorithm.minimize(items, propertyTester, info)
 

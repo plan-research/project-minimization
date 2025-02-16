@@ -2,7 +2,6 @@ package org.plan.research.minimization.core.algorithm.dd.impl
 
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
-import org.plan.research.minimization.core.algorithm.dd.DDItemInfo
 import org.plan.research.minimization.core.model.*
 
 import java.util.*
@@ -24,7 +23,7 @@ class ProbabilisticDD : DDAlgorithm {
     override suspend fun <M : Monad, T : DDItem> minimize(
         items: List<T>,
         propertyTester: PropertyTester<M, T>,
-        info: (T) -> DDItemInfo,
+        info: DDInfo<T>,
     ): DDAlgorithmResult<T> {
         val buffer = ArrayDeque<T>()
         val probs = initProbs(items, info)
@@ -98,13 +97,13 @@ class ProbabilisticDD : DDAlgorithm {
         buffer.clear()
     }
 
-    private fun <T> initProbs(
+    private fun <T : DDItem> initProbs(
         items: List<T>,
-        info: (T) -> DDItemInfo,
+        info: DDInfo<T>,
     ): IdentityHashMap<T, Double> {
         val probs = IdentityHashMap<T, Double>()
         val important = IdentityHashMap<T, Boolean>()
-        items.forEach { important[it] = info(it).likelyImportant }
+        items.forEach { important[it] = info.of(it).likelyImportant }
 
         val importantItemsCount = items.count { important[it]!! }
         if (importantItemsCount == 0 || importantItemsCount == items.size) {

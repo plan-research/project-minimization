@@ -3,6 +3,13 @@ package org.plan.research.minimization.core.algorithm.dd.impl
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import kotlinx.coroutines.runBlocking
+import net.jqwik.api.ForAll
+import net.jqwik.api.Property
+import net.jqwik.api.domains.Domain
+import net.jqwik.api.domains.DomainContext
+import net.jqwik.api.statistics.NumberRangeHistogram
+import net.jqwik.api.statistics.Statistics
+import net.jqwik.api.statistics.StatisticsReport
 import org.junit.jupiter.api.Test
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.model.*
@@ -37,6 +44,22 @@ abstract class DDAlgorithmTestBase {
             ensure(badCount == 0 || badCount == badItems.size) { PropertyTesterError.UnknownProperty }
             ensure(retainedItems.count { it in target } == target.size) { PropertyTesterError.NoProperty }
         }
+    }
+
+    class CountingTester<M : Monad, T : DDItem>(
+        private val internal: PropertyTester<M, T>,
+    ) : PropertyTester<M, T> {
+        private var count = 0
+
+        fun getCount() = count
+
+        fun resetCount() {
+            count = 0
+        }
+
+        context(M)
+        override suspend fun test(retainedItems: List<T>, deletedItems: List<T>) =
+            internal.test(retainedItems, deletedItems).also { count++ }
     }
 
     private suspend fun simpleTestWithSize(
@@ -120,6 +143,51 @@ abstract class DDAlgorithmTestBase {
                 complexTestWithSize(algorithm, size, targetSize, badSize, random, shuffled)
             }
         }
+    }
+
+    @Property
+    @Domain(DDDomain::class)
+    @Domain(DomainContext.Global::class)
+    @StatisticsReport(format = NumberRangeHistogram::class)
+    fun infoHelps(@ForAll case: TestCase, @ForAll seed: Long) {
+        val random = Random(seed)
+        val items = case.items.shuffled(random)
+
+        val algorithm = createAlgorithm()
+        val tester = CountingTester(SimpleTester(target = case.target.toSet()))
+
+        val simpleResult = runBlocking {
+            EmptyMonad.run {
+                algorithm.minimize(items, tester)
+            }
+        }
+        val simpleCount = tester.getCount()
+        tester.resetCount()
+
+        assertContentEquals(
+            simpleResult.retained.sortedBy { it.value },
+            case.target.sortedBy { it.value }
+        )
+
+        val infoResult = runBlocking {
+            EmptyMonad.run {
+                algorithm.minimize(
+                    items, tester,
+                    info = DDInfo.fromImportance { it in case.target }
+                )
+            }
+        }
+        val infoCount = tester.getCount()
+        tester.resetCount()
+
+        assertContentEquals(
+            infoResult.retained.sortedBy { it.value },
+            case.target.sortedBy { it.value }
+        )
+
+        assert(infoCount <= simpleCount)
+
+        Statistics.label("Difference in runs count").collect(simpleCount - infoCount)
     }
 
     companion object {

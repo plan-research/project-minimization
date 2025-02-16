@@ -102,8 +102,7 @@ class ProbabilisticDD : DDAlgorithm {
         info: DDInfo<T>,
     ): IdentityHashMap<T, Double> {
         val probs = IdentityHashMap<T, Double>()
-        val important = IdentityHashMap<T, Boolean>()
-        items.forEach { important[it] = info.of(it).likelyImportant }
+        val important = info.importanceOf(items)
 
         val importantItemsCount = items.count { important[it]!! }
         if (importantItemsCount == 0 || importantItemsCount == items.size) {

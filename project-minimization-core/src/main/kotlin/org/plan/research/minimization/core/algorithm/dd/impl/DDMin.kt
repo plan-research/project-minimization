@@ -24,7 +24,9 @@ class DDMin : DDAlgorithm {
         propertyTester: PropertyTester<M, T>,
         info: DDInfo<T>,
     ): DDAlgorithmResult<T> {
-        var currentItems = ArrayDeque(items)
+        var currentItems = info.importanceOf(items).let { imp ->
+            items.sortedByDescending(imp::getValue)
+        }.let { ArrayDeque(it) }
         var smallItems = ArrayDeque<T>()
         val currentNodes = ArrayDeque<Node>()
         Node(items.size, parent = null, smallChecked = false, checked = true).let { root ->

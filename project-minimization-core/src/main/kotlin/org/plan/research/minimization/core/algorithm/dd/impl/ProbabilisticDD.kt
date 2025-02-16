@@ -113,9 +113,12 @@ class ProbabilisticDD : DDAlgorithm {
 
         val unimportantItemsCount = items.size - importantItemsCount
         val unimportantProb = splitAtProb(unimportantItemsCount.toDouble())
+        // Probability of unimportant items in the second iteration if the first had no property
+        val nextUnimportantProb = unimportantProb / (1 - exp(-1.0))
         val importantProb = max(
+            // If there are less than 2/3 of important items, this probability prevails
             splitAtProb(importantItemsCount.toDouble() / 2),
-            unimportantProb.pow(0.9),
+            nextUnimportantProb,
         )
 
         items.forEach {

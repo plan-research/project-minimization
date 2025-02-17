@@ -111,14 +111,6 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
                     DDAlgorithmResult(currentLevel.items, emptyList())
                 ).getOrNull()
             }!!
-            assertSize(1, currentLevel.items)
-            val secondElement = currentLevel.items.first()
-            assertEquals("complicated-project", secondElement.localPath.name)
-            currentLevel = runWithModalProgressBlocking(project, "") {
-                generator.generateNextLevel(
-                    DDAlgorithmResult(currentLevel.items, emptyList())
-                ).getOrNull()
-            }!!
             for (i in 0..9) {
                 assertSize(2, currentLevel.items)
                 val directory =
@@ -131,7 +123,14 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
                 val nextElements =
                     currentLevel.items.filterNot { it.getVirtualFile(lift { context })!!.isDirectory }
                 val nextLevelWithoutDirectory =
-                    runWithModalProgressBlocking(project, "") { generator.generateNextLevel(DDAlgorithmResult(nextElements, emptyList())).getOrNull() }
+                    runWithModalProgressBlocking(project, "") {
+                        generator.generateNextLevel(
+                            DDAlgorithmResult(
+                                nextElements,
+                                emptyList()
+                            )
+                        ).getOrNull()
+                    }
                 assertNull(nextLevelWithoutDirectory)
                 currentLevel = runWithModalProgressBlocking(project, "") {
                     generator.generateNextLevel(
@@ -147,6 +146,48 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
                     DDAlgorithmResult(currentLevel.items, emptyList())
                 ).getOrNull()
             })
+        }
+    }
+
+    fun testWithNestedDirs() {
+        myFixture.copyDirectoryToProject("nested-dirs-project", "nested-dirs-project")
+        val files = FilenameIndex.getAllFilesByExt(project, "txt")
+        UsefulTestCase.assertSize(3, files)
+
+        val projectRoot = project.guessProjectDir()!!
+        val projectRootPsi = psiManager.findDirectory(projectRoot)!!
+        val rootPsiDepth = getPsiDepth(projectRootPsi)
+        val depths = files.map { getPsiDepth(it.findPsiFile(project)!!) - rootPsiDepth }
+        assertContainsElements(depths, 6, 7, 8)
+
+        LightTestContext(project).runMonadWithEmptyProgress {
+            val generator = generateHierarchicalDDGenerator(lift { context })
+
+            val projectLevel = runWithModalProgressBlocking(project, "test") {
+                generator.generateFirstLevel()
+            }.getOrNull()!!
+            assertSize(1, projectLevel.items)
+
+            val dirLevel = runWithModalProgressBlocking(project, "test") {
+                generator.generateNextLevel(DDAlgorithmResult(projectLevel.items, emptyList()))
+            }.getOrNull()!!
+            val dirVFs = dirLevel.items.map { it.getVirtualFile(lift { context })!! }
+            UsefulTestCase.assertSize(files.size, dirVFs)
+            assert(dirVFs.all { it.isDirectory })
+            assertContainsElements(dirVFs.map { it.name }, "first-0", "second-0", "third-0")
+
+            val fileLevel = runWithModalProgressBlocking(project, "test") {
+                generator.generateNextLevel(DDAlgorithmResult(dirLevel.items, emptyList()))
+            }.getOrNull()!!
+            val fileVFs = fileLevel.items.map { it.getVirtualFile(lift { context })!! }
+            UsefulTestCase.assertSize(files.size, fileVFs)
+            assert(fileVFs.all { it.isFile })
+            assertContainsElements(fileVFs.map { it.name }, "first.txt", "second.txt", "third.txt")
+
+            val lastLevel = runWithModalProgressBlocking(project, "test") {
+                generator.generateNextLevel(DDAlgorithmResult(fileLevel.items, emptyList()))
+            }.getOrNull()
+            assertNull(lastLevel)
         }
     }
 

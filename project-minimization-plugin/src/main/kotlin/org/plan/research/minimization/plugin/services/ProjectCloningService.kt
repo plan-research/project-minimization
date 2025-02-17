@@ -20,6 +20,7 @@ import com.intellij.openapi.vfs.toNioPathOrNull
 import java.nio.file.Path
 import java.util.*
 
+import kotlin.io.path.Path
 import kotlin.io.path.copyTo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -32,14 +33,13 @@ import kotlinx.coroutines.withContext
 @Service(Service.Level.PROJECT)
 class ProjectCloningService(private val rootProject: Project) : IJDDContextCloner {
     private val openingService = service<ProjectOpeningService>()
-    private val logsDirectoryName by rootProject
+    private val state = rootProject
         .service<MinimizationPluginSettings>()
         .stateObservable
+    private val logsDirectoryName by state
         .logsLocation
         .observe { it }
-    private val tempProjectsDirectoryName by rootProject
-        .service<MinimizationPluginSettings>()
-        .stateObservable
+    private val tempProjectsDirectoryPath by state
         .temporaryProjectLocation
         .observe { it }
 
@@ -60,23 +60,17 @@ class ProjectCloningService(private val rootProject: Project) : IJDDContextClone
         projectDir.refresh(false, true)
         return withContext(Dispatchers.IO) {
             val clonedProjectPath = createNewProjectDirectory()
-            val snapshotLocation = getSnapshotLocation()
             val logsLocation = getLogsLocation()
             projectDir.copyTo(clonedProjectPath) {
-                isImportant(it, projectDir) && it.toNioPath() != snapshotLocation && it.toNioPath() != logsLocation
+                isImportant(it, projectDir) && it.toNioPath() != logsLocation
             }
             clonedProjectPath
         }
     }
 
     private fun createNewProjectDirectory(): Path =
-        getSnapshotLocation().findOrCreateDirectory("snapshot-${getCurrentTimeString()}-${UUID.randomUUID()}")
-
-    private fun getSnapshotLocation(): Path =
-        rootProject
-            .guessProjectDir()!!
-            .toNioPath()
-            .findOrCreateDirectory(tempProjectsDirectoryName)
+        Path(tempProjectsDirectoryPath)
+            .findOrCreateDirectory("snapshot-${getCurrentTimeString()}-${UUID.randomUUID()}")
 
     private fun getLogsLocation(): Path? =
         rootProject

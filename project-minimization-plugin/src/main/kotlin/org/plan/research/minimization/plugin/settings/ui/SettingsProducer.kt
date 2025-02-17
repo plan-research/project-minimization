@@ -9,11 +9,17 @@ import com.intellij.ui.dsl.builder.panel
 class SettingsProducer(project: Project) : SettingsProducerBase(project) {
     override fun getPanel(): DialogPanel =
         panel {
+            tempProjectLocation()
+            logsLocation()
+
+            separator()
+
             // compilationStrategy()
             gradleTask()
             gradleOptions()
-            tempProjectLocation()
-            logsLocation()
+
+            separator()
+
             snapshotStrategy()
             exceptionComparingStrategy()
 

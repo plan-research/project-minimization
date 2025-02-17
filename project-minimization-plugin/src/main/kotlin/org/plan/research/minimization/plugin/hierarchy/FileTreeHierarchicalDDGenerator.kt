@@ -51,81 +51,105 @@ class FileTreeHierarchicalDDGenerator<C : IJDDContext>(
             val nextFiles = lift {
                 minimizationResult.retained.flatMap {
                     val vf = it.getVirtualFile(context) ?: return@flatMap emptyList()
-                    readAction { vf.children }
-                        .map { file ->
-                            ProjectFileDDItem.create(context, file)
-                        }
+                    generateNext(vf).map { file ->
+                        ProjectFileDDItem.create(context, file)
+                    }
                 }
             }
-            ensure(nextFiles.isNotEmpty())
-
             reporter.updateProgress(nextFiles)
+
+            ensure(nextFiles.isNotEmpty())
 
             HDDLevel(nextFiles, propertyTester)
         }
 
     /**
+     * Generates the next level of files for the given virtual file.
+     *
+     * This method skips chains of single nested directories and returns the children of the last directory.
+     *
+     * @param vf The starting virtual file.
+     * @return An array of virtual files representing the next level of files.
+     */
+    private suspend fun generateNext(vf: VirtualFile): Array<VirtualFile> {
+        var iter = vf
+        while (true) {
+            iter = readAction {
+                if (iter.isValid && iter.isDirectory) {
+                    iter.children.singleOrNull()?.takeIf { it.isValid && it.isDirectory }
+                } else {
+                    null
+                }
+            } ?: break
+        }
+
+        return readAction { if (iter.isValid) iter.children else emptyArray() }
+    }
+
+    /**
      * ProgressReporter is a class responsible for managing and reporting the progress of a hierarchical
      * delta-debugging process on a file tree structure. It utilizes a sequential progress reporter to
-     * keep track of the current progress and update it during the process. This class computes levels
+     * keep track of the current progress and update it during the process. This class computes subtree sizes
      * of directories and files to provide meaningful progress reporting.
      *
      * @param context The context of the project.
-     * @param roots An array of VirtualFile representing the starting points to compute levels.
-     * @constructor Creates a new instance of [ProgressReporter] based on the given root path and the array of root files.
+     * @param roots An array of Path representing the starting points to compute levels.
+     * @constructor Creates a new instance of [ProgressReporter] based on the given context and the array of root files.
      */
     context(SnapshotWithProgressMonad<C>)
     private inner class ProgressReporter(context: C, roots: List<Path>) {
         @Volatile
-        private var currentLevel = 0
-        private val levelMaxDepths = HashMap<Path, Int>()
+        private var totalSize = 0
+        private val subtreeSize = HashMap<Path, Int>()
 
         init {
-            computeLevels(context, roots)
+            computeSubtreeSizes(context, roots)
         }
 
         /**
-         * Computes the maximum depth levels for the given root paths and their descendants.
+         * Computes the subtree sizes for the given root paths and their descendants.
          * This method implements DFS traversal via call-stack simulation.
          *
          * @param context The context of the project.
-         * @param roots An array of VirtualFile representing the starting points to compute levels.
+         * @param roots An array of Path representing the starting points to compute subtree sizes.
          */
-        private fun computeLevels(context: C, roots: List<Path>) {
-            val stack = mutableListOf<StackEntry>()
-            roots.forEach { root ->
-                context.projectDir.findFileByRelativePath(root.pathString)?.let {
-                    stack.add(StackEntry(it, 1))
-                }
+        private fun computeSubtreeSizes(context: C, roots: List<Path>) {
+            val rootFiles = roots.mapNotNull { root ->
+                context.projectDir.findFileByRelativePath(root.pathString)
             }
 
-            val root = context.projectDir.toNioPath()
+            val keyOf = context.projectDir.toNioPath().let { proj ->
+                fun(file: VirtualFile) = file.toNioPath().relativeTo(proj)
+            }
+
+            val stack = rootFiles.mapTo(mutableListOf()) { StackEntry(it) }
             while (stack.isNotEmpty()) {
                 val entry = stack.last()
 
-                val children = entry.file.children
-                if (children.isNotEmpty()) {
-                    if (entry.nextChildIndex < children.size) {
-                        stack.add(StackEntry(children[entry.nextChildIndex], entry.level + 1))
-                        entry.nextChildIndex += 1
-                    } else {
-                        stack.removeLast()
-                        levelMaxDepths[entry.file.toNioPath().relativeTo(root)] =
-                            children.maxOf { levelMaxDepths[it.toNioPath().relativeTo(root)]!! }
-                    }
-                } else {
+                entry.nextChild()?.let {
+                    stack.add(StackEntry(it))
+                } ?: run {
                     stack.removeLast()
-                    levelMaxDepths[entry.file.toNioPath().relativeTo(root)] = entry.level
+                    subtreeSize[keyOf(entry.file)] =
+                        1 + entry.file.children.sumOf {
+                            subtreeSize[keyOf(it)]!!
+                        }
                 }
             }
+
+            totalSize = rootFiles.sumOf { subtreeSize[keyOf(it)]!! }
         }
 
         fun updateProgress(level: List<ProjectFileDDItem>) {
-            currentLevel += 1
-            val maxDepth = level.maxOf { levelMaxDepths[it.localPath]!! }
-            nextStep(currentLevel, maxDepth)
+            val remaining = level.sumOf { subtreeSize[it.localPath]!! }
+            nextStep(totalSize - remaining, totalSize)
         }
     }
 
-    private data class StackEntry(val file: VirtualFile, val level: Int, var nextChildIndex: Int = 0)
+    private data class StackEntry(
+        val file: VirtualFile,
+        private var nextChildIndex: Int = 0,
+    ) {
+        fun nextChild() = file.children.getOrNull(nextChildIndex++)
+    }
 }

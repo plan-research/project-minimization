@@ -117,14 +117,10 @@ class ProbabilisticDD : DDAlgorithm {
         // Typical expected size of the minimized result
         private const val EXPECTED_RESULT_SIZE = 2
 
-        private fun initProb(size: Int): Double = if (size <= 0) {
-            1.0
-        } else {
-            min(
-                EXPECTED_RESULT_SIZE / size.toDouble(),
-                // To not assign p >= 1 in corner cases
-                EXPECTED_RESULT_SIZE / (EXPECTED_RESULT_SIZE + 1).toDouble(),
-            )
-        }
+        private fun initProb(size: Int): Double = min(
+            if (size <= 0) 1.0 else EXPECTED_RESULT_SIZE / size.toDouble(),
+            // To not assign p >= 1 in corner cases
+            EXPECTED_RESULT_SIZE / (EXPECTED_RESULT_SIZE + 1).toDouble(),
+        )
     }
 }

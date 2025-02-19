@@ -52,9 +52,7 @@ object PathSerializer : KSerializer<Path> {
 fun SnapshotStrategy.getSnapshotManager(project: Project): SnapshotManager =
     when (this) {
         SnapshotStrategy.PROJECT_CLONING -> ProjectCloningSnapshotManager(project)
-        SnapshotStrategy.PROJECT_GIT -> ProjectGitSnapshotManager()
-        SnapshotStrategy.PROJECT_GIT4IDEA -> ProjectGit4IdeaSnapshotManager()
-        SnapshotStrategy.LOCAL_HISTORY -> ProjectLocalHistorySnapshotManager()
+        SnapshotStrategy.LOCAL_STORAGE -> ProjectLocalHistorySnapshotManager()
     }
 
 fun DDStrategy.getDDAlgorithm(): DDAlgorithm =

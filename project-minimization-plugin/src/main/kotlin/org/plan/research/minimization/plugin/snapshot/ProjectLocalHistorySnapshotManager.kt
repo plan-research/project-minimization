@@ -9,20 +9,22 @@ import org.plan.research.minimization.plugin.model.monad.SnapshotMonad
 import org.plan.research.minimization.plugin.model.monad.TransactionAction
 import org.plan.research.minimization.plugin.model.monad.TransactionResult
 import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
-import org.plan.research.minimization.plugin.services.LocalStorageWrapperService
+import org.plan.research.minimization.plugin.services.LocalHistoryWrapperService
 
 import arrow.core.raise.either
 import arrow.core.raise.recover
+import com.intellij.history.Label
 import com.intellij.openapi.components.service
 import com.intellij.util.application
 import mu.KotlinLogging
 
 class ProjectLocalHistorySnapshotManager : SnapshotManager {
     private val logger = KotlinLogging.logger {}
-    private val gitWrapperService = application.service<LocalStorageWrapperService>()
+    private val localStorageWrapperService = application.service<LocalHistoryWrapperService>()
+    private var lastLabel: Label? = null
 
     override suspend fun <C : IJDDContextBase<C>> createMonad(context: C): SnapshotMonad<C> {
-        gitWrapperService.gitInit(context.indexProject)
+        lastLabel = localStorageWrapperService.gitInit(context.indexProject)
 
         return ProjectCloningMonad(context)
     }
@@ -44,8 +46,7 @@ class ProjectLocalHistorySnapshotManager : SnapshotManager {
         }
     }
 
-    private inner class ProjectCloningMonad<C : IJDDContextBase<C>>(context: C) :
-        SnapshotMonad<C> {
+    private inner class ProjectCloningMonad<C : IJDDContextBase<C>>(context: C) : SnapshotMonad<C> {
         override var context: C = context
             private set
 
@@ -64,13 +65,13 @@ class ProjectLocalHistorySnapshotManager : SnapshotManager {
                     catch = { raise(TransactionFailed(it)) },
                 )
             } catch (e: Throwable) {
-                gitWrapperService.resetChanges(context)
+                localStorageWrapperService.resetChanges(context, lastLabel)
                 throw e
             }
         }.onRight {
             logger.info { "Transaction completed successfully" }
             statLogger.info { "Transaction result: success" }
-            gitWrapperService.commitChanges(context)
+            lastLabel = localStorageWrapperService.commitChanges(context)
         }.onLeft { it.log() }
     }
 }

@@ -3,6 +3,7 @@ package org.plan.research.minimization.core.algorithm.dd.impl
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.model.*
+import org.plan.research.minimization.core.model.DDInfo.Companion.importanceOf
 
 import java.util.*
 

@@ -21,6 +21,7 @@ interface DDInfo<in T : DDItem> {
     }
 }
 
+@Suppress("OBJECT_NAME_INCORRECT")
 object EmptyDDInfo : DDInfo<DDItem> {
     override fun of(item: DDItem): DDItemInfo = DDItemInfo()
 }

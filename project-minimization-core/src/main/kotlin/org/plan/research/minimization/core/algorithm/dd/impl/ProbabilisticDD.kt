@@ -7,10 +7,8 @@ import org.plan.research.minimization.core.model.*
 import java.util.*
 
 import kotlin.collections.ArrayDeque
-import kotlin.math.exp
-import kotlin.math.max
-import kotlinx.coroutines.yield
 import kotlin.math.min
+import kotlinx.coroutines.yield
 
 /**
  * Probabilistic Delta Debugging.
@@ -119,10 +117,14 @@ class ProbabilisticDD : DDAlgorithm {
         // Typical expected size of the minimized result
         private const val EXPECTED_RESULT_SIZE = 2
 
-        private fun initProb(size: Int): Double = if (size <= 0) 1.0 else min(
-            EXPECTED_RESULT_SIZE / size.toDouble(),
-            // To not assign p >= 1 in corner cases
-            EXPECTED_RESULT_SIZE / (EXPECTED_RESULT_SIZE + 1).toDouble(),
-        )
+        private fun initProb(size: Int): Double = if (size <= 0) {
+            1.0
+        } else {
+            min(
+                EXPECTED_RESULT_SIZE / size.toDouble(),
+                // To not assign p >= 1 in corner cases
+                EXPECTED_RESULT_SIZE / (EXPECTED_RESULT_SIZE + 1).toDouble(),
+            )
+        }
     }
 }

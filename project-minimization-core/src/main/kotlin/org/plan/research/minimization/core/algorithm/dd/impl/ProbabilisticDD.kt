@@ -10,6 +10,7 @@ import kotlin.collections.ArrayDeque
 import kotlin.math.exp
 import kotlin.math.max
 import kotlinx.coroutines.yield
+import kotlin.math.min
 
 /**
  * Probabilistic Delta Debugging.
@@ -103,22 +104,9 @@ class ProbabilisticDD : DDAlgorithm {
         val probs = IdentityHashMap<T, Double>()
         val important = info.importanceOf(items)
 
+        val unimportantProb = initProb(items.size)
         val importantItemsCount = items.count { important[it]!! }
-        if (importantItemsCount == 0 || importantItemsCount == items.size) {
-            val bisectProb = splitAtProb(items.size / 2.0)
-            items.forEach { probs[it] = bisectProb }
-            return probs
-        }
-
-        val unimportantItemsCount = items.size - importantItemsCount
-        val unimportantProb = splitAtProb(unimportantItemsCount.toDouble())
-        // Probability of unimportant items in the second iteration if the first had no property
-        val nextUnimportantProb = unimportantProb / (1 - exp(-1.0))
-        val importantProb = max(
-            // If there are less than 2/3 of important items, this probability prevails
-            splitAtProb(importantItemsCount.toDouble() / 2),
-            nextUnimportantProb,
-        )
+        val importantProb = initProb(importantItemsCount)
 
         items.forEach {
             probs[it] = if (important[it]!!) importantProb else unimportantProb
@@ -128,9 +116,13 @@ class ProbabilisticDD : DDAlgorithm {
     }
 
     companion object {
-        /**
-         * Returns probability such that if first n items have it, then PDD will split at n.
-         */
-        private fun splitAtProb(n: Double): Double = 1 - exp(-1.0 / n)
+        // Typical expected size of the minimized result
+        private const val EXPECTED_RESULT_SIZE = 2
+
+        private fun initProb(size: Int): Double = if (size <= 0) 1.0 else min(
+            EXPECTED_RESULT_SIZE / size.toDouble(),
+            // To not assign p >= 1 in corner cases
+            EXPECTED_RESULT_SIZE / (EXPECTED_RESULT_SIZE + 1).toDouble(),
+        )
     }
 }

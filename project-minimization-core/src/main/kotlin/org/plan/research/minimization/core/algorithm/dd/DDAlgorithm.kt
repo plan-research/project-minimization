@@ -15,5 +15,6 @@ interface DDAlgorithm {
     suspend fun <M : Monad, T : DDItem> minimize(
         items: List<T>,
         propertyTester: PropertyTester<M, T>,
+        info: DDInfo<T> = EmptyDDInfo,
     ): DDAlgorithmResult<T>
 }

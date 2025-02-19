@@ -3,11 +3,12 @@ package org.plan.research.minimization.core.algorithm.dd.impl
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.model.*
+import org.plan.research.minimization.core.model.DDInfo.Companion.importanceOf
 
 import java.util.*
 
 import kotlin.collections.ArrayDeque
-import kotlin.math.exp
+import kotlin.math.min
 import kotlinx.coroutines.yield
 
 /**
@@ -21,12 +22,11 @@ class ProbabilisticDD : DDAlgorithm {
     override suspend fun <M : Monad, T : DDItem> minimize(
         items: List<T>,
         propertyTester: PropertyTester<M, T>,
+        info: DDInfo<T>,
     ): DDAlgorithmResult<T> {
         val buffer = ArrayDeque<T>()
-        val probs = IdentityHashMap<T, Double>()
-        val defaultProb = 1 - exp(-2.0 / items.size)
-        items.forEach { item -> probs[item] = defaultProb }
-        val currentItems = items.toMutableList()
+        val probs = initProbs(items, info)
+        val currentItems = items.sortedByDescending { probs[it]!! }.toMutableList()
         val excludedItems = mutableListOf<T>()
         val deletedItems = mutableListOf<T>()
         while (currentItems.size > 1 && probs[currentItems.last()]!! < 1.0) {
@@ -94,5 +94,34 @@ class ProbabilisticDD : DDAlgorithm {
         }
         currentItems.addAll(buffer)
         buffer.clear()
+    }
+
+    private fun <T : DDItem> initProbs(
+        items: List<T>,
+        info: DDInfo<T>,
+    ): IdentityHashMap<T, Double> {
+        val probs = IdentityHashMap<T, Double>()
+        val important = info.importanceOf(items)
+
+        val unimportantProb = initProb(items.size)
+        val importantItemsCount = items.count { important[it]!! }
+        val importantProb = initProb(importantItemsCount)
+
+        items.forEach {
+            probs[it] = if (important[it]!!) importantProb else unimportantProb
+        }
+
+        return probs
+    }
+
+    companion object {
+        // Typical expected size of the minimized result
+        private const val EXPECTED_RESULT_SIZE = 2
+
+        private fun initProb(size: Int): Double = min(
+            if (size <= 0) 1.0 else EXPECTED_RESULT_SIZE / size.toDouble(),
+            // To not assign p >= 1 in corner cases
+            EXPECTED_RESULT_SIZE / (EXPECTED_RESULT_SIZE + 1).toDouble(),
+        )
     }
 }

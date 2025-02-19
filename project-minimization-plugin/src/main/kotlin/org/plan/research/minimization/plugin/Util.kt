@@ -16,7 +16,7 @@ import org.plan.research.minimization.plugin.model.exception.CompilationExceptio
 import org.plan.research.minimization.plugin.model.exception.ExceptionTransformation
 import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.model.state.*
-import org.plan.research.minimization.plugin.snapshot.ProjectCloningSnapshotManager
+import org.plan.research.minimization.plugin.snapshot.*
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
@@ -52,6 +52,7 @@ object PathSerializer : KSerializer<Path> {
 fun SnapshotStrategy.getSnapshotManager(project: Project): SnapshotManager =
     when (this) {
         SnapshotStrategy.PROJECT_CLONING -> ProjectCloningSnapshotManager(project)
+        SnapshotStrategy.LOCAL_STORAGE -> ProjectLocalHistorySnapshotManager()
     }
 
 fun DDStrategy.getDDAlgorithm(): DDAlgorithm =

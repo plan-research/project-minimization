@@ -7,20 +7,20 @@ Here is the general pipeline of project minimization.
 sequenceDiagram
     actor User
     participant ProjectMinimizationService
-    participant StageExecutionService
+    participant MinimizationStage
     
     User->>ProjectMinimizationService: Minimize Project
     
     loop
-        ProjectMinimizationService->>+StageExecutionService: Execute next stage
+        ProjectMinimizationService->>+MinimizationStage: Execute next stage
 
         create participant MinimizationAlgorithm
-        StageExecutionService->>MinimizationAlgorithm: Initialize algorithm
+        MinimizationStage->>MinimizationAlgorithm: Initialize algorithm
         
         participant SnapshotManager
         participant CompilationChecker
 
-        StageExecutionService->>+MinimizationAlgorithm: Minimize project
+        MinimizationStage->>+MinimizationAlgorithm: Minimize project
         
         MinimizationAlgorithm->>+SnapshotManager: Try to make some modifications
         SnapshotManager->>+CompilationChecker: Try to compile modified project
@@ -31,20 +31,17 @@ sequenceDiagram
             SnapshotManager->>-MinimizationAlgorithm: Non-modified project
         end
         
-        MinimizationAlgorithm->>-StageExecutionService: Minimized project
+        MinimizationAlgorithm->>-MinimizationStage: Minimized project
 
         destroy MinimizationAlgorithm
-        StageExecutionService-xMinimizationAlgorithm: Release algorithm
-        
-        StageExecutionService->>-ProjectMinimizationService: Minimized project
+        MinimizationStage-xMinimizationAlgorithm: Release algorithm
+
+        MinimizationStage->>-ProjectMinimizationService: Minimized project
     end
     ProjectMinimizationService->>User: Minimized Project
 ```
 
-The minimization process consists of several stages.
-For instance, stage can be file-level minimization, function-level minimization or even program slicing.
-
-At each stage, some minimization algorithm is used to minimize the project somehow. 
+The minimization process consists of several stages, where each stage represents some minimization algorithm.
 Any algorithm can try to apply some changes to the project using SnapshotManager, 
 which can roll back any changes if they violate the target compilation error.
 

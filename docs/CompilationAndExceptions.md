@@ -58,10 +58,9 @@ If we have any problem with collecting the information, we will suppose that isn
 
 #### Task execution
 
-To execute the task, the External System Runner API is used: we create a run configuration for Gradle with the necessary
-task and `--quiet` flag for less output. To store the output, [GradleRunProcessAdapter][run-process-adapter] is used. It
-stores stdOut/stdErr/system output. After the process has exited, the adapter asynchronously pushes the result into
-`Channel` to proceed the `BuildProvider`.
+To execute the task, the Gradle plugin is used: 
+we create a run configuration for Gradle with the necessary task
+and `--no-configuration-cache, --no-build-cache, --quiet` flags for less and consistent output.
 
 ### Parsing
 
@@ -150,23 +149,22 @@ To do that, it uses several interfaces:
 2. Build Exception Provider: see [compilation](#gradle) part
 3. Lens for focusing on specific projects of the project: see lens part
 
-[build-exception-provider]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/execution/gradle/GradleBuildExceptionProvider.kt
+[build-exception-provider]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/compilation/gradle/GradleBuildExceptionProvider.kt
 
-[run-process-adapter]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/execution/gradle/GradleRunProcessAdapter.kt
+[string-output-reader]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/compilation/gradle/GradleBuildExceptionProvider.kt
 
-[string-output-reader]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/execution/gradle/GradleBuildExceptionProvider.kt
+[kotlinc-translator]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/compilation/exception/KotlincExceptionTranslator.kt
 
-[kotlinc-translator]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/execution/exception/KotlincExceptionTranslator.kt
+[kotlinc-exception]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/compilation/exception/KotlincException.kt
 
-[kotlinc-exception]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/execution/exception/KotlincException.kt
+[exception-transformer]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/compilation/transformer/ExceptionTransformer.kt
 
-[exception-transformer]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/exception/ExceptionTransformer.kt
+[path-relative-transformer]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/compilation/transformer/PathRelativizationTransformer.kt
 
-[path-relative-transformer]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/execution/transformer/PathRelativizationTransformer.kt
+[same-exception-checker]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/algorithm/tester/SameExceptionPropertyTester.kt
 
-[same-exception-checker]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/execution/SameExceptionPropertyTester.kt
+[exception-comparator]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/compilation/comparator/ExceptionComparator.kt
 
-[exception-comparator]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/exception/ExceptionComparator.kt
+[simple-comparator]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/compilation/comparator/SimpleExceptionComparator.kt
 
-[simple-comparator]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/execution/comparable/SimpleExceptionComparator.kt
-[project-item-lens]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/ProjectItemLens.kt
+[project-item-lens]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/modification/lenses/ProjectItemLens.kt

@@ -121,14 +121,14 @@ Here are some implementations of SnapshotManager:
 [snapshot-doc]: SnapshotManagers.md
 [settings-doc]: Settings.md
 
-[stage]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/MinimizationStage.kt
+[stage]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/algorithm/stages/MinimizationStage.kt
 
-[ij-item]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/item/IJDDItem.kt
-[proj-file-item]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/item/ProjectFileDDItem.kt
-[psi-item]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/item/PsiDDItem.kt
+[ij-item]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/modification/item/IJDDItem.kt
+[proj-file-item]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/modification/item/ProjectFileDDItem.kt
+[psi-item]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/modification/item/PsiDDItem.kt
 
-[ij-context]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/context/IJDDContext.kt
+[ij-context]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/context/IJDDContext.kt
 
-[snapshot]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/snapshot/SnapshotManager.kt
-[project-cloning]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/snapshot/ProjectCloningSnapshotManager.kt
+[snapshot]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/context/snapshot/SnapshotManager.kt
+[project-cloning]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/context/snapshot/impl/ProjectCloningSnapshotManager.kt
 [state]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/settings/MinimizationPluginState.kt

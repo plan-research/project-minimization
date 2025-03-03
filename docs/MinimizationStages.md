@@ -24,26 +24,12 @@ The stage is works in several stages:
 2. On the second stage, the DD algorithm is run using SameExceptionPropertyTester (described
    in [Compilation and Exceptions][compilation]) with custom lens: on this stage we
    use [FunctionModificationLens][function-lens] to focus on the selected functions
-3. The lens is using [PsiItemStorage][psi-item-storage] and [PsiTrie][psi-trie] to quickly find all related PSI
-   elements.
+3. The lens is using [PsiTrie][psi-trie] to quickly find all related PSI elements.
 4. After it, they are modified using [MinimizationPsiManagerService][psi-manager] and [PsiUtils][psi-utils].
 
 ## Declaration-level stage
 
-On this stage, the functions, classes, objects, properties are tried to be deleted via HDD. This stage is added since
-after the body replacement stage, a lot of objects became unused, therefore could be deleted.
-
-The overall process is similar to the Body Replacement Algorithm:
-
-1. The PSIDDItems are fetched using [MinimizationPsiManagerService][psi-manager] and [PsiUtils][psi-utils]
-2. Using [CompressingPsiItemTrie][compressing-trie] the
-   hierarchy ([DeletablePsiElementHierarchyDDGenerator][psi-hierarchy]) is built
-3. On the second stage, the DD algorithm is run using SameExceptionPropertyTester (described
-   in [Compilation and Exceptions][compilation]) with custom lens: on this stage we
-   use [FunctionDeletingLens][function-deleting-lens] to focus on the selected function and deleting it
-
-The declaration-level stage has been appended with two optimizations:
-import reference counter and overridden composing item.
+TODO
 
 ### Import Reference Counter
 
@@ -101,28 +87,22 @@ The information is retrieved on the focusing stage (see [BasePsiLens]).
 
 [compilation]: CompilationAndExceptions.md
 
-[function-lens]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/lenses/FunctionModificationLens.kt
+[function-lens]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/modification/lenses/FunctionModificationLens.kt
 
 [psi-manager]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/services/MinimizationPsiManagerService.kt
 
-[psi-utils]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/psi/PsiUtils.kt
+[psi-utils]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/modification/psi/PsiUtils.kt
 
-[psi-item-storage]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/psi/PsiItemStorage.kt
+[psi-trie]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/modification/psi/trie/PsiTrie.kt
 
-[psi-trie]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/psi/PsiTrie.kt
+[function-deleting-lens]:  ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/modification/lenses/FunctionDeletingLens.kt
 
-[compressing-trie]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/psi/CompressingPsiItemTrie.kt
+[imports]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/modification/psi/imports
 
-[psi-hierarchy]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/hierarchy/DeletablePsiElementHierarchyDDGenerator.kt
+[KotlinOverriddenElementsGetter]:  ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/modification/psi/KotlinOverriddenElementsGetter.kt
 
-[function-deleting-lens]:  ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/lenses/FunctionDeletingLens.kt
+[IJDDItem]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/modification/item/IJDDItem.kt
 
-[imports]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/psi/imports
+[BasePsiLens]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/modification/lenses/BasePsiLens.kt
 
-[KotlinOverriddenElementsGetter]:  ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/psi/KotlinOverriddenElementsGetter.kt
-
-[IJDDItem]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/IJDDItem.kt
-
-[BasePsiLens]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/lenses/BasePsiLens.kt
-
-[KtSourceImportRefCounter]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/psi/KtSourceImportRefCounter.kt
+[KtSourceImportRefCounter]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/modification/psi/KtSourceImportRefCounter.kt

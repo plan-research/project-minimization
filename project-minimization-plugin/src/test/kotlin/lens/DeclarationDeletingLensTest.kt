@@ -70,7 +70,7 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
     override suspend fun getAllItems(context: TestContext): List<PsiStubDDItem> {
         configureModules(context.indexProject)
         return service<MinimizationPsiManagerService>()
-            .findDeletablePsiItems(context, compressOverridden = false, withFunctionParameters = true)
+            .findDeletablePsiItems(context, withFunctionParameters = true)
     }
 
     override fun getTestDataPath() = "src/test/resources/testData/function-deleting"

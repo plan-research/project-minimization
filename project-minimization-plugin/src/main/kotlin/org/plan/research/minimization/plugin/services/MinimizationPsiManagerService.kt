@@ -9,11 +9,9 @@ import org.plan.research.minimization.plugin.modification.item.PsiStubDDItem
 import org.plan.research.minimization.plugin.modification.item.PsiStubDDItem.CallablePsiStubDDItem
 import org.plan.research.minimization.plugin.modification.psi.KotlinElementLookup
 import org.plan.research.minimization.plugin.modification.psi.KotlinOverriddenElementsGetter
-import org.plan.research.minimization.plugin.modification.psi.PsiDSU
 import org.plan.research.minimization.plugin.modification.psi.PsiUtils
 import org.plan.research.minimization.plugin.modification.psi.usages.MethodUserSearcher
 
-import arrow.core.compareTo
 import arrow.core.filterOption
 import arrow.core.raise.option
 import com.intellij.openapi.application.readAction
@@ -40,7 +38,6 @@ import org.jetbrains.kotlin.psi.psiUtil.containingClass
 import org.jgrapht.graph.DirectedPseudograph
 
 import kotlin.collections.plus
-import kotlin.collections.singleOrNull
 import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
 
@@ -75,20 +72,14 @@ class MinimizationPsiManagerService {
      *  That means that they could be represented via [org.plan.research.minimization.plugin.modification.psi.stub.KtStub]
      *
      * @param context The context for the minimization process containing the current project and relevant properties.
-     * @param compressOverridden If set to true, then all overridden elements will be compressed to one element
      * @param withFunctionParameters
      * @return A list of deletable PSI items found in the Kotlin files of the project.
      */
     suspend fun findDeletablePsiItems(
         context: IJDDContext,
-        compressOverridden: Boolean = true,
         withFunctionParameters: Boolean = false,
     ): List<PsiStubDDItem> =
-        if (compressOverridden) {
-            findDeletablePsiItemsCompressed(context)
-        } else {
-            findDeletablePsiItemsWithoutCompression(context, withFunctionParameters).map { it.item }
-        }
+        findDeletablePsiItemsWithoutCompression(context, withFunctionParameters).map { it.item }
 
     private suspend fun findDeletablePsiItemsWithoutCompression(
         context: IJDDContext,
@@ -110,23 +101,6 @@ class MinimizationPsiManagerService {
             .orEmpty()
         logger.debug { "Got ${functionParameters.size} function parameters" }
         return coreElements + functionParameters
-    }
-
-    private suspend fun findDeletablePsiItemsCompressed(
-        context: IJDDContext,
-    ): List<PsiStubDDItem> {
-        val nonStructuredItems = findDeletablePsiItemsWithoutCompression(context, false)
-
-        val dsu =
-            PsiDSU<KtElement, PsiStubDDItem>(nonStructuredItems.map(IntermediatePsiItemInfo::asPair)) { lhs, rhs ->
-                lhs.childrenPath.size
-                    .compareTo(rhs.childrenPath.size)
-                    .takeIf { it != 0 }
-                    ?: lhs.childrenPath.compareTo(rhs.childrenPath)
-            }
-        return smartReadAction(context.indexProject) {
-            dsu.transformItems(context, nonStructuredItems)
-        }
     }
 
     /**
@@ -297,31 +271,6 @@ class MinimizationPsiManagerService {
                     }
             }
         }
-
-    private fun PsiDSU<KtElement, PsiStubDDItem>.transformItems(
-        context: IJDDContext,
-        items: List<IntermediatePsiItemInfo>,
-    ): List<PsiStubDDItem> {
-        items.forEach { (element) ->
-            KotlinOverriddenElementsGetter
-                .getOverriddenElements(element, includeClass = false)
-                .filter { it.isFromContext(context) }
-                .forEach { union(element, it) }
-        }
-        val classes = classes
-        return items
-            .asSequence()
-            .filter { (psiElement, item) -> representativeElementOf(psiElement) === item }
-            .map { (_, item) ->
-                val clazz = classes[item]!!
-                clazz.singleOrNull() ?: PsiStubDDItem.OverriddenPsiStubDDItem(
-                    item.localPath,
-                    item.childrenPath,
-                    clazz.filter { it != item },
-                )
-            }
-            .toList()
-    }
 
     private suspend fun getFunctionsProperties(
         context: IJDDContext,

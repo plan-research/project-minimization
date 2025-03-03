@@ -39,7 +39,7 @@ class MinimizationPsiManagerDeletablePsiTest : MinimizationPsiManagerTestBase() 
         val psiFile = myFixture.configureByFile("function-variable.kt")
         assertIs<KtFile>(psiFile)
         val elements = runBlocking {
-            service.findDeletablePsiItems(context, compressOverridden = false)
+            service.findDeletablePsiItems(context)
         }
         val psi = runBlocking { readAction { elements.getPsi(context) } }
         assertSize(4, psi)

@@ -13,13 +13,21 @@ import org.plan.research.minimization.plugin.context.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.context.snapshot.impl.ProjectCloningSnapshotManager
 import org.plan.research.minimization.plugin.logging.withLog
 import org.plan.research.minimization.plugin.logging.withLogging
-import org.plan.research.minimization.plugin.settings.enums.CompilationStrategy
-import org.plan.research.minimization.plugin.settings.enums.DDStrategy
-import org.plan.research.minimization.plugin.settings.enums.ExceptionComparingStrategy
-import org.plan.research.minimization.plugin.settings.enums.SnapshotStrategy
-import org.plan.research.minimization.plugin.settings.enums.TransformationDescriptor
+import org.plan.research.minimization.plugin.settings.data.CompilationStrategy
+import org.plan.research.minimization.plugin.settings.data.DDStrategy
+import org.plan.research.minimization.plugin.settings.data.ExceptionComparingStrategy
+import org.plan.research.minimization.plugin.settings.data.SnapshotStrategy
+import org.plan.research.minimization.plugin.settings.data.TransformationDescriptor
 
 import com.intellij.openapi.project.Project
+import org.plan.research.minimization.plugin.algorithm.stages.DeclarationGraphLevelStage
+import org.plan.research.minimization.plugin.algorithm.stages.FileLevelStage
+import org.plan.research.minimization.plugin.algorithm.stages.FunctionLevelStage
+import org.plan.research.minimization.plugin.algorithm.stages.MinimizationStage
+import org.plan.research.minimization.plugin.settings.data.DeclarationGraphStageData
+import org.plan.research.minimization.plugin.settings.data.FileLevelStageData
+import org.plan.research.minimization.plugin.settings.data.FunctionLevelStageData
+import org.plan.research.minimization.plugin.settings.data.MinimizationStageData
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -51,3 +59,13 @@ fun TransformationDescriptor.getExceptionTransformations() = when (this) {
 }
 
 fun getCurrentTimeString(): String = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))
+
+fun MinimizationStageData.getMinimizationStage(): MinimizationStage = when (this) {
+    is DeclarationGraphStageData -> DeclarationGraphLevelStage(
+        isFunctionParametersEnabled,
+        ddAlgorithm.getDDAlgorithm()
+    )
+
+    is FileLevelStageData -> FileLevelStage(ddAlgorithm.getDDAlgorithm())
+    is FunctionLevelStageData -> FunctionLevelStage(ddAlgorithm.getDDAlgorithm())
+}

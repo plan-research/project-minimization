@@ -19,7 +19,7 @@ import org.plan.research.minimization.plugin.compilation.CompilationResult
 import org.plan.research.minimization.plugin.context.HeavyIJDDContext
 import org.plan.research.minimization.plugin.context.IJDDContext
 import org.plan.research.minimization.plugin.context.IJDDContextBase
-import org.plan.research.minimization.plugin.settings.enums.CompilationStrategy
+import org.plan.research.minimization.plugin.settings.data.CompilationStrategy
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.services.ProjectCloningService

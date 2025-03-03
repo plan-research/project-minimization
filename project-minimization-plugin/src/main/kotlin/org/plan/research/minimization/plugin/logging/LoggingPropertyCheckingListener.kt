@@ -1,6 +1,6 @@
 package org.plan.research.minimization.plugin.logging
 
-import org.plan.research.minimization.plugin.algorithm.PropertyCheckingListener
+import org.plan.research.minimization.plugin.algorithm.tester.PropertyCheckingListener
 import org.plan.research.minimization.plugin.compilation.exception.CompilationException
 import org.plan.research.minimization.plugin.compilation.exception.IdeaCompilationException
 import org.plan.research.minimization.plugin.context.IJDDContext

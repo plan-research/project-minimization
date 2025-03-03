@@ -1,10 +1,10 @@
-package org.plan.research.minimization.plugin.algorithm.hierarchy
+package org.plan.research.minimization.plugin.algorithm.file
 
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HDDLevel
 import org.plan.research.minimization.core.model.lift
-import org.plan.research.minimization.plugin.algorithm.IJHierarchicalDDGenerator
-import org.plan.research.minimization.plugin.algorithm.IJPropertyTester
+import org.plan.research.minimization.plugin.algorithm.adapters.IJHierarchicalDDGenerator
+import org.plan.research.minimization.plugin.algorithm.adapters.IJPropertyTester
 import org.plan.research.minimization.plugin.context.IJDDContext
 import org.plan.research.minimization.plugin.modification.item.ProjectFileDDItem
 import org.plan.research.minimization.plugin.services.RootsManagerService

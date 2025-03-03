@@ -97,7 +97,7 @@ object PsiUtils {
 
     /**
      * Collects all parent elements of the given [item].
-     * It is used for building [PsiIJEdge.PSITreeEdge] for the instance-level graph.
+     * It is used for building [PsiIJEdge.PSITreeEdge] for the instance-level adapters.
      * Thus returned items follow the invariant of [PsiStubDDItem]:
      * all returned elements are some of the selected PSI nodes.
      *

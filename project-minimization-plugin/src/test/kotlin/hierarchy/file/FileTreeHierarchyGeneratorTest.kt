@@ -15,9 +15,9 @@ import com.intellij.testFramework.UsefulTestCase
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
 import org.plan.research.minimization.core.model.lift
-import org.plan.research.minimization.plugin.algorithm.hierarchy.FileTreeHierarchicalDDGenerator
-import org.plan.research.minimization.plugin.algorithm.hierarchy.FileTreeHierarchyGenerator
-import org.plan.research.minimization.plugin.settings.enums.CompilationStrategy
+import org.plan.research.minimization.plugin.algorithm.file.FileTreeHierarchicalDDGenerator
+import org.plan.research.minimization.plugin.algorithm.file.FileTreeHierarchyFactory
+import org.plan.research.minimization.plugin.settings.data.CompilationStrategy
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import runMonadWithEmptyProgress
 import kotlin.io.path.name
@@ -32,8 +32,6 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
         super.setUp()
         project.service<MinimizationPluginSettings>().stateObservable.compilationStrategy.set(CompilationStrategy.DUMB)
     }
-
-    private val fileTreeHierarchyGenerator = FileTreeHierarchyGenerator<LightTestContext>()
 
     fun testWithEmptyProject() {
         val project = myFixture.project
@@ -194,7 +192,7 @@ class FileTreeHierarchyGeneratorTest : JavaCodeInsightFixtureTestCase() {
     private fun getPsiDepth(element: PsiElement?): Int = if (element == null) 0 else getPsiDepth(element.parent) + 1
 
     private fun generateHierarchicalDDGenerator(context: LightTestContext): FileTreeHierarchicalDDGenerator<LightTestContext> {
-        val ddGenerator = runWithModalProgressBlocking(project, "") { fileTreeHierarchyGenerator.produce(context) }
+        val ddGenerator = runWithModalProgressBlocking(project, "") { FileTreeHierarchyFactory.createFromContext(context) }
         assertIs<Either.Right<FileTreeHierarchicalDDGenerator<LightTestContext>>>(ddGenerator)
         val generator = ddGenerator.value
         return generator

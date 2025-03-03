@@ -130,11 +130,11 @@ class MinimizationPsiManagerService {
     }
 
     /**
-     * Builds an instance-level graph representing the deletable PSI (Program Structure Interface) elements
+     * Builds an instance-level adapters representing the deletable PSI (Program Structure Interface) elements
      * and their relationships within the given context.
      *
      * @param context The minimization context containing information about the current project and relevant properties.
-     * @param withFunctionParameters If set to `true` then the constructor and function parameters will be included in the graph
+     * @param withFunctionParameters If set to `true` then the constructor and function parameters will be included in the adapters
      * @return An instance of [InstanceLevelGraph] containing the vertices (deletable PSI items) and edges (connections between them).
      */
     suspend fun buildDeletablePsiGraph(context: IJDDContext, withFunctionParameters: Boolean): InstanceLevelGraph {

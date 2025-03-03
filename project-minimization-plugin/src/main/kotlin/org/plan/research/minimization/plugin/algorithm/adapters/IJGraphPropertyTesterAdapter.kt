@@ -1,7 +1,10 @@
-package org.plan.research.minimization.plugin.algorithm
+package org.plan.research.minimization.plugin.algorithm.adapters
 
+import arrow.core.raise.option
 import org.plan.research.minimization.core.model.GraphCut
 import org.plan.research.minimization.core.model.PropertyTestResult
+import org.plan.research.minimization.plugin.algorithm.tester.Listeners
+import org.plan.research.minimization.plugin.algorithm.tester.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.compilation.BuildExceptionProvider
 import org.plan.research.minimization.plugin.compilation.comparator.ExceptionComparator
 import org.plan.research.minimization.plugin.context.IJDDContext
@@ -10,10 +13,8 @@ import org.plan.research.minimization.plugin.context.snapshot.SnapshotMonad
 import org.plan.research.minimization.plugin.modification.item.PsiStubDDItem
 import org.plan.research.minimization.plugin.modification.lenses.ProjectItemLens
 
-import arrow.core.raise.option
-
 /**
- * A class that tests properties of a condensed instance-level graph within a delta debugging context
+ * A class that tests properties of a condensed instance-level adapters within a delta debugging context
  * utilizing a backing linear property tester.
  */
 class IJGraphPropertyTesterAdapter<C : IJDDContext> private constructor(
@@ -37,7 +38,7 @@ class IJGraphPropertyTesterAdapter<C : IJDDContext> private constructor(
             listeners: Listeners<PsiStubDDItem> = emptyList(),
         ) =
             option {
-                val tester = SameExceptionPropertyTester.create(
+                val tester = SameExceptionPropertyTester.Companion.create(
                     compilerPropertyChecker,
                     exceptionComparator,
                     lens,

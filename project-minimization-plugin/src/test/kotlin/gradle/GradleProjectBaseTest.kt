@@ -18,7 +18,7 @@ import com.intellij.testFramework.TestObservation
 import com.intellij.testFramework.common.runAll
 import mu.KotlinLogging
 import org.jetbrains.plugins.gradle.util.GradleConstants
-import org.plan.research.minimization.plugin.settings.enums.TransformationDescriptor
+import org.plan.research.minimization.plugin.settings.data.TransformationDescriptor
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import kotlin.test.assertNotEquals
 import kotlin.time.Duration

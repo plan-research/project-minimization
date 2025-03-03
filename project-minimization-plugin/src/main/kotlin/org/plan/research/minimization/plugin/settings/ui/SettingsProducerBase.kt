@@ -1,12 +1,12 @@
 package org.plan.research.minimization.plugin.settings.ui
 
-import org.plan.research.minimization.plugin.algorithm.MinimizationStage
+import org.plan.research.minimization.plugin.settings.data.MinimizationStageData
 import org.plan.research.minimization.plugin.compilation.gradle.GradleBuildExceptionProvider
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.settings.MinimizationPluginState
-import org.plan.research.minimization.plugin.settings.enums.CompilationStrategy
-import org.plan.research.minimization.plugin.settings.enums.ExceptionComparingStrategy
-import org.plan.research.minimization.plugin.settings.enums.SnapshotStrategy
+import org.plan.research.minimization.plugin.settings.data.CompilationStrategy
+import org.plan.research.minimization.plugin.settings.data.ExceptionComparingStrategy
+import org.plan.research.minimization.plugin.settings.data.SnapshotStrategy
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.observable.properties.PropertyGraph
@@ -102,7 +102,7 @@ abstract class SettingsProducerBase(protected val project: Project) {
         }
     }
 
-    private fun DefaultListModel<MinimizationStage>.isDefault(): Boolean =
+    private fun DefaultListModel<MinimizationStageData>.isDefault(): Boolean =
         toList() == MinimizationPluginState.defaultStages
 
     protected fun Panel.stagesSettings() {

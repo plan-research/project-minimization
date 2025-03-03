@@ -1,4 +1,4 @@
-package org.plan.research.minimization.plugin.settings.enums
+package org.plan.research.minimization.plugin.settings.data
 
 /**
  * A descriptor for [ExceptionTransformer][org.plan.research.minimization.plugin.compilation.transformer.ExceptionTransformer].

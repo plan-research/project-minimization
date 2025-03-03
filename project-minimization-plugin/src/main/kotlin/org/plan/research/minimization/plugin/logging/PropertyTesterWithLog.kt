@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.logging
 
 import org.plan.research.minimization.core.model.PropertyTestResult
-import org.plan.research.minimization.plugin.algorithm.IJPropertyTester
+import org.plan.research.minimization.plugin.algorithm.adapters.IJPropertyTester
 import org.plan.research.minimization.plugin.context.IJDDContext
 import org.plan.research.minimization.plugin.context.snapshot.SnapshotMonad
 import org.plan.research.minimization.plugin.modification.item.IJDDItem

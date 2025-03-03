@@ -5,7 +5,7 @@ import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.compilation.exception.KotlincException
 import org.plan.research.minimization.plugin.util.getExceptionComparator
 import org.plan.research.minimization.plugin.compilation.comparator.ExceptionComparator
-import org.plan.research.minimization.plugin.settings.enums.ExceptionComparingStrategy
+import org.plan.research.minimization.plugin.settings.data.ExceptionComparingStrategy
 import java.io.File
 import kotlin.io.path.Path
 import kotlin.io.path.exists

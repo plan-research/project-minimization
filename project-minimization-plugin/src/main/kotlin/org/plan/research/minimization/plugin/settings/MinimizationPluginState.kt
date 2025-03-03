@@ -1,13 +1,13 @@
 package org.plan.research.minimization.plugin.settings
 
-import org.plan.research.minimization.plugin.algorithm.DeclarationGraphStage
-import org.plan.research.minimization.plugin.algorithm.FileLevelStage
-import org.plan.research.minimization.plugin.algorithm.FunctionLevelStage
-import org.plan.research.minimization.plugin.algorithm.MinimizationStage
-import org.plan.research.minimization.plugin.settings.enums.CompilationStrategy
-import org.plan.research.minimization.plugin.settings.enums.ExceptionComparingStrategy
-import org.plan.research.minimization.plugin.settings.enums.SnapshotStrategy
-import org.plan.research.minimization.plugin.settings.enums.TransformationDescriptor
+import org.plan.research.minimization.plugin.settings.data.DeclarationGraphStageData
+import org.plan.research.minimization.plugin.settings.data.FileLevelStageData
+import org.plan.research.minimization.plugin.settings.data.FunctionLevelStageData
+import org.plan.research.minimization.plugin.settings.data.MinimizationStageData
+import org.plan.research.minimization.plugin.settings.data.CompilationStrategy
+import org.plan.research.minimization.plugin.settings.data.ExceptionComparingStrategy
+import org.plan.research.minimization.plugin.settings.data.SnapshotStrategy
+import org.plan.research.minimization.plugin.settings.data.TransformationDescriptor
 
 import com.intellij.openapi.components.BaseState
 import com.intellij.util.xmlb.annotations.Tag
@@ -29,7 +29,7 @@ class MinimizationPluginState : BaseState() {
     @get:XCollection(
         style = XCollection.Style.v1,
         elementName = "stage",
-        elementTypes = [FunctionLevelStage::class, DeclarationGraphStage::class, FileLevelStage::class],
+        elementTypes = [FunctionLevelStageData::class, DeclarationGraphStageData::class, FileLevelStageData::class],
     )
     var stages by property(defaultStages) { it == defaultStages }
 
@@ -44,10 +44,10 @@ class MinimizationPluginState : BaseState() {
     companion object {
         const val DEFAULT_GRADLE_TASK = "build"
         const val DEFAULT_LOGS_LOCATION: String = "minimization-logs"
-        val defaultStages: List<MinimizationStage> = listOf(
-            FunctionLevelStage(),
-            DeclarationGraphStage(),
-            FileLevelStage(),
+        val defaultStages: List<MinimizationStageData> = listOf(
+            FunctionLevelStageData(),
+            DeclarationGraphStageData(),
+            FileLevelStageData(),
         )
         val defaultTransformations: List<TransformationDescriptor> = listOf(
             TransformationDescriptor.PATH_RELATIVIZATION,

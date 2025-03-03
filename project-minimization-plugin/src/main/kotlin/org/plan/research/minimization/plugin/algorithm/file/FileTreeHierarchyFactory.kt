@@ -1,9 +1,7 @@
-package org.plan.research.minimization.plugin.algorithm.hierarchy
+package org.plan.research.minimization.plugin.algorithm.file
 
-import org.plan.research.minimization.plugin.algorithm.HierarchyBuildError.NoExceptionFound
-import org.plan.research.minimization.plugin.algorithm.ProjectHierarchyProducer
-import org.plan.research.minimization.plugin.algorithm.ProjectHierarchyProducerResult
-import org.plan.research.minimization.plugin.algorithm.SameExceptionPropertyTester
+import arrow.core.Either
+import org.plan.research.minimization.plugin.algorithm.tester.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.context.IJDDContextBase
 import org.plan.research.minimization.plugin.logging.LoggingPropertyCheckingListener
 import org.plan.research.minimization.plugin.modification.item.ProjectFileDDItem
@@ -15,11 +13,16 @@ import org.plan.research.minimization.plugin.util.getExceptionComparator
 import arrow.core.getOrElse
 import arrow.core.raise.either
 import com.intellij.openapi.components.service
+import org.plan.research.minimization.plugin.algorithm.MinimizationError
+import org.plan.research.minimization.plugin.algorithm.MinimizationError.NoExceptionFound
+import org.plan.research.minimization.plugin.algorithm.adapters.IJHierarchicalDDGenerator
 
-class FileTreeHierarchyGenerator<C : IJDDContextBase<C>> : ProjectHierarchyProducer<C, ProjectFileDDItem> {
-    override suspend fun produce(
+typealias FileTreeHierarchyFactoryResult<C> = Either<MinimizationError, IJHierarchicalDDGenerator<C, ProjectFileDDItem>>
+
+object FileTreeHierarchyFactory {
+    suspend fun <C : IJDDContextBase<C>> createFromContext(
         context: C,
-    ): ProjectHierarchyProducerResult<C, ProjectFileDDItem> = either {
+    ): FileTreeHierarchyFactoryResult<C> = either {
         val project = context.originalProject
         val compilerPropertyTester = project.service<BuildExceptionProviderService>()
         val propertyTester = SameExceptionPropertyTester

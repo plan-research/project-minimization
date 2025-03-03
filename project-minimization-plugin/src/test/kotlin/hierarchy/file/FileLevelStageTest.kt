@@ -11,13 +11,13 @@ import getPathContentPair
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.compilation.DumbCompiler
-import org.plan.research.minimization.plugin.algorithm.FileLevelStage
-import org.plan.research.minimization.plugin.settings.enums.CompilationStrategy
-import org.plan.research.minimization.plugin.settings.enums.DDStrategy
+import org.plan.research.minimization.plugin.settings.data.FileLevelStageData
+import org.plan.research.minimization.plugin.settings.data.CompilationStrategy
+import org.plan.research.minimization.plugin.settings.data.DDStrategy
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
-import org.plan.research.minimization.plugin.services.MinimizationStageExecutorService
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 import org.plan.research.minimization.plugin.services.ProjectOpeningService
+import org.plan.research.minimization.plugin.util.getMinimizationStage
 
 class FileLevelStageTest : JavaCodeInsightFixtureTestCase() {
     override fun getTestDataPath(): String {
@@ -61,10 +61,9 @@ class FileLevelStageTest : JavaCodeInsightFixtureTestCase() {
     private fun minimizeProjectTest(root: VirtualFile, targetPaths: List<String>?) {
         DumbCompiler.targetPaths = targetPaths
         val project = myFixture.project
-        val executor = project.service<MinimizationStageExecutorService>()
-        val stage = FileLevelStage(
+        val stage = FileLevelStageData(
             DDStrategy.PROBABILISTIC_DD
-        )
+        ).getMinimizationStage()
         val context = HeavyTestContext(project)
 
         val targetFiles = if (targetPaths == null) {
@@ -78,7 +77,7 @@ class FileLevelStageTest : JavaCodeInsightFixtureTestCase() {
             project.service<ProjectCloningService>().clone(context)!!
         }
         val minimizedProject = runBlocking {
-            stage.apply(clonedContext, executor)
+            stage.executeStage(context)
         }.getOrNull()?.projectDir
         assertNotNull(minimizedProject)
 

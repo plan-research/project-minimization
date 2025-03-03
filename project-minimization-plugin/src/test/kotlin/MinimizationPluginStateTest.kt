@@ -1,23 +1,19 @@
 import com.intellij.openapi.components.service
-import com.intellij.openapi.project.guessProjectDir
-import com.intellij.openapi.vfs.toNioPathOrNull
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import org.plan.research.minimization.plugin.algorithm.FileLevelStage
+import org.plan.research.minimization.plugin.settings.data.FileLevelStageData
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 import org.plan.research.minimization.plugin.settings.loadStateFromFile
 import org.plan.research.minimization.plugin.settings.saveStateToFile
-import org.plan.research.minimization.plugin.settings.enums.CompilationStrategy
-import org.plan.research.minimization.plugin.settings.enums.DDStrategy
-import org.plan.research.minimization.plugin.settings.enums.ExceptionComparingStrategy
-import org.plan.research.minimization.plugin.settings.enums.SnapshotStrategy
-import org.plan.research.minimization.plugin.settings.enums.TransformationDescriptor
+import org.plan.research.minimization.plugin.settings.data.CompilationStrategy
+import org.plan.research.minimization.plugin.settings.data.DDStrategy
+import org.plan.research.minimization.plugin.settings.data.ExceptionComparingStrategy
+import org.plan.research.minimization.plugin.settings.data.SnapshotStrategy
+import org.plan.research.minimization.plugin.settings.data.TransformationDescriptor
 import org.w3c.dom.Document
 import java.io.File
 import java.nio.file.Paths
 import javax.xml.parsers.DocumentBuilderFactory
-import kotlin.io.path.Path
-import kotlin.io.path.relativeTo
 import kotlin.test.assertEquals
 
 class MinimizationPluginStateTest : BasePlatformTestCase() {
@@ -61,7 +57,7 @@ class MinimizationPluginStateTest : BasePlatformTestCase() {
         assertEquals(ExceptionComparingStrategy.STACKTRACE, changedState.exceptionComparingStrategy)
         assertEquals(emptyList<TransformationDescriptor>(), changedState.minimizationTransformations)
         assertEquals(
-            listOf(FileLevelStage(DDStrategy.DD_MIN)),
+            listOf(FileLevelStageData(DDStrategy.DD_MIN)),
             changedState.stages
         )
 

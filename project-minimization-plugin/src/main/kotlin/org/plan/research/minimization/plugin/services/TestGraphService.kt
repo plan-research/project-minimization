@@ -43,7 +43,7 @@ class TestGraphService(private val project: Project, private val coroutineScope:
         )
         val projectRoot = project.guessProjectDir()!!.toNioPath()
         val graphViz = Graphviz.fromGraph(representation)
-        val file = projectRoot.resolve("instance-level-graph.svg").toFile()
+        val file = projectRoot.resolve("instance-level-adapters.svg").toFile()
         
         withContext(Dispatchers.IO) {
             graphViz.render(Format.SVG).toFile(file)

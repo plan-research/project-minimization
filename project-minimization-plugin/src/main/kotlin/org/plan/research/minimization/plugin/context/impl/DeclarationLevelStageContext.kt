@@ -9,11 +9,13 @@ import org.plan.research.minimization.plugin.modification.psi.KtSourceImportRefC
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import org.plan.research.minimization.plugin.modification.graph.InstanceLevelGraph
 
 class DeclarationLevelStageContext(
     projectDir: VirtualFile,
     indexProject: Project,
     originalProject: Project,
+    val graph: InstanceLevelGraph,
     override val importRefCounter: KtSourceImportRefCounter,
     override val callTraceParameterCache: CallTraceParameterCache,
 ) : LightIJDDContext<DeclarationLevelStageContext>(projectDir, indexProject, originalProject),
@@ -24,6 +26,7 @@ WithCallTraceParameterCacheContext<DeclarationLevelStageContext> {
             projectDir,
             indexProject,
             originalProject,
+            graph,
             importRefCounter,
             callTraceParameterCache,
         )
@@ -36,6 +39,7 @@ WithCallTraceParameterCacheContext<DeclarationLevelStageContext> {
             projectDir,
             indexProject,
             originalProject,
+            graph,
             importRefCounter,
             callTraceParameterCache,
         )
@@ -45,6 +49,7 @@ WithCallTraceParameterCacheContext<DeclarationLevelStageContext> {
             projectDir,
             indexProject,
             originalProject,
+            graph,
             importRefCounter,
             callTraceParameterCache,
         )

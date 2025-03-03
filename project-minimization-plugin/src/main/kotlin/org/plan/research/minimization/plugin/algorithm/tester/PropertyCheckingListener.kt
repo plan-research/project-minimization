@@ -1,4 +1,4 @@
-package org.plan.research.minimization.plugin.algorithm
+package org.plan.research.minimization.plugin.algorithm.tester
 
 import org.plan.research.minimization.plugin.compilation.exception.CompilationException
 import org.plan.research.minimization.plugin.context.IJDDContext

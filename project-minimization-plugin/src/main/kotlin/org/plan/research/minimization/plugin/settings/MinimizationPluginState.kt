@@ -1,11 +1,11 @@
 package org.plan.research.minimization.plugin.settings
 
+import org.plan.research.minimization.plugin.settings.data.CompilationStrategy
 import org.plan.research.minimization.plugin.settings.data.DeclarationGraphStageData
+import org.plan.research.minimization.plugin.settings.data.ExceptionComparingStrategy
 import org.plan.research.minimization.plugin.settings.data.FileLevelStageData
 import org.plan.research.minimization.plugin.settings.data.FunctionLevelStageData
 import org.plan.research.minimization.plugin.settings.data.MinimizationStageData
-import org.plan.research.minimization.plugin.settings.data.CompilationStrategy
-import org.plan.research.minimization.plugin.settings.data.ExceptionComparingStrategy
 import org.plan.research.minimization.plugin.settings.data.SnapshotStrategy
 import org.plan.research.minimization.plugin.settings.data.TransformationDescriptor
 

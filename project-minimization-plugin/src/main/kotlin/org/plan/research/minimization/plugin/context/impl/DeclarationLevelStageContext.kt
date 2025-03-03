@@ -4,12 +4,12 @@ import org.plan.research.minimization.plugin.context.IJDDContextCloner
 import org.plan.research.minimization.plugin.context.LightIJDDContext
 import org.plan.research.minimization.plugin.context.WithCallTraceParameterCacheContext
 import org.plan.research.minimization.plugin.context.WithImportRefCounterContext
+import org.plan.research.minimization.plugin.modification.graph.InstanceLevelGraph
 import org.plan.research.minimization.plugin.modification.psi.CallTraceParameterCache
 import org.plan.research.minimization.plugin.modification.psi.KtSourceImportRefCounter
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import org.plan.research.minimization.plugin.modification.graph.InstanceLevelGraph
 
 class DeclarationLevelStageContext(
     projectDir: VirtualFile,

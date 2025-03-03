@@ -1,11 +1,11 @@
 package org.plan.research.minimization.plugin.settings.ui
 
-import org.plan.research.minimization.plugin.settings.data.MinimizationStageData
 import org.plan.research.minimization.plugin.compilation.gradle.GradleBuildExceptionProvider
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.settings.MinimizationPluginState
 import org.plan.research.minimization.plugin.settings.data.CompilationStrategy
 import org.plan.research.minimization.plugin.settings.data.ExceptionComparingStrategy
+import org.plan.research.minimization.plugin.settings.data.MinimizationStageData
 import org.plan.research.minimization.plugin.settings.data.SnapshotStrategy
 
 import com.intellij.openapi.components.service
@@ -17,6 +17,7 @@ import com.intellij.ui.dsl.builder.*
 import com.intellij.util.execution.ParametersListUtil
 
 import javax.swing.DefaultListModel
+
 import kotlin.io.path.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.relativeTo

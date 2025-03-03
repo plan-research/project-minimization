@@ -1,6 +1,5 @@
 package org.plan.research.minimization.plugin.algorithm.tester
 
-import com.intellij.openapi.components.service
 import org.plan.research.minimization.plugin.algorithm.adapters.IJGraphPropertyTesterAdapter
 import org.plan.research.minimization.plugin.context.IJDDContextBase
 import org.plan.research.minimization.plugin.logging.LoggingPropertyCheckingListener
@@ -10,6 +9,8 @@ import org.plan.research.minimization.plugin.modification.lenses.ProjectItemLens
 import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.util.getExceptionComparator
+
+import com.intellij.openapi.components.service
 
 object PropertyTesterFactory {
     suspend fun <C : IJDDContextBase<C>, T : IJDDItem> createPropertyTester(

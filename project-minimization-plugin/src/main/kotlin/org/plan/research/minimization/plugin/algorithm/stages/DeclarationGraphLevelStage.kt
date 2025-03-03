@@ -1,10 +1,5 @@
 package org.plan.research.minimization.plugin.algorithm.stages
 
-import arrow.core.getOrElse
-import arrow.core.raise.Raise
-import com.intellij.openapi.components.service
-import mu.KLogger
-import mu.KotlinLogging
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.impl.graph.GraphDD
 import org.plan.research.minimization.core.algorithm.dd.withCondensation
@@ -19,6 +14,12 @@ import org.plan.research.minimization.plugin.modification.psi.CallTraceParameter
 import org.plan.research.minimization.plugin.modification.psi.KtSourceImportRefCounter
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import org.plan.research.minimization.plugin.util.WithProgressReporterMonadProvider
+
+import arrow.core.getOrElse
+import arrow.core.raise.Raise
+import com.intellij.openapi.components.service
+import mu.KLogger
+import mu.KotlinLogging
 
 class DeclarationGraphLevelStage(
     private val isFunctionParametersEnabled: Boolean,

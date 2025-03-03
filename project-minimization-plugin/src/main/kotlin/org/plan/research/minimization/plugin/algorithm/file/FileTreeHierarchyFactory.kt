@@ -1,6 +1,8 @@
 package org.plan.research.minimization.plugin.algorithm.file
 
-import arrow.core.Either
+import org.plan.research.minimization.plugin.algorithm.MinimizationError
+import org.plan.research.minimization.plugin.algorithm.MinimizationError.NoExceptionFound
+import org.plan.research.minimization.plugin.algorithm.adapters.IJHierarchicalDDGenerator
 import org.plan.research.minimization.plugin.algorithm.tester.SameExceptionPropertyTester
 import org.plan.research.minimization.plugin.context.IJDDContextBase
 import org.plan.research.minimization.plugin.logging.LoggingPropertyCheckingListener
@@ -10,12 +12,10 @@ import org.plan.research.minimization.plugin.services.BuildExceptionProviderServ
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.util.getExceptionComparator
 
+import arrow.core.Either
 import arrow.core.getOrElse
 import arrow.core.raise.either
 import com.intellij.openapi.components.service
-import org.plan.research.minimization.plugin.algorithm.MinimizationError
-import org.plan.research.minimization.plugin.algorithm.MinimizationError.NoExceptionFound
-import org.plan.research.minimization.plugin.algorithm.adapters.IJHierarchicalDDGenerator
 
 typealias FileTreeHierarchyFactoryResult<C> = Either<MinimizationError, IJHierarchicalDDGenerator<C, ProjectFileDDItem>>
 

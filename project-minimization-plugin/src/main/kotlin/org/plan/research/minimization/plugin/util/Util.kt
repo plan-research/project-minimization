@@ -3,6 +3,10 @@ package org.plan.research.minimization.plugin.util
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.impl.DDMin
 import org.plan.research.minimization.core.algorithm.dd.impl.ProbabilisticDD
+import org.plan.research.minimization.plugin.algorithm.stages.DeclarationGraphLevelStage
+import org.plan.research.minimization.plugin.algorithm.stages.FileLevelStage
+import org.plan.research.minimization.plugin.algorithm.stages.FunctionLevelStage
+import org.plan.research.minimization.plugin.algorithm.stages.MinimizationStage
 import org.plan.research.minimization.plugin.compilation.BuildExceptionProvider
 import org.plan.research.minimization.plugin.compilation.DumbCompiler
 import org.plan.research.minimization.plugin.compilation.comparator.SimpleExceptionComparator
@@ -15,19 +19,15 @@ import org.plan.research.minimization.plugin.logging.withLog
 import org.plan.research.minimization.plugin.logging.withLogging
 import org.plan.research.minimization.plugin.settings.data.CompilationStrategy
 import org.plan.research.minimization.plugin.settings.data.DDStrategy
+import org.plan.research.minimization.plugin.settings.data.DeclarationGraphStageData
 import org.plan.research.minimization.plugin.settings.data.ExceptionComparingStrategy
+import org.plan.research.minimization.plugin.settings.data.FileLevelStageData
+import org.plan.research.minimization.plugin.settings.data.FunctionLevelStageData
+import org.plan.research.minimization.plugin.settings.data.MinimizationStageData
 import org.plan.research.minimization.plugin.settings.data.SnapshotStrategy
 import org.plan.research.minimization.plugin.settings.data.TransformationDescriptor
 
 import com.intellij.openapi.project.Project
-import org.plan.research.minimization.plugin.algorithm.stages.DeclarationGraphLevelStage
-import org.plan.research.minimization.plugin.algorithm.stages.FileLevelStage
-import org.plan.research.minimization.plugin.algorithm.stages.FunctionLevelStage
-import org.plan.research.minimization.plugin.algorithm.stages.MinimizationStage
-import org.plan.research.minimization.plugin.settings.data.DeclarationGraphStageData
-import org.plan.research.minimization.plugin.settings.data.FileLevelStageData
-import org.plan.research.minimization.plugin.settings.data.FunctionLevelStageData
-import org.plan.research.minimization.plugin.settings.data.MinimizationStageData
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -58,14 +58,14 @@ fun TransformationDescriptor.getExceptionTransformations() = when (this) {
     TransformationDescriptor.PATH_RELATIVIZATION -> PathRelativizationTransformer()
 }
 
-fun getCurrentTimeString(): String = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))
-
 fun MinimizationStageData.getMinimizationStage(): MinimizationStage = when (this) {
     is DeclarationGraphStageData -> DeclarationGraphLevelStage(
         isFunctionParametersEnabled,
-        ddAlgorithm.getDDAlgorithm()
+        ddAlgorithm.getDDAlgorithm(),
     )
 
     is FileLevelStageData -> FileLevelStage(ddAlgorithm.getDDAlgorithm())
     is FunctionLevelStageData -> FunctionLevelStage(ddAlgorithm.getDDAlgorithm())
 }
+
+fun getCurrentTimeString(): String = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))

@@ -1,13 +1,7 @@
 package org.plan.research.minimization.plugin.algorithm.tester
 
-import arrow.core.getOrElse
-import arrow.core.raise.either
-import arrow.core.raise.ensure
-import arrow.core.raise.option
-import mu.KotlinLogging
 import org.plan.research.minimization.core.model.PropertyTestResult
 import org.plan.research.minimization.core.model.PropertyTesterError
-import org.plan.research.minimization.plugin.algorithm.tester.Listeners
 import org.plan.research.minimization.plugin.algorithm.adapters.IJPropertyTester
 import org.plan.research.minimization.plugin.benchmark.BenchmarkSettings
 import org.plan.research.minimization.plugin.compilation.BuildExceptionProvider
@@ -21,6 +15,12 @@ import org.plan.research.minimization.plugin.logging.withLog
 import org.plan.research.minimization.plugin.logging.withStatistics
 import org.plan.research.minimization.plugin.modification.item.IJDDItem
 import org.plan.research.minimization.plugin.modification.lenses.ProjectItemLens
+
+import arrow.core.getOrElse
+import arrow.core.raise.either
+import arrow.core.raise.ensure
+import arrow.core.raise.option
+import mu.KotlinLogging
 
 class SameExceptionPropertyTester<C : IJDDContextBase<C>, T : IJDDItem> private constructor(
     private val buildExceptionProvider: BuildExceptionProvider,

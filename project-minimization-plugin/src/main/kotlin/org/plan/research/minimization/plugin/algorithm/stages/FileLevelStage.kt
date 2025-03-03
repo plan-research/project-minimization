@@ -1,8 +1,5 @@
 package org.plan.research.minimization.plugin.algorithm.stages
 
-import arrow.core.raise.Raise
-import mu.KLogger
-import mu.KotlinLogging
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.hierarchical.HierarchicalDD
 import org.plan.research.minimization.plugin.algorithm.MinimizationError
@@ -11,6 +8,10 @@ import org.plan.research.minimization.plugin.context.HeavyIJDDContext
 import org.plan.research.minimization.plugin.context.impl.FileLevelStageContext
 import org.plan.research.minimization.plugin.context.snapshot.SnapshotMonad
 import org.plan.research.minimization.plugin.util.withProgress
+
+import arrow.core.raise.Raise
+import mu.KLogger
+import mu.KotlinLogging
 
 class FileLevelStage(
     private val baseAlgorithm: DDAlgorithm,

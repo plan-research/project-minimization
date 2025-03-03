@@ -1,9 +1,5 @@
 package org.plan.research.minimization.plugin.algorithm.stages
 
-import arrow.core.raise.Raise
-import arrow.core.raise.either
-import com.intellij.openapi.components.service
-import mu.KLogger
 import org.plan.research.minimization.plugin.algorithm.MinimizationError
 import org.plan.research.minimization.plugin.context.HeavyIJDDContext
 import org.plan.research.minimization.plugin.context.IJDDContextBase
@@ -12,7 +8,12 @@ import org.plan.research.minimization.plugin.context.snapshot.SnapshotMonadF
 import org.plan.research.minimization.plugin.logging.statLogger
 import org.plan.research.minimization.plugin.services.SnapshotManagerService
 
-sealed class MinimizationStageBase<C : IJDDContextBase<C>>: MinimizationStage {
+import arrow.core.raise.Raise
+import arrow.core.raise.either
+import com.intellij.openapi.components.service
+import mu.KLogger
+
+sealed class MinimizationStageBase<C : IJDDContextBase<C>> : MinimizationStage {
     abstract val logger: KLogger
 
     context(SnapshotMonad<C>, Raise<MinimizationError>)

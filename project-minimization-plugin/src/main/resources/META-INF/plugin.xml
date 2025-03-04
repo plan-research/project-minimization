@@ -48,12 +48,6 @@
                 class="org.plan.research.minimization.plugin.actions.BenchmarkAction" text="Run Minimization Plugin Benchmarks">
             <add-to-group group-id="ToolsMenu" anchor="after" relative-to-action="org.plan.research.minimization.plugin.actions.MinimizeProjectAction"/>
         </action>
-
-        <action id="org.plan.research.minimization.plugin.actions.FindAllConstructorCallsAction"
-                class="org.plan.research.minimization.plugin.actions.FindAllConstructorCallsAction"
-                text="Find All Primary Constructors' Calls"
-                description="The test method to print into logger all PSI elements that call the primary constructor"
-                internal="true"/>
         <action id="org.plan.research.minimization.plugin.actions.DumpDeletablePsiGraphAction"
                 class="org.plan.research.minimization.plugin.actions.DumpDeletablePsiGraphAction"
                 text="Dump Instance-Level Graph" description="Dumps instance-level graph"

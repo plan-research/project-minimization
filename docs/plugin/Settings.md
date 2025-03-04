@@ -77,6 +77,6 @@ These methods allow you to persist configuration data by serializing `Minimizati
    Here is a guide on how to do this correctly: [link](https://arrow-kt.io/learn/immutable-data/intro/#meet-optics).
 
 
-[plugin-state]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/settings/MinimizationPluginState.kt
+[plugin-state]: ../../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/settings/MinimizationPluginState.kt
 
-[stages-settings-component]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/settings/ui/StagesSettingsProducer.kt
+[stages-settings-component]: ../../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/settings/ui/StagesSettingsProducer.kt

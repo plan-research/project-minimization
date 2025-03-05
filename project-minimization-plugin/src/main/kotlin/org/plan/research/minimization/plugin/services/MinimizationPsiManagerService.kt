@@ -206,6 +206,18 @@ class MinimizationPsiManagerService {
      */
     @RequiresReadLock
     fun findAllKotlinFilesInIndexProject(context: IJDDContext): List<VirtualFile> {
+        return findAllSourceFilesInIndexProject(context, setOf(KotlinFileType.EXTENSION))
+    }
+
+    /**
+     * Finds all source files within the index project that match any of the provided file extensions.
+     *
+     * @param context The context representing the minimization process.
+     * @param exts A set of file extensions to filter the source files (e.g., "kt", "java").
+     * @return A list of source files from the index project that match the specified file extensions.
+     */
+    @RequiresReadLock
+    fun findAllSourceFilesInIndexProject(context: IJDDContext, exts: Set<String>): List<VirtualFile> {
         val roots = service<RootsManagerService>().findPossibleRoots(context)
         logger.debug {
             "Found ${roots.size} roots: $roots"
@@ -213,18 +225,18 @@ class MinimizationPsiManagerService {
         val rootFiles = roots.mapNotNull {
             context.indexProjectDir.findFileByRelativePath(it.pathString)
         }
-        return myVirtualFileTraverse(rootFiles)
+        return myVirtualFileTraverse(rootFiles, exts)
     }
 
     @RequiresReadLock
-    private fun myVirtualFileTraverse(roots: List<VirtualFile>): List<VirtualFile> = buildSet<VirtualFile> {
+    private fun myVirtualFileTraverse(roots: List<VirtualFile>, exts: Set<String>): List<VirtualFile> = buildSet<VirtualFile> {
         roots.forEach { root ->
             VfsUtilCore.visitChildrenRecursively(root, object : VirtualFileVisitor<Unit>() {
                 override fun visitFileEx(file: VirtualFile): Result {
                     if (file.isDirectory) {
                         return CONTINUE
                     }
-                    if (file.extension == KotlinFileType.EXTENSION) {
+                    if (exts.contains(file.extension)) {
                         add(file)
                     }
                     return CONTINUE

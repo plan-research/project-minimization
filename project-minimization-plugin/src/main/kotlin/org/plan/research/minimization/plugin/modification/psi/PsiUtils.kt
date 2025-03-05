@@ -19,18 +19,11 @@ import com.intellij.openapi.command.writeCommandAction
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiDirectory
-import com.intellij.psi.PsiDocumentManager
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFile
+import com.intellij.psi.*
 import com.intellij.psi.impl.PsiManagerEx
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.idea.core.util.toPsiDirectory
-import org.jetbrains.kotlin.psi.KtCallExpression
-import org.jetbrains.kotlin.psi.KtElement
-import org.jetbrains.kotlin.psi.KtExpression
-import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.parentsWithSelf
 
 import kotlin.io.path.relativeTo
@@ -202,6 +195,16 @@ object PsiUtils {
         PsiStubDDItem.NonOverriddenPsiStubDDItem(localPath, parentPath.map { it.bind() })
     }
 
+    /**
+     * Builds a path of parent-child relationships from a given PsiElement to
+     * the first encountered file or directory.
+     *
+     * @param element The starting PsiElement from which the path will be constructed.
+     * @param pathElementProducer A function from a parent and a child to their relationship.
+     * @param isElementAllowed A predicate of allowed PsiElement in the path.
+     * @return A pair of the topmost PsiElement in the path and the list of processed
+     *         relationships, or null if any element in the path is not allowed.
+     */
     @RequiresReadLock
     @Suppress("TYPE_ALIAS")
     private fun <T> buildParentPath(
@@ -230,7 +233,15 @@ object PsiUtils {
 
     @RequiresReadLock
     fun getKtFile(context: IJDDContext, file: VirtualFile): KtFile? =
-        PsiManagerEx.getInstance(context.indexProject).findFile(file) as? KtFile
+        getPsiFile(context, file) as? KtFile
+
+    @RequiresReadLock
+    fun getJFile(context: IJDDContext, file: VirtualFile): PsiJavaFile? =
+        getPsiFile(context, file) as? PsiJavaFile
+
+    @RequiresReadLock
+    fun getPsiFile(context: IJDDContext, file: VirtualFile): PsiFile? =
+        PsiManagerEx.getInstance(context.indexProject).findFile(file)
 
     suspend inline fun <T> performPsiChangesAndSave(
         context: IJDDContext,

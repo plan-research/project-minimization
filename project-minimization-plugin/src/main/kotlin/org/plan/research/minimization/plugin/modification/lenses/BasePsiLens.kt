@@ -11,6 +11,7 @@ import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.vfs.findFileOrDirectory
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import mu.KotlinLogging
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
@@ -63,9 +64,9 @@ abstract class BasePsiLens<C, I, T> :
     }
 
     context(IJDDContextMonad<C>)
-    protected open suspend fun useTrie(trie: PsiTrie<I, T>, ktFile: KtFile) {
-        PsiUtils.performPsiChangesAndSave(context, ktFile) {
-            trie.processMarkedElements(ktFile) { item, psiElement -> focusOnPsiElement(item, psiElement, context) }
+    protected open suspend fun useTrie(trie: PsiTrie<I, T>, file: PsiFile) {
+        PsiUtils.performPsiChangesAndSave(context, file) {
+            trie.processMarkedElements(file) { item, psiElement -> focusOnPsiElement(item, psiElement, context) }
         }
     }
 
@@ -84,7 +85,8 @@ abstract class BasePsiLens<C, I, T> :
             logger.error { "The desired path for focused path $relativePath is not found in the project (name=${context.indexProject.name})" }
             return
         }
-        val psiFile = smartReadAction(context.indexProject) { PsiUtils.getKtFile(context, virtualFile) }
+        // TODO: Is it important to have a kt file here?
+        val psiFile = smartReadAction(context.indexProject) { PsiUtils.getPsiFile(context, virtualFile) }
         psiFile ?: run {
             logger.error { "The desired path for focused path $relativePath is not a Kotlin file in the project (name=${context.indexProject.name})" }
             return
@@ -99,6 +101,7 @@ abstract class BasePsiLens<C, I, T> :
         val rootPath = context.projectDir.toNioPath()
         return this.virtualFile.toNioPath().relativeTo(rootPath)
     }
+
     @RequiresReadLock
     protected fun IJDDContext.getKtFileInIndexProject(ktFile: KtFile): KtFile? {
         val rootPath = projectDir.toNioPath()

@@ -1,5 +1,6 @@
 package org.plan.research.minimization.plugin.modification.psi
 
+import com.intellij.psi.impl.source.PsiMethodImpl
 import org.plan.research.minimization.plugin.modification.item.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.modification.psi.KotlinTypeRenderer.renderType
 
@@ -30,4 +31,7 @@ object PsiBodyTypeRenderer : PsiChildrenIndexDDItem.PsiWithBodyTransformer<Strin
             val type = accessor.returnType
             renderType(accessor.containingKtFile, type)
         }
+
+    // TODO: Implement or make it unnecessary?
+    override fun transform(method: PsiMethodImpl): String? = null
 }

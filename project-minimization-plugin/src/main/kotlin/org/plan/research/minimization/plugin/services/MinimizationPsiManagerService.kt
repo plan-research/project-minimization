@@ -14,6 +14,7 @@ import org.plan.research.minimization.plugin.modification.psi.usages.MethodUserS
 
 import arrow.core.filterOption
 import arrow.core.raise.option
+import com.intellij.ide.highlighter.JavaFileType
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.Service
@@ -28,16 +29,10 @@ import com.intellij.util.concurrency.annotations.RequiresReadLock
 import mu.KotlinLogging
 import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.lexer.KtTokens
-import org.jetbrains.kotlin.psi.KtCallableDeclaration
-import org.jetbrains.kotlin.psi.KtClass
-import org.jetbrains.kotlin.psi.KtElement
-import org.jetbrains.kotlin.psi.KtFunction
-import org.jetbrains.kotlin.psi.KtNamedFunction
-import org.jetbrains.kotlin.psi.KtPrimaryConstructor
+import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.containingClass
 import org.jgrapht.graph.DirectedPseudograph
 
-import kotlin.collections.plus
 import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo
 
@@ -59,9 +54,14 @@ class MinimizationPsiManagerService {
 
     suspend fun findAllPsiWithBodyItems(context: IJDDContext): List<PsiChildrenIndexDDItem> =
         smartReadAction(context.indexProject) {
-            findPsiInKotlinFiles(context, PsiChildrenIndexDDItem.BODY_REPLACEABLE_PSI_JAVA_CLASSES)
+            val javaPsi = findPsiInJavaFiles(context, PsiChildrenIndexDDItem.JAVA_BODY_REPLACEABLE_PSI_JAVA_CLASSES)
+            val kotlinPsi = findPsiInKotlinFiles(context, PsiChildrenIndexDDItem.BODY_REPLACEABLE_PSI_JAVA_CLASSES)
+
+            val result = (kotlinPsi + javaPsi)
                 .filter { PsiChildrenIndexDDItem.hasBodyIfAvailable(it) != false }
                 .mapNotNull { PsiUtils.buildReplaceablePsiItem(context, it) }
+
+            result
         }
 
     /**
@@ -205,9 +205,8 @@ class MinimizationPsiManagerService {
      * @param context
      */
     @RequiresReadLock
-    fun findAllKotlinFilesInIndexProject(context: IJDDContext): List<VirtualFile> {
-        return findAllSourceFilesInIndexProject(context, setOf(KotlinFileType.EXTENSION))
-    }
+    fun findAllKotlinFilesInIndexProject(context: IJDDContext): List<VirtualFile> =
+        findAllSourceFilesInIndexProject(context, setOf(KotlinFileType.EXTENSION))
 
     /**
      * Finds all source files within the index project that match any of the provided file extensions.
@@ -229,21 +228,22 @@ class MinimizationPsiManagerService {
     }
 
     @RequiresReadLock
-    private fun myVirtualFileTraverse(roots: List<VirtualFile>, exts: Set<String>): List<VirtualFile> = buildSet<VirtualFile> {
-        roots.forEach { root ->
-            VfsUtilCore.visitChildrenRecursively(root, object : VirtualFileVisitor<Unit>() {
-                override fun visitFileEx(file: VirtualFile): Result {
-                    if (file.isDirectory) {
+    private fun myVirtualFileTraverse(roots: List<VirtualFile>, exts: Set<String>): List<VirtualFile> =
+        buildSet<VirtualFile> {
+            roots.forEach { root ->
+                VfsUtilCore.visitChildrenRecursively(root, object : VirtualFileVisitor<Unit>() {
+                    override fun visitFileEx(file: VirtualFile): Result {
+                        if (file.isDirectory) {
+                            return CONTINUE
+                        }
+                        if (exts.contains(file.extension)) {
+                            add(file)
+                        }
                         return CONTINUE
                     }
-                    if (exts.contains(file.extension)) {
-                        add(file)
-                    }
-                    return CONTINUE
-                }
-            })
-        }
-    }.toList()
+                })
+            }
+        }.toList()
 
     @RequiresReadLock
     fun <T : PsiElement> findPsiInKotlinFiles(
@@ -257,25 +257,39 @@ class MinimizationPsiManagerService {
         if (kotlinFiles.isEmpty()) {
             logger.warn { "Found 0 kotlin files!" }
         }
-        return extractAllPsi(context, kotlinFiles, classes)
+        return extractPsi(context, kotlinFiles, classes)
     }
 
     @RequiresReadLock
-    private fun <T : PsiElement> extractAllPsi(
+    fun <T : PsiElement> findPsiInJavaFiles(
+        context: IJDDContext,
+        classes: List<Class<out T>>,
+    ): List<T> {
+        val javaFiles = findAllSourceFilesInIndexProject(context, setOf(JavaFileType.DEFAULT_EXTENSION))
+        logger.debug {
+            "Found ${javaFiles.size} java files"
+        }
+
+        return extractPsi(context, javaFiles, classes)
+    }
+
+    @RequiresReadLock
+    private fun <T : PsiElement> extractPsi(
         context: IJDDContext,
         files: Collection<VirtualFile>,
         classes: List<Class<out T>>,
     ): List<T> =
-        files.flatMap { kotlinFile ->
-            val relativePath = kotlinFile.toNioPath().relativeTo(context.indexProjectDir.toNioPath())
+        files.flatMap { file ->
+            val relativePath = file.toNioPath().relativeTo(context.indexProjectDir.toNioPath())
             val fileInCurrentProject = context.projectDir.findFileByRelativePath(relativePath.pathString)
                 ?: return@flatMap emptyList()
 
-            val ktFileInCurrentProject = PsiUtils.getKtFile(context, fileInCurrentProject)
+            // TODO: Is it important to check specific file type here? e.g. KtFile
+            val psiFileInCurrentProject = PsiUtils.getPsiFile(context, fileInCurrentProject)
                 ?: return@flatMap emptyList()
 
             classes.flatMap { clazz ->
-                PsiTreeUtil.collectElementsOfType(ktFileInCurrentProject, clazz)
+                PsiTreeUtil.collectElementsOfType(psiFileInCurrentProject, clazz)
                     .also {
                         logger.trace {
                             "Found ${it.size} ${clazz.simpleName} elements in $relativePath"

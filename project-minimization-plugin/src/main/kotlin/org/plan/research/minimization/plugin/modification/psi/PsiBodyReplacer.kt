@@ -1,9 +1,11 @@
 package org.plan.research.minimization.plugin.modification.psi
 
+import com.intellij.psi.JavaPsiFacade
 import org.plan.research.minimization.plugin.context.IJDDContext
 import org.plan.research.minimization.plugin.modification.item.PsiChildrenIndexDDItem
 
 import com.intellij.psi.PsiElement
+import com.intellij.psi.impl.source.PsiMethodImpl
 import mu.KotlinLogging
 import org.jetbrains.kotlin.psi.*
 
@@ -16,6 +18,7 @@ import org.jetbrains.kotlin.psi.*
 class PsiBodyReplacer(private val context: IJDDContext) : PsiChildrenIndexDDItem.PsiWithBodyTransformer<Unit> {
     private val logger = KotlinLogging.logger {}
     private val psiFactory = KtPsiFactory(context.indexProject)
+    private val javaPsiFactory = JavaPsiFacade.getElementFactory(context.indexProject)
     private lateinit var item: PsiChildrenIndexDDItem
 
     override fun transform(classInitializer: KtClassInitializer) {
@@ -71,6 +74,18 @@ class PsiBodyReplacer(private val context: IJDDContext) : PsiChildrenIndexDDItem
 
             accessor.bodyExpression != null -> accessor.bodyExpression!!.replace(
                 psiFactory.createExpression(replacementText),
+            )
+        }
+    }
+
+    override fun transform(method: PsiMethodImpl) {
+        logger.trace { "Replacing method body: ${method.name} in ${method.containingFile.virtualFile.path}" }
+        method.body?.let {
+            it.replace(
+                javaPsiFactory.createCodeBlockFromText(
+                    "{\nthrow new UnsupportedOperationException(\"Removed by DD\");\n}",
+                    it.context
+                )
             )
         }
     }

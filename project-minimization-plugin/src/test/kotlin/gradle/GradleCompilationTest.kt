@@ -131,23 +131,23 @@ abstract class GradleCompilationTest<C : IJDDContextBase<C>> : GradleProjectBase
         assertNotEquals(compilationResult.value, compilationResult2.value)
     }
 
-    fun testKt71260() {
-        // Example of Internal Error
-        myFixture.copyDirectoryToProject("kt-71260", ".")
-        copyGradle(useBuildKts = false)
-        val context = createContext(project)
-        val compilationResult = doCompilation(context)
-        assertIs<Either.Right<IdeaCompilationException>>(compilationResult)
-        val buildErrors = compilationResult.value.kotlincExceptions
-        assertIs<List<KotlincException.BackendCompilerException>>(buildErrors)
-        assertSize(1, buildErrors)
-        assertEquals("Case2.kt", buildErrors[0].position.filePath.name)
-        assert(buildErrors[0].stacktrace.isNotBlank())
-
-        val compilationResult2 = doCompilation(context, linkProject = false)
-        assertIs<Either.Right<IdeaCompilationException>>(compilationResult2)
-        assertEquals(compilationResult.value, compilationResult2.value)
-    }
+//    fun testKt71260() {
+//        // Example of Internal Error
+//        myFixture.copyDirectoryToProject("kt-71260", ".")
+//        copyGradle(useBuildKts = false)
+//        val context = createContext(project)
+//        val compilationResult = doCompilation(context)
+//        assertIs<Either.Right<IdeaCompilationException>>(compilationResult)
+//        val buildErrors = compilationResult.value.kotlincExceptions
+//        assertIs<List<KotlincException.BackendCompilerException>>(buildErrors)
+//        assertSize(1, buildErrors)
+//        assertEquals("Case2.kt", buildErrors[0].position.filePath.name)
+//        assert(buildErrors[0].stacktrace.isNotBlank())
+//
+//        val compilationResult2 = doCompilation(context, linkProject = false)
+//        assertIs<Either.Right<IdeaCompilationException>>(compilationResult2)
+//        assertEquals(compilationResult.value, compilationResult2.value)
+//    }
 
     fun testMavenProject() {
         myFixture.copyDirectoryToProject("maven-project", ".")

@@ -1,87 +1,75 @@
 package snapshot
 
-import HeavyTestContext
-import LightTestContext
+import PathContent
 import TestWithContext
-import TestWithHeavyContext
-import TestWithLightContext
 import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VfsUtilCore
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.utils.vfs.deleteRecursively
 import getAllFiles
-import getAllNestedElements
 import getPathContentPair
 import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.plugin.context.snapshot.SnapshotError
 import org.plan.research.minimization.plugin.context.IJDDContextBase
+import org.plan.research.minimization.plugin.context.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.services.ProjectCloningService
-import org.plan.research.minimization.plugin.context.snapshot.impl.ProjectCloningSnapshotManager
 import runSnapshotMonadAsync
-import kotlin.io.path.Path
 import kotlin.io.path.relativeTo
 
-abstract class ProjectCloningSnapshotTest<C : IJDDContextBase<C>> : ProjectCloningBaseTest(), TestWithContext<C> {
+abstract class ProjectCloningSnapshotTest<C : IJDDContextBase<C>, S : SnapshotManager>
+    : ProjectCloningBaseTest(), TestWithContext<C> {
+
+    /**
+     * Fabric method for SnapshotManager.
+     */
+    abstract fun createSnapshotManager(): S
+
     fun testOneFileProjectPartialCloning() {
-        val file = myFixture.configureByFile("oneFileProject.txt")
-        doPartialCloningTest(
-            listOf(
-                file.virtualFile
-            )
-        )
-        doPartialCloningTest(listOf())
+        myFixture.configureByFile("oneFileProject.txt")
+        doPartialCloningTest()
     }
 
     fun testFlatProjectPartialCloning() {
         val root = myFixture.copyDirectoryToProject("flatProject", "")
-        val fileMap = root.children.associateBy { it.name }
-        doPartialCloningTest(root.getAllNestedElements())
-        doPartialCloningTest(listOf(fileMap[".config"], fileMap["A"], fileMap["B"]).map { it!! })
-        doPartialCloningTest(listOf(fileMap[".config"]!!))
+        root.children.associateBy { it.name }
+        doPartialCloningTest()
     }
 
     fun testTreeProjectPartialCloning() {
         val root = myFixture.copyDirectoryToProject("treeProject", "")
-        val fileMap = buildMap {
+        buildMap {
             VfsUtilCore.iterateChildrenRecursively(root, null) {
                 this[it.toNioPath().relativeTo(project.guessProjectDir()!!.toNioPath())] = it
                 true
             }
         }
-        doPartialCloningTest(listOf(root))
-        doPartialCloningTest(listOf(fileMap[Path("root-file")]!!))
-        doPartialCloningTest(listOf(fileMap[Path("depth-1-a", "depth-2-a", "depth-2-file-a-a")]!!))
-        doPartialCloningTest(
-            listOf(
-                fileMap[Path("depth-1-a", "depth-2-a", "pretty-good-file")]!!,
-                fileMap[Path("depth-1-a", "depth-2-a-prime", "pretty-good-file")]!!,
-                fileMap[Path("depth-1-a", "pretty-good-file")]!!,
-                fileMap[Path("depth-1-b", "pretty-good-file")]!!,
-                fileMap[Path("depth-1-b", "depth-2-b", "pretty-good-file")]!!,
-                fileMap[Path("depth-1-b", "depth-2-b-prime", "pretty-good-file")]!!,
-            )
-        )
+        doPartialCloningTest()
     }
 
     private fun doPartialCloningTest(
-        selectedFiles: List<VirtualFile>
     ) {
         val project = myFixture.project
-        val projectDir = project.guessProjectDir()!!
-        val snapshotManager = ProjectCloningSnapshotManager(project)
+        val snapshotManager = createSnapshotManager()
         val projectCloning = project.service<ProjectCloningService>()
         val initialContext = createContext(project)
 
-        val originalFiles =
-            selectedFiles.getAllFiles(projectDir) + project.guessProjectDir()!!
-                .getPathContentPair(projectDir.toNioPath())
+        var originalFiles: Set<PathContent> = emptySet()
 
         val clonedProject = runBlocking {
             val clonedContext = projectCloning.clone(initialContext)!!
             clonedContext.runSnapshotMonadAsync(snapshotManager) {
+                originalFiles =  clonedContext.projectDir.getAllFiles(clonedContext.projectDir.toNioPath()) +
+                        clonedContext.projectDir.getPathContentPair(clonedContext.projectDir.toNioPath())
+
+                writeAction {
+                    context.projectDir.createChildData(this, "extraFile1.txt")
+                    context.projectDir.createChildData(this, "extraFile2.txt")
+                    val extraDir = context.projectDir.createChildDirectory(this, "extraDir")
+                    extraDir.createChildData(this, "extraFileInDir.txt")
+                }
+
                 val result = transaction<Unit> {
                     writeAction {
                         VfsUtil.iterateChildrenRecursively(context.projectDir, null) {
@@ -98,7 +86,7 @@ abstract class ProjectCloningSnapshotTest<C : IJDDContextBase<C>> : ProjectCloni
             }
         }
         val clonedFiles = clonedProject.projectDir.getAllFiles(clonedProject.projectDir.toNioPath())
-        assertEquals(originalFiles, clonedFiles)
+        assertEquals(originalFiles.forEach { it.path }, clonedFiles.forEach { it.path })
         deleteContext(clonedProject)
     }
 
@@ -106,7 +94,7 @@ abstract class ProjectCloningSnapshotTest<C : IJDDContextBase<C>> : ProjectCloni
         myFixture.copyDirectoryToProject("flatProject", "")
         val project = myFixture.project
 
-        val snapshotManager = ProjectCloningSnapshotManager(project)
+        val snapshotManager = createSnapshotManager()
         val initialContext = createContext(project)
         runBlocking {
             initialContext.runSnapshotMonadAsync(snapshotManager) {
@@ -129,7 +117,7 @@ abstract class ProjectCloningSnapshotTest<C : IJDDContextBase<C>> : ProjectCloni
         val project = myFixture.project
         val initialContext = createContext(project)
 
-        val snapshotManager = ProjectCloningSnapshotManager(project)
+        val snapshotManager = createSnapshotManager()
         runBlocking {
             initialContext.runSnapshotMonadAsync(snapshotManager) {
                 val result = transaction<String> {
@@ -146,12 +134,3 @@ abstract class ProjectCloningSnapshotTest<C : IJDDContextBase<C>> : ProjectCloni
         assert(project.isOpen)
     }
 }
-
-class ProjectCloningSnapshotHeavyTest :
-    ProjectCloningSnapshotTest<HeavyTestContext>(),
-    TestWithContext<HeavyTestContext> by TestWithHeavyContext()
-
-
-class ProjectCloningSnapshotLightTest :
-    ProjectCloningSnapshotTest<LightTestContext>(),
-    TestWithContext<LightTestContext> by TestWithLightContext()

@@ -24,9 +24,9 @@ import java.nio.file.Path
  * to manage and remove unused import statements in Kotlin files.
  */
 abstract class AbstractImportRefLens<C, I, T> : BasePsiLens<C, I, T>()
-        where C : WithImportRefCounterContext<C>,
-              I : PsiDDItem<T>,
-              T : Comparable<T>, T : PsiChildrenPathIndex {
+where C : WithImportRefCounterContext<C>,
+I : PsiDDItem<T>,
+T : Comparable<T>, T : PsiChildrenPathIndex {
     private val logger = KotlinLogging.logger {}
     context(IJDDContextMonad<C>)
     override suspend fun useTrie(

@@ -1,9 +1,9 @@
 package org.plan.research.minimization.plugin.modification.psi
 
-import com.intellij.psi.impl.source.PsiMethodImpl
 import org.plan.research.minimization.plugin.modification.item.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.modification.psi.KotlinTypeRenderer.renderType
 
+import com.intellij.psi.impl.source.PsiMethodImpl
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
 import org.jetbrains.kotlin.psi.KtClassInitializer

@@ -1,9 +1,9 @@
 package org.plan.research.minimization.plugin.modification.psi
 
-import com.intellij.psi.JavaPsiFacade
 import org.plan.research.minimization.plugin.context.IJDDContext
 import org.plan.research.minimization.plugin.modification.item.PsiChildrenIndexDDItem
 
+import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiElement
 import com.intellij.psi.impl.source.PsiMethodImpl
 import mu.KotlinLogging
@@ -84,8 +84,8 @@ class PsiBodyReplacer(private val context: IJDDContext) : PsiChildrenIndexDDItem
             it.replace(
                 javaPsiFactory.createCodeBlockFromText(
                     "{\nthrow new UnsupportedOperationException(\"Removed by DD\");\n}",
-                    it.context
-                )
+                    it.context,
+                ),
             )
         }
     }

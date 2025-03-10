@@ -70,9 +70,9 @@ data class PsiChildrenIndexDDItem(
                 // TODO: Update error
                 error(
                     "Invalid Psi Element. " +
-                            "Supported types: " +
-                            "KtNamedFunction, KtClassInitializer, KtPropertyAccessor, KtLambdaExpression, " +
-                            "but got ${element.javaClass.simpleName}",
+                        "Supported types: " +
+                        "KtNamedFunction, KtClassInitializer, KtPropertyAccessor, KtLambdaExpression, " +
+                        "but got ${element.javaClass.simpleName}",
                 )
             }
     }

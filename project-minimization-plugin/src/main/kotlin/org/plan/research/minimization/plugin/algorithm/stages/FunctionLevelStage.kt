@@ -11,20 +11,9 @@ import org.plan.research.minimization.plugin.services.MinimizationPsiManagerServ
 
 import arrow.core.getOrElse
 import arrow.core.raise.Raise
-import arrow.core.right
 import com.intellij.openapi.components.service
 import mu.KLogger
 import mu.KotlinLogging
-
-import org.plan.research.minimization.plugin.algorithm.tester.SameExceptionPropertyTester
-import org.plan.research.minimization.plugin.compilation.BuildExceptionProvider
-import org.plan.research.minimization.plugin.compilation.CompilationResult
-import org.plan.research.minimization.plugin.compilation.DumbCompiler
-import org.plan.research.minimization.plugin.context.IJDDContext
-import org.plan.research.minimization.plugin.logging.LoggingPropertyCheckingListener
-import org.plan.research.minimization.plugin.services.BuildExceptionProviderService
-import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
-import org.plan.research.minimization.plugin.util.getExceptionComparator
 
 class FunctionLevelStage(
     private val ddAlgorithm: DDAlgorithm,
@@ -46,24 +35,24 @@ class FunctionLevelStage(
             }
 
         // TODO: Remove
-//        class MyExceptionProvider : BuildExceptionProvider {
-//            private val THROWABLE = Throwable("Test")
-//            override suspend fun checkCompilation(context: IJDDContext): CompilationResult =
-//                DumbCompiler.DumbException(THROWABLE).right()
-//        }
-//
-//        val propertyChecker = SameExceptionPropertyTester.create(
-//            MyExceptionProvider(),
-//            context.originalProject.service<MinimizationPluginSettings>().state
-//                .exceptionComparingStrategy
-//                .getExceptionComparator(),
-//            lens,
-//            context,
-//            listOfNotNull(LoggingPropertyCheckingListener.create(stageName)),
-//        ).getOrElse {
-//            logger.error { "Property checker creation failed. Aborted" }
-//            raise(MinimizationError.PropertyCheckerFailed)
-//        }
+        // class MyExceptionProvider : BuildExceptionProvider {
+        // private val THROWABLE = Throwable("Test")
+        // override suspend fun checkCompilation(context: IJDDContext): CompilationResult =
+        // DumbCompiler.DumbException(THROWABLE).right()
+        // }
+        // 
+        // val propertyChecker = SameExceptionPropertyTester.create(
+        // MyExceptionProvider(),
+        // context.originalProject.service<MinimizationPluginSettings>().state
+        // .exceptionComparingStrategy
+        // .getExceptionComparator(),
+        // lens,
+        // context,
+        // listOfNotNull(LoggingPropertyCheckingListener.create(stageName)),
+        // ).getOrElse {
+        // logger.error { "Property checker creation failed. Aborted" }
+        // raise(MinimizationError.PropertyCheckerFailed)
+        // }
 
         ddAlgorithm.minimize(
             firstLevel,

@@ -57,7 +57,6 @@ tasks {
         isScanForTestClasses = false
         // Only run tests from classes that end with "Test"
         include("**/*Test.class")
-        exclude("**/GradleCompilation*Test.class")
         systemProperty("idea.is.internal", true)
     }
 }

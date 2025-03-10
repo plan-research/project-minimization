@@ -1,12 +1,12 @@
 package org.plan.research.minimization.plugin.services
 
-import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.context.IJDDContext
 
 import com.intellij.history.Label
 import com.intellij.history.LocalHistory
 import com.intellij.history.LocalHistoryAction
 import com.intellij.openapi.application.EDT
-import com.intellij.openapi.application.runWriteAction
+import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 
@@ -23,7 +23,7 @@ class LocalHistoryWrapperService {
 
         val action = startLocalHistoryAction(project, "Save Project Snapshot")
         try {
-            runWriteAction {
+            writeAction {
                 LocalHistory.getInstance().putSystemLabel(project, "Project Snapshot")
             }
         } finally {
@@ -39,7 +39,7 @@ class LocalHistoryWrapperService {
             try {
                 // Get Local History revisions for the project directory
                 lastLabel?.let {
-                    runWriteAction {
+                    writeAction {
                         it.revert(project, context.indexProjectDir)
                     }
                 }
@@ -51,7 +51,7 @@ class LocalHistoryWrapperService {
 
     suspend fun gitInit(project: Project): Label = withContext(Dispatchers.EDT) {
         // No explicit initialization needed for Local History
-        runWriteAction {
+        writeAction {
             LocalHistory.getInstance().putSystemLabel(project, "Initialized Local History Tracking")
         }
     }

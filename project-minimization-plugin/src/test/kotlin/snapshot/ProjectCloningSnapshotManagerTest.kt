@@ -5,8 +5,8 @@ import LightTestContext
 import TestWithContext
 import TestWithHeavyContext
 import TestWithLightContext
-import org.plan.research.minimization.plugin.model.context.IJDDContextBase
-import org.plan.research.minimization.plugin.snapshot.ProjectCloningSnapshotManager
+import org.plan.research.minimization.plugin.context.IJDDContextBase
+import org.plan.research.minimization.plugin.context.snapshot.impl.ProjectCloningSnapshotManager
 
 abstract class ProjectCloningSnapshotManagerTest<C : IJDDContextBase<C>> : ProjectCloningSnapshotTest<C, ProjectCloningSnapshotManager>() {
     override fun createSnapshotManager(): ProjectCloningSnapshotManager {

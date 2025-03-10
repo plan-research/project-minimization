@@ -1,14 +1,16 @@
-package org.plan.research.minimization.plugin.snapshot
+package org.plan.research.minimization.plugin.context.snapshot.impl
 
-import org.plan.research.minimization.plugin.errors.SnapshotError
-import org.plan.research.minimization.plugin.errors.SnapshotError.*
+import org.plan.research.minimization.plugin.context.IJDDContextBase
+import org.plan.research.minimization.plugin.context.IJDDContextMonad
+import org.plan.research.minimization.plugin.context.snapshot.SnapshotError
+import org.plan.research.minimization.plugin.context.snapshot.SnapshotError.Aborted
+import org.plan.research.minimization.plugin.context.snapshot.SnapshotError.TransactionCreationFailed
+import org.plan.research.minimization.plugin.context.snapshot.SnapshotError.TransactionFailed
+import org.plan.research.minimization.plugin.context.snapshot.SnapshotManager
+import org.plan.research.minimization.plugin.context.snapshot.SnapshotMonad
+import org.plan.research.minimization.plugin.context.snapshot.TransactionAction
+import org.plan.research.minimization.plugin.context.snapshot.TransactionResult
 import org.plan.research.minimization.plugin.logging.statLogger
-import org.plan.research.minimization.plugin.model.context.IJDDContextBase
-import org.plan.research.minimization.plugin.model.monad.IJDDContextMonad
-import org.plan.research.minimization.plugin.model.monad.SnapshotMonad
-import org.plan.research.minimization.plugin.model.monad.TransactionAction
-import org.plan.research.minimization.plugin.model.monad.TransactionResult
-import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.services.LocalHistoryWrapperService
 
 import arrow.core.raise.either

@@ -56,16 +56,6 @@ fun List<VirtualFile>.getAllParents(root: VirtualFile): List<VirtualFile> = buil
     this@getAllParents.forEach(::traverseParents)
 }.toList()
 
-fun VirtualFile.getAllNestedElements(): List<VirtualFile> = buildList {
-    VfsUtilCore.iterateChildrenRecursively(
-        this@getAllNestedElements,
-        null,
-    ) {
-        add(it)
-        true
-    }
-}
-
 fun List<VirtualFile>.getAllFiles(projectDir: VirtualFile): Set<PathContent> =
     flatMap { it.getAllFiles(projectDir.toNioPath()) }.toSet() + getAllParents(projectDir).map {
         it.getPathContentPair(projectDir.toNioPath())

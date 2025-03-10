@@ -32,9 +32,6 @@ allprojects {
         implementation(libs.arrow.core)
         implementation(libs.kotlin.logging)
         implementation(libs.logback.classic)
-        implementation(libs.jgit.core)
-//        implementation(libs.jgit.ssh.apache)
-//        implementation(libs.jgit.gpg.bc)
         implementation(libs.arrow.optics)
         ksp(libs.arrow.ksp.plugin)
 

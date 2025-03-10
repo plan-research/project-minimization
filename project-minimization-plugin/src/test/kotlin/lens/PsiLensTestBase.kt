@@ -8,10 +8,10 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.toNioPathOrNull
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
-import org.plan.research.minimization.plugin.lenses.BasePsiLens
-import org.plan.research.minimization.plugin.model.context.LightIJDDContext
-import org.plan.research.minimization.plugin.model.item.PsiDDItem
-import org.plan.research.minimization.plugin.model.item.index.PsiChildrenPathIndex
+import org.plan.research.minimization.plugin.modification.lenses.BasePsiLens
+import org.plan.research.minimization.plugin.context.LightIJDDContext
+import org.plan.research.minimization.plugin.modification.item.PsiDDItem
+import org.plan.research.minimization.plugin.modification.item.index.PsiChildrenPathIndex
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 import runMonad
 import kotlin.io.path.relativeTo

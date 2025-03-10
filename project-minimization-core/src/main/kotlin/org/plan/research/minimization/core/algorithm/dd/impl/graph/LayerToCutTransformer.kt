@@ -8,8 +8,8 @@ import org.jgrapht.graph.EdgeReversedGraph
 import org.jgrapht.traverse.DepthFirstIterator
 
 /**
- * Class that defines the transformation of a hierarchical graph layer
- * into a corresponding graph cut.
+ * Class that defines the transformation of a hierarchical adapters layer
+ * into a corresponding adapters cut.
  *
  * The only user of that object is [GraphLayerHierarchyGenerator].
  */

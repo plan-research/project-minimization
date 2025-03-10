@@ -1,8 +1,8 @@
 package org.plan.research.minimization.plugin.services
 
 import org.plan.research.minimization.core.GraphToImageDumper
-import org.plan.research.minimization.plugin.model.context.impl.DefaultProjectContext
-import org.plan.research.minimization.plugin.model.graph.PsiIJEdge
+import org.plan.research.minimization.plugin.context.impl.DefaultProjectContext
+import org.plan.research.minimization.plugin.modification.graph.PsiIJEdge
 
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
@@ -43,7 +43,7 @@ class TestGraphService(private val project: Project, private val coroutineScope:
         )
         val projectRoot = project.guessProjectDir()!!.toNioPath()
         val graphViz = Graphviz.fromGraph(representation)
-        val file = projectRoot.resolve("instance-level-graph.svg").toFile()
+        val file = projectRoot.resolve("instance-level-adapters.svg").toFile()
         
         withContext(Dispatchers.IO) {
             graphViz.render(Format.SVG).toFile(file)

@@ -11,14 +11,14 @@ import org.jgrapht.Graph
 import org.jgrapht.graph.AsSubgraph
 
 /**
- * An implementation for producing hierarchical layers from a graph for the [GraphDD] algorithm.
+ * An implementation for producing hierarchical layers from a adapters for the [GraphDD] algorithm.
  *
  * The implementation of that class is based on some like of reversed breath-first search.
- * Any element of the graph could be in one of the following states:
+ * Any element of the adapters could be in one of the following states:
  * * Not visited yet — that vertex has not been processed by the hierarchy producer yet
  * * Active — that vertex is now chosen to be in the next layer
- * * Deleted — that vertex from the current layer is chosen to be deleted by DD algorithm. That vertex is deleted from the graph.
- * * Selected to left nodes — that vertex from the current layer is determined as important for graph
+ * * Deleted — that vertex from the current layer is chosen to be deleted by DD algorithm. That vertex is deleted from the adapters.
+ * * Selected to left nodes — that vertex from the current layer is determined as important for adapters
  * * Inactive — This vertex is adjacent with an active node. That vertex is propagated from some active layer, but not all out-coming edges are taken into account
  */
 class GraphLayerHierarchyGenerator<M : Monad, T : DDItem, E>(
@@ -43,9 +43,9 @@ class GraphLayerHierarchyGenerator<M : Monad, T : DDItem, E>(
     }
 
     /**
-     * Generates the next graph layer in the hierarchy based on the provided minimization result.
+     * Generates the next adapters layer in the hierarchy based on the provided minimization result.
      *
-     * The deleted on the current level vertices are processed automatically: they were removed from the graph.
+     * The deleted on the current level vertices are processed automatically: they were removed from the adapters.
      *
      * * Then from the left active vertices propagates the state to the predecessors.
      * * That produces a list of the inactive elements that were updated during this layer.

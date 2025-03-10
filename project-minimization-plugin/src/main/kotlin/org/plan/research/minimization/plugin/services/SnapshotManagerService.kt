@@ -1,9 +1,9 @@
 package org.plan.research.minimization.plugin.services
 
-import org.plan.research.minimization.plugin.getSnapshotManager
-import org.plan.research.minimization.plugin.model.context.IJDDContextBase
-import org.plan.research.minimization.plugin.model.monad.SnapshotMonad
-import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
+import org.plan.research.minimization.plugin.context.IJDDContextBase
+import org.plan.research.minimization.plugin.context.snapshot.SnapshotManager
+import org.plan.research.minimization.plugin.context.snapshot.SnapshotMonad
+import org.plan.research.minimization.plugin.util.getSnapshotManager
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service

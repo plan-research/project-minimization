@@ -8,9 +8,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.indexing.FileBasedIndex
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.idea.KotlinFileType
-import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
-import org.plan.research.minimization.plugin.model.context.impl.DefaultProjectContext
-import org.plan.research.minimization.plugin.psi.KDocRemover
+import org.plan.research.minimization.plugin.context.impl.DefaultProjectContext
+import org.plan.research.minimization.plugin.modification.psi.KDocRemover
 import kotlin.io.path.Path
 import kotlin.io.path.relativeTo
 

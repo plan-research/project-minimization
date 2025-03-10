@@ -38,26 +38,32 @@ class FunctionLevelStage(
         val firstLevel = service<MinimizationPsiManagerService>()
             .findAllPsiWithBodyItems(context)
 
-        //        val propertyChecker = PropertyTesterFactory
-        //            .createPropertyTester(lens, context, stageName)
-        class MyExceptionProvider : BuildExceptionProvider {
-            private val THROWABLE = Throwable("Test")
-            override suspend fun checkCompilation(context: IJDDContext): CompilationResult =
-                DumbCompiler.DumbException(THROWABLE).right()
-        }
+        val propertyChecker = PropertyTesterFactory
+            .createPropertyTester(lens, context, stageName)
+            .getOrElse {
+                logger.error { "Property checker creation failed. Aborted" }
+                raise(MinimizationError.PropertyCheckerFailed)
+            }
 
-        val propertyChecker = SameExceptionPropertyTester.create(
-            MyExceptionProvider(),
-            context.originalProject.service<MinimizationPluginSettings>().state
-                .exceptionComparingStrategy
-                .getExceptionComparator(),
-            lens,
-            context,
-            listOfNotNull(LoggingPropertyCheckingListener.create(stageName)),
-        ).getOrElse {
-            logger.error { "Property checker creation failed. Aborted" }
-            raise(MinimizationError.PropertyCheckerFailed)
-        }
+        // TODO: Remove
+//        class MyExceptionProvider : BuildExceptionProvider {
+//            private val THROWABLE = Throwable("Test")
+//            override suspend fun checkCompilation(context: IJDDContext): CompilationResult =
+//                DumbCompiler.DumbException(THROWABLE).right()
+//        }
+//
+//        val propertyChecker = SameExceptionPropertyTester.create(
+//            MyExceptionProvider(),
+//            context.originalProject.service<MinimizationPluginSettings>().state
+//                .exceptionComparingStrategy
+//                .getExceptionComparator(),
+//            lens,
+//            context,
+//            listOfNotNull(LoggingPropertyCheckingListener.create(stageName)),
+//        ).getOrElse {
+//            logger.error { "Property checker creation failed. Aborted" }
+//            raise(MinimizationError.PropertyCheckerFailed)
+//        }
 
         ddAlgorithm.minimize(
             firstLevel,

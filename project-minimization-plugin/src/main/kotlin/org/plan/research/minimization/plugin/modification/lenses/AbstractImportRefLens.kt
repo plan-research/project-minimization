@@ -29,7 +29,7 @@ I : PsiDDItem<T>,
 T : Comparable<T>, T : PsiChildrenPathIndex {
     private val logger = KotlinLogging.logger {}
     context(IJDDContextMonad<C>)
-    override suspend fun useTrie(
+    override suspend fun focusOnTrieAndSave(
         trie: PsiTrie<I, T>,
         file: PsiFile,
     ) {
@@ -37,7 +37,7 @@ T : Comparable<T>, T : PsiChildrenPathIndex {
         val file = file as? KtFile ?: throw UnsupportedOperationException("Only Kotlin files are supported")
 
         // Usual PSI removing stuff
-        super.useTrie(trie, file)
+        super.focusOnTrieAndSave(trie, file)
 
         // Import optimization part
         val localPath = file.getLocalPath(context)

@@ -63,8 +63,14 @@ abstract class BasePsiLens<C, I, T> :
         }
     }
 
+    /**
+     * Focus on elements represented by the [PsiTrie] inside the [PsiFile].
+     *
+     * @param trie The PsiTrie containing items to be focused on.
+     * @param file The PsiFile where the changes will be performed and saved.
+     */
     context(IJDDContextMonad<C>)
-    protected open suspend fun useTrie(trie: PsiTrie<I, T>, file: PsiFile) {
+    protected open suspend fun focusOnTrieAndSave(trie: PsiTrie<I, T>, file: PsiFile) {
         PsiUtils.performPsiChangesAndSave(context, file) {
             trie.processMarkedElements(file) { item, psiElement -> focusOnPsiElement(item, psiElement, context) }
         }
@@ -92,7 +98,7 @@ abstract class BasePsiLens<C, I, T> :
             return
         }
         logger.trace { "Processing all focused elements in $relativePath" }
-        useTrie(trie, psiFile)
+        focusOnTrieAndSave(trie, psiFile)
     }
 
     protected abstract suspend fun focusOnFilesAndDirectories(itemsToDelete: List<I>, context: C)

@@ -1,7 +1,7 @@
 package org.plan.research.minimization.plugin.settings.ui
 
-import org.plan.research.minimization.plugin.model.state.TransformationDescriptor
 import org.plan.research.minimization.plugin.settings.MinimizationPluginStateObservable
+import org.plan.research.minimization.plugin.settings.data.TransformationDescriptor
 
 import org.jetbrains.kotlin.nj2k.mutate
 

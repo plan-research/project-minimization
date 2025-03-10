@@ -2,6 +2,7 @@ package org.plan.research.minimization.plugin.logging
 
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithm
 import org.plan.research.minimization.core.algorithm.dd.DDAlgorithmResult
+import org.plan.research.minimization.core.model.DDInfo
 import org.plan.research.minimization.core.model.DDItem
 import org.plan.research.minimization.core.model.Monad
 import org.plan.research.minimization.core.model.PropertyTester
@@ -17,6 +18,7 @@ class DDAlgorithmWithLog(
     override suspend fun <M : Monad, T : DDItem> minimize(
         items: List<T>,
         propertyTester: PropertyTester<M, T>,
+        info: DDInfo<T>,
     ): DDAlgorithmResult<T> {
         val result: DDAlgorithmResult<T>
 
@@ -36,7 +38,7 @@ class DDAlgorithmWithLog(
         statLogger.info { "DDAlgorithm started with size: ${items.size}" }
 
         try {
-            result = innerDDAlgorithm.minimize(items, propertyTester)
+            result = innerDDAlgorithm.minimize(items, propertyTester, info)
         } catch (e: Throwable) {
             logger.error { "DDAlgorithm ended up with error: ${e.message}" }
             throw e

@@ -1,17 +1,18 @@
 package org.plan.research.minimization.plugin.services
 
-import org.plan.research.minimization.plugin.errors.MinimizationError
-import org.plan.research.minimization.plugin.getCurrentTimeString
+import org.plan.research.minimization.plugin.algorithm.MinimizationError
+import org.plan.research.minimization.plugin.algorithm.stages.MinimizationStage
+import org.plan.research.minimization.plugin.context.HeavyIJDDContext
+import org.plan.research.minimization.plugin.context.IJDDContextBase
+import org.plan.research.minimization.plugin.context.IJDDContextTransformer
+import org.plan.research.minimization.plugin.context.LightIJDDContext
+import org.plan.research.minimization.plugin.context.impl.DefaultProjectContext
 import org.plan.research.minimization.plugin.logging.ExecutionDiscriminator
 import org.plan.research.minimization.plugin.logging.statLogger
-import org.plan.research.minimization.plugin.model.MinimizationStage
-import org.plan.research.minimization.plugin.model.context.HeavyIJDDContext
-import org.plan.research.minimization.plugin.model.context.IJDDContextBase
-import org.plan.research.minimization.plugin.model.context.IJDDContextTransformer
-import org.plan.research.minimization.plugin.model.context.LightIJDDContext
-import org.plan.research.minimization.plugin.model.context.impl.DefaultProjectContext
-import org.plan.research.minimization.plugin.psi.KDocRemover
-import org.plan.research.minimization.plugin.psi.PsiImportCleaner
+import org.plan.research.minimization.plugin.modification.psi.KDocRemover
+import org.plan.research.minimization.plugin.modification.psi.PsiImportCleaner
+import org.plan.research.minimization.plugin.util.getCurrentTimeString
+import org.plan.research.minimization.plugin.util.getMinimizationStage
 
 import arrow.core.Either
 import arrow.core.raise.Raise
@@ -42,7 +43,6 @@ class MinimizationService(private val project: Project, private val coroutineSco
         .stateObservable
         .stages
         .observe { it }
-    private val executor = project.service<MinimizationStageExecutorService>()
     private val projectCloning = project.service<ProjectCloningService>()
     private val openingService = service<ProjectOpeningService>()
     private val logger = KotlinLogging.logger {}
@@ -69,8 +69,9 @@ class MinimizationService(private val project: Project, private val coroutineSco
                 context = cloneProject(context, reporter)
                 removeKDocs(context)
 
-                for (stage in stages) {
-                    logger.info { "Starting stage=${stage.name}. The starting snapshot is: ${context.projectDir.toNioPath()}" }
+                for (stageData in stages) {
+                    val stage = stageData.getMinimizationStage()
+                    logger.info { "Starting stage=${stage.stageName}. The starting snapshot is: ${context.projectDir.toNioPath()}" }
                     context = processStage(context, stage, reporter)
                 }
             }
@@ -91,8 +92,8 @@ class MinimizationService(private val project: Project, private val coroutineSco
         stage: MinimizationStage,
         reporter: SequentialProgressReporter,
     ): HeavyIJDDContext<*> {
-        val newContext = reporter.itemStep("Minimization step: ${stage.name}") {
-            stage.apply(context, executor).bind()
+        val newContext = reporter.itemStep("Minimization step: ${stage.stageName}") {
+            stage.executeStage(context).bind()
         }
 
         logger.info { "Opening and importing" }

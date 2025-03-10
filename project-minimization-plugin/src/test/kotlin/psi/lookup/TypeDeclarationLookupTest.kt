@@ -1,6 +1,5 @@
 package psi.lookup
 
-import com.intellij.openapi.application.readAction
 import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtElement
@@ -11,7 +10,7 @@ import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtPrimaryConstructor
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtTypeParameter
-import org.plan.research.minimization.plugin.psi.lookup.TypeDeclarationLookup
+import org.plan.research.minimization.plugin.modification.psi.lookup.TypeDeclarationLookup
 import kotlin.test.assertIs
 
 class TypeDeclarationLookupTest : AbstractLookupTestBase() {

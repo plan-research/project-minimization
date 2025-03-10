@@ -1,12 +1,12 @@
 package org.plan.research.minimization.plugin.settings.ui
 
-import org.plan.research.minimization.plugin.execution.gradle.GradleBuildExceptionProvider
-import org.plan.research.minimization.plugin.model.MinimizationStage
-import org.plan.research.minimization.plugin.model.state.CompilationStrategy
-import org.plan.research.minimization.plugin.model.state.ExceptionComparingStrategy
-import org.plan.research.minimization.plugin.model.state.SnapshotStrategy
+import org.plan.research.minimization.plugin.compilation.gradle.GradleBuildExceptionProvider
 import org.plan.research.minimization.plugin.services.MinimizationPluginSettings
 import org.plan.research.minimization.plugin.settings.MinimizationPluginState
+import org.plan.research.minimization.plugin.settings.data.CompilationStrategy
+import org.plan.research.minimization.plugin.settings.data.ExceptionComparingStrategy
+import org.plan.research.minimization.plugin.settings.data.MinimizationStageData
+import org.plan.research.minimization.plugin.settings.data.SnapshotStrategy
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.observable.properties.PropertyGraph
@@ -17,6 +17,7 @@ import com.intellij.ui.dsl.builder.*
 import com.intellij.util.execution.ParametersListUtil
 
 import javax.swing.DefaultListModel
+
 import kotlin.io.path.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.relativeTo
@@ -102,7 +103,7 @@ abstract class SettingsProducerBase(protected val project: Project) {
         }
     }
 
-    private fun DefaultListModel<MinimizationStage>.isDefault(): Boolean =
+    private fun DefaultListModel<MinimizationStageData>.isDefault(): Boolean =
         toList() == MinimizationPluginState.defaultStages
 
     protected fun Panel.stagesSettings() {

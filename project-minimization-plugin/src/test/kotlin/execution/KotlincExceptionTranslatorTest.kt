@@ -10,11 +10,11 @@ import com.intellij.build.events.MessageEventResult
 import com.intellij.openapi.project.Project
 import com.intellij.pom.Navigatable
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
-import org.plan.research.minimization.plugin.errors.CompilationPropertyCheckerError.CompilationSuccess
-import org.plan.research.minimization.plugin.execution.exception.KotlincErrorSeverity
-import org.plan.research.minimization.plugin.execution.exception.KotlincException
-import org.plan.research.minimization.plugin.execution.exception.KotlincExceptionTranslator
-import org.plan.research.minimization.plugin.model.CaretPosition
+import org.plan.research.minimization.plugin.compilation.CompilationPropertyCheckerError.CompilationSuccess
+import org.plan.research.minimization.plugin.compilation.exception.KotlincErrorSeverity
+import org.plan.research.minimization.plugin.compilation.exception.KotlincException
+import org.plan.research.minimization.plugin.compilation.exception.KotlincExceptionTranslator
+import org.plan.research.minimization.plugin.compilation.exception.CaretPosition
 import java.io.File
 import kotlin.io.path.Path
 import kotlin.test.assertIs

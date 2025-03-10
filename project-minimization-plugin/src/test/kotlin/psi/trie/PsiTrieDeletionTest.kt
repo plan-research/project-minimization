@@ -14,10 +14,10 @@ import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtTypeAlias
 import org.jetbrains.kotlin.psi.KtTypeParameterList
-import org.plan.research.minimization.plugin.model.context.IJDDContext
-import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
-import org.plan.research.minimization.plugin.psi.PsiUtils
-import org.plan.research.minimization.plugin.psi.stub.KtStub
+import org.plan.research.minimization.plugin.context.IJDDContext
+import org.plan.research.minimization.plugin.modification.item.PsiStubDDItem
+import org.plan.research.minimization.plugin.modification.psi.PsiUtils
+import org.plan.research.minimization.plugin.modification.psi.stub.KtStub
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import kotlin.io.path.pathString
 import kotlin.io.path.relativeTo

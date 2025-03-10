@@ -2,10 +2,10 @@ package execution
 
 import com.intellij.testFramework.fixtures.JavaCodeInsightFixtureTestCase
 import kotlinx.coroutines.runBlocking
-import org.plan.research.minimization.plugin.execution.exception.KotlincException
-import org.plan.research.minimization.plugin.getExceptionComparator
-import org.plan.research.minimization.plugin.model.exception.ExceptionComparator
-import org.plan.research.minimization.plugin.model.state.ExceptionComparingStrategy
+import org.plan.research.minimization.plugin.compilation.exception.KotlincException
+import org.plan.research.minimization.plugin.util.getExceptionComparator
+import org.plan.research.minimization.plugin.compilation.comparator.ExceptionComparator
+import org.plan.research.minimization.plugin.settings.data.ExceptionComparingStrategy
 import java.io.File
 import kotlin.io.path.Path
 import kotlin.io.path.exists

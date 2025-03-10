@@ -1,7 +1,12 @@
 package org.plan.research.minimization.plugin.settings.ui
 
-import org.plan.research.minimization.plugin.model.*
-import org.plan.research.minimization.plugin.model.state.DDStrategy
+import org.plan.research.minimization.plugin.settings.data.DDStrategy
+import org.plan.research.minimization.plugin.settings.data.DeclarationGraphStageData
+import org.plan.research.minimization.plugin.settings.data.FileLevelStageData
+import org.plan.research.minimization.plugin.settings.data.FunctionLevelStageData
+import org.plan.research.minimization.plugin.settings.data.MinimizationStageData
+import org.plan.research.minimization.plugin.settings.data.ddAlgorithm
+import org.plan.research.minimization.plugin.settings.data.isFunctionParametersEnabled
 
 import arrow.optics.Lens
 import com.intellij.openapi.observable.properties.GraphProperty
@@ -23,8 +28,8 @@ import javax.swing.ListSelectionModel
 
 class StagesSettingsProducer {
     @Suppress("TOO_LONG_FUNCTION")
-    fun createStagesPanel(changed: ObservableMutableProperty<Boolean>): PanelWithList<MinimizationStage> {
-        val stagesListModel = DefaultListModel<MinimizationStage>()
+    fun createStagesPanel(changed: ObservableMutableProperty<Boolean>): PanelWithList<MinimizationStageData> {
+        val stagesListModel = DefaultListModel<MinimizationStageData>()
 
         val stagesList = JBList(stagesListModel).apply {
             emptyText.text = "Stages"
@@ -97,7 +102,7 @@ class StagesSettingsProducer {
             .apply { comment?.bind(commentText) }
     }
 
-    private fun <T : MinimizationStage, V> PropertyGraph.stageProperty(
+    private fun <T : MinimizationStageData, V> PropertyGraph.stageProperty(
         stageProperty: GraphProperty<T>,
         lens: Lens<T, V>,
     ) = property(lens.get(stageProperty.get())).apply {
@@ -108,9 +113,9 @@ class StagesSettingsProducer {
 
     private fun functionLevelPanel(
         graph: PropertyGraph,
-        stageProperty: GraphProperty<FunctionLevelStage>,
+        stageProperty: GraphProperty<FunctionLevelStageData>,
     ): DialogPanel = panel {
-        val ddAlgorithm = graph.stageProperty(stageProperty, FunctionLevelStage.ddAlgorithm)
+        val ddAlgorithm = graph.stageProperty(stageProperty, FunctionLevelStageData.ddAlgorithm)
         row("Description") {
             text("The algorithm replaces function's bodies with `TODO` statements.")
         }
@@ -123,12 +128,12 @@ class StagesSettingsProducer {
 
     private fun declarationGraphLevelPanel(
         graph: PropertyGraph,
-        stageProperty: GraphProperty<DeclarationGraphStage>,
+        stageProperty: GraphProperty<DeclarationGraphStageData>,
     ): DialogPanel = panel {
-        val ddAlgorithm = graph.stageProperty(stageProperty, DeclarationGraphStage.ddAlgorithm)
-        val withFunctionParameters = graph.stageProperty(stageProperty, DeclarationGraphStage.isFunctionParametersEnabled)
+        val ddAlgorithm = graph.stageProperty(stageProperty, DeclarationGraphStageData.ddAlgorithm)
+        val withFunctionParameters = graph.stageProperty(stageProperty, DeclarationGraphStageData.isFunctionParametersEnabled)
         row("Description:") {
-            text("The algorithm removes declarations, e.g. classes, functions and fields using a graph approach.")
+            text("The algorithm removes declarations, e.g. classes, functions and fields using a adapters approach.")
         }
         group("Declaration Graph Level Settings", indent = false) {
             row("Minimization strategy:") {
@@ -144,9 +149,9 @@ class StagesSettingsProducer {
 
     private fun fileLevelPanel(
         graph: PropertyGraph,
-        stageProperty: GraphProperty<FileLevelStage>,
+        stageProperty: GraphProperty<FileLevelStageData>,
     ): DialogPanel = panel {
-        val ddAlgorithm = graph.stageProperty(stageProperty, FileLevelStage.ddAlgorithm)
+        val ddAlgorithm = graph.stageProperty(stageProperty, FileLevelStageData.ddAlgorithm)
         row("Description:") {
             text("The algorithm deletes files")
         }
@@ -157,9 +162,9 @@ class StagesSettingsProducer {
         }
     }
 
-    private fun showAddDialog(stage: MinimizationStage? = null): MinimizationStage? {
-        lateinit var current: GraphProperty<out MinimizationStage>
-        val items = createStagesData(stage)
+    private fun showAddDialog(stage: MinimizationStageData? = null): MinimizationStageData? {
+        lateinit var current: GraphProperty<out MinimizationStageData>
+        val items = createStagesUIData(stage)
         val dialogPanel = addStageDialogPanel(items) { current = it }
 
         val dialog = dialog("Stage Settings", dialogPanel) {
@@ -176,8 +181,8 @@ class StagesSettingsProducer {
     }
 
     private fun addStageDialogPanel(
-        items: List<MinimizationStageData>,
-        setCurrent: (GraphProperty<out MinimizationStage>) -> Unit,
+        items: List<MinimizationStageUIData>,
+        setCurrent: (GraphProperty<out MinimizationStageData>) -> Unit,
     ): DialogPanel {
         lateinit var selected: Cell<ComboBox<String>>
 
@@ -221,40 +226,40 @@ class StagesSettingsProducer {
         }
     }
 
-    private fun createStagesData(
-        stage: MinimizationStage?,
-    ): List<MinimizationStageData> {
+    private fun createStagesUIData(
+        stage: MinimizationStageData?,
+    ): List<MinimizationStageUIData> {
         val propertyGraph = PropertyGraph()
-        val newFunctionStage = propertyGraph.property((stage as? FunctionLevelStage) ?: FunctionLevelStage())
-        val newDeclarationGraphStage = propertyGraph.property((stage as? DeclarationGraphStage) ?: DeclarationGraphStage())
-        val newFileStage = propertyGraph.property((stage as? FileLevelStage) ?: FileLevelStage())
+        val newFunctionStage = propertyGraph.property((stage as? FunctionLevelStageData) ?: FunctionLevelStageData())
+        val newDeclarationGraphStage = propertyGraph.property((stage as? DeclarationGraphStageData) ?: DeclarationGraphStageData())
+        val newFileStage = propertyGraph.property((stage as? FileLevelStageData) ?: FileLevelStageData())
 
         return listOf(
-            MinimizationStageData(
+            MinimizationStageUIData(
                 name = "Function level stage",
                 panel = functionLevelPanel(propertyGraph, newFunctionStage),
                 stage = newFunctionStage,
-                isDefaultSelected = stage is FunctionLevelStage,
+                isDefaultSelected = stage is FunctionLevelStageData,
             ),
-            MinimizationStageData(
-                name = "Declaration graph level stage",
+            MinimizationStageUIData(
+                name = "Declaration adapters level stage",
                 panel = declarationGraphLevelPanel(propertyGraph, newDeclarationGraphStage),
                 stage = newDeclarationGraphStage,
-                isDefaultSelected = stage is DeclarationGraphStage,
+                isDefaultSelected = stage is DeclarationGraphStageData,
             ),
-            MinimizationStageData(
+            MinimizationStageUIData(
                 name = "File level stage",
                 panel = fileLevelPanel(propertyGraph, newFileStage),
                 stage = newFileStage,
-                isDefaultSelected = stage is FileLevelStage,
+                isDefaultSelected = stage is FileLevelStageData,
             ),
         )
     }
 
-    private data class MinimizationStageData(
+    private data class MinimizationStageUIData(
         val name: String,
         val panel: DialogPanel,
-        val stage: GraphProperty<out MinimizationStage>,
+        val stage: GraphProperty<out MinimizationStageData>,
         val isDefaultSelected: Boolean,
     )
 }

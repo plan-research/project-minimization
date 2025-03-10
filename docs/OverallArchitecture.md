@@ -7,20 +7,20 @@ Here is the general pipeline of project minimization.
 sequenceDiagram
     actor User
     participant ProjectMinimizationService
-    participant StageExecutionService
+    participant MinimizationStage
     
     User->>ProjectMinimizationService: Minimize Project
     
     loop
-        ProjectMinimizationService->>+StageExecutionService: Execute next stage
+        ProjectMinimizationService->>+MinimizationStage: Execute next stage
 
         create participant MinimizationAlgorithm
-        StageExecutionService->>MinimizationAlgorithm: Initialize algorithm
+        MinimizationStage->>MinimizationAlgorithm: Initialize algorithm
         
         participant SnapshotManager
         participant CompilationChecker
 
-        StageExecutionService->>+MinimizationAlgorithm: Minimize project
+        MinimizationStage->>+MinimizationAlgorithm: Minimize project
         
         MinimizationAlgorithm->>+SnapshotManager: Try to make some modifications
         SnapshotManager->>+CompilationChecker: Try to compile modified project
@@ -31,24 +31,21 @@ sequenceDiagram
             SnapshotManager->>-MinimizationAlgorithm: Non-modified project
         end
         
-        MinimizationAlgorithm->>-StageExecutionService: Minimized project
+        MinimizationAlgorithm->>-MinimizationStage: Minimized project
 
         destroy MinimizationAlgorithm
-        StageExecutionService-xMinimizationAlgorithm: Release algorithm
-        
-        StageExecutionService->>-ProjectMinimizationService: Minimized project
+        MinimizationStage-xMinimizationAlgorithm: Release algorithm
+
+        MinimizationStage->>-ProjectMinimizationService: Minimized project
     end
     ProjectMinimizationService->>User: Minimized Project
 ```
 
-The minimization process consists of several stages.
-For instance, stage can be file-level minimization, function-level minimization or even program slicing.
-
-At each stage, some minimization algorithm is used to minimize the project somehow. 
+The minimization process consists of several stages, where each stage represents some minimization algorithm.
 Any algorithm can try to apply some changes to the project using SnapshotManager, 
 which can roll back any changes if they violate the target compilation error.
 
-## Main Components
+## Main Modules and Components
 
 The project consists of two modules: Core and Plugin.
 
@@ -82,53 +79,15 @@ Such representation allows us to control flow the HDD algorithm in a scalable ma
 
 ### Plugin
 
-This module is an implementation of an IntelliJ IDEA plugin.
+This module is an implementation of an IntelliJ IDEA plugin and consists of these components:
 
-- **IJDDItem.**
-Project's components are represented as [IJDDItem][ij-item], which has such inherited classes:
-  - **[ProjectFileDDItem][proj-file-item]** represents any file of the project.
-  - **[PsiDDItem][psi-item]** represents a psi element of the project in the IDEA-project-agnostic way,
-  so can be reused across different instances of the same project.
-
-- **IJDDContext.**
-The algorithm context is represented as [IJDDContext][ij-context], which contains the current minimized project.
-There are several representations of the context:
-  - `LightIJDDContext` represents a project as a directory where it's located.
-  - `HeavyIJDDContext` represents a project as an opened IDEA project.
-
-- **Minimization Stages.** 
-As shown on the sequence diagram, the minimization process consists of minimization stages ([doc][stage-doc]).
-Each stage should implement the [MinimizationStage][stage] interface.
-Here are already implemented stages:
-  - **[FileLevelStage][fl-stage-doc]** aims to minimize the project by deleting the project's files using HDD.
-
-- **Snapshots.**
-[SnapshotManager][snapshot] ([doc][snapshot-doc])
-interface provides `transaction` method representing undoable changes performed during transaction.
-Here are some implementations of SnapshotManager:
-  - **[ProjectCloningSnapshotManager][project-cloning]** implements transactions base on project cloning.
-
-- **Compilation.**
-[CompilationPropertyChecker][compilation] interface provides methods for checking compilation errors of the project.
-
-- **Settings.**
-[MinimizationPluginState][state] ([doc][settings-doc]) describes settings such as minimization stages, their order and own settings for each stage.
-
-  
-
-[stage-doc]: MinimizationStages.md
-[fl-stage-doc]: MinimizationStages.md#File-level-stage
-[snapshot-doc]: SnapshotManagers.md
-[settings-doc]: Settings.md
-
-[stage]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/MinimizationStage.kt
-
-[ij-item]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/item/IJDDItem.kt
-[proj-file-item]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/item/ProjectFileDDItem.kt
-[psi-item]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/item/PsiDDItem.kt
-
-[ij-context]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/context/IJDDContext.kt
-
-[snapshot]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/model/snapshot/SnapshotManager.kt
-[project-cloning]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/snapshot/ProjectCloningSnapshotManager.kt
-[state]: ../project-minimization-plugin/src/main/kotlin/org/plan/research/minimization/plugin/settings/MinimizationPluginState.kt
+- [**Actions**](plugin/Actions.md): contains all IntelliJ IDEA actions that our plugin provides.
+- [**Algorithm**](plugin/Algorithm.md): the algorithmic part of the plugin, it contains stages implementations and necessary adapters for the core module.
+- **Benchmark**: the internal component for statistics collection.
+- [**Compilation**](plugin/CompilationAndExceptions.md): the component for working with compilation and exceptions.
+- [**Context**](plugin/Context.md): the component for working with projects as contexts, it also provides snapshot functionality.
+- [**Logging**](plugin/Logging.md): provides logging functionality.
+- **Modification**: implements workaround for all necessary code modifications.
+- [**Services**](plugin/Services.md): contains all services of the plugin.
+- [**Settings**](plugin/Settings.md): the component is responsible for the settings part of the plugin.
+- **Util**: contains some useful utility functions.

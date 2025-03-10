@@ -1,6 +1,6 @@
 package org.plan.research.minimization.plugin.services
 
-import org.plan.research.minimization.plugin.model.context.IJDDContext
+import org.plan.research.minimization.plugin.context.IJDDContext
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service

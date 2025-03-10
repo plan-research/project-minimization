@@ -13,25 +13,23 @@ import com.intellij.testFramework.PlatformTestUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import lens.TestContext
-import org.gradle.api.internal.project.DefaultProject
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtSecondaryConstructor
 import org.jetbrains.kotlin.psi.KtParameter
-import org.plan.research.minimization.plugin.lenses.FunctionDeletingLens
-import org.plan.research.minimization.plugin.model.context.IJDDContextCloner
-import org.plan.research.minimization.plugin.model.context.LightIJDDContext
-import org.plan.research.minimization.plugin.model.context.WithCallTraceParameterCacheContext
-import org.plan.research.minimization.plugin.model.context.WithImportRefCounterContext
-import org.plan.research.minimization.plugin.model.context.impl.DefaultProjectContext
-import org.plan.research.minimization.plugin.model.item.PsiStubDDItem
-import org.plan.research.minimization.plugin.psi.CallTraceParameterCache
-import org.plan.research.minimization.plugin.psi.KtSourceImportRefCounter
-import org.plan.research.minimization.plugin.psi.stub.KtFunctionStub
-import org.plan.research.minimization.plugin.psi.stub.KtPrimaryConstructorStub
-import org.plan.research.minimization.plugin.psi.stub.KtStub
+import org.plan.research.minimization.plugin.modification.lenses.FunctionDeletingLens
+import org.plan.research.minimization.plugin.context.IJDDContextCloner
+import org.plan.research.minimization.plugin.context.LightIJDDContext
+import org.plan.research.minimization.plugin.context.WithCallTraceParameterCacheContext
+import org.plan.research.minimization.plugin.context.WithImportRefCounterContext
+import org.plan.research.minimization.plugin.context.impl.DefaultProjectContext
+import org.plan.research.minimization.plugin.modification.item.PsiStubDDItem
+import org.plan.research.minimization.plugin.modification.psi.CallTraceParameterCache
+import org.plan.research.minimization.plugin.modification.psi.KtSourceImportRefCounter
+import org.plan.research.minimization.plugin.modification.psi.stub.KtFunctionStub
+import org.plan.research.minimization.plugin.modification.psi.stub.KtPrimaryConstructorStub
+import org.plan.research.minimization.plugin.modification.psi.stub.KtStub
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import org.plan.research.minimization.plugin.services.ProjectCloningService
 import runMonad
@@ -72,7 +70,7 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
     override suspend fun getAllItems(context: TestContext): List<PsiStubDDItem> {
         configureModules(context.indexProject)
         return service<MinimizationPsiManagerService>()
-            .findDeletablePsiItems(context, compressOverridden = false, withFunctionParameters = true)
+            .findDeletablePsiItems(context, withFunctionParameters = true)
     }
 
     override fun getTestDataPath() = "src/test/resources/testData/function-deleting"

@@ -9,12 +9,14 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.testFramework.utils.vfs.deleteRecursively
 import getAllFiles
+import getAllNestedElements
 import getPathContentPair
 import kotlinx.coroutines.runBlocking
-import org.plan.research.minimization.plugin.errors.SnapshotError
-import org.plan.research.minimization.plugin.model.context.IJDDContextBase
-import org.plan.research.minimization.plugin.model.snapshot.SnapshotManager
+import org.plan.research.minimization.plugin.context.snapshot.SnapshotError
+import org.plan.research.minimization.plugin.context.IJDDContextBase
+import org.plan.research.minimization.plugin.context.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.services.ProjectCloningService
+import org.plan.research.minimization.plugin.context.snapshot.impl.ProjectCloningSnapshotManager
 import runSnapshotMonadAsync
 import kotlin.io.path.relativeTo
 

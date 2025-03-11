@@ -98,7 +98,7 @@ class PsiBodyReplacer(private val context: IJDDContext) : PsiChildrenIndexDDItem
         logger.trace { "Replacing lambda at line ${lambdaExpression.getLineNumber()} in ${lambdaExpression.containingFile.virtualFile.path}" }
         lambdaExpression.body?.let {
             // NOTE: Lambda can have an expression as a body, but `throw` is not an expression,
-            //       so code block is used as the new body in any case.
+            // so code block is used as the new body in any case.
             val block = javaPsiFactory.createCodeBlockFromText(JAVA_BLOCK_TEXT, it.context)
             try {
                 it.replace(block)

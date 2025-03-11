@@ -2,6 +2,7 @@ package org.plan.research.minimization.plugin.modification.item
 
 import org.plan.research.minimization.plugin.modification.item.index.IntChildrenIndex
 
+import com.intellij.grazie.utils.orFalse
 import com.intellij.lang.java.JavaLanguage
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiParameterListOwner
@@ -52,7 +53,10 @@ data class PsiChildrenIndexDDItem(
                 else -> return false
             }.any { it.isInstance(psiElement) }
 
-            return isCompatibleClass && hasBodyIfAvailable(psiElement) != false
+            // Java constructors are not supported
+            val isConstructorCompatible = !(psiElement as? PsiMethodImpl)?.isConstructor.orFalse()
+
+            return isCompatibleClass && isConstructorCompatible && hasBodyIfAvailable(psiElement) != false
         }
 
         /**

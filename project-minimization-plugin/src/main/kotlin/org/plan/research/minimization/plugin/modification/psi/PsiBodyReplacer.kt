@@ -6,7 +6,9 @@ import org.plan.research.minimization.plugin.modification.item.PsiChildrenIndexD
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiElement
 import com.intellij.psi.impl.source.PsiMethodImpl
+import com.intellij.psi.impl.source.tree.java.PsiLambdaExpressionImpl
 import mu.KotlinLogging
+import org.jetbrains.kotlin.idea.base.psi.getLineNumber
 import org.jetbrains.kotlin.psi.*
 
 /**
@@ -81,12 +83,30 @@ class PsiBodyReplacer(private val context: IJDDContext) : PsiChildrenIndexDDItem
     override fun transform(method: PsiMethodImpl) {
         logger.trace { "Replacing method body: ${method.name} in ${method.containingFile.virtualFile.path}" }
         method.body?.let {
-            it.replace(
-                javaPsiFactory.createCodeBlockFromText(
-                    "{\nthrow new UnsupportedOperationException(\"Removed by DD\");\n}",
-                    it.context,
-                ),
-            )
+            val block = javaPsiFactory.createCodeBlockFromText(JAVA_BLOCK_TEXT, it.context)
+            try {
+                it.replace(block)
+            } catch (e: UnsupportedOperationException) {
+                logger.error(e) { "Failed to replace body of method ${method.name}" }
+            }
+        } ?: run {
+            logger.warn { "Method ${method.name} in ${method.containingFile.virtualFile.path} has no body" }
+        }
+    }
+
+    override fun transform(lambdaExpression: PsiLambdaExpressionImpl) {
+        logger.trace { "Replacing lambda at line ${lambdaExpression.getLineNumber()} in ${lambdaExpression.containingFile.virtualFile.path}" }
+        lambdaExpression.body?.let {
+            // NOTE: Lambda can have an expression as a body, but `throw` is not an expression,
+            //       so code block is used as the new body in any case.
+            val block = javaPsiFactory.createCodeBlockFromText(JAVA_BLOCK_TEXT, it.context)
+            try {
+                it.replace(block)
+            } catch (e: UnsupportedOperationException) {
+                logger.error(e) { "Failed to replace body of lambda expression at line ${lambdaExpression.getLineNumber()} in ${lambdaExpression.containingFile.virtualFile.path}" }
+            }
+        } ?: run {
+            logger.warn { "Lambda expression at line ${lambdaExpression.getLineNumber()} in ${lambdaExpression.containingFile.virtualFile.path} has no body" }
         }
     }
 
@@ -102,18 +122,18 @@ class PsiBodyReplacer(private val context: IJDDContext) : PsiChildrenIndexDDItem
     private fun getReplacementText(
         item: PsiChildrenIndexDDItem,
         hasExplicitReturnType: Boolean,
-    ): String =
-        when {
-            hasExplicitReturnType || item.renderedType == null ->
-                BLOCKLESS_TEXT
+    ): String = when {
+        hasExplicitReturnType || item.renderedType == null ->
+            BLOCKLESS_TEXT
 
-            else -> {
-                val returnTypeText = item.renderedType
-                "$BLOCKLESS_TEXT as $returnTypeText"
-            }
+        else -> {
+            val returnTypeText = item.renderedType
+            "$BLOCKLESS_TEXT as $returnTypeText"
         }
+    }
 
     companion object {
         private const val BLOCKLESS_TEXT = "TODO(\"Removed by DD\")"
+        private const val JAVA_BLOCK_TEXT = "{\nthrow new UnsupportedOperationException(\"Removed by DD\");\n}"
     }
 }

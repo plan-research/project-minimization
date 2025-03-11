@@ -4,12 +4,16 @@ import org.plan.research.minimization.plugin.modification.item.index.IntChildren
 
 import com.intellij.lang.java.JavaLanguage
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiParameterListOwner
 import com.intellij.psi.impl.source.PsiMethodImpl
+import com.intellij.psi.impl.source.tree.java.PsiLambdaExpressionImpl
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.psi.*
 
 import java.nio.file.Path
+
+typealias ClassJavaFunction = Class<out PsiParameterListOwner>
 
 data class PsiChildrenIndexDDItem(
     override val localPath: Path,
@@ -25,11 +29,15 @@ data class PsiChildrenIndexDDItem(
             KtLambdaExpression::class.java,
             KtClassInitializer::class.java,
         )
-        val JAVA_BODY_REPLACEABLE_PSI_JAVA_CLASSES = listOf(
-            PsiMethodImpl::class.java,
-        )
         val BODY_REPLACEABLE_PSI_JAVA_CLASSES: List<ClassKtExpression> =
             DECLARATIONS_WITH_BODY_JAVA_CLASSES + EXPRESSIONS_WITH_BODY_JAVA_CLASSES
+        val JAVA_BODY_REPLACEABLE_PSI_JAVA_CLASSES: List<ClassJavaFunction> = listOf(
+            PsiMethodImpl::class.java,
+            PsiLambdaExpressionImpl::class.java,
+        )
+        val compatibleClassNames: List<String> =
+            (BODY_REPLACEABLE_PSI_JAVA_CLASSES + JAVA_BODY_REPLACEABLE_PSI_JAVA_CLASSES)
+                .map { it.simpleName }
 
         /**
          * Check if a [PsiChildrenIndexDDItem] can be created from given [PsiElement]
@@ -62,7 +70,7 @@ data class PsiChildrenIndexDDItem(
 
             is JavaLanguage -> JAVA_BODY_REPLACEABLE_PSI_JAVA_CLASSES
                 .find { it.isInstance(psiElement) }
-                ?.let { (psiElement as PsiMethodImpl).body != null }
+                ?.let { (psiElement as PsiParameterListOwner).body != null }
 
             else -> null
         }
@@ -93,20 +101,23 @@ data class PsiChildrenIndexDDItem(
             } else {
                 error(
                     "Invalid Psi Element. " +
-                        "Supported types: " +
-                        "KtNamedFunction, KtClassInitializer, KtPropertyAccessor, KtLambdaExpression, " +
-                        "PsiMethodImpl, " +
+                        "Supported types: " + compatibleClassNames.joinToString(", ", postfix = ", ") +
                         "but got ${element.javaClass.simpleName}",
                 )
             }
     }
 
+    /**
+     * Transformation of a [PsiElement] with body to a value of type [T].
+     */
     interface PsiWithBodyTransformer<T> {
         fun transform(classInitializer: KtClassInitializer): T
         fun transform(function: KtNamedFunction): T
         fun transform(lambdaExpression: KtLambdaExpression): T
         fun transform(accessor: KtPropertyAccessor): T
+
         fun transform(method: PsiMethodImpl): T
+        fun transform(lambdaExpression: PsiLambdaExpressionImpl): T
 
         fun transform(element: PsiElement): T = when (element) {
             is KtClassInitializer -> transform(element)
@@ -114,10 +125,10 @@ data class PsiChildrenIndexDDItem(
             is KtLambdaExpression -> transform(element)
             is KtPropertyAccessor -> transform(element)
             is PsiMethodImpl -> transform(element)
+            is PsiLambdaExpressionImpl -> transform(element)
             else -> error(
                 "Invalid PSI element type: ${element::class.simpleName}. " +
-                    "Expected one of: " +
-                    "KtClassInitializer, KtNamedFunction, KtLambdaExpression, KtPropertyAccessor, " +
+                    "Expected one of: " + compatibleClassNames.joinToString(", ", postfix = ", ") +
                     "PsiMethodImpl",
             )
         }

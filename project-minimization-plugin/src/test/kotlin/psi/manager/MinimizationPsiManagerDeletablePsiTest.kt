@@ -3,6 +3,7 @@ package psi.manager
 import LightTestContext
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.service
+import getPsi
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.hasBody
@@ -70,6 +71,7 @@ class MinimizationPsiManagerDeletablePsiTest : MinimizationPsiManagerTestBase() 
             }
         }
     }
+
     fun testClassClass() {
         val service = service<MinimizationPsiManagerService>()
         val context = LightTestContext(project)

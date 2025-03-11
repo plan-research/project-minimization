@@ -8,6 +8,7 @@ import com.intellij.openapi.project.DumbService
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiElement
 import com.intellij.testFramework.PlatformTestUtil
+import filterByPsi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -184,10 +185,9 @@ class InstanceLevelGraphCollectionTest : AbstractAnalysisKotlinTest() {
     private suspend inline fun <reified T : PsiElement> InstanceLevelGraph.findByClassAndName(
         context: IJDDContext,
         name: String?
-    ) =
-        readAction {
-            vertexSet().toList().filterByPsi(context) { it is T && (name == null || it.name == name) }
-        }
+    ) = readAction {
+        vertexSet().toList().filterByPsi(context) { it is T && (name == null || it.name == name) }
+    }
 
     private val PsiElement.name: String
         get() = when (this) {

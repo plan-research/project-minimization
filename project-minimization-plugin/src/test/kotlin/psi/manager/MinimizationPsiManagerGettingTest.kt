@@ -8,6 +8,7 @@ import org.jetbrains.kotlin.psi.*
 import org.plan.research.minimization.plugin.modification.psi.PsiUtils
 import org.plan.research.minimization.plugin.services.MinimizationPsiManagerService
 import kotlin.test.assertIs
+import getPsi
 
 class MinimizationPsiManagerGettingTest : MinimizationPsiManagerTestBase() {
     override fun getTestDataPath(): String {
@@ -15,7 +16,7 @@ class MinimizationPsiManagerGettingTest : MinimizationPsiManagerTestBase() {
     }
 
     override fun runInDispatchThread(): Boolean = false
-    
+
     fun testFunctions() {
         val service = service<MinimizationPsiManagerService>()
         val psiFile = myFixture.configureByFile("functions.kt")

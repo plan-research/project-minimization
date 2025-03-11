@@ -1,3 +1,4 @@
+import arrow.core.compareTo
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.module.ModuleManager
@@ -47,26 +48,4 @@ abstract class AbstractAnalysisKotlinTest : JavaCodeInsightFixtureTestCase() {
             PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
         }
     }
-
-
-    @RequiresReadLock
-    protected fun <ITEM, T> List<ITEM>.findByPsi(
-        context: IJDDContext,
-        filter: (PsiElement) -> Boolean
-    ) where T : Comparable<T>, T : PsiChildrenPathIndex, ITEM : PsiDDItem<T> =
-        find { filter(PsiUtils.getPsiElementFromItem(context, it)!!) }
-
-    @RequiresReadLock
-    protected fun <ITEM, T> List<ITEM>.findLastByPsi(
-        context: IJDDContext,
-        filter: (PsiElement) -> Boolean
-    ) where T : Comparable<T>, T : PsiChildrenPathIndex, ITEM : PsiDDItem<T> =
-        findLast { filter(PsiUtils.getPsiElementFromItem(context, it)!!) }
-
-    @RequiresReadLock
-    protected fun <ITEM, T> List<ITEM>.filterByPsi(
-        context: IJDDContext,
-        filter: (PsiElement) -> Boolean
-    ) where T : Comparable<T>, T : PsiChildrenPathIndex, ITEM : PsiDDItem<T> =
-        filter { filter(PsiUtils.getPsiElementFromItem(context, it)!!) }
 }

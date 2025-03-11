@@ -13,8 +13,4 @@ abstract class MinimizationPsiManagerTestBase : AbstractAnalysisKotlinTest() {
     }
 
     override fun runInDispatchThread(): Boolean = false
-
-    protected fun <T> List<PsiDDItem<T>>.getPsi(context: IJDDContext) where T : PsiChildrenPathIndex, T : Comparable<T> =
-        sortedWith { a, b -> a.childrenPath.compareTo(b.childrenPath) }
-            .map { PsiUtils.getPsiElementFromItem(context, it) }
 }

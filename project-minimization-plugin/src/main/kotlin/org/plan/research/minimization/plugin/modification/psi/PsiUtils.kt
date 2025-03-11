@@ -116,35 +116,30 @@ object PsiUtils {
     }
 
     /**
-     * Resolves and retrieves a Kotlin PSI element of type [KtExpression] from a given [PsiDDItem].
+     * Resolve [PsiElement] from a given [PsiDDItem].
      *
-     * This function locates the file corresponding to the given [PsiDDItem] using its [PsiDDItem.localPath].
-     * parses it as a Kotlin file,
-     * and navigates to the specified PSI element within the file following the [PsiDDItem.childrenPath].
+     * This function locates the file corresponding to the given [PsiDDItem] using its [PsiDDItem.localPath]
+     * and navigates to the [PsiElement] within the file following the [PsiDDItem.childrenPath].
      *
      * @param context The context of the current computation, providing access to the project directory and related utilities.
-     * @param item The PSI item containing the `localPath` to locate the file and the `childrenPath` to resolve the desired PSI element.
-     * @return The resolved [KtExpression] instance, or `null` if the PSI element cannot be resolved.
+     * @param item The item containing the `localPath` to locate the file and the `childrenPath` to resolve the desired PSI element.
+     * @return The resolved [PsiElement], or `null` if it cannot be resolved.
      */
     @RequiresReadLock
     fun <T : PsiChildrenPathIndex> getPsiElementFromItem(context: IJDDContext, item: PsiDDItem<T>): PsiElement? {
-        val file = context.projectDir.findFileByRelativePath(item.localPath.toString())!!
-        if (file.isDirectory) {
-            return file.toPsiDirectory(context.indexProject)
+        val virtualFile = context.projectDir.findFileByRelativePath(item.localPath.toString())!!
+        if (virtualFile.isDirectory) {
+            return virtualFile.toPsiDirectory(context.indexProject)
         }
-        val ktFile = getKtFile(context, file)!!
-        return if (item.childrenPath.isEmpty()) ktFile else getElementByFileAndPath(ktFile, item.childrenPath)
+        val file = getPsiFile(context, virtualFile)!!
+        return getPsiByPath(file, item.childrenPath)
     }
 
-    fun <T : PsiChildrenPathIndex> getElementByFileAndPath(ktFile: KtFile, path: List<T>): KtElement? {
-        var currentDepth = 0
-        var element: PsiElement = ktFile
-        while (currentDepth < path.size) {
-            element = path[currentDepth++].getNext(element) ?: return null
-        }
-        val psiElement = element as? KtElement
-        return psiElement
-    }
+    fun <T : PsiChildrenPathIndex> getElementByFileAndPath(ktFile: KtFile, path: List<T>): KtElement? =
+        getPsiByPath(ktFile, path) as? KtElement
+
+    private fun <T : PsiChildrenPathIndex> getPsiByPath(root: PsiElement, path: List<T>): PsiElement? =
+        path.fold(root) { element, idx -> idx.getNext(element) ?: return@getPsiByPath null }
 
     /**
      * Transforms PsiElement into **replaceable** PSIDDItem by traversing the parents and collecting file information.

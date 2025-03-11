@@ -15,6 +15,7 @@ class MinimizationPsiManagerGettingTest : MinimizationPsiManagerTestBase() {
     }
 
     override fun runInDispatchThread(): Boolean = false
+    
     fun testFunctions() {
         val service = service<MinimizationPsiManagerService>()
         val psiFile = myFixture.configureByFile("functions.kt")

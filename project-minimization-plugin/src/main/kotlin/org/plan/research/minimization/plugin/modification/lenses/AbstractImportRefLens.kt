@@ -33,7 +33,6 @@ T : Comparable<T>, T : PsiChildrenPathIndex {
         trie: PsiTrie<I, T>,
         file: PsiFile,
     ) {
-        // TODO: Is it okay to do so?
         val file = file as? KtFile ?: throw UnsupportedOperationException("Only Kotlin files are supported")
 
         // Usual PSI removing stuff

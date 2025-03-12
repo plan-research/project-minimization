@@ -91,10 +91,9 @@ abstract class BasePsiLens<C, I, T> :
             logger.error { "The desired path for focused path $relativePath is not found in the project (name=${context.indexProject.name})" }
             return
         }
-        // TODO: Is it important to have a kt file here?
-        val psiFile = smartReadAction(context.indexProject) { PsiUtils.getPsiFile(context, virtualFile) }
+        val psiFile = smartReadAction(context.indexProject) { PsiUtils.getSourceFile(context, virtualFile) }
         psiFile ?: run {
-            logger.error { "The desired path for focused path $relativePath is not a Kotlin file in the project (name=${context.indexProject.name})" }
+            logger.error { "The desired path for focused path $relativePath is not a source file in the project (name=${context.indexProject.name})" }
             return
         }
         logger.trace { "Processing all focused elements in $relativePath" }

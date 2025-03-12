@@ -235,6 +235,16 @@ object PsiUtils {
         getPsiFile(context, file) as? PsiJavaFile
 
     @RequiresReadLock
+    fun getSourceFile(context: IJDDContext, file: VirtualFile): PsiFile? {
+        val psiFile = getPsiFile(context, file) ?: return null
+        return when (psiFile) {
+            is PsiJavaFile -> psiFile
+            is KtFile -> psiFile
+            else -> null
+        }
+    }
+
+    @RequiresReadLock
     fun getPsiFile(context: IJDDContext, file: VirtualFile): PsiFile? =
         PsiManagerEx.getInstance(context.indexProject).findFile(file)
 

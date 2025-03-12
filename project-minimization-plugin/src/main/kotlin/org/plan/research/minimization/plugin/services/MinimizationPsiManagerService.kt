@@ -282,8 +282,7 @@ class MinimizationPsiManagerService {
             val fileInCurrentProject = context.projectDir.findFileByRelativePath(relativePath.pathString)
                 ?: return@flatMap emptyList()
 
-            // TODO: Is it important to check specific file type here? e.g. KtFile
-            val psiFileInCurrentProject = PsiUtils.getPsiFile(context, fileInCurrentProject)
+            val psiFileInCurrentProject = PsiUtils.getSourceFile(context, fileInCurrentProject)
                 ?: return@flatMap emptyList()
 
             classes.flatMap { clazz ->

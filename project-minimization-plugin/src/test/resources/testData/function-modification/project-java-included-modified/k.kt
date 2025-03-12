@@ -1,0 +1,1 @@
+fun function() = TODO("Removed by DD") as Int

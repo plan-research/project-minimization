@@ -95,6 +95,16 @@ class FunctionModificationLensTest : PsiLensTestBase<LightTestContext, PsiChildr
         }
     }
 
+    fun testProjectJava() {
+        myFixture.copyDirectoryToProject("project-java-included", ".")
+        configureModules(project)
+        val context = LightTestContext(project)
+        runBlocking {
+            val elements = getAllItems(context)
+            doTest(context, elements, "project-java-included-modified")
+        }
+    }
+
     override suspend fun doTest(
         initialContext: LightTestContext,
         elements: List<PsiChildrenIndexDDItem>,

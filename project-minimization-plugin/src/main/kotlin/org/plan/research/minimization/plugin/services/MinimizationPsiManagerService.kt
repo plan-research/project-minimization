@@ -57,11 +57,9 @@ class MinimizationPsiManagerService {
             val javaPsi = findPsiInJavaFiles(context, PsiChildrenIndexDDItem.JAVA_BODY_REPLACEABLE_PSI_JAVA_CLASSES)
             val kotlinPsi = findPsiInKotlinFiles(context, PsiChildrenIndexDDItem.BODY_REPLACEABLE_PSI_JAVA_CLASSES)
 
-            val result = (kotlinPsi + javaPsi)
+            (kotlinPsi + javaPsi)
                 .filter { PsiChildrenIndexDDItem.isCompatible(it) }
                 .mapNotNull { PsiUtils.buildReplaceablePsiItem(context, it) }
-
-            result
         }
 
     /**

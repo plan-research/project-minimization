@@ -87,7 +87,7 @@ class PsiBodyReplacer(private val context: IJDDContext) : PsiChildrenIndexDDItem
             try {
                 it.replace(block)
             } catch (e: UnsupportedOperationException) {
-                logger.error(e) { "Failed to replace body of method ${method.name}" }
+                logger.error(e) { "Failed to replace body of method ${method.name} in ${method.containingFile.virtualFile.path}" }
             }
         } ?: run {
             logger.warn { "Method ${method.name} in ${method.containingFile.virtualFile.path} has no body" }

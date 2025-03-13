@@ -11,6 +11,7 @@ import org.plan.research.minimization.plugin.modification.psi.trie.PsiTrie
 
 import com.intellij.openapi.application.readAction
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
 import mu.KotlinLogging
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
@@ -28,16 +29,18 @@ I : PsiDDItem<T>,
 T : Comparable<T>, T : PsiChildrenPathIndex {
     private val logger = KotlinLogging.logger {}
     context(IJDDContextMonad<C>)
-    override suspend fun useTrie(
+    override suspend fun focusOnTrieAndSave(
         trie: PsiTrie<I, T>,
-        ktFile: KtFile,
+        file: PsiFile,
     ) {
+        val file = file as? KtFile ?: throw UnsupportedOperationException("Only Kotlin files are supported")
+
         // Usual PSI removing stuff
-        super.useTrie(trie, ktFile)
+        super.focusOnTrieAndSave(trie, file)
 
         // Import optimization part
-        val localPath = ktFile.getLocalPath(context)
-        if (readAction { !ktFile.isValid }) {
+        val localPath = file.getLocalPath(context)
+        if (readAction { !file.isValid }) {
             logger.debug { "All top-level declarations has been removed from $localPath. Invalidating the ref counter for it" }
             // See [KtClassOrObject::delete] —
             // on deleting a single top-level declaration,
@@ -47,14 +50,14 @@ T : Comparable<T>, T : PsiChildrenPathIndex {
         }
 
         logger.debug { "Optimizing imports in $localPath" }
-        val terminalElements = context.getTerminalElements(ktFile, trie)
+        val terminalElements = context.getTerminalElements(file, trie)
             ?: run {
                 // If any searching problem with the file occurred, then the file should be removed completely
                 updateContext { it.copyWithout(localPath) }
                 return
             }
 
-        val modifiedCounter = context.processRefs(ktFile, terminalElements)
+        val modifiedCounter = context.processRefs(file, terminalElements)
         updateContext {
             it.copy(
                 importRefCounter = it.importRefCounter

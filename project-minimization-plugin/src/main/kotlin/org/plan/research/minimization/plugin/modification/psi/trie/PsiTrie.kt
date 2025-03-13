@@ -11,10 +11,15 @@ typealias PsiProcessor<ITEM> = (ITEM, PsiElement) -> Unit
 private typealias AdjacentNodes<I, T> = MutableMap<T, PsiTrie<I, T>>
 
 /**
- * The PsiTrie class represents a trie structure designed to store and process
+ * The [PsiTrie] represents a trie structure designed to store and process
  * PSI elements associated with specific PSI elements in the root project.
+ *
+ * @param I type of element stored in the trie.
+ * @param T type of index stored in edges of the trie.
  */
-class PsiTrie<I, T> private constructor() where I : PsiDDItem<T>, T : Comparable<T>, T : PsiChildrenPathIndex {
+class PsiTrie<I, T> private constructor()
+where I : PsiDDItem<T>,
+T : Comparable<T>, T : PsiChildrenPathIndex {
     private val children: AdjacentNodes<I, T> = mutableMapOf()
     private var containingItem: I? = null
     private val logger = KotlinLogging.logger {}
@@ -48,7 +53,15 @@ class PsiTrie<I, T> private constructor() where I : PsiDDItem<T>, T : Comparable
     }
 
     companion object {
-        fun <ITEM, T> create(items: List<ITEM>): PsiTrie<ITEM, T> where ITEM : PsiDDItem<T>, T : Comparable<T>, T : PsiChildrenPathIndex {
+        /**
+         * Creates a [PsiTrie] from a list of [PsiDDItem]s.
+         *
+         * @param items list of items. `.localPath` should be the same for all.
+         * @return [PsiTrie] constructed from items.
+         */
+        fun <ITEM, T> create(items: List<ITEM>): PsiTrie<ITEM, T>
+        where ITEM : PsiDDItem<T>,
+        T : Comparable<T>, T : PsiChildrenPathIndex {
             require(items.same(PsiDDItem<T>::localPath))
             val rootNode = PsiTrie<ITEM, T>()
             items.forEach { rootNode.add(it) }

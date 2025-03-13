@@ -11,6 +11,7 @@ import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.vfs.findFileOrDirectory
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import mu.KotlinLogging
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
@@ -62,10 +63,16 @@ abstract class BasePsiLens<C, I, T> :
         }
     }
 
+    /**
+     * Focus on elements represented by the [PsiTrie] inside the [PsiFile].
+     *
+     * @param trie The PsiTrie containing items to be focused on.
+     * @param file The PsiFile where the changes will be performed and saved.
+     */
     context(IJDDContextMonad<C>)
-    protected open suspend fun useTrie(trie: PsiTrie<I, T>, ktFile: KtFile) {
-        PsiUtils.performPsiChangesAndSave(context, ktFile) {
-            trie.processMarkedElements(ktFile) { item, psiElement -> focusOnPsiElement(item, psiElement, context) }
+    protected open suspend fun focusOnTrieAndSave(trie: PsiTrie<I, T>, file: PsiFile) {
+        PsiUtils.performPsiChangesAndSave(context, file) {
+            trie.processMarkedElements(file) { item, psiElement -> focusOnPsiElement(item, psiElement, context) }
         }
     }
 
@@ -84,13 +91,13 @@ abstract class BasePsiLens<C, I, T> :
             logger.error { "The desired path for focused path $relativePath is not found in the project (name=${context.indexProject.name})" }
             return
         }
-        val psiFile = smartReadAction(context.indexProject) { PsiUtils.getKtFile(context, virtualFile) }
+        val psiFile = smartReadAction(context.indexProject) { PsiUtils.getSourceFile(context, virtualFile) }
         psiFile ?: run {
-            logger.error { "The desired path for focused path $relativePath is not a Kotlin file in the project (name=${context.indexProject.name})" }
+            logger.error { "The desired path for focused path $relativePath is not a source file in the project (name=${context.indexProject.name})" }
             return
         }
         logger.trace { "Processing all focused elements in $relativePath" }
-        useTrie(trie, psiFile)
+        focusOnTrieAndSave(trie, psiFile)
     }
 
     protected abstract suspend fun focusOnFilesAndDirectories(itemsToDelete: List<I>, context: C)
@@ -99,6 +106,7 @@ abstract class BasePsiLens<C, I, T> :
         val rootPath = context.projectDir.toNioPath()
         return this.virtualFile.toNioPath().relativeTo(rootPath)
     }
+
     @RequiresReadLock
     protected fun IJDDContext.getKtFileInIndexProject(ktFile: KtFile): KtFile? {
         val rootPath = projectDir.toNioPath()

@@ -10,6 +10,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findFile
 import com.intellij.openapi.vfs.toNioPathOrNull
 import com.intellij.psi.PsiElement
+import filterByPsi
+import findByPsi
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.psi.KtLambdaExpression
@@ -93,6 +95,16 @@ class FunctionModificationLensTest : PsiLensTestBase<LightTestContext, PsiChildr
         }
     }
 
+    fun testProjectJava() {
+        myFixture.copyDirectoryToProject("project-java-included", ".")
+        configureModules(project)
+        val context = LightTestContext(project)
+        runBlocking {
+            val elements = getAllItems(context)
+            doTest(context, elements, "project-java-included-modified")
+        }
+    }
+
     override suspend fun doTest(
         initialContext: LightTestContext,
         elements: List<PsiChildrenIndexDDItem>,
@@ -106,7 +118,12 @@ class FunctionModificationLensTest : PsiLensTestBase<LightTestContext, PsiChildr
         return cloned.runMonad {
             lens.focusOn(elements)
 
-            val files = buildList { VfsUtil.iterateChildrenRecursively(context.projectDir, null) { fileOrDir -> add(fileOrDir) } }
+            val files = buildList {
+                VfsUtil.iterateChildrenRecursively(
+                    context.projectDir,
+                    null
+                ) { fileOrDir -> add(fileOrDir) }
+            }
             val projectRoot = context.projectDir.toNioPath()
 
             files.mapNotNull { smartReadAction(context.indexProject) { it.toPsiFile(context.indexProject) } }

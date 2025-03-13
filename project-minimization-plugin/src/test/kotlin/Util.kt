@@ -1,3 +1,4 @@
+import arrow.core.compareTo
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
@@ -6,13 +7,18 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.isFile
+import com.intellij.psi.PsiElement
+import com.intellij.util.concurrency.annotations.RequiresReadLock
 import kotlinx.coroutines.runBlocking
 import org.plan.research.minimization.core.model.withEmptyProgress
 import org.plan.research.minimization.plugin.context.IJDDContext
 import org.plan.research.minimization.plugin.context.IJDDContextBase
 import org.plan.research.minimization.plugin.context.IJDDContextMonad
-import org.plan.research.minimization.plugin.context.snapshot.SnapshotMonad
 import org.plan.research.minimization.plugin.context.snapshot.SnapshotManager
+import org.plan.research.minimization.plugin.context.snapshot.SnapshotMonad
+import org.plan.research.minimization.plugin.modification.item.PsiDDItem
+import org.plan.research.minimization.plugin.modification.item.index.PsiChildrenPathIndex
+import org.plan.research.minimization.plugin.modification.psi.PsiUtils
 import org.plan.research.minimization.plugin.services.SnapshotManagerService
 import org.plan.research.minimization.plugin.util.SnapshotWithProgressMonadFAsync
 import java.nio.file.Path
@@ -108,3 +114,32 @@ suspend fun <C : IJDDContextBase<C>> C.runSnapshotMonadAsync(
 fun <C : IJDDContextBase<C>> C.runMonadWithEmptyProgress(
     block: SnapshotWithProgressMonadFAsync<C, Unit>,
 ): C = runSnapshotMonad { withEmptyProgress(block) }
+
+
+@RequiresReadLock
+fun <ITEM, T> List<ITEM>.getPsi(
+    context: IJDDContext
+) where T : Comparable<T>, T : PsiChildrenPathIndex, ITEM : PsiDDItem<T> =
+    sortedWith { a, b -> a.childrenPath.compareTo(b.childrenPath) }
+        .map { PsiUtils.getPsiElementFromItem(context, it) }
+
+@RequiresReadLock
+fun <ITEM, T> List<ITEM>.findByPsi(
+    context: IJDDContext,
+    filter: (PsiElement) -> Boolean
+) where T : Comparable<T>, T : PsiChildrenPathIndex, ITEM : PsiDDItem<T> =
+    find { filter(PsiUtils.getPsiElementFromItem(context, it)!!) }
+
+@RequiresReadLock
+fun <ITEM, T> List<ITEM>.findLastByPsi(
+    context: IJDDContext,
+    filter: (PsiElement) -> Boolean
+) where T : Comparable<T>, T : PsiChildrenPathIndex, ITEM : PsiDDItem<T> =
+    findLast { filter(PsiUtils.getPsiElementFromItem(context, it)!!) }
+
+@RequiresReadLock
+fun <ITEM, T> List<ITEM>.filterByPsi(
+    context: IJDDContext,
+    filter: (PsiElement) -> Boolean
+) where T : Comparable<T>, T : PsiChildrenPathIndex, ITEM : PsiDDItem<T> =
+    filter { filter(PsiUtils.getPsiElementFromItem(context, it)!!) }

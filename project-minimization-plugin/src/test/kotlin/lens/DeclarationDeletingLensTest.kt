@@ -10,6 +10,8 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findFile
 import com.intellij.testFramework.PlatformTestUtil
+import filterByPsi
+import findByPsi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -43,8 +45,7 @@ class TestContext(
     override val callTraceParameterCache: CallTraceParameterCache
 ) : LightIJDDContext<TestContext>(projectDir, indexProject, originalProject),
     WithImportRefCounterContext<TestContext>,
-    WithCallTraceParameterCacheContext<TestContext>
-{
+    WithCallTraceParameterCacheContext<TestContext> {
 
     constructor(
         project: Project,
@@ -79,7 +80,7 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
         val importRefCounter = runBlocking {
             KtSourceImportRefCounter.create(HeavyTestContext(project)).getOrNull()
         }
-        val cache = runBlocking { 
+        val cache = runBlocking {
             val defaultContext = DefaultProjectContext(project)
             val allCallableItems = service<MinimizationPsiManagerService>()
                 .buildDeletablePsiGraph(defaultContext, true)
@@ -277,19 +278,21 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
             doTest(test1, itemsStage2, "project-secondary-constructor-simple-stage-2")
         }
     }
+
     fun testSecondaryConstructorParameter() {
         myFixture.copyDirectoryToProject("project-secondary-constructor-parameter-simple", ".")
         val context = createContext()
         val allItems = runBlocking { getAllItems(context) }
         val item = runBlocking {
             readAction {
-                allItems.filterByPsi(context) { it is KtParameter && it.name == "y"}.single()
+                allItems.filterByPsi(context) { it is KtParameter && it.name == "y" }.single()
             }
         }
         runBlocking {
             doTest(context, listOf(item), "project-secondary-constructor-parameter-simple-result")
         }
     }
+
     fun testSecondaryConstructorParameterLinked() {
         myFixture.copyDirectoryToProject("project-secondary-constructor-parameter-simple", ".")
         configureModules(project)
@@ -298,13 +301,14 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
         val allItems = runBlocking { getAllItems(context) }
         val item = runBlocking {
             readAction {
-                allItems.filterByPsi(context) { it is KtParameter && it.name == "x"}.single()
+                allItems.filterByPsi(context) { it is KtParameter && it.name == "x" }.single()
             }
         }
         runBlocking {
             doTest(context, listOf(item), "project-secondary-constructor-parameter-complicated-result")
         }
     }
+
     fun testDefaultFunctionParametersX() {
         myFixture.copyDirectoryToProject("project-default-function-parameters", ".")
         configureModules(project)
@@ -313,13 +317,14 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
         val allItems = runBlocking { getAllItems(context) }
         val item = runBlocking {
             readAction {
-                allItems.filterByPsi(context) { it is KtParameter && it.name == "x"}.single()
+                allItems.filterByPsi(context) { it is KtParameter && it.name == "x" }.single()
             }
         }
         runBlocking {
             doTest(context, listOf(item), "project-default-function-parameters-result-x")
         }
     }
+
     fun testDefaultFunctionParametersY() {
         myFixture.copyDirectoryToProject("project-default-function-parameters", ".")
         configureModules(project)
@@ -328,13 +333,14 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
         val allItems = runBlocking { getAllItems(context) }
         val item = runBlocking {
             readAction {
-                allItems.filterByPsi(context) { it is KtParameter && it.name == "y"}.single()
+                allItems.filterByPsi(context) { it is KtParameter && it.name == "y" }.single()
             }
         }
         runBlocking {
             doTest(context, listOf(item), "project-default-function-parameters-result-y")
         }
     }
+
     fun testDefaultFunctionParametersLambda() {
         myFixture.copyDirectoryToProject("project-default-function-parameters", ".")
         configureModules(project)
@@ -343,7 +349,7 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
         val allItems = runBlocking { getAllItems(context) }
         val item = runBlocking {
             readAction {
-                allItems.filterByPsi(context) { it is KtParameter && it.name == "lambda"}.single()
+                allItems.filterByPsi(context) { it is KtParameter && it.name == "lambda" }.single()
             }
         }
         runBlocking {
@@ -359,13 +365,14 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
         val allItems = runBlocking { getAllItems(context) }
         val item = runBlocking {
             readAction {
-                allItems.filterByPsi(context) { it is KtParameter && it.name == "y"}.single()
+                allItems.filterByPsi(context) { it is KtParameter && it.name == "y" }.single()
             }
         }
         runBlocking {
             doTest(context, listOf(item), "project-named-function-parameters-result")
         }
     }
+
     fun testNamedFunctionParametersMultiStage() {
         return
         myFixture.copyDirectoryToProject("project-named-function-parameters", ".")
@@ -375,7 +382,7 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
         val allItems = runBlocking { getAllItems(context) }
         val item = runBlocking {
             readAction {
-                allItems.filterByPsi(context) { it is KtParameter && it.name == "y"}.single()
+                allItems.filterByPsi(context) { it is KtParameter && it.name == "y" }.single()
             }
         }
         val contextAfterStage1 = runBlocking {
@@ -383,7 +390,7 @@ class DeclarationDeletingLensTest : PsiLensTestBase<TestContext, PsiStubDDItem, 
         }
         val itemStage2 = runBlocking {
             readAction {
-                allItems.filterByPsi(context) { it is KtParameter && it.name == "x"}.single()
+                allItems.filterByPsi(context) { it is KtParameter && it.name == "x" }.single()
             }
         }
         runBlocking {

@@ -26,6 +26,7 @@ class FunctionLevelStage(
         val lens = FunctionModificationLens<FunctionLevelStageContext>()
         val firstLevel = service<MinimizationPsiManagerService>()
             .findAllPsiWithBodyItems(context)
+
         val propertyChecker = PropertyTesterFactory
             .createPropertyTester(lens, context, stageName)
             .getOrElse {

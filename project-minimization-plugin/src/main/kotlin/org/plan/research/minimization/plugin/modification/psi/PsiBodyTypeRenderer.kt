@@ -3,6 +3,8 @@ package org.plan.research.minimization.plugin.modification.psi
 import org.plan.research.minimization.plugin.modification.item.PsiChildrenIndexDDItem
 import org.plan.research.minimization.plugin.modification.psi.KotlinTypeRenderer.renderType
 
+import com.intellij.psi.impl.source.PsiMethodImpl
+import com.intellij.psi.impl.source.tree.java.PsiLambdaExpressionImpl
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
 import org.jetbrains.kotlin.psi.KtClassInitializer
@@ -30,4 +32,8 @@ object PsiBodyTypeRenderer : PsiChildrenIndexDDItem.PsiWithBodyTransformer<Strin
             val type = accessor.returnType
             renderType(accessor.containingKtFile, type)
         }
+
+    // Rendered type is unused for java PSI
+    override fun transform(method: PsiMethodImpl): String? = null
+    override fun transform(lambdaExpression: PsiLambdaExpressionImpl): String? = null
 }

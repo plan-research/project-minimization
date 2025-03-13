@@ -19,18 +19,11 @@ import com.intellij.openapi.command.writeCommandAction
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiDirectory
-import com.intellij.psi.PsiDocumentManager
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFile
+import com.intellij.psi.*
 import com.intellij.psi.impl.PsiManagerEx
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.idea.core.util.toPsiDirectory
-import org.jetbrains.kotlin.psi.KtCallExpression
-import org.jetbrains.kotlin.psi.KtElement
-import org.jetbrains.kotlin.psi.KtExpression
-import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.parentsWithSelf
 
 import kotlin.io.path.relativeTo
@@ -123,35 +116,30 @@ object PsiUtils {
     }
 
     /**
-     * Resolves and retrieves a Kotlin PSI element of type [KtExpression] from a given [PsiDDItem].
+     * Resolve [PsiElement] from a given [PsiDDItem].
      *
-     * This function locates the file corresponding to the given [PsiDDItem] using its [PsiDDItem.localPath].
-     * parses it as a Kotlin file,
-     * and navigates to the specified PSI element within the file following the [PsiDDItem.childrenPath].
+     * This function locates the file corresponding to the given [PsiDDItem] using its [PsiDDItem.localPath]
+     * and navigates to the [PsiElement] within the file following the [PsiDDItem.childrenPath].
      *
      * @param context The context of the current computation, providing access to the project directory and related utilities.
-     * @param item The PSI item containing the `localPath` to locate the file and the `childrenPath` to resolve the desired PSI element.
-     * @return The resolved [KtExpression] instance, or `null` if the PSI element cannot be resolved.
+     * @param item The item containing the `localPath` to locate the file and the `childrenPath` to resolve the desired PSI element.
+     * @return The resolved [PsiElement], or `null` if it cannot be resolved.
      */
     @RequiresReadLock
     fun <T : PsiChildrenPathIndex> getPsiElementFromItem(context: IJDDContext, item: PsiDDItem<T>): PsiElement? {
-        val file = context.projectDir.findFileByRelativePath(item.localPath.toString())!!
-        if (file.isDirectory) {
-            return file.toPsiDirectory(context.indexProject)
+        val virtualFile = context.projectDir.findFileByRelativePath(item.localPath.toString())!!
+        if (virtualFile.isDirectory) {
+            return virtualFile.toPsiDirectory(context.indexProject)
         }
-        val ktFile = getKtFile(context, file)!!
-        return if (item.childrenPath.isEmpty()) ktFile else getElementByFileAndPath(ktFile, item.childrenPath)
+        val file = getPsiFile(context, virtualFile)!!
+        return getPsiByPath(file, item.childrenPath)
     }
 
-    fun <T : PsiChildrenPathIndex> getElementByFileAndPath(ktFile: KtFile, path: List<T>): KtElement? {
-        var currentDepth = 0
-        var element: PsiElement = ktFile
-        while (currentDepth < path.size) {
-            element = path[currentDepth++].getNext(element) ?: return null
-        }
-        val psiElement = element as? KtElement
-        return psiElement
-    }
+    fun <T : PsiChildrenPathIndex> getElementByFileAndPath(ktFile: KtFile, path: List<T>): KtElement? =
+        getPsiByPath(ktFile, path) as? KtElement
+
+    private fun <T : PsiChildrenPathIndex> getPsiByPath(root: PsiElement, path: List<T>): PsiElement? =
+        path.fold(root) { element, idx -> idx.getNext(element) ?: return@getPsiByPath null }
 
     /**
      * Transforms PsiElement into **replaceable** PSIDDItem by traversing the parents and collecting file information.
@@ -202,6 +190,16 @@ object PsiUtils {
         PsiStubDDItem.NonOverriddenPsiStubDDItem(localPath, parentPath.map { it.bind() })
     }
 
+    /**
+     * Builds a path of parent-child relationships from a given PsiElement to
+     * the first encountered file or directory.
+     *
+     * @param element The starting PsiElement from which the path will be constructed.
+     * @param pathElementProducer A function from a parent and a child to their relationship.
+     * @param isElementAllowed A predicate of allowed PsiElement in the path.
+     * @return A pair of the topmost PsiElement in the path and the list of processed
+     *         relationships, or null if any element in the path is not allowed.
+     */
     @RequiresReadLock
     @Suppress("TYPE_ALIAS")
     private fun <T> buildParentPath(
@@ -230,7 +228,25 @@ object PsiUtils {
 
     @RequiresReadLock
     fun getKtFile(context: IJDDContext, file: VirtualFile): KtFile? =
-        PsiManagerEx.getInstance(context.indexProject).findFile(file) as? KtFile
+        getPsiFile(context, file) as? KtFile
+
+    @RequiresReadLock
+    fun getJFile(context: IJDDContext, file: VirtualFile): PsiJavaFile? =
+        getPsiFile(context, file) as? PsiJavaFile
+
+    @RequiresReadLock
+    fun getSourceFile(context: IJDDContext, file: VirtualFile): PsiFile? {
+        val psiFile = getPsiFile(context, file) ?: return null
+        return when (psiFile) {
+            is PsiJavaFile -> psiFile
+            is KtFile -> psiFile
+            else -> null
+        }
+    }
+
+    @RequiresReadLock
+    fun getPsiFile(context: IJDDContext, file: VirtualFile): PsiFile? =
+        PsiManagerEx.getInstance(context.indexProject).findFile(file)
 
     suspend inline fun <T> performPsiChangesAndSave(
         context: IJDDContext,

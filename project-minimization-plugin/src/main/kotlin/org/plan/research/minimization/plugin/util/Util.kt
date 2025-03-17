@@ -15,6 +15,7 @@ import org.plan.research.minimization.plugin.compilation.gradle.GradleBuildExcep
 import org.plan.research.minimization.plugin.compilation.transformer.PathRelativizationTransformer
 import org.plan.research.minimization.plugin.context.snapshot.SnapshotManager
 import org.plan.research.minimization.plugin.context.snapshot.impl.ProjectCloningSnapshotManager
+import org.plan.research.minimization.plugin.context.snapshot.impl.ProjectLocalHistorySnapshotManager
 import org.plan.research.minimization.plugin.logging.withLog
 import org.plan.research.minimization.plugin.logging.withLogging
 import org.plan.research.minimization.plugin.settings.data.CompilationStrategy
@@ -35,6 +36,7 @@ import java.time.format.DateTimeFormatter
 fun SnapshotStrategy.getSnapshotManager(project: Project): SnapshotManager =
     when (this) {
         SnapshotStrategy.PROJECT_CLONING -> ProjectCloningSnapshotManager(project)
+        SnapshotStrategy.LOCAL_STORAGE -> ProjectLocalHistorySnapshotManager()
     }
 
 fun DDStrategy.getDDAlgorithm(): DDAlgorithm =
